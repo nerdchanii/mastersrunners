@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 마스터스러너스 (mastersrunners)
 
-## Getting Started
+한국 러너들을 위한 최고의 훈련 기록 & 커뮤니티 플랫폼
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 소개
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**마스터스러너스(mastersrunners)**는 한국의 러너들이 더 활발하게 훈련하고, 자신의 훈련을 쉽고 재미있게 기록·공유할 수 있도록 돕는 러닝 커뮤니티 앱입니다. 멀리 떨어져 있어도, 같은 러너로서 서로의 성장과 도전을 응원할 수 있습니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 주요 기능 (Phase별)
 
-## Learn More
+### Phase 1 - (현재 Phase 1 개발 중)
+- **훈련 기록 (러닝 전용)**  
+  러닝(running) 기록만을 쉽고 빠르게 저장할 수 있습니다.  
+  *(현재는 러닝만 지원하며, 다른 운동 기록 기능은 추후 계획되어 있지 않습니다.)*
+- **훈련 공유**  
+  자신의 러닝 기록을 커뮤니티에 공유하고, 다른 러너들의 훈련도 한눈에 볼 수 있습니다.
 
-To learn more about Next.js, take a look at the following resources:
+### Phase 2
+- **커뮤니티 소통**  
+  댓글, 좋아요, 피드백 등 다양한 방식으로 러너들과 소통할 수 있습니다.
+- **통계 및 분석**  
+  나의 러닝 데이터를 시각적으로 확인하고, 성장 과정을 추적할 수 있습니다.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 기대 효과
 
-## Deploy on Vercel
+- **사용자**
+  - 러너 커뮤니티 강화
+  - 정보 접근성 향상
+  - 러너들의 활발한 정보공유
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 시작하기
+
+> 현재 서비스 준비 중입니다.  
+> 곧 더 자세한 안내와 함께 찾아뵙겠습니다!
+
+---
+
+## 문의 및 피드백
+
+- 이메일: 
+- 인스타그램: 
+
+마스터스러너스와 함께 더 멀리, 더 즐겁게 달려보세요! 🏃‍♂️🏃‍♀️
