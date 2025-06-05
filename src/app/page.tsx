@@ -1,7 +1,7 @@
 "use client";
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-[100svh] max-h-[100dvh] p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)] border-2 border-red-500">
+    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-[100svh] max-h-[100dvh] p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start justify-center relative">
         <div className="absolute inset-0 "></div>
         <h1 className="text-4xl font-bold text-center w-full">
