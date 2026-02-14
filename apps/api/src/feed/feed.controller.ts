@@ -1,5 +1,5 @@
-import { Controller, Get, Query } from "@nestjs/common";
-import { Throttle } from "@nestjs/throttler";
+import { Controller, Get, Query, UseGuards } from "@nestjs/common";
+import { Throttle, ThrottlerGuard } from "@nestjs/throttler";
 import { Public } from "../common/decorators/public.decorator.js";
 import { FeedService } from "./feed.service.js";
 
@@ -8,6 +8,7 @@ export class FeedController {
   constructor(private readonly feedService: FeedService) {}
 
   @Public()
+  @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Get()
   getFeed(
