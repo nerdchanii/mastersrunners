@@ -35,20 +35,16 @@ export async function GET() {
     }
 
     // Get workout statistics
-    const workouts = await prisma.workout.findMany({
-      where: {
-        userId: session.user.id,
-      },
-      select: {
-        distance: true,
-        duration: true,
-      },
+    const stats = await prisma.workout.aggregate({
+      where: { userId: session.user.id },
+      _count: true,
+      _sum: { distance: true, duration: true },
     });
 
-    const totalWorkouts = workouts.length;
-    const totalDistance = workouts.reduce((sum, w) => sum + w.distance, 0);
-    const totalDuration = workouts.reduce((sum, w) => sum + w.duration, 0);
-    const averagePace = totalDistance > 0 ? totalDuration / 60 / totalDistance : 0;
+    const totalWorkouts = stats._count;
+    const totalDistance = stats._sum.distance ?? 0;
+    const totalDuration = stats._sum.duration ?? 0;
+    const averagePace = totalDistance > 0 ? totalDuration / (totalDistance / 1000) : 0;
 
     return NextResponse.json({
       user,
