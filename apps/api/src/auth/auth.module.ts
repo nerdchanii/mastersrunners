@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, type Provider } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 import { ConfigModule, ConfigService } from "@nestjs/config";
@@ -8,6 +8,13 @@ import { JwtStrategy } from "./strategies/jwt.strategy.js";
 import { KakaoStrategy } from "./strategies/kakao.strategy.js";
 import { GoogleStrategy } from "./strategies/google.strategy.js";
 import { NaverStrategy } from "./strategies/naver.strategy.js";
+
+// Only register OAuth strategies when credentials are configured.
+// dotenv/config runs synchronously before module loading, so process.env is safe here.
+const oauthStrategies: Provider[] = [];
+if (process.env.KAKAO_CLIENT_ID) oauthStrategies.push(KakaoStrategy);
+if (process.env.GOOGLE_CLIENT_ID) oauthStrategies.push(GoogleStrategy);
+if (process.env.NAVER_CLIENT_ID) oauthStrategies.push(NaverStrategy);
 
 @Module({
   imports: [
@@ -24,13 +31,7 @@ import { NaverStrategy } from "./strategies/naver.strategy.js";
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    KakaoStrategy,
-    GoogleStrategy,
-    NaverStrategy,
-  ],
+  providers: [AuthService, JwtStrategy, ...oauthStrategies],
   exports: [AuthService],
 })
 export class AuthModule {}
