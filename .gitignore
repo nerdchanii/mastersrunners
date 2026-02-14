@@ -52,5 +52,8 @@ next-env.d.ts
 # cursor
 .cursor
 
+# claude code
+.claude/
+
 # oh-my-claudecode
 .omc/
