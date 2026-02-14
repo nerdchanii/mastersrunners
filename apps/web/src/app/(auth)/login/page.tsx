@@ -3,7 +3,7 @@
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { API_BASE } from "@/lib/api-client";
+import { api, API_BASE } from "@/lib/api-client";
 
 function LoginContent() {
   const router = useRouter();
@@ -58,6 +58,35 @@ function LoginContent() {
       >
         네이버로 시작하기
       </button>
+
+      {API_BASE.includes("localhost") && (
+        <>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400">개발 전용</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch(`${API_BASE}/auth/dev-login`, {
+                  method: "POST",
+                });
+                if (!res.ok) throw new Error("Dev login failed");
+                const data = await res.json();
+                api.setTokens(data.accessToken, data.refreshToken);
+                router.replace("/");
+              } catch {
+                // silently fail
+              }
+            }}
+            className="w-full py-3 px-4 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg font-medium hover:border-gray-400 hover:text-gray-700 transition"
+          >
+            개발용 로그인 (OAuth 생략)
+          </button>
+        </>
+      )}
     </div>
   );
 }

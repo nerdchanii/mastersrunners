@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Req, Res, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, Body, Req, Res, UseGuards, NotFoundException } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { ConfigService } from "@nestjs/config";
 import type { Request, Response } from "express";
@@ -60,6 +60,29 @@ export class AuthController {
   @UseGuards(AuthGuard("naver"))
   async naverCallback(@Req() req: Request, @Res() res: Response) {
     return this.handleOAuthCallback(req.user as OAuthProfile, res);
+  }
+
+  // ─── Dev Login (development only) ──────────────────
+
+  @Public()
+  @Post("dev-login")
+  async devLogin() {
+    if (process.env.NODE_ENV === "production") {
+      throw new NotFoundException();
+    }
+
+    const profile: OAuthProfile = {
+      provider: "dev",
+      providerAccountId: "dev-1",
+      email: "dev@mastersrunners.local",
+      name: "개발 테스터",
+      profileImage: null,
+      accessToken: "dev-access-token",
+      refreshToken: "dev-refresh-token",
+    };
+
+    const user = await this.authService.upsertOAuthUser(profile);
+    return this.authService.generateTokens(user);
   }
 
   // ─── Token Refresh ─────────────────────────────────
