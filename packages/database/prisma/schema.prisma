@@ -1,0 +1,480 @@
+// Masters Runners - Prisma Schema
+// ERD: .omc/plans/erd-design.md
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============================================================================
+// Auth (NextAuth)
+// ============================================================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================================================
+// Core
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String?
+  name          String
+  profileImage  String?
+  bio           String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Core
+  workouts Workout[]
+  shoes    Shoe[]
+
+  // Auth
+  accounts Account[]
+  sessions Session[]
+
+  // Social
+  followers  Follow[] @relation("following") // 나를 팔로우하는 사람들
+  following  Follow[] @relation("follower")  // 내가 팔로우하는 사람들
+  likes      Like[]
+  comments   Comment[]
+
+  // Group
+  crewMemberships CrewMember[]
+  createdCrews    Crew[]
+
+  // Challenge
+  challengeParticipations ChallengeParticipant[]
+  createdChallenges       Challenge[]
+
+  // Event
+  eventParticipations EventParticipant[]
+  organizedEvents     Event[]
+
+  // Integration
+  connectedPlatforms ConnectedPlatform[]
+  syncLogs           SyncLog[]
+
+  // Notification
+  notifications     Notification[] @relation("recipient")
+  actedNotifications Notification[] @relation("actor")
+}
+
+model Workout {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  // 기본 정보
+  title          String?
+  sport          String  @default("RUN") // RUN, TRAIL_RUN, TREADMILL, RACE
+  source         String  @default("MANUAL") // MANUAL, FIT_FILE, GPX_FILE, GARMIN_SYNC, COROS_SYNC, STRAVA_SYNC
+  externalId     String? // 외부 플랫폼 activity ID
+  externalSource String? // GARMIN, COROS, STRAVA
+
+  // 거리/시간
+  distance   Float // 총 거리 (m)
+  duration   Int   // 총 경과시간 (초)
+  movingTime Int?  // 이동시간 - 정지 제외 (초)
+  pace       Float // 평균 페이스 (초/km)
+  bestPace   Float? // 최고 페이스 (초/km)
+
+  // 고도
+  elevationGain Float? // 총 상승 고도 (m)
+  elevationLoss Float? // 총 하강 고도 (m)
+  minElevation  Float? // 최저 고도 (m)
+  maxElevation  Float? // 최고 고도 (m)
+
+  // 심박수
+  avgHeartRate Int? // 평균 심박 (bpm)
+  maxHeartRate Int? // 최대 심박 (bpm)
+
+  // 케이던스
+  avgCadence Int? // 평균 케이던스 (spm)
+  maxCadence Int? // 최대 케이던스 (spm)
+
+  // 기타 메트릭
+  calories       Int?   // 소모 칼로리
+  avgTemperature Float? // 평균 기온 (C)
+
+  // 위치
+  startLat Float? // 출발 위도
+  startLng Float? // 출발 경도
+  endLat   Float? // 도착 위도
+  endLng   Float? // 도착 경도
+  hasGps   Boolean @default(false)
+
+  // 시각
+  date       DateTime  // 운동 날짜
+  startedAt  DateTime? // 운동 시작 시각
+  finishedAt DateTime? // 운동 종료 시각
+
+  // 소셜/메타
+  memo     String?
+  isPublic Boolean @default(false)
+  shoeId   String?
+  shoe     Shoe?   @relation(fields: [shoeId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  file     WorkoutFile?
+  route    WorkoutRoute?
+  laps     WorkoutLap[]
+  photos   WorkoutPhoto[]
+  likes    Like[]
+  comments Comment[]
+  eventParticipant EventParticipant?
+
+  @@unique([externalSource, externalId])
+  @@index([userId, date])
+  @@index([isPublic, createdAt])
+}
+
+model WorkoutFile {
+  id        String @id @default(cuid())
+  workoutId String @unique
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  fileType           String  // FIT, GPX, TCX
+  fileUrl            String  // 파일 저장 경로 (S3/local)
+  originalFileName   String
+  fileSize           Int     // bytes
+  checksum           String? // SHA-256
+  deviceName         String? // "Garmin Forerunner 265"
+  deviceManufacturer String?
+
+  processStatus String  @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  processError  String?
+  processedAt   DateTime?
+  createdAt     DateTime @default(now())
+}
+
+model WorkoutRoute {
+  id        String @id @default(cuid())
+  workoutId String @unique
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  encodedPolyline String // Google Encoded Polyline (지도 표시용)
+  routeData       String // JSON: [{lat, lng, ele, time, hr, cad, pace}, ...]
+  boundNorth      Float
+  boundSouth      Float
+  boundEast       Float
+  boundWest       Float
+  totalPoints     Int
+
+  createdAt DateTime @default(now())
+}
+
+model WorkoutLap {
+  id        String @id @default(cuid())
+  workoutId String
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  lapNumber     Int
+  trigger       String  @default("AUTO_KM") // AUTO_KM, AUTO_MILE, MANUAL, CUSTOM_DISTANCE
+  distance      Float   // 구간 거리 (m)
+  duration      Int     // 구간 시간 (초)
+  pace          Float   // 구간 페이스 (초/km)
+  avgHeartRate  Int?
+  maxHeartRate  Int?
+  avgCadence    Int?
+  elevationGain Float?
+  elevationLoss Float?
+  calories      Int?
+  startedAt     DateTime?
+
+  @@unique([workoutId, lapNumber])
+}
+
+model WorkoutPhoto {
+  id        String @id @default(cuid())
+  workoutId String
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  imageUrl   String
+  caption    String?
+  orderIndex Int     @default(0)
+  createdAt  DateTime @default(now())
+}
+
+model Shoe {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  brand         String
+  model         String
+  nickname      String?
+  imageUrl      String?
+  totalDistance  Float   @default(0) // 누적 거리 (m)
+  maxDistance    Float?              // 교체 기준 거리 (m)
+  isRetired     Boolean @default(false)
+  createdAt     DateTime @default(now())
+
+  workouts Workout[]
+
+  @@index([userId, isRetired])
+}
+
+// ============================================================================
+// Social
+// ============================================================================
+
+model Follow {
+  id          String @id @default(cuid())
+  followerId  String
+  followingId String
+  follower    User   @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User   @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model Like {
+  id        String @id @default(cuid())
+  userId    String
+  workoutId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, workoutId])
+  @@index([workoutId])
+}
+
+model Comment {
+  id        String @id @default(cuid())
+  userId    String
+  workoutId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  content  String
+  parentId String?
+  parent   Comment?  @relation("replies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("replies")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workoutId, createdAt])
+  @@index([parentId])
+}
+
+// ============================================================================
+// Group (Crew)
+// ============================================================================
+
+model Crew {
+  id          String @id @default(cuid())
+  name        String
+  description String?
+  imageUrl    String?
+  creatorId   String
+  creator     User   @relation(fields: [creatorId], references: [id])
+  isPublic    Boolean @default(true)
+  maxMembers  Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members    CrewMember[]
+  challenges Challenge[]
+}
+
+model CrewMember {
+  id       String @id @default(cuid())
+  crewId   String
+  userId   String
+  crew     Crew   @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String @default("MEMBER") // OWNER, ADMIN, MEMBER
+  joinedAt DateTime @default(now())
+
+  @@unique([crewId, userId])
+  @@index([crewId])
+  @@index([userId])
+}
+
+// ============================================================================
+// Challenge
+// ============================================================================
+
+model Challenge {
+  id          String @id @default(cuid())
+  title       String
+  description String?
+  type        String // DISTANCE, FREQUENCY, STREAK, PACE
+  targetValue Float  // 목표 수치
+  targetUnit  String // KM, COUNT, DAYS, SEC_PER_KM
+  startDate   DateTime
+  endDate     DateTime
+  creatorId   String
+  creator     User   @relation(fields: [creatorId], references: [id])
+  crewId      String?
+  crew        Crew?  @relation(fields: [crewId], references: [id], onDelete: SetNull)
+  isPublic    Boolean @default(true)
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+
+  participants ChallengeParticipant[]
+}
+
+model ChallengeParticipant {
+  id          String @id @default(cuid())
+  challengeId String
+  userId      String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  currentValue Float   @default(0)
+  isCompleted  Boolean @default(false)
+  completedAt  DateTime?
+  joinedAt     DateTime @default(now())
+
+  @@unique([challengeId, userId])
+  @@index([challengeId, currentValue])
+}
+
+// ============================================================================
+// Event
+// ============================================================================
+
+model Event {
+  id          String @id @default(cuid())
+  title       String
+  description String?
+  eventType   String // MARATHON, HALF, TEN_K, FIVE_K, ULTRA, TRAIL, OTHER
+  date        DateTime
+  location    String?
+  latitude    Float?
+  longitude   Float?
+  distance    Float? // 대회 거리 (m)
+  organizerId String
+  organizer   User   @relation(fields: [organizerId], references: [id])
+  maxParticipants      Int?
+  registrationDeadline DateTime?
+  externalUrl          String?
+  imageUrl             String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  participants EventParticipant[]
+}
+
+model EventParticipant {
+  id       String @id @default(cuid())
+  eventId  String
+  userId   String
+  event    Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status     String  @default("REGISTERED") // REGISTERED, COMPLETED, DNS, DNF
+  bibNumber  String?
+  goalTime   Int?    // 목표 기록 (초)
+  resultTime Int?    // 실제 기록 (초)
+  resultRank Int?
+  workoutId  String? @unique
+  workout    Workout? @relation(fields: [workoutId], references: [id], onDelete: SetNull)
+  registeredAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+}
+
+// ============================================================================
+// Integration (Garmin, Coros, Strava)
+// ============================================================================
+
+model ConnectedPlatform {
+  id             String @id @default(cuid())
+  userId         String
+  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform       String // GARMIN, COROS, STRAVA, SUUNTO
+  externalUserId String
+  accessToken    String  // 암호화 저장
+  refreshToken   String? // 암호화 저장
+  tokenExpiresAt DateTime?
+  scope          String?
+  isActive       Boolean  @default(true)
+  lastSyncAt     DateTime?
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, platform])
+  @@index([userId])
+}
+
+model SyncLog {
+  id           String @id @default(cuid())
+  userId       String
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform     String // GARMIN, COROS, STRAVA, SUUNTO
+  status       String // SUCCESS, PARTIAL, FAILED
+  errorMessage String?
+  startedAt    DateTime @default(now())
+  completedAt  DateTime?
+
+  @@index([userId, platform, startedAt])
+}
+
+// ============================================================================
+// Notification
+// ============================================================================
+
+model Notification {
+  id            String @id @default(cuid())
+  userId        String
+  user          User   @relation("recipient", fields: [userId], references: [id], onDelete: Cascade)
+  actorId       String?
+  actor         User?  @relation("actor", fields: [actorId], references: [id], onDelete: SetNull)
+  type          String // LIKE, COMMENT, COMMENT_REPLY, FOLLOW, CREW_INVITE, CREW_JOIN, CHALLENGE_COMPLETE, EVENT_REMINDER
+  referenceType String // WORKOUT, CREW, CHALLENGE, EVENT, COMMENT
+  referenceId   String
+  message       String
+  isRead        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([userId, isRead, createdAt])
+}
