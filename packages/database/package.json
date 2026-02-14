@@ -20,11 +20,10 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@libsql/client": "^0.17.0",
-    "@prisma/adapter-libsql": "^7.3.0",
+    "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "dotenv": "^17.2.3",
-    "libsql": "^0.5.22"
+    "pg": "^8.16.0"
   },
   "devDependencies": {
     "@types/node": "^20",

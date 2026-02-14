@@ -11,17 +11,15 @@ const nextConfig: NextConfig = {
     "@masters/database",
     "@prisma/client",
     "prisma",
-    "@prisma/adapter-libsql",
-    "@libsql/client",
-    "libsql",
+    "@prisma/adapter-pg",
+    "pg",
   ],
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals.push({
         "@masters/database": "module @masters/database",
-        "@prisma/adapter-libsql": "module @prisma/adapter-libsql",
-        "@libsql/client": "module @libsql/client",
-        libsql: "module libsql",
+        "@prisma/adapter-pg": "module @prisma/adapter-pg",
+        pg: "module pg",
       });
     }
     return config;

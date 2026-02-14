@@ -8,9 +8,8 @@ export default defineConfig({
   clean: true,
   outDir: "dist",
   external: [
-    "@prisma/adapter-libsql",
-    "@libsql/client",
-    "libsql",
+    "@prisma/adapter-pg",
+    "pg",
     "@prisma/client",
   ],
 });

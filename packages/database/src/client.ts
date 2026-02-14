@@ -1,16 +1,12 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { PrismaClient as _PrismaClient } from "../generated/prisma/client.js";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Absolute path to SQLite database regardless of runtime cwd
-const dbPath = path.resolve(__dirname, "..", "dev.db");
+import { PrismaPg } from "@prisma/adapter-pg";
 
 function createPrismaClient() {
-  const adapter = new PrismaLibSql({ url: `file:${dbPath}` });
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("DATABASE_URL environment variable is not set");
+  }
+  const adapter = new PrismaPg({ connectionString });
   return new _PrismaClient({ adapter });
 }
 
