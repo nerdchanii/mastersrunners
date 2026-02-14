@@ -13,9 +13,37 @@ export async function POST(req: Request) {
       );
     }
 
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedName = name.trim();
+
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      return NextResponse.json(
+        { error: "유효한 이메일 주소를 입력해주세요." },
+        { status: 400 }
+      );
+    }
+
+    // 비밀번호 길이 검증
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: "비밀번호는 8자 이상이어야 합니다." },
+        { status: 400 }
+      );
+    }
+
+    // 이름 길이 검증
+    if (trimmedName.length < 2 || trimmedName.length > 50) {
+      return NextResponse.json(
+        { error: "이름은 2자 이상 50자 이하여야 합니다." },
+        { status: 400 }
+      );
+    }
+
     // 이메일 중복 확인
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: trimmedEmail },
     });
 
     if (existingUser) {
@@ -31,9 +59,9 @@ export async function POST(req: Request) {
     // 사용자 생성
     const user = await prisma.user.create({
       data: {
-        email,
+        email: trimmedEmail,
         password: hashedPassword,
-        name,
+        name: trimmedName,
       },
     });
 
