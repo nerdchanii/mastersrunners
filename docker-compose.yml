@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: masters-runners-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: masters
+      POSTGRES_PASSWORD: masters
+      POSTGRES_DB: masters_runners
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
