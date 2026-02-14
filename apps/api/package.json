@@ -25,7 +25,10 @@
     "dotenv": "^17.2.4",
     "ioredis": "^5.9.3",
     "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
+    "passport-kakao": "^1.0.1",
+    "passport-naver-v2": "^2.0.8",
     "reflect-metadata": "^0.2",
     "rxjs": "^7"
   },
@@ -36,7 +39,9 @@
     "@swc/core": "^1.11",
     "@types/express": "^5",
     "@types/node": "^20",
+    "@types/passport-google-oauth20": "^2.0.17",
     "@types/passport-jwt": "^4.0.1",
+    "@types/passport-kakao": "^1.0.3",
     "typescript": "^5"
   }
 }
