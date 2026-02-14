@@ -68,8 +68,30 @@ export async function POST(req: Request) {
       );
     }
 
-    // Calculate pace (minutes per kilometer)
-    const pace = duration / 60 / distance;
+    if (distance > 500000) {
+      return NextResponse.json(
+        { error: "거리는 500km 이하여야 합니다." },
+        { status: 400 }
+      );
+    }
+
+    if (duration > 86400) {
+      return NextResponse.json(
+        { error: "시간은 24시간 이하여야 합니다." },
+        { status: 400 }
+      );
+    }
+
+    // 메모 길이 제한
+    if (memo && typeof memo === "string" && memo.length > 2000) {
+      return NextResponse.json(
+        { error: "메모는 2000자 이하여야 합니다." },
+        { status: 400 }
+      );
+    }
+
+    // Calculate pace (seconds per kilometer)
+    const pace = duration / (distance / 1000);
 
     // Create workout
     const workout = await prisma.workout.create({
