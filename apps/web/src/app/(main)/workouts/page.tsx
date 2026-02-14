@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import WorkoutCard from "@/components/workout/WorkoutCard";
+import { api } from "@/lib/api-client";
 
 interface Workout {
   id: string;
@@ -22,13 +23,7 @@ export default function WorkoutsPage() {
   useEffect(() => {
     const fetchWorkouts = async () => {
       try {
-        const response = await fetch("/api/workouts");
-
-        if (!response.ok) {
-          throw new Error("기록을 불러오는데 실패했습니다.");
-        }
-
-        const data = await response.json();
+        const data = await api.fetch<Workout[]>("/workouts");
         setWorkouts(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");

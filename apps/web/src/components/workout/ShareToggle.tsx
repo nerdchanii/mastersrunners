@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { api } from "@/lib/api-client";
 
 interface ShareToggleProps {
   workoutId: string;
@@ -20,20 +21,13 @@ export default function ShareToggle({
     setError(null);
 
     try {
-      const response = await fetch(`/api/workouts/${workoutId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ isPublic: !isPublic }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "공개 설정 변경에 실패했습니다.");
-      }
-
-      const updatedWorkout = await response.json();
+      const updatedWorkout = await api.fetch<{ isPublic: boolean }>(
+        `/workouts/${workoutId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ isPublic: !isPublic }),
+        }
+      );
       setIsPublic(updatedWorkout.isPublic);
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했습니다.");

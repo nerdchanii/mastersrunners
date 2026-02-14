@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api-client";
 
 export default function NewWorkoutPage() {
   const router = useRouter();
@@ -86,11 +87,8 @@ export default function NewWorkoutPage() {
       const secondsNum = parseInt(seconds) || 0;
       const duration = hoursNum * 3600 + minutesNum * 60 + secondsNum;
 
-      const response = await fetch("/api/workouts", {
+      await api.fetch("/workouts", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           distance: parseFloat(distance),
           duration,
@@ -100,13 +98,7 @@ export default function NewWorkoutPage() {
         }),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "기록 저장에 실패했습니다.");
-      }
-
       router.push("/workouts");
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");
     } finally {

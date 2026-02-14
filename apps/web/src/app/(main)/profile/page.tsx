@@ -1,7 +1,17 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { prisma } from "@masters/database";
+import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api-client";
+
+interface ProfileStats {
+  totalWorkouts: number;
+  totalDistance: number;
+  totalDuration: number;
+  averagePace: number;
+}
 
 interface ProfileData {
   user: {
@@ -9,66 +19,9 @@ interface ProfileData {
     email: string;
     name: string;
     profileImage: string | null;
-    createdAt: Date;
+    createdAt: string;
   };
-  stats: {
-    totalWorkouts: number;
-    totalDistance: number;
-    totalDuration: number;
-    averagePace: number;
-  };
-}
-
-async function getProfileData(): Promise<ProfileData> {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    redirect("/login");
-  }
-
-  // Get user info
-  const user = await prisma.user.findUnique({
-    where: {
-      id: session.user.id,
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      profileImage: true,
-      createdAt: true,
-    },
-  });
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  // Get workout statistics
-  const workouts = await prisma.workout.findMany({
-    where: {
-      userId: session.user.id,
-    },
-    select: {
-      distance: true,
-      duration: true,
-    },
-  });
-
-  const totalWorkouts = workouts.length;
-  const totalDistance = workouts.reduce((sum, w) => sum + w.distance, 0);
-  const totalDuration = workouts.reduce((sum, w) => sum + w.duration, 0);
-  const averagePace = totalDistance > 0 ? totalDuration / 60 / totalDistance : 0;
-
-  return {
-    user,
-    stats: {
-      totalWorkouts,
-      totalDistance,
-      totalDuration,
-      averagePace,
-    },
-  };
+  stats: ProfileStats;
 }
 
 function formatDuration(seconds: number): string {
@@ -91,7 +44,8 @@ function formatPace(pace: number): string {
   return `${minutes}'${seconds.toString().padStart(2, "0")}"`;
 }
 
-function formatDate(date: Date): string {
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
   return date.toLocaleDateString("ko-KR", {
     year: "numeric",
     month: "long",
@@ -99,9 +53,56 @@ function formatDate(date: Date): string {
   });
 }
 
-export default async function ProfilePage() {
-  const data = await getProfileData();
-  const { user, stats } = data;
+export default function ProfilePage() {
+  const router = useRouter();
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      router.replace("/login");
+      return;
+    }
+
+    const fetchProfile = async () => {
+      try {
+        const data = await api.fetch<ProfileData>("/profile");
+        setProfileData(data);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "프로필을 불러오는데 실패했습니다."
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [authLoading, isAuthenticated, router]);
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-gray-500">로딩 중...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
+
+  if (!profileData) return null;
+
+  const { user, stats } = profileData;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">

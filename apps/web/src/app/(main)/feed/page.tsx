@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import FeedCard from "@/components/feed/FeedCard";
+import { api } from "@/lib/api-client";
 
 interface FeedItem {
   id: string;
@@ -35,18 +36,12 @@ export default function FeedPage() {
       setLoading(true);
       setError(null);
 
-      const url = new URL("/api/feed", window.location.origin);
+      let path = "/feed?limit=10";
       if (cursor) {
-        url.searchParams.set("cursor", cursor);
-      }
-      url.searchParams.set("limit", "10");
-
-      const response = await fetch(url.toString());
-      if (!response.ok) {
-        throw new Error("피드를 불러오는데 실패했습니다.");
+        path += `&cursor=${encodeURIComponent(cursor)}`;
       }
 
-      const data: FeedResponse = await response.json();
+      const data = await api.fetch<FeedResponse>(path);
 
       if (cursor) {
         // Append to existing items
