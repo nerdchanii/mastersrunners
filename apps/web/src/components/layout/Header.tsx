@@ -1,20 +1,16 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 
 export default function Header() {
-  const { status } = useSession();
+  const { isAuthenticated, isLoading, logout } = useAuth();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => pathname === path;
-
-  const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/" });
-  };
 
   const navLinks = [
     { href: "/feed", label: "피드", auth: false },
@@ -24,7 +20,7 @@ export default function Header() {
   ];
 
   const visibleLinks = navLinks.filter(
-    (link) => !link.auth || status === "authenticated"
+    (link) => !link.auth || isAuthenticated
   );
 
   return (
@@ -61,30 +57,22 @@ export default function Header() {
 
           {/* Auth Buttons - Desktop */}
           <div className="hidden items-center gap-3 md:flex">
-            {status === "loading" ? (
+            {isLoading ? (
               <div className="h-9 w-20 animate-pulse rounded-lg bg-gray-200" />
-            ) : status === "authenticated" ? (
+            ) : isAuthenticated ? (
               <button
-                onClick={handleSignOut}
+                onClick={logout}
                 className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-gray-800 active:scale-95"
               >
                 로그아웃
               </button>
             ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
-                >
-                  로그인
-                </Link>
-                <Link
-                  href="/signup"
-                  className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-gray-800 active:scale-95"
-                >
-                  회원가입
-                </Link>
-              </>
+              <Link
+                href="/login"
+                className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-gray-800 active:scale-95"
+              >
+                로그인
+              </Link>
             )}
           </div>
 
@@ -142,33 +130,24 @@ export default function Header() {
             ))}
 
             <div className="mt-4 flex flex-col gap-2 border-t border-gray-200 pt-4">
-              {status === "authenticated" ? (
+              {isAuthenticated ? (
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    handleSignOut();
+                    logout();
                   }}
                   className="rounded-lg bg-gray-900 px-4 py-3 text-sm font-medium text-white transition-all active:scale-95"
                 >
                   로그아웃
                 </button>
               ) : (
-                <>
-                  <Link
-                    href="/login"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="rounded-lg px-4 py-3 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
-                  >
-                    로그인
-                  </Link>
-                  <Link
-                    href="/signup"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="rounded-lg bg-gray-900 px-4 py-3 text-center text-sm font-medium text-white transition-all active:scale-95"
-                  >
-                    회원가입
-                  </Link>
-                </>
+                <Link
+                  href="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="rounded-lg bg-gray-900 px-4 py-3 text-center text-sm font-medium text-white transition-all active:scale-95"
+                >
+                  로그인
+                </Link>
               )}
             </div>
           </nav>
