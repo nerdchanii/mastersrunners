@@ -27,7 +27,7 @@ if (process.env.NAVER_CLIENT_ID) oauthStrategies.push(NaverStrategy);
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>("JWT_SECRET"),
         signOptions: {
-          expiresIn: config.get<number>("JWT_ACCESS_TTL", 900),
+          expiresIn: Number(config.get("JWT_ACCESS_TTL", 900)),
         },
       }),
     }),

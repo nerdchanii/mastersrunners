@@ -1,5 +1,6 @@
-import { Controller, Get, Query, Request } from "@nestjs/common";
+import { Controller, Get, Query, Req } from "@nestjs/common";
 import { SkipThrottle } from "@nestjs/throttler";
+import type { Request } from "express";
 import { FeedService } from "./feed.service.js";
 
 @SkipThrottle()
@@ -9,31 +10,33 @@ export class FeedController {
 
   @Get("posts")
   getPostFeed(
-    @Request() req: { user: { id: string } },
+    @Req() req: Request,
     @Query("cursor") cursor?: string,
     @Query("limit") limit?: string,
   ) {
+    const { userId } = req.user as { userId: string };
     const parsedLimit = Math.min(
       Math.max(parseInt(limit || "10", 10) || 10, 1),
       50,
     );
-    return this.feedService.getPostFeed(req.user.id, cursor, parsedLimit);
+    return this.feedService.getPostFeed(userId, cursor, parsedLimit);
   }
 
   @Get("workouts")
   getWorkoutFeed(
-    @Request() req: { user: { id: string } },
+    @Req() req: Request,
     @Query("cursor") cursor?: string,
     @Query("limit") limit?: string,
     @Query("excludeLinked") excludeLinked?: string,
   ) {
+    const { userId } = req.user as { userId: string };
     const parsedLimit = Math.min(
       Math.max(parseInt(limit || "10", 10) || 10, 1),
       50,
     );
     const excludeLinkedToPost = excludeLinked === "true";
     return this.feedService.getWorkoutFeed(
-      req.user.id,
+      userId,
       cursor,
       parsedLimit,
       excludeLinkedToPost,

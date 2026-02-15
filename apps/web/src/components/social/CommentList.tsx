@@ -46,16 +46,20 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
       params.set("limit", "20");
       if (cursor) params.set("cursor", cursor);
 
-      const data = await api.fetch<CommentsResponse>(
+      const data = await api.fetch<CommentsResponse | Comment[]>(
         `${endpoint}?${params.toString()}`
       );
 
+      // API may return array directly or { comments, nextCursor }
+      const items = Array.isArray(data) ? data : (data.comments ?? []);
+      const newCursor = Array.isArray(data) ? null : (data.nextCursor ?? null);
+
       if (cursor) {
-        setComments((prev) => [...prev, ...data.comments]);
+        setComments((prev) => [...prev, ...items]);
       } else {
-        setComments(data.comments);
+        setComments(items);
       }
-      setNextCursor(data.nextCursor);
+      setNextCursor(newCursor);
     } catch (error) {
       console.error("Failed to fetch comments:", error);
     } finally {
