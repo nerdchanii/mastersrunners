@@ -3,9 +3,10 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 class ApiClient {
   private getStorage(): Storage | null {
     try {
-      return typeof window !== "undefined" && window.localStorage
-        ? window.localStorage
-        : null;
+      if (typeof window === "undefined") return null;
+      const storage = window.localStorage;
+      if (!storage || typeof storage.getItem !== "function") return null;
+      return storage;
     } catch {
       return null;
     }
