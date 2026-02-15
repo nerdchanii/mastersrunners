@@ -19,8 +19,11 @@ export class WorkoutsService {
       duration: dto.duration,
       pace,
       date: new Date(dto.date),
+      title: dto.title || null,
+      workoutTypeId: dto.workoutTypeId || null,
       memo: dto.memo || null,
       isPublic: dto.isPublic ?? false,
+      shoeId: dto.shoeId || null,
     });
   }
 
@@ -29,6 +32,39 @@ export class WorkoutsService {
   }
 
   async update(id: string, dto: UpdateWorkoutDto) {
-    return this.workoutRepo.updateVisibility(id, dto.isPublic);
+    const data: Record<string, unknown> = {};
+    if (dto.distance !== undefined) data.distance = dto.distance;
+    if (dto.duration !== undefined) data.duration = dto.duration;
+    if (dto.date !== undefined) data.date = new Date(dto.date);
+    if (dto.title !== undefined) data.title = dto.title;
+    if (dto.workoutTypeId !== undefined) data.workoutTypeId = dto.workoutTypeId;
+    if (dto.memo !== undefined) data.memo = dto.memo;
+    if (dto.isPublic !== undefined) data.isPublic = dto.isPublic;
+    if (dto.shoeId !== undefined) data.shoeId = dto.shoeId;
+
+    // Recalculate pace if distance or duration changed
+    if (dto.distance !== undefined || dto.duration !== undefined) {
+      let distance = dto.distance;
+      let duration = dto.duration;
+
+      // Fetch current values for the missing field
+      if (distance === undefined || duration === undefined) {
+        const current = await this.workoutRepo.findByIdWithUser(id);
+        if (current) {
+          distance = distance ?? current.distance;
+          duration = duration ?? current.duration;
+        }
+      }
+
+      if (distance !== undefined && duration !== undefined && distance > 0) {
+        data.pace = duration / (distance / 1000);
+      }
+    }
+
+    return this.workoutRepo.update(id, data);
+  }
+
+  async remove(id: string) {
+    return this.workoutRepo.softDelete(id);
   }
 }

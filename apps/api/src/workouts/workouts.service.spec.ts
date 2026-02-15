@@ -6,7 +6,8 @@ const mockWorkoutRepo = {
   findAllByUser: jest.fn(),
   findByIdWithUser: jest.fn(),
   create: jest.fn(),
-  updateVisibility: jest.fn(),
+  update: jest.fn(),
+  softDelete: jest.fn(),
 };
 
 describe("WorkoutsService", () => {
@@ -62,15 +63,41 @@ describe("WorkoutsService", () => {
       expect(call.date.toISOString().startsWith("2026-06-15")).toBe(true);
     });
 
-    it("should default memo to null and isPublic to false", async () => {
+    it("should default optional fields to null/false when not provided", async () => {
       const dto = { distance: 5000, duration: 1500, date: "2026-01-01" };
       mockWorkoutRepo.create.mockResolvedValue({ id: "w1" });
 
       await service.create("u1", dto);
 
       const call = mockWorkoutRepo.create.mock.calls[0][0];
+      expect(call.title).toBeNull();
+      expect(call.workoutTypeId).toBeNull();
       expect(call.memo).toBeNull();
       expect(call.isPublic).toBe(false);
+      expect(call.shoeId).toBeNull();
+    });
+
+    it("should pass all optional fields when provided", async () => {
+      const dto = {
+        distance: 10000,
+        duration: 3600,
+        date: "2026-01-01",
+        title: "Morning Run",
+        workoutTypeId: "wt1",
+        memo: "Felt great",
+        isPublic: true,
+        shoeId: "shoe1",
+      };
+      mockWorkoutRepo.create.mockResolvedValue({ id: "w1" });
+
+      await service.create("u1", dto);
+
+      const call = mockWorkoutRepo.create.mock.calls[0][0];
+      expect(call.title).toBe("Morning Run");
+      expect(call.workoutTypeId).toBe("wt1");
+      expect(call.memo).toBe("Felt great");
+      expect(call.isPublic).toBe(true);
+      expect(call.shoeId).toBe("shoe1");
     });
   });
 
@@ -87,12 +114,79 @@ describe("WorkoutsService", () => {
   });
 
   describe("update", () => {
-    it("should delegate to workoutRepo.updateVisibility", async () => {
-      mockWorkoutRepo.updateVisibility.mockResolvedValue({ id: "w1", isPublic: true });
+    it("should build update data object from provided fields", async () => {
+      const dto = {
+        distance: 12000,
+        duration: 4200,
+        title: "Updated Run",
+        isPublic: false,
+      };
+      mockWorkoutRepo.update.mockResolvedValue({ id: "w1", ...dto });
 
-      await service.update("w1", { isPublic: true });
+      await service.update("w1", dto);
 
-      expect(mockWorkoutRepo.updateVisibility).toHaveBeenCalledWith("w1", true);
+      const call = mockWorkoutRepo.update.mock.calls[0][1];
+      expect(call.distance).toBe(12000);
+      expect(call.duration).toBe(4200);
+      expect(call.title).toBe("Updated Run");
+      expect(call.isPublic).toBe(false);
+    });
+
+    it("should recalculate pace when both distance and duration are updated", async () => {
+      const dto = { distance: 10000, duration: 3500 };
+      mockWorkoutRepo.update.mockResolvedValue({ id: "w1" });
+
+      await service.update("w1", dto);
+
+      const call = mockWorkoutRepo.update.mock.calls[0][1];
+      expect(call.pace).toBe(3500 / (10000 / 1000)); // 350 sec/km
+    });
+
+    it("should convert date string to Date object when updating", async () => {
+      const dto = { date: "2026-07-01" };
+      mockWorkoutRepo.update.mockResolvedValue({ id: "w1" });
+
+      await service.update("w1", dto);
+
+      const call = mockWorkoutRepo.update.mock.calls[0][1];
+      expect(call.date).toBeInstanceOf(Date);
+      expect(call.date.toISOString().startsWith("2026-07-01")).toBe(true);
+    });
+
+    it("should recalculate pace when only distance is updated", async () => {
+      const currentWorkout = { id: "w1", distance: 10000, duration: 3600 };
+      mockWorkoutRepo.findByIdWithUser.mockResolvedValue(currentWorkout);
+      mockWorkoutRepo.update.mockResolvedValue({ id: "w1" });
+
+      const dto = { distance: 12000 };
+      await service.update("w1", dto);
+
+      const call = mockWorkoutRepo.update.mock.calls[0][1];
+      expect(call.pace).toBe(3600 / (12000 / 1000)); // 300 sec/km
+      expect(mockWorkoutRepo.findByIdWithUser).toHaveBeenCalledWith("w1");
+    });
+
+    it("should recalculate pace when only duration is updated", async () => {
+      const currentWorkout = { id: "w1", distance: 10000, duration: 3600 };
+      mockWorkoutRepo.findByIdWithUser.mockResolvedValue(currentWorkout);
+      mockWorkoutRepo.update.mockResolvedValue({ id: "w1" });
+
+      const dto = { duration: 4200 };
+      await service.update("w1", dto);
+
+      const call = mockWorkoutRepo.update.mock.calls[0][1];
+      expect(call.pace).toBe(4200 / (10000 / 1000)); // 420 sec/km
+      expect(mockWorkoutRepo.findByIdWithUser).toHaveBeenCalledWith("w1");
+    });
+  });
+
+  describe("remove", () => {
+    it("should delegate to workoutRepo.softDelete", async () => {
+      mockWorkoutRepo.softDelete.mockResolvedValue({ id: "w1", deletedAt: new Date() });
+
+      await service.remove("w1");
+
+      expect(mockWorkoutRepo.softDelete).toHaveBeenCalledWith("w1");
     });
   });
 });

@@ -7,8 +7,23 @@ interface CreateWorkoutData {
   duration: number;
   pace: number;
   date: Date;
-  memo: string | null;
+  title?: string | null;
+  workoutTypeId?: string | null;
+  memo?: string | null;
   isPublic: boolean;
+  shoeId?: string | null;
+}
+
+interface UpdateWorkoutData {
+  distance?: number;
+  duration?: number;
+  pace?: number;
+  date?: Date;
+  title?: string | null;
+  workoutTypeId?: string | null;
+  memo?: string | null;
+  isPublic?: boolean;
+  shoeId?: string | null;
 }
 
 interface FindPublicFeedOptions {
@@ -22,16 +37,17 @@ export class WorkoutRepository {
 
   async findAllByUser(userId: string) {
     return this.db.prisma.workout.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       orderBy: { date: "desc" },
     });
   }
 
   async findByIdWithUser(id: string) {
-    return this.db.prisma.workout.findUnique({
-      where: { id },
+    return this.db.prisma.workout.findFirst({
+      where: { id, deletedAt: null },
       include: {
         user: { select: { id: true, name: true, profileImage: true } },
+        workoutType: { select: { id: true, category: true, name: true } },
       },
     });
   }
@@ -40,16 +56,23 @@ export class WorkoutRepository {
     return this.db.prisma.workout.create({ data });
   }
 
-  async updateVisibility(id: string, isPublic: boolean) {
+  async update(id: string, data: UpdateWorkoutData) {
     return this.db.prisma.workout.update({
       where: { id },
-      data: { isPublic },
+      data,
+    });
+  }
+
+  async softDelete(id: string) {
+    return this.db.prisma.workout.update({
+      where: { id },
+      data: { deletedAt: new Date() },
     });
   }
 
   async findPublicFeed({ cursor, limit }: FindPublicFeedOptions) {
     return this.db.prisma.workout.findMany({
-      where: { isPublic: true },
+      where: { isPublic: true, deletedAt: null },
       include: {
         user: { select: { id: true, name: true, profileImage: true } },
       },
@@ -61,7 +84,7 @@ export class WorkoutRepository {
 
   async aggregateByUser(userId: string) {
     return this.db.prisma.workout.aggregate({
-      where: { userId },
+      where: { userId, deletedAt: null },
       _count: true,
       _sum: { distance: true, duration: true },
     });

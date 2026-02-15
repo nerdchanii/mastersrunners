@@ -16,10 +16,23 @@ export class CreateWorkoutDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  workoutTypeId?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(2000)
   memo?: string;
 
   @IsOptional()
   @IsBoolean()
   isPublic?: boolean;
+
+  @IsOptional()
+  @IsString()
+  shoeId?: string;
 }

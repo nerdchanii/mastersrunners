@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Req, ForbiddenException, NotFoundException } from "@nestjs/common";
+import { Controller, Get, Post, Patch, Delete, Param, Body, Req, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { WorkoutsService } from "./workouts.service.js";
@@ -43,5 +43,14 @@ export class WorkoutsController {
     if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
     if (workout.userId !== userId) throw new ForbiddenException("본인의 기록만 수정할 수 있습니다.");
     return this.workoutsService.update(id, dto);
+  }
+
+  @Delete(":id")
+  async remove(@Param("id") id: string, @Req() req: Request) {
+    const { userId } = req.user as { userId: string };
+    const workout = await this.workoutsService.findOne(id);
+    if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
+    if (workout.userId !== userId) throw new ForbiddenException("본인의 기록만 삭제할 수 있습니다.");
+    return this.workoutsService.remove(id);
   }
 }
