@@ -36,7 +36,7 @@ export class UploadsController {
     return this.uploadsService.getUploadUrl(key, contentType);
   }
 
-  @Delete(":key(*)")
+  @Delete("*key")
   async deleteFile(@Req() req: Request, @Param("key") key: string) {
     const { userId } = req.user as { userId: string };
     // Verify the key belongs to the user (key format: folder/userId/timestamp-filename)
