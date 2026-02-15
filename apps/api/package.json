@@ -14,6 +14,8 @@
     "test:cov": "jest --coverage"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.990.0",
+    "@aws-sdk/s3-request-presigner": "^3.990.0",
     "@masters/database": "workspace:*",
     "@masters/types": "workspace:*",
     "@nestjs/common": "^11",
