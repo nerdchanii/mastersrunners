@@ -28,6 +28,10 @@
     },
     "db:studio": {
       "cache": false
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "cache": false
     }
   }
 }

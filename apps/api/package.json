@@ -8,7 +8,10 @@
     "build": "nest build",
     "start": "node dist/main.js",
     "start:prod": "node dist/main.js",
-    "lint": "eslint \"{src,test}/**/*.ts\""
+    "lint": "eslint \"{src,test}/**/*.ts\"",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage"
   },
   "dependencies": {
     "@masters/database": "workspace:*",
@@ -35,13 +38,17 @@
   "devDependencies": {
     "@nestjs/cli": "^11",
     "@nestjs/schematics": "^11",
+    "@nestjs/testing": "^11.1.13",
     "@swc/cli": "^0.6",
     "@swc/core": "^1.11",
+    "@swc/jest": "^0.2.39",
     "@types/express": "^5",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-kakao": "^1.0.3",
+    "jest": "^30.2.0",
     "typescript": "^5"
   }
 }
