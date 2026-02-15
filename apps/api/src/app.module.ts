@@ -1,7 +1,13 @@
 import { Module } from "@nestjs/common";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_GUARD, Reflector } from "@nestjs/core";
 import { ConfigModule } from "@nestjs/config";
-import { ThrottlerModule } from "@nestjs/throttler";
+import {
+  ThrottlerModule,
+  ThrottlerGuard,
+  ThrottlerStorage,
+  getOptionsToken,
+  type ThrottlerModuleOptions,
+} from "@nestjs/throttler";
 import { DatabaseModule } from "./database/database.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { FeedModule } from "./feed/feed.module.js";
@@ -22,9 +28,7 @@ import { AppService } from "./app.service.js";
     FeedModule,
     WorkoutsModule,
     ProfileModule,
-    ThrottlerModule.forRoot({
-      throttlers: [{ ttl: 60000, limit: 30 }],
-    }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
   ],
   controllers: [AppController],
   providers: [
@@ -32,6 +36,15 @@ import { AppService } from "./app.service.js";
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useFactory: (
+        options: ThrottlerModuleOptions,
+        storage: ThrottlerStorage,
+        reflector: Reflector,
+      ) => new ThrottlerGuard(options, storage, reflector),
+      inject: [getOptionsToken(), ThrottlerStorage, Reflector],
     },
   ],
 })

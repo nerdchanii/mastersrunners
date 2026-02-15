@@ -1,12 +1,14 @@
 import { Controller, Get, Post, Body, Req, Res, UseGuards, NotFoundException } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { ConfigService } from "@nestjs/config";
+import { SkipThrottle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
 import { AuthService } from "./auth.service.js";
 import type { OAuthProfile } from "./auth.service.js";
 import { RefreshTokenDto } from "./dto/refresh-token.dto.js";
 import { Public } from "../common/decorators/public.decorator.js";
 
+@SkipThrottle()
 @Controller("auth")
 export class AuthController {
   constructor(

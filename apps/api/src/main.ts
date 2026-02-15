@@ -24,9 +24,12 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new AllExceptionsFilter());
+  app.setGlobalPrefix("api/v1", {
+    exclude: ["health"],
+  });
 
   const port = config.get<number>("API_PORT", 4000);
   await app.listen(port);
-  console.log(`API server running on http://localhost:${port}`);
+  console.log(`API server running on http://localhost:${port}/api/v1`);
 }
 bootstrap();

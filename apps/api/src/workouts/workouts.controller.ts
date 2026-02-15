@@ -1,10 +1,12 @@
 import { Controller, Get, Post, Patch, Param, Body, Req, ForbiddenException, NotFoundException } from "@nestjs/common";
+import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { WorkoutsService } from "./workouts.service.js";
 import { CreateWorkoutDto } from "./dto/create-workout.dto.js";
 import { UpdateWorkoutDto } from "./dto/update-workout.dto.js";
 import { Public } from "../common/decorators/public.decorator.js";
 
+@SkipThrottle()
 @Controller("workouts")
 export class WorkoutsController {
   constructor(private readonly workoutsService: WorkoutsService) {}

@@ -1,7 +1,9 @@
 import { Controller, Get, Req } from "@nestjs/common";
+import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { ProfileService } from "./profile.service.js";
 
+@SkipThrottle()
 @Controller("profile")
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
