@@ -3,35 +3,45 @@
 import { useState } from "react";
 import { api } from "@/lib/api-client";
 
+type Visibility = "PRIVATE" | "FOLLOWERS" | "PUBLIC";
+
 interface ShareToggleProps {
   workoutId: string;
-  initialIsPublic: boolean;
+  initialVisibility: Visibility;
 }
+
+const VISIBILITY_LABELS: Record<Visibility, string> = {
+  PRIVATE: "비공개",
+  FOLLOWERS: "팔로워 공개",
+  PUBLIC: "전체 공개",
+};
 
 export default function ShareToggle({
   workoutId,
-  initialIsPublic,
+  initialVisibility,
 }: ShareToggleProps) {
-  const [isPublic, setIsPublic] = useState(initialIsPublic);
+  const [visibility, setVisibility] = useState<Visibility>(initialVisibility);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleToggle = async () => {
+  const handleChange = async (newVisibility: Visibility) => {
+    if (newVisibility === visibility) return;
+
     setIsLoading(true);
     setError(null);
 
     try {
-      const updatedWorkout = await api.fetch<{ isPublic: boolean }>(
+      const updatedWorkout = await api.fetch<{ visibility: Visibility }>(
         `/workouts/${workoutId}`,
         {
           method: "PATCH",
-          body: JSON.stringify({ isPublic: !isPublic }),
+          body: JSON.stringify({ visibility: newVisibility }),
         }
       );
-      setIsPublic(updatedWorkout.isPublic);
+      setVisibility(updatedWorkout.visibility);
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
-      console.error("Error toggling share:", err);
+      console.error("Error changing visibility:", err);
     } finally {
       setIsLoading(false);
     }
@@ -39,23 +49,20 @@ export default function ShareToggle({
 
   return (
     <div className="flex items-center gap-3">
-      <button
-        onClick={handleToggle}
+      <select
+        value={visibility}
+        onChange={(e) => handleChange(e.target.value as Visibility)}
         disabled={isLoading}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-          isPublic ? "bg-blue-600" : "bg-gray-300"
-        }`}
-        aria-label={isPublic ? "공개" : "비공개"}
+        className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-label="공개 설정"
       >
-        <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-            isPublic ? "translate-x-6" : "translate-x-1"
-          }`}
-        />
-      </button>
-      <span className="text-sm font-medium text-gray-700">
-        {isLoading ? "변경 중..." : isPublic ? "공개" : "비공개"}
-      </span>
+        <option value="PRIVATE">{VISIBILITY_LABELS.PRIVATE}</option>
+        <option value="FOLLOWERS">{VISIBILITY_LABELS.FOLLOWERS}</option>
+        <option value="PUBLIC">{VISIBILITY_LABELS.PUBLIC}</option>
+      </select>
+      {isLoading && (
+        <span className="text-sm text-gray-500">변경 중...</span>
+      )}
       {error && (
         <span className="text-xs text-red-600" role="alert">
           {error}

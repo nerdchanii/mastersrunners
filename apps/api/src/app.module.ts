@@ -18,6 +18,8 @@ import { ShoesModule } from "./shoes/shoes.module.js";
 import { PostsModule } from "./posts/posts.module.js";
 import { BlockModule } from "./block/block.module.js";
 import { FollowModule } from "./follow/follow.module.js";
+import { WorkoutSocialModule } from "./workout-social/workout-social.module.js";
+import { PostSocialModule } from "./post-social/post-social.module.js";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard.js";
 import { AppController } from "./app.controller.js";
 import { AppService } from "./app.service.js";
@@ -37,6 +39,8 @@ import { AppService } from "./app.service.js";
     PostsModule,
     BlockModule,
     FollowModule,
+    WorkoutSocialModule,
+    PostSocialModule,
     ProfileModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
   ],

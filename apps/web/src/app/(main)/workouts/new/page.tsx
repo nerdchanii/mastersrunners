@@ -14,7 +14,7 @@ export default function NewWorkoutPage() {
   const [minutes, setMinutes] = useState("");
   const [seconds, setSeconds] = useState("");
   const [memo, setMemo] = useState("");
-  const [isPublic, setIsPublic] = useState(false);
+  const [visibility, setVisibility] = useState<"PRIVATE" | "FOLLOWERS" | "PUBLIC">("FOLLOWERS");
 
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -94,7 +94,7 @@ export default function NewWorkoutPage() {
           duration,
           date,
           memo: memo.trim() || undefined,
-          isPublic,
+          visibility,
         }),
       });
 
@@ -271,25 +271,24 @@ export default function NewWorkoutPage() {
               />
             </div>
 
-            {/* Public Toggle */}
-            <div className="flex items-start">
-              <div className="flex items-center h-5">
-                <input
-                  id="isPublic"
-                  type="checkbox"
-                  checked={isPublic}
-                  onChange={(e) => setIsPublic(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                />
-              </div>
-              <div className="ml-3">
-                <label htmlFor="isPublic" className="text-sm font-medium text-gray-700">
-                  커뮤니티에 공유
-                </label>
-                <p className="text-xs text-gray-500">
-                  이 기록을 다른 러너들과 공유합니다.
-                </p>
-              </div>
+            {/* Visibility Select */}
+            <div>
+              <label htmlFor="visibility" className="block text-sm font-medium text-gray-700">
+                공개 설정
+              </label>
+              <select
+                id="visibility"
+                value={visibility}
+                onChange={(e) => setVisibility(e.target.value as "PRIVATE" | "FOLLOWERS" | "PUBLIC")}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
+              >
+                <option value="PRIVATE">비공개</option>
+                <option value="FOLLOWERS">팔로워 공개</option>
+                <option value="PUBLIC">전체 공개</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                누가 이 기록을 볼 수 있는지 설정합니다.
+              </p>
             </div>
           </div>
         </div>

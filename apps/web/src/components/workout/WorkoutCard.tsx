@@ -2,6 +2,14 @@
 
 import ShareToggle from "./ShareToggle";
 
+type Visibility = "PRIVATE" | "FOLLOWERS" | "PUBLIC";
+
+const VISIBILITY_BADGE: Record<Visibility, { label: string; className: string }> = {
+  PUBLIC: { label: "전체 공개", className: "bg-green-100 text-green-800" },
+  FOLLOWERS: { label: "팔로워 공개", className: "bg-blue-100 text-blue-800" },
+  PRIVATE: { label: "비공개", className: "bg-gray-100 text-gray-800" },
+};
+
 interface WorkoutCardProps {
   workout: {
     id: string;
@@ -10,7 +18,7 @@ interface WorkoutCardProps {
     pace: number;
     date: Date | string;
     memo: string | null;
-    isPublic: boolean;
+    visibility: Visibility;
     userId?: string;
   };
   currentUserId?: string;
@@ -31,14 +39,12 @@ export default function WorkoutCard({
     weekday: "short",
   });
 
-  // Convert duration (seconds) to mm:ss format
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Format pace to min/km (e.g., "5:30")
   const formatPace = (paceInMinPerKm: number) => {
     const mins = Math.floor(paceInMinPerKm);
     const secs = Math.round((paceInMinPerKm - mins) * 60);
@@ -55,20 +61,12 @@ export default function WorkoutCard({
           {isOwner && showShareToggle ? (
             <ShareToggle
               workoutId={workout.id}
-              initialIsPublic={workout.isPublic}
+              initialVisibility={workout.visibility}
             />
           ) : (
-            <>
-              {workout.isPublic ? (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  공개
-                </span>
-              ) : (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                  비공개
-                </span>
-              )}
-            </>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${VISIBILITY_BADGE[workout.visibility].className}`}>
+              {VISIBILITY_BADGE[workout.visibility].label}
+            </span>
           )}
         </div>
       </div>

@@ -1,9 +1,11 @@
 import { Test } from "@nestjs/testing";
 import { FeedService } from "./feed.service";
-import { WorkoutRepository } from "../workouts/repositories/workout.repository";
+import { FeedRepository } from "./repositories/feed.repository";
 
-const mockWorkoutRepo = {
-  findPublicFeed: jest.fn(),
+const mockFeedRepo = {
+  getFollowingIds: jest.fn(),
+  getPostFeed: jest.fn(),
+  getWorkoutFeed: jest.fn(),
 };
 
 describe("FeedService", () => {
@@ -15,54 +17,127 @@ describe("FeedService", () => {
     const module = await Test.createTestingModule({
       providers: [
         FeedService,
-        { provide: WorkoutRepository, useValue: mockWorkoutRepo },
+        { provide: FeedRepository, useValue: mockFeedRepo },
       ],
     }).compile();
 
     service = module.get(FeedService);
   });
 
-  describe("getFeed", () => {
-    it("should set hasMore=true and nextCursor when more items exist", async () => {
-      const items = Array.from({ length: 11 }, (_, i) => ({ id: `w${i}` }));
-      mockWorkoutRepo.findPublicFeed.mockResolvedValue(items);
+  describe("getPostFeed", () => {
+    it("should fetch following IDs and return post feed with pagination", async () => {
+      mockFeedRepo.getFollowingIds.mockResolvedValue(["user1", "user2"]);
+      const posts = Array.from({ length: 11 }, (_, i) => ({ id: `p${i}` }));
+      mockFeedRepo.getPostFeed.mockResolvedValue(posts);
 
-      const result = await service.getFeed(undefined, 10);
+      const result = await service.getPostFeed("me", undefined, 10);
 
+      expect(mockFeedRepo.getFollowingIds).toHaveBeenCalledWith("me");
+      expect(mockFeedRepo.getPostFeed).toHaveBeenCalledWith({
+        userId: "me",
+        followingIds: ["user1", "user2"],
+        cursor: undefined,
+        limit: 10,
+      });
       expect(result.hasMore).toBe(true);
       expect(result.items).toHaveLength(10);
-      expect(result.nextCursor).toBe("w9");
+      expect(result.nextCursor).toBe("p9");
     });
 
-    it("should set hasMore=false and nextCursor=null when no more items", async () => {
-      const items = [{ id: "w1" }, { id: "w2" }];
-      mockWorkoutRepo.findPublicFeed.mockResolvedValue(items);
+    it("should set hasMore=false when no more posts", async () => {
+      mockFeedRepo.getFollowingIds.mockResolvedValue([]);
+      const posts = [{ id: "p1" }, { id: "p2" }];
+      mockFeedRepo.getPostFeed.mockResolvedValue(posts);
 
-      const result = await service.getFeed(undefined, 10);
+      const result = await service.getPostFeed("me", undefined, 10);
 
       expect(result.hasMore).toBe(false);
       expect(result.items).toHaveLength(2);
       expect(result.nextCursor).toBeNull();
     });
 
-    it("should return empty result when no items", async () => {
-      mockWorkoutRepo.findPublicFeed.mockResolvedValue([]);
+    it("should return empty result when no posts", async () => {
+      mockFeedRepo.getFollowingIds.mockResolvedValue([]);
+      mockFeedRepo.getPostFeed.mockResolvedValue([]);
 
-      const result = await service.getFeed(undefined, 10);
+      const result = await service.getPostFeed("me", undefined, 10);
 
       expect(result.items).toEqual([]);
       expect(result.nextCursor).toBeNull();
       expect(result.hasMore).toBe(false);
     });
 
-    it("should pass cursor and limit to repository", async () => {
-      mockWorkoutRepo.findPublicFeed.mockResolvedValue([]);
+    it("should pass cursor to repository", async () => {
+      mockFeedRepo.getFollowingIds.mockResolvedValue([]);
+      mockFeedRepo.getPostFeed.mockResolvedValue([]);
 
-      await service.getFeed("cursor-1", 20);
+      await service.getPostFeed("me", "cursor-abc", 20);
 
-      expect(mockWorkoutRepo.findPublicFeed).toHaveBeenCalledWith({
-        cursor: "cursor-1",
+      expect(mockFeedRepo.getPostFeed).toHaveBeenCalledWith({
+        userId: "me",
+        followingIds: [],
+        cursor: "cursor-abc",
         limit: 20,
+      });
+    });
+  });
+
+  describe("getWorkoutFeed", () => {
+    it("should fetch following IDs and return workout feed with pagination", async () => {
+      mockFeedRepo.getFollowingIds.mockResolvedValue(["user1", "user2"]);
+      const workouts = Array.from({ length: 11 }, (_, i) => ({ id: `w${i}` }));
+      mockFeedRepo.getWorkoutFeed.mockResolvedValue(workouts);
+
+      const result = await service.getWorkoutFeed("me", undefined, 10);
+
+      expect(mockFeedRepo.getFollowingIds).toHaveBeenCalledWith("me");
+      expect(mockFeedRepo.getWorkoutFeed).toHaveBeenCalledWith({
+        userId: "me",
+        followingIds: ["user1", "user2"],
+        cursor: undefined,
+        limit: 10,
+        excludeLinkedToPost: undefined,
+      });
+      expect(result.hasMore).toBe(true);
+      expect(result.items).toHaveLength(10);
+      expect(result.nextCursor).toBe("w9");
+    });
+
+    it("should set hasMore=false when no more workouts", async () => {
+      mockFeedRepo.getFollowingIds.mockResolvedValue([]);
+      const workouts = [{ id: "w1" }];
+      mockFeedRepo.getWorkoutFeed.mockResolvedValue(workouts);
+
+      const result = await service.getWorkoutFeed("me", undefined, 10);
+
+      expect(result.hasMore).toBe(false);
+      expect(result.items).toHaveLength(1);
+      expect(result.nextCursor).toBeNull();
+    });
+
+    it("should return empty result when no workouts", async () => {
+      mockFeedRepo.getFollowingIds.mockResolvedValue([]);
+      mockFeedRepo.getWorkoutFeed.mockResolvedValue([]);
+
+      const result = await service.getWorkoutFeed("me", undefined, 10);
+
+      expect(result.items).toEqual([]);
+      expect(result.nextCursor).toBeNull();
+      expect(result.hasMore).toBe(false);
+    });
+
+    it("should pass cursor and excludeLinkedToPost to repository", async () => {
+      mockFeedRepo.getFollowingIds.mockResolvedValue([]);
+      mockFeedRepo.getWorkoutFeed.mockResolvedValue([]);
+
+      await service.getWorkoutFeed("me", "cursor-xyz", 15, true);
+
+      expect(mockFeedRepo.getWorkoutFeed).toHaveBeenCalledWith({
+        userId: "me",
+        followingIds: [],
+        cursor: "cursor-xyz",
+        limit: 15,
+        excludeLinkedToPost: true,
       });
     });
   });

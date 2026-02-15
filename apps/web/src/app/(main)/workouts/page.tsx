@@ -12,7 +12,7 @@ interface Workout {
   pace: number;
   date: string;
   memo: string | null;
-  isPublic: boolean;
+  visibility: "PRIVATE" | "FOLLOWERS" | "PUBLIC";
 }
 
 export default function WorkoutsPage() {
