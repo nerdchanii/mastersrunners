@@ -10,7 +10,7 @@ interface CreateWorkoutData {
   title?: string | null;
   workoutTypeId?: string | null;
   memo?: string | null;
-  isPublic: boolean;
+  visibility: string;
   shoeId?: string | null;
 }
 
@@ -22,7 +22,7 @@ interface UpdateWorkoutData {
   title?: string | null;
   workoutTypeId?: string | null;
   memo?: string | null;
-  isPublic?: boolean;
+  visibility?: string;
   shoeId?: string | null;
 }
 
@@ -72,7 +72,7 @@ export class WorkoutRepository {
 
   async findPublicFeed({ cursor, limit }: FindPublicFeedOptions) {
     return this.db.prisma.workout.findMany({
-      where: { isPublic: true, deletedAt: null },
+      where: { visibility: "PUBLIC", deletedAt: null },
       include: {
         user: { select: { id: true, name: true, profileImage: true } },
       },

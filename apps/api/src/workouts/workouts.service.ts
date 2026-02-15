@@ -22,7 +22,7 @@ export class WorkoutsService {
       title: dto.title || null,
       workoutTypeId: dto.workoutTypeId || null,
       memo: dto.memo || null,
-      isPublic: dto.isPublic ?? false,
+      visibility: dto.visibility || "FOLLOWERS",
       shoeId: dto.shoeId || null,
     });
   }
@@ -39,7 +39,7 @@ export class WorkoutsService {
     if (dto.title !== undefined) data.title = dto.title;
     if (dto.workoutTypeId !== undefined) data.workoutTypeId = dto.workoutTypeId;
     if (dto.memo !== undefined) data.memo = dto.memo;
-    if (dto.isPublic !== undefined) data.isPublic = dto.isPublic;
+    if (dto.visibility !== undefined) data.visibility = dto.visibility;
     if (dto.shoeId !== undefined) data.shoeId = dto.shoeId;
 
     // Recalculate pace if distance or duration changed

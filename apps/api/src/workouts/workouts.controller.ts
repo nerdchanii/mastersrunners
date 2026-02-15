@@ -30,7 +30,7 @@ export class WorkoutsController {
     if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
 
     const user = req.user as { userId: string } | undefined;
-    if (!workout.isPublic && workout.userId !== user?.userId) {
+    if (workout.visibility === "PRIVATE" && workout.userId !== user?.userId) {
       throw new ForbiddenException("접근 권한이 없습니다.");
     }
     return workout;

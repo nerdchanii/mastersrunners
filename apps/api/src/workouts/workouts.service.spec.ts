@@ -40,7 +40,7 @@ describe("WorkoutsService", () => {
 
   describe("create", () => {
     it("should calculate pace correctly: duration / (distance / 1000)", async () => {
-      const dto = { distance: 10000, duration: 3600, date: "2026-01-01", memo: "long run", isPublic: true };
+      const dto = { distance: 10000, duration: 3600, date: "2026-01-01", memo: "long run", visibility: "PUBLIC" };
       mockWorkoutRepo.create.mockResolvedValue({ id: "w1" });
 
       await service.create("u1", dto);
@@ -63,7 +63,7 @@ describe("WorkoutsService", () => {
       expect(call.date.toISOString().startsWith("2026-06-15")).toBe(true);
     });
 
-    it("should default optional fields to null/false when not provided", async () => {
+    it("should default optional fields to null/FOLLOWERS when not provided", async () => {
       const dto = { distance: 5000, duration: 1500, date: "2026-01-01" };
       mockWorkoutRepo.create.mockResolvedValue({ id: "w1" });
 
@@ -73,7 +73,7 @@ describe("WorkoutsService", () => {
       expect(call.title).toBeNull();
       expect(call.workoutTypeId).toBeNull();
       expect(call.memo).toBeNull();
-      expect(call.isPublic).toBe(false);
+      expect(call.visibility).toBe("FOLLOWERS");
       expect(call.shoeId).toBeNull();
     });
 
@@ -85,7 +85,7 @@ describe("WorkoutsService", () => {
         title: "Morning Run",
         workoutTypeId: "wt1",
         memo: "Felt great",
-        isPublic: true,
+        visibility: "PUBLIC",
         shoeId: "shoe1",
       };
       mockWorkoutRepo.create.mockResolvedValue({ id: "w1" });
@@ -96,7 +96,7 @@ describe("WorkoutsService", () => {
       expect(call.title).toBe("Morning Run");
       expect(call.workoutTypeId).toBe("wt1");
       expect(call.memo).toBe("Felt great");
-      expect(call.isPublic).toBe(true);
+      expect(call.visibility).toBe("PUBLIC");
       expect(call.shoeId).toBe("shoe1");
     });
   });
@@ -119,7 +119,7 @@ describe("WorkoutsService", () => {
         distance: 12000,
         duration: 4200,
         title: "Updated Run",
-        isPublic: false,
+        visibility: "PRIVATE",
       };
       mockWorkoutRepo.update.mockResolvedValue({ id: "w1", ...dto });
 
@@ -129,7 +129,7 @@ describe("WorkoutsService", () => {
       expect(call.distance).toBe(12000);
       expect(call.duration).toBe(4200);
       expect(call.title).toBe("Updated Run");
-      expect(call.isPublic).toBe(false);
+      expect(call.visibility).toBe("PRIVATE");
     });
 
     it("should recalculate pace when both distance and duration are updated", async () => {

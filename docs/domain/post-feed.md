@@ -6,7 +6,9 @@
 
 - Workout = 순수 운동 데이터 (거리, 페이스, 심박, 랩, 루트)
 - Post = 소셜 콘텐츠 (텍스트, 이미지, 해시태그, 워크아웃 첨부)
-- Feed에는 Post만 노출된다 (Workout 자체는 피드에 나오지 않음)
+- Feed는 두 가지 뷰를 제공:
+  - **Post Feed**: Post visibility + 팔로우 기반
+  - **Workout Feed**: Workout.visibility + 팔로우 기반
 
 ## Post (포스트)
 
@@ -37,7 +39,9 @@
 | postId | FK → Post |
 | workoutId | FK → Workout |
 
-하나의 포스트에 0~N개 워크아웃 첨부 가능.
+- 하나의 포스트에 0~N개 워크아웃 첨부 가능
+- **누구의 워크아웃이든 첨부 가능** (본인 워크아웃 제한 없음)
+- 다른 유저의 공개 워크아웃도 내 포스트에 첨부 가능
 
 ## 포스트 생성 규칙
 
@@ -47,17 +51,31 @@
 
 ## Feed (피드)
 
-- Post만 표시 (Workout 직접 표시 안 함)
+### 1. Post Feed (포스트 피드)
+
+- Post만 표시
 - 팔로우한 유저의 포스트 + 본인 포스트
-- 공개 범위(visibility) 규칙에 따라 필터링
+- 공개 범위(Post.visibility) 규칙에 따라 필터링:
+  - PRIVATE: 본인만 조회 가능
+  - FOLLOWERS: 팔로워만 조회 가능
+  - PUBLIC: 모든 유저 조회 가능
 
-## Comment (댓글)
+### 2. Workout Feed (워크아웃 피드)
 
-### 2단계 구조
+- Workout만 표시 (Post 없이 독립적)
+- 팔로우한 유저의 워크아웃 + 본인 워크아웃
+- 공개 범위(Workout.visibility) 규칙에 따라 필터링:
+  - PRIVATE: 본인만 조회 가능
+  - FOLLOWERS: 팔로워만 조회 가능
+  - PUBLIC: 모든 유저 조회 가능
+
+## PostComment (포스트 댓글)
+
+### 2단계 구조 with @멘션
 
 ```
 Post
-├── Comment (1단계 — 댓글)
+├── PostComment (1단계 — 댓글)
 │   ├── Reply (2단계 — 대댓글)
 │   ├── Reply (2단계 — 대댓글)
 │   └── Reply (2단계 — 대댓글에 대한 답글, @멘션으로 표시)
@@ -68,7 +86,7 @@ Post
 | id | UUID | PK |
 | postId | UUID | FK → Post |
 | userId | UUID | FK → User (작성자) |
-| parentId | UUID? | FK → Comment (self-reference, 1단계 댓글 ID) |
+| parentId | UUID? | FK → PostComment (self-reference, 1단계 댓글 ID) |
 | mentionedUserId | UUID? | FK → User (대댓글의 답글 대상) |
 | content | string | 댓글 내용 (최대 500자) |
 | deletedAt | datetime? | Soft delete |
@@ -82,11 +100,40 @@ Post
   - `parentId` = 원래 1단계 댓글 ID (대댓글의 parentId와 동일)
   - `mentionedUserId` = 답글 대상 유저
 
-## Like (좋아요)
+## WorkoutComment (워크아웃 댓글)
+
+### Flat 구조 (1단계만)
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| id | UUID | PK |
+| workoutId | UUID | FK → Workout |
+| userId | UUID | FK → User (작성자) |
+| content | string | 댓글 내용 (최대 500자) |
+| deletedAt | datetime? | Soft delete |
+| createdAt | datetime | 생성 시각 |
+
+### 규칙
+
+- 워크아웃에 직접 댓글만 가능 (중첩/대댓글 없음)
+- 삭제된 댓글도 soft delete로 처리
+
+## PostLike (포스트 좋아요)
 
 | 필드 | 설명 |
 |------|------|
 | userId | FK → User |
 | postId | FK → Post |
+| createdAt | datetime |
 
 유저당 포스트 하나에 한 번만 가능.
+
+## WorkoutLike (워크아웃 좋아요)
+
+| 필드 | 설명 |
+|------|------|
+| userId | FK → User |
+| workoutId | FK → Workout |
+| createdAt | datetime |
+
+유저당 워크아웃 하나에 한 번만 가능.

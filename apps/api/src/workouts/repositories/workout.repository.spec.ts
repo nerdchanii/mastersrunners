@@ -77,7 +77,7 @@ describe("WorkoutRepository", () => {
         title: "Morning Run",
         workoutTypeId: "wt1",
         memo: "test run",
-        isPublic: true,
+        visibility: "PUBLIC",
         shoeId: "shoe1",
       };
       const mockCreated = { id: "w1", ...data };
@@ -97,7 +97,7 @@ describe("WorkoutRepository", () => {
         duration: 4200,
         pace: 350,
         title: "Updated Run",
-        isPublic: false,
+        visibility: "PRIVATE",
       };
       mockPrisma.workout.update.mockResolvedValue({ id: "w1", ...updateData });
 
@@ -131,7 +131,7 @@ describe("WorkoutRepository", () => {
       await repository.findPublicFeed({ limit: 10 });
 
       expect(mockPrisma.workout.findMany).toHaveBeenCalledWith({
-        where: { isPublic: true, deletedAt: null },
+        where: { visibility: "PUBLIC", deletedAt: null },
         include: {
           user: { select: { id: true, name: true, profileImage: true } },
         },
@@ -146,7 +146,7 @@ describe("WorkoutRepository", () => {
       await repository.findPublicFeed({ cursor: "c1", limit: 10 });
 
       expect(mockPrisma.workout.findMany).toHaveBeenCalledWith({
-        where: { isPublic: true, deletedAt: null },
+        where: { visibility: "PUBLIC", deletedAt: null },
         include: {
           user: { select: { id: true, name: true, profileImage: true } },
         },

@@ -32,8 +32,8 @@ export class UpdateWorkoutDto {
   memo?: string;
 
   @IsOptional()
-  @IsBoolean()
-  isPublic?: boolean;
+  @IsString()
+  visibility?: string;
 
   @IsOptional()
   @IsString()

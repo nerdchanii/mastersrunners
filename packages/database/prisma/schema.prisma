@@ -54,12 +54,12 @@ model VerificationToken {
 // ============================================================================
 
 model WorkoutType {
-  id          String  @id @default(cuid())
-  category    String  // LONG_RUN, SPEED, THRESHOLD, EASY, RACE, TRAIL, CROSS_TRAINING
-  name        String  // 하위 유형 이름 (예: LSD, Interval, Tempo Run)
+  id          String   @id @default(cuid())
+  category    String // LONG_RUN, SPEED, THRESHOLD, EASY, RACE, TRAIL, CROSS_TRAINING
+  name        String // 하위 유형 이름 (예: LSD, Interval, Tempo Run)
   description String?
-  sortOrder   Int     @default(0)
-  isActive    Boolean @default(true)
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
 
   workouts Workout[]
@@ -69,15 +69,16 @@ model WorkoutType {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String?
-  name          String
-  profileImage  String?
-  bio           String?
-  emailVerified DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  name                  String
+  profileImage          String?
+  bio                   String?
+  emailVerified         DateTime?
+  isPrivate             Boolean   @default(false)
+  workoutSharingDefault String    @default("FOLLOWERS") // PRIVATE, FOLLOWERS, PUBLIC
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   // Core
   workouts Workout[]
@@ -87,11 +88,20 @@ model User {
   accounts Account[]
   sessions Session[]
 
-  // Social
-  followers  Follow[] @relation("following") // 나를 팔로우하는 사람들
-  following  Follow[] @relation("follower")  // 내가 팔로우하는 사람들
-  likes      Like[]
-  comments   Comment[]
+  // Social — Post & Feed
+  posts        Post[]
+  postLikes    PostLike[]
+  postComments PostComment[]
+
+  // Social — Workout interactions
+  workoutLikes    WorkoutLike[]
+  workoutComments WorkoutComment[]
+
+  // Social — Follow & Block
+  followers       Follow[] @relation("following") // 나를 팔로우하는 사람들
+  following       Follow[] @relation("follower") // 내가 팔로우하는 사람들
+  blockerBlocks   Block[]  @relation("blocker")
+  blockedByBlocks Block[]  @relation("blocked")
 
   // Group
   crewMemberships CrewMember[]
@@ -110,7 +120,7 @@ model User {
   syncLogs           SyncLog[]
 
   // Notification
-  notifications     Notification[] @relation("recipient")
+  notifications      Notification[] @relation("recipient")
   actedNotifications Notification[] @relation("actor")
 }
 
@@ -123,15 +133,15 @@ model Workout {
   title          String?
   workoutTypeId  String?
   workoutType    WorkoutType? @relation(fields: [workoutTypeId], references: [id], onDelete: SetNull)
-  sport          String  @default("RUN") // RUN, TRAIL_RUN, TREADMILL, RACE
-  source         String  @default("MANUAL") // MANUAL, FIT_FILE, GPX_FILE, GARMIN_SYNC, COROS_SYNC, STRAVA_SYNC
+  sport          String       @default("RUN") // RUN, TRAIL_RUN, TREADMILL, RACE
+  source         String       @default("MANUAL") // MANUAL, FIT_FILE, GPX_FILE, GARMIN_SYNC, COROS_SYNC, STRAVA_SYNC
   externalId     String? // 외부 플랫폼 activity ID
   externalSource String? // GARMIN, COROS, STRAVA
 
   // 거리/시간
   distance   Float // 총 거리 (m)
-  duration   Int   // 총 경과시간 (초)
-  movingTime Int?  // 이동시간 - 정지 제외 (초)
+  duration   Int // 총 경과시간 (초)
+  movingTime Int? // 이동시간 - 정지 제외 (초)
   pace       Float // 평균 페이스 (초/km)
   bestPace   Float? // 최고 페이스 (초/km)
 
@@ -150,7 +160,7 @@ model Workout {
   maxCadence Int? // 최대 케이던스 (spm)
 
   // 기타 메트릭
-  calories       Int?   // 소모 칼로리
+  calories       Int? // 소모 칼로리
   avgTemperature Float? // 평균 기온 (C)
 
   // 위치
@@ -161,56 +171,58 @@ model Workout {
   hasGps   Boolean @default(false)
 
   // 시각
-  date       DateTime  // 운동 날짜
+  date       DateTime // 운동 날짜
   startedAt  DateTime? // 운동 시작 시각
   finishedAt DateTime? // 운동 종료 시각
 
   // 소셜/메타
-  memo     String?
-  isPublic Boolean @default(false)
-  shoeId   String?
-  shoe     Shoe?   @relation(fields: [shoeId], references: [id], onDelete: SetNull)
+  memo       String?
+  visibility String  @default("FOLLOWERS") // PRIVATE, FOLLOWERS, PUBLIC
+  shoeId     String?
+  shoe       Shoe?   @relation(fields: [shoeId], references: [id], onDelete: SetNull)
 
   deletedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   // Relations
-  file     WorkoutFile?
-  route    WorkoutRoute?
-  laps     WorkoutLap[]
-  photos   WorkoutPhoto[]
-  likes    Like[]
-  comments Comment[]
+  file             WorkoutFile?
+  route            WorkoutRoute?
+  laps             WorkoutLap[]
+  photos           WorkoutPhoto[]
+  workoutLikes     WorkoutLike[]
+  workoutComments  WorkoutComment[]
+  postWorkouts     PostWorkout[]
   eventParticipant EventParticipant?
 
   @@unique([externalSource, externalId])
   @@index([userId, date])
-  @@index([isPublic, createdAt])
+  @@index([userId, deletedAt, createdAt])
+  @@index([visibility, deletedAt, createdAt])
 }
 
 model WorkoutFile {
-  id        String @id @default(cuid())
-  workoutId String @unique
+  id        String  @id @default(cuid())
+  workoutId String  @unique
   workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 
-  fileType           String  // FIT, GPX, TCX
-  fileUrl            String  // 파일 저장 경로 (S3/local)
+  fileType           String // FIT, GPX, TCX
+  fileUrl            String // 파일 저장 경로 (S3/local)
   originalFileName   String
-  fileSize           Int     // bytes
+  fileSize           Int // bytes
   checksum           String? // SHA-256
   deviceName         String? // "Garmin Forerunner 265"
   deviceManufacturer String?
 
-  processStatus String  @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  processStatus String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
   processError  String?
   processedAt   DateTime?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
 }
 
 model WorkoutRoute {
-  id        String @id @default(cuid())
-  workoutId String @unique
+  id        String  @id @default(cuid())
+  workoutId String  @unique
   workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 
   encodedPolyline String // Google Encoded Polyline (지도 표시용)
@@ -225,15 +237,15 @@ model WorkoutRoute {
 }
 
 model WorkoutLap {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   workoutId String
   workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 
   lapNumber     Int
-  trigger       String  @default("AUTO_KM") // AUTO_KM, AUTO_MILE, MANUAL, CUSTOM_DISTANCE
-  distance      Float   // 구간 거리 (m)
-  duration      Int     // 구간 시간 (초)
-  pace          Float   // 구간 페이스 (초/km)
+  trigger       String    @default("AUTO_KM") // AUTO_KM, AUTO_MILE, MANUAL, CUSTOM_DISTANCE
+  distance      Float // 구간 거리 (m)
+  duration      Int // 구간 시간 (초)
+  pace          Float // 구간 페이스 (초/km)
   avgHeartRate  Int?
   maxHeartRate  Int?
   avgCadence    Int?
@@ -246,13 +258,13 @@ model WorkoutLap {
 }
 
 model WorkoutPhoto {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   workoutId String
   workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 
   imageUrl   String
   caption    String?
-  orderIndex Int     @default(0)
+  orderIndex Int      @default(0)
   createdAt  DateTime @default(now())
 }
 
@@ -265,9 +277,9 @@ model Shoe {
   model         String
   nickname      String?
   imageUrl      String?
-  totalDistance  Float   @default(0) // 누적 거리 (m)
-  maxDistance    Float?              // 교체 기준 거리 (m)
-  isRetired     Boolean @default(false)
+  totalDistance Float    @default(0) // 누적 거리 (m)
+  maxDistance   Float? // 교체 기준 거리 (m)
+  isRetired     Boolean  @default(false)
   createdAt     DateTime @default(now())
 
   workouts Workout[]
@@ -276,15 +288,16 @@ model Shoe {
 }
 
 // ============================================================================
-// Social
+// Social — Follow & Block
 // ============================================================================
 
 model Follow {
-  id          String @id @default(cuid())
+  id          String   @id @default(cuid())
   followerId  String
   followingId String
-  follower    User   @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
-  following   User   @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  status      String   @default("ACCEPTED") // PENDING, ACCEPTED
   createdAt   DateTime @default(now())
 
   @@unique([followerId, followingId])
@@ -292,35 +305,125 @@ model Follow {
   @@index([followingId])
 }
 
-model Like {
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  blocker   User     @relation("blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+}
+
+// ============================================================================
+// Post & Feed
+// ============================================================================
+
+model Post {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  content    String?
+  visibility String    @default("FOLLOWERS") // PRIVATE, FOLLOWERS, PUBLIC
+  hashtags   String[] // PostgreSQL array
+  deletedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  images   PostImage[]
+  workouts PostWorkout[]
+  likes    PostLike[]
+  comments PostComment[]
+
+  @@index([userId, deletedAt, createdAt])
+  @@index([visibility, deletedAt, createdAt])
+}
+
+model PostImage {
   id        String @id @default(cuid())
+  postId    String
+  post      Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  sortOrder Int    @default(0)
+
+  @@index([postId, sortOrder])
+}
+
+model PostWorkout {
+  postId    String
+  workoutId String
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  @@id([postId, workoutId])
+}
+
+// ============================================================================
+// Social — Post Interactions
+// ============================================================================
+
+model PostLike {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model PostComment {
+  id              String        @id @default(cuid())
+  userId          String
+  postId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post            Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  content         String
+  parentId        String?
+  parent          PostComment?  @relation("postCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies         PostComment[] @relation("postCommentReplies")
+  mentionedUserId String?
+  deletedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([postId, deletedAt, createdAt])
+  @@index([parentId])
+}
+
+// ============================================================================
+// Social — Workout Interactions
+// ============================================================================
+
+model WorkoutLike {
+  id        String   @id @default(cuid())
   userId    String
   workoutId String
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workout   Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@unique([userId, workoutId])
   @@index([workoutId])
 }
 
-model Comment {
-  id        String @id @default(cuid())
+model WorkoutComment {
+  id        String    @id @default(cuid())
   userId    String
   workoutId String
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workout   Workout   @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  content   String
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-  content  String
-  parentId String?
-  parent   Comment?  @relation("replies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies  Comment[] @relation("replies")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([workoutId, createdAt])
-  @@index([parentId])
+  @@index([workoutId, deletedAt, createdAt])
 }
 
 // ============================================================================
@@ -328,33 +431,103 @@ model Comment {
 // ============================================================================
 
 model Crew {
-  id          String @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   description String?
   imageUrl    String?
   creatorId   String
-  creator     User   @relation(fields: [creatorId], references: [id])
-  isPublic    Boolean @default(true)
+  creator     User      @relation(fields: [creatorId], references: [id])
+  isPublic    Boolean   @default(true)
   maxMembers  Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   members    CrewMember[]
   challenges Challenge[]
+  tags       CrewTag[]
+  bans       CrewBan[]
+  activities CrewActivity[]
 }
 
 model CrewMember {
-  id       String @id @default(cuid())
+  id       String   @id @default(cuid())
   crewId   String
   userId   String
-  crew     Crew   @relation(fields: [crewId], references: [id], onDelete: Cascade)
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role     String @default("MEMBER") // OWNER, ADMIN, MEMBER
+  crew     Crew     @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("MEMBER") // OWNER, ADMIN, MEMBER
+  status   String   @default("ACTIVE") // PENDING, ACTIVE, LEFT
   joinedAt DateTime @default(now())
+
+  crewMemberTags CrewMemberTag[]
 
   @@unique([crewId, userId])
   @@index([crewId])
   @@index([userId])
+}
+
+model CrewTag {
+  id     String @id @default(cuid())
+  crewId String
+  crew   Crew   @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  name   String
+  color  String @default("#3B82F6")
+
+  members CrewMemberTag[]
+
+  @@unique([crewId, name])
+}
+
+model CrewMemberTag {
+  crewMemberId String
+  crewTagId    String
+  crewMember   CrewMember @relation(fields: [crewMemberId], references: [id], onDelete: Cascade)
+  crewTag      CrewTag    @relation(fields: [crewTagId], references: [id], onDelete: Cascade)
+
+  @@id([crewMemberId, crewTagId])
+}
+
+model CrewBan {
+  id        String   @id @default(cuid())
+  crewId    String
+  userId    String
+  crew      Crew     @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  bannedBy  String
+  reason    String?
+  createdAt DateTime @default(now())
+
+  @@unique([crewId, userId])
+}
+
+model CrewActivity {
+  id           String   @id @default(cuid())
+  crewId       String
+  crew         Crew     @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  activityDate DateTime
+  location     String?
+  latitude     Float?
+  longitude    Float?
+  createdBy    String
+  createdAt    DateTime @default(now())
+
+  attendances CrewAttendance[]
+  qrCode      String?          @unique
+
+  @@index([crewId, activityDate])
+}
+
+model CrewAttendance {
+  id         String       @id @default(cuid())
+  activityId String
+  userId     String
+  activity   CrewActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  method     String       @default("QR") // QR, MANUAL
+  checkedAt  DateTime     @default(now())
+
+  @@unique([activityId, userId])
 }
 
 // ============================================================================
@@ -362,39 +535,65 @@ model CrewMember {
 // ============================================================================
 
 model Challenge {
-  id          String @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   description String?
   type        String // DISTANCE, FREQUENCY, STREAK, PACE
-  targetValue Float  // 목표 수치
+  targetValue Float // 목표 수치
   targetUnit  String // KM, COUNT, DAYS, SEC_PER_KM
   startDate   DateTime
   endDate     DateTime
   creatorId   String
-  creator     User   @relation(fields: [creatorId], references: [id])
+  creator     User     @relation(fields: [creatorId], references: [id])
   crewId      String?
-  crew        Crew?  @relation(fields: [crewId], references: [id], onDelete: SetNull)
-  isPublic    Boolean @default(true)
+  crew        Crew?    @relation(fields: [crewId], references: [id], onDelete: SetNull)
+  isPublic    Boolean  @default(true)
   imageUrl    String?
-  createdAt   DateTime @default(now())
+
+  // Phase 2d extensions
+  creatorType       String    @default("USER") // USER, CREW
+  goalType          String    @default("CUMULATIVE") // CUMULATIVE, SINGLE_BEST
+  participationUnit String    @default("INDIVIDUAL") // INDIVIDUAL, CREW
+  participationMode String    @default("SOLO") // SOLO, TEAM
+  joinType          String    @default("OPEN") // OPEN, APPROVAL, INVITE
+  visibility        String    @default("PUBLIC") // PUBLIC, CREW_ONLY, PRIVATE
+  deletedAt         DateTime?
+
+  createdAt DateTime @default(now())
 
   participants ChallengeParticipant[]
+  teams        ChallengeTeam[]
 }
 
 model ChallengeParticipant {
-  id          String @id @default(cuid())
+  id          String    @id @default(cuid())
   challengeId String
   userId      String
   challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  currentValue Float   @default(0)
-  isCompleted  Boolean @default(false)
-  completedAt  DateTime?
-  joinedAt     DateTime @default(now())
+  currentValue    Float          @default(0)
+  isCompleted     Boolean        @default(false)
+  completedAt     DateTime?
+  status          String         @default("ACTIVE") // ACTIVE, WITHDRAWN
+  challengeTeamId String?
+  challengeTeam   ChallengeTeam? @relation(fields: [challengeTeamId], references: [id], onDelete: SetNull)
+  joinedAt        DateTime       @default(now())
 
   @@unique([challengeId, userId])
   @@index([challengeId, currentValue])
+}
+
+model ChallengeTeam {
+  id          String    @id @default(cuid())
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  name        String
+  createdAt   DateTime  @default(now())
+
+  participants ChallengeParticipant[]
+
+  @@unique([challengeId, name])
 }
 
 // ============================================================================
@@ -402,41 +601,41 @@ model ChallengeParticipant {
 // ============================================================================
 
 model Event {
-  id          String @id @default(cuid())
-  title       String
-  description String?
-  eventType   String // MARATHON, HALF, TEN_K, FIVE_K, ULTRA, TRAIL, OTHER
-  date        DateTime
-  location    String?
-  latitude    Float?
-  longitude   Float?
-  distance    Float? // 대회 거리 (m)
-  organizerId String
-  organizer   User   @relation(fields: [organizerId], references: [id])
+  id                   String    @id @default(cuid())
+  title                String
+  description          String?
+  eventType            String // MARATHON, HALF, TEN_K, FIVE_K, ULTRA, TRAIL, OTHER
+  date                 DateTime
+  location             String?
+  latitude             Float?
+  longitude            Float?
+  distance             Float? // 대회 거리 (m)
+  organizerId          String
+  organizer            User      @relation(fields: [organizerId], references: [id])
   maxParticipants      Int?
   registrationDeadline DateTime?
   externalUrl          String?
   imageUrl             String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   participants EventParticipant[]
 }
 
 model EventParticipant {
-  id       String @id @default(cuid())
-  eventId  String
-  userId   String
-  event    Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  eventId String
+  userId  String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  status     String  @default("REGISTERED") // REGISTERED, COMPLETED, DNS, DNF
-  bibNumber  String?
-  goalTime   Int?    // 목표 기록 (초)
-  resultTime Int?    // 실제 기록 (초)
-  resultRank Int?
-  workoutId  String? @unique
-  workout    Workout? @relation(fields: [workoutId], references: [id], onDelete: SetNull)
+  status       String   @default("REGISTERED") // REGISTERED, COMPLETED, DNS, DNF
+  bibNumber    String?
+  goalTime     Int? // 목표 기록 (초)
+  resultTime   Int? // 실제 기록 (초)
+  resultRank   Int?
+  workoutId    String?  @unique
+  workout      Workout? @relation(fields: [workoutId], references: [id], onDelete: SetNull)
   registeredAt DateTime @default(now())
 
   @@unique([eventId, userId])
@@ -447,31 +646,31 @@ model EventParticipant {
 // ============================================================================
 
 model ConnectedPlatform {
-  id             String @id @default(cuid())
+  id             String    @id @default(cuid())
   userId         String
-  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   platform       String // GARMIN, COROS, STRAVA, SUUNTO
   externalUserId String
-  accessToken    String  // 암호화 저장
+  accessToken    String // 암호화 저장
   refreshToken   String? // 암호화 저장
   tokenExpiresAt DateTime?
   scope          String?
-  isActive       Boolean  @default(true)
+  isActive       Boolean   @default(true)
   lastSyncAt     DateTime?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime  @default(now())
 
   @@unique([userId, platform])
   @@index([userId])
 }
 
 model SyncLog {
-  id           String @id @default(cuid())
+  id           String    @id @default(cuid())
   userId       String
-  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   platform     String // GARMIN, COROS, STRAVA, SUUNTO
   status       String // SUCCESS, PARTIAL, FAILED
   errorMessage String?
-  startedAt    DateTime @default(now())
+  startedAt    DateTime  @default(now())
   completedAt  DateTime?
 
   @@index([userId, platform, startedAt])
@@ -482,13 +681,13 @@ model SyncLog {
 // ============================================================================
 
 model Notification {
-  id            String @id @default(cuid())
+  id            String   @id @default(cuid())
   userId        String
-  user          User   @relation("recipient", fields: [userId], references: [id], onDelete: Cascade)
+  user          User     @relation("recipient", fields: [userId], references: [id], onDelete: Cascade)
   actorId       String?
-  actor         User?  @relation("actor", fields: [actorId], references: [id], onDelete: SetNull)
-  type          String // LIKE, COMMENT, COMMENT_REPLY, FOLLOW, CREW_INVITE, CREW_JOIN, CHALLENGE_COMPLETE, EVENT_REMINDER
-  referenceType String // WORKOUT, CREW, CHALLENGE, EVENT, COMMENT
+  actor         User?    @relation("actor", fields: [actorId], references: [id], onDelete: SetNull)
+  type          String // LIKE, COMMENT, COMMENT_REPLY, FOLLOW, FOLLOW_REQUEST, CREW_INVITE, CREW_JOIN, CHALLENGE_COMPLETE, EVENT_REMINDER
+  referenceType String // WORKOUT, CREW, CHALLENGE, EVENT, COMMENT, POST, BLOCK
   referenceId   String
   message       String
   isRead        Boolean  @default(false)
