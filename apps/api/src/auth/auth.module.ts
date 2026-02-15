@@ -8,6 +8,8 @@ import { JwtStrategy } from "./strategies/jwt.strategy.js";
 import { KakaoStrategy } from "./strategies/kakao.strategy.js";
 import { GoogleStrategy } from "./strategies/google.strategy.js";
 import { NaverStrategy } from "./strategies/naver.strategy.js";
+import { UserRepository } from "./repositories/user.repository.js";
+import { AccountRepository } from "./repositories/account.repository.js";
 
 // Only register OAuth strategies when credentials are configured.
 // dotenv/config runs synchronously before module loading, so process.env is safe here.
@@ -31,7 +33,7 @@ if (process.env.NAVER_CLIENT_ID) oauthStrategies.push(NaverStrategy);
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, ...oauthStrategies],
-  exports: [AuthService],
+  providers: [AuthService, JwtStrategy, ...oauthStrategies, UserRepository, AccountRepository],
+  exports: [AuthService, UserRepository],
 })
 export class AuthModule {}

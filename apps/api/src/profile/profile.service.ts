@@ -1,31 +1,22 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { DatabaseService } from "../database/database.service.js";
+import { UserRepository } from "../auth/repositories/user.repository.js";
+import { WorkoutRepository } from "../workouts/repositories/workout.repository.js";
 
 @Injectable()
 export class ProfileService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly userRepo: UserRepository,
+    private readonly workoutRepo: WorkoutRepository,
+  ) {}
 
   async getProfile(userId: string) {
-    const user = await this.db.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        profileImage: true,
-        createdAt: true,
-      },
-    });
+    const user = await this.userRepo.findByIdBasicSelect(userId);
 
     if (!user) {
       throw new NotFoundException("사용자를 찾을 수 없습니다.");
     }
 
-    const stats = await this.db.prisma.workout.aggregate({
-      where: { userId },
-      _count: true,
-      _sum: { distance: true, duration: true },
-    });
+    const stats = await this.workoutRepo.aggregateByUser(userId);
 
     const totalWorkouts = stats._count;
     const totalDistance = stats._sum.distance ?? 0;

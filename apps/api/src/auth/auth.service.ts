@@ -1,7 +1,8 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { DatabaseService } from "../database/database.service.js";
+import { UserRepository } from "./repositories/user.repository.js";
+import { AccountRepository } from "./repositories/account.repository.js";
 
 export interface OAuthProfile {
   provider: string;
@@ -21,7 +22,8 @@ interface TokenPayload {
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly db: DatabaseService,
+    private readonly userRepo: UserRepository,
+    private readonly accountRepo: AccountRepository,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
   ) {}
@@ -48,80 +50,55 @@ export class AuthService {
    * 2. If found: update OAuth tokens, return existing user
    * 3. If not found:
    *    a. If email exists in User table: link new Account to existing user
-   *    b. Otherwise: create User + Account in a transaction
+   *    b. Otherwise: create User + Account atomically
    */
   async upsertOAuthUser(profile: OAuthProfile) {
     const { provider, providerAccountId, email, name, profileImage, accessToken, refreshToken } =
       profile;
 
     // 1. Check if this OAuth account already exists
-    const existingAccount = await this.db.prisma.account.findUnique({
-      where: {
-        provider_providerAccountId: { provider, providerAccountId },
-      },
-      include: { user: true },
-    });
+    const existingAccount = await this.accountRepo.findByProviderWithUser(
+      provider,
+      providerAccountId,
+    );
 
     if (existingAccount) {
-      // Update stored OAuth tokens
-      await this.db.prisma.account.update({
-        where: { id: existingAccount.id },
-        data: {
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        },
-      });
+      await this.accountRepo.updateTokens(existingAccount.id, accessToken, refreshToken);
       return existingAccount.user;
     }
 
     // 2. No existing account -- check if user with same email exists
     if (email) {
-      const existingUser = await this.db.prisma.user.findUnique({
-        where: { email },
-      });
+      const existingUser = await this.userRepo.findByEmail(email);
 
       if (existingUser) {
-        // Link new OAuth account to existing user
-        await this.db.prisma.account.create({
-          data: {
-            userId: existingUser.id,
-            type: "oauth",
-            provider,
-            providerAccountId,
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          },
-        });
-        return existingUser;
-      }
-    }
-
-    // 3. Brand-new user -- create User + Account in transaction
-    const user = await this.db.prisma.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
-        data: {
-          email: email || `${provider}_${providerAccountId}@placeholder.local`,
-          name,
-          profileImage,
-          emailVerified: email ? new Date() : null,
-        },
-      });
-
-      await tx.account.create({
-        data: {
-          userId: newUser.id,
+        await this.accountRepo.createForUser(existingUser.id, {
           type: "oauth",
           provider,
           providerAccountId,
           access_token: accessToken,
           refresh_token: refreshToken,
-        },
-      });
+        });
+        return existingUser;
+      }
+    }
 
-      return newUser;
-    });
-
-    return user;
+    // 3. Brand-new user -- create User + Account atomically
+    return this.userRepo.createWithAccount(
+      {
+        email: email || `${provider}_${providerAccountId}@placeholder.local`,
+        name,
+        profileImage,
+        emailVerified: email ? new Date() : null,
+      },
+      {
+        type: "oauth",
+        provider,
+        providerAccountId,
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      },
+    );
   }
 
   /**
@@ -131,9 +108,7 @@ export class AuthService {
     try {
       const payload = this.jwt.verify<TokenPayload>(refreshToken);
 
-      const user = await this.db.prisma.user.findUnique({
-        where: { id: payload.sub },
-      });
+      const user = await this.userRepo.findById(payload.sub);
 
       if (!user) {
         throw new UnauthorizedException("User not found");
@@ -149,17 +124,7 @@ export class AuthService {
    * Get user by ID (for /auth/me).
    */
   async getUser(userId: string) {
-    const user = await this.db.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        profileImage: true,
-        bio: true,
-        createdAt: true,
-      },
-    });
+    const user = await this.userRepo.findByIdWithProfile(userId);
 
     if (!user) {
       throw new UnauthorizedException("User not found");
