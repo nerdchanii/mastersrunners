@@ -1,24 +1,34 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 class ApiClient {
+  private getStorage(): Storage | null {
+    try {
+      return typeof window !== "undefined" && window.localStorage
+        ? window.localStorage
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
   private getAccessToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("accessToken");
+    return this.getStorage()?.getItem("accessToken") ?? null;
   }
 
   private getRefreshToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("refreshToken");
+    return this.getStorage()?.getItem("refreshToken") ?? null;
   }
 
   setTokens(accessToken: string, refreshToken: string) {
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
+    const s = this.getStorage();
+    s?.setItem("accessToken", accessToken);
+    s?.setItem("refreshToken", refreshToken);
   }
 
   clearTokens() {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    const s = this.getStorage();
+    s?.removeItem("accessToken");
+    s?.removeItem("refreshToken");
   }
 
   isAuthenticated(): boolean {
