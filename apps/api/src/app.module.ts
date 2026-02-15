@@ -13,6 +13,8 @@ import { AuthModule } from "./auth/auth.module.js";
 import { FeedModule } from "./feed/feed.module.js";
 import { WorkoutsModule } from "./workouts/workouts.module.js";
 import { ProfileModule } from "./profile/profile.module.js";
+import { WorkoutTypesModule } from "./workout-types/workout-types.module.js";
+import { ShoesModule } from "./shoes/shoes.module.js";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard.js";
 import { AppController } from "./app.controller.js";
 import { AppService } from "./app.service.js";
@@ -27,6 +29,8 @@ import { AppService } from "./app.service.js";
     AuthModule,
     FeedModule,
     WorkoutsModule,
+    WorkoutTypesModule,
+    ShoesModule,
     ProfileModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
   ],
