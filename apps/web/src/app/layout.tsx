@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "마스터즈 러너스 - 준비중",
+  title: "마스터즈 러너스",
   description:
     "한국의 러너들을 위한 훈련일지 기반 러닝 커뮤니티 서비스입니다. 훈련일지를 공유하고 함께 성장해요",
 };
