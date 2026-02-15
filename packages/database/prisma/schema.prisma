@@ -53,6 +53,21 @@ model VerificationToken {
 // Core
 // ============================================================================
 
+model WorkoutType {
+  id          String  @id @default(cuid())
+  category    String  // LONG_RUN, SPEED, THRESHOLD, EASY, RACE, TRAIL, CROSS_TRAINING
+  name        String  // 하위 유형 이름 (예: LSD, Interval, Tempo Run)
+  description String?
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+
+  workouts Workout[]
+
+  @@unique([category, name])
+  @@index([category, isActive, sortOrder])
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -106,6 +121,8 @@ model Workout {
 
   // 기본 정보
   title          String?
+  workoutTypeId  String?
+  workoutType    WorkoutType? @relation(fields: [workoutTypeId], references: [id], onDelete: SetNull)
   sport          String  @default("RUN") // RUN, TRAIL_RUN, TREADMILL, RACE
   source         String  @default("MANUAL") // MANUAL, FIT_FILE, GPX_FILE, GARMIN_SYNC, COROS_SYNC, STRAVA_SYNC
   externalId     String? // 외부 플랫폼 activity ID
@@ -154,6 +171,7 @@ model Workout {
   shoeId   String?
   shoe     Shoe?   @relation(fields: [shoeId], references: [id], onDelete: SetNull)
 
+  deletedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
