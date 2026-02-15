@@ -47,11 +47,13 @@ export class PostSocialController {
   @Get(":postId/comments")
   async getComments(
     @Param("postId") postId: string,
+    @Req() req: Request,
     @Query("cursor") cursor?: string,
     @Query("limit") limit?: string
   ) {
+    const { userId } = req.user as { userId: string };
     const parsedLimit = limit ? parseInt(limit, 10) : undefined;
-    return this.postSocialService.getComments(postId, cursor, parsedLimit);
+    return this.postSocialService.getComments(postId, userId, cursor, parsedLimit);
   }
 
   @Delete(":postId/comments/:commentId")

@@ -37,6 +37,26 @@
 - User 탈퇴: Soft delete, 일정 기간 후 hard delete (기간 TBD)
 - Crew 삭제: OWNER만 가능, 모든 멤버십/활동/출석 데이터 soft delete
 
+## 차단 규칙 (Block Filtering)
+
+### 필터링 우선순위
+
+모든 조회 작업은 다음 순서로 필터링된다:
+
+1. **Soft Delete 체크**: `deletedAt IS NULL`
+2. **Block 필터링**: 양방향 차단 관계 확인 (`getBlockedUserIds`)
+3. **Visibility 체크**: PRIVATE/FOLLOWERS/PUBLIC
+4. **권한 매트릭스**: 본인/팔로워/비팔로워
+
+### Block과 다른 규칙의 상호작용
+
+| 상황 | 동작 |
+|------|------|
+| 차단 후 기존 댓글/좋아요 | 조회 시 숨김 처리 (DB에서 삭제하지 않음) |
+| 차단 해제 후 | 팔로우 복구 안 됨, 댓글/좋아요는 다시 보임 |
+| 차단된 유저의 팔로우 요청 | ForbiddenException |
+| 차단된 유저의 프로필/포스트 조회 | ForbiddenException |
+
 ## 검증 규칙 (Validation)
 
 ### Workout

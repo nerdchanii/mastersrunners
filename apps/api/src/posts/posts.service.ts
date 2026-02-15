@@ -1,11 +1,15 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, ForbiddenException } from "@nestjs/common";
 import { PostRepository } from "./repositories/post.repository.js";
+import { BlockRepository } from "../block/repositories/block.repository.js";
 import type { CreatePostDto } from "./dto/create-post.dto.js";
 import type { UpdatePostDto } from "./dto/update-post.dto.js";
 
 @Injectable()
 export class PostsService {
-  constructor(private readonly postRepo: PostRepository) {}
+  constructor(
+    private readonly postRepo: PostRepository,
+    private readonly blockRepo: BlockRepository,
+  ) {}
 
   async create(userId: string, dto: CreatePostDto) {
     const postData = {
@@ -22,11 +26,24 @@ export class PostsService {
     );
   }
 
-  async findById(id: string) {
-    return this.postRepo.findById(id);
+  async findById(id: string, currentUserId?: string) {
+    const post = await this.postRepo.findById(id);
+    if (post && currentUserId && post.userId !== currentUserId) {
+      const blocked = await this.blockRepo.isBlocked(currentUserId, post.userId);
+      if (blocked) {
+        throw new ForbiddenException("차단된 사용자의 게시글입니다.");
+      }
+    }
+    return post;
   }
 
-  async findByUser(userId: string, cursor?: string, limit?: number) {
+  async findByUser(userId: string, currentUserId?: string, cursor?: string, limit?: number) {
+    if (currentUserId && userId !== currentUserId) {
+      const blocked = await this.blockRepo.isBlocked(currentUserId, userId);
+      if (blocked) {
+        throw new ForbiddenException("차단된 사용자입니다.");
+      }
+    }
     return this.postRepo.findByUser(userId, { cursor, limit });
   }
 

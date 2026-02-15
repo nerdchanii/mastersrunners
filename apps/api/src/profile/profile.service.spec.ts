@@ -1,8 +1,9 @@
 import { Test } from "@nestjs/testing";
-import { NotFoundException } from "@nestjs/common";
+import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { ProfileService } from "./profile.service";
 import { UserRepository } from "../auth/repositories/user.repository";
 import { WorkoutRepository } from "../workouts/repositories/workout.repository";
+import { BlockRepository } from "../block/repositories/block.repository";
 
 const mockUserRepo = {
   findByIdBasicSelect: jest.fn(),
@@ -12,17 +13,23 @@ const mockWorkoutRepo = {
   aggregateByUser: jest.fn(),
 };
 
+const mockBlockRepository = {
+  isBlocked: jest.fn(),
+};
+
 describe("ProfileService", () => {
   let service: ProfileService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockBlockRepository.isBlocked.mockResolvedValue(false);
 
     const module = await Test.createTestingModule({
       providers: [
         ProfileService,
         { provide: UserRepository, useValue: mockUserRepo },
         { provide: WorkoutRepository, useValue: mockWorkoutRepo },
+        { provide: BlockRepository, useValue: mockBlockRepository },
       ],
     }).compile();
 
@@ -77,6 +84,41 @@ describe("ProfileService", () => {
       mockUserRepo.findByIdBasicSelect.mockResolvedValue(null);
 
       await expect(service.getProfile("unknown")).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw ForbiddenException when viewing blocked user's profile", async () => {
+      const targetUserId = "target-user";
+      const currentUserId = "me";
+      mockBlockRepository.isBlocked.mockResolvedValue(true);
+
+      await expect(service.getProfile(targetUserId, currentUserId)).rejects.toThrow(ForbiddenException);
+      expect(mockBlockRepository.isBlocked).toHaveBeenCalledWith(currentUserId, targetUserId);
+    });
+
+    it("should not check block when viewing own profile", async () => {
+      const userId = "user-1";
+      mockUserRepo.findByIdBasicSelect.mockResolvedValue({ id: userId });
+      mockWorkoutRepo.aggregateByUser.mockResolvedValue({
+        _count: 0,
+        _sum: { distance: null, duration: null },
+      });
+
+      await service.getProfile(userId, userId);
+
+      expect(mockBlockRepository.isBlocked).not.toHaveBeenCalled();
+    });
+
+    it("should not check block when currentUserId is not provided", async () => {
+      const userId = "user-1";
+      mockUserRepo.findByIdBasicSelect.mockResolvedValue({ id: userId });
+      mockWorkoutRepo.aggregateByUser.mockResolvedValue({
+        _count: 0,
+        _sum: { distance: null, duration: null },
+      });
+
+      await service.getProfile(userId);
+
+      expect(mockBlockRepository.isBlocked).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,6 +1,7 @@
 import { Test } from "@nestjs/testing";
 import { FeedService } from "./feed.service";
 import { FeedRepository } from "./repositories/feed.repository";
+import { BlockRepository } from "../block/repositories/block.repository";
 
 const mockFeedRepo = {
   getFollowingIds: jest.fn(),
@@ -8,16 +9,22 @@ const mockFeedRepo = {
   getWorkoutFeed: jest.fn(),
 };
 
+const mockBlockRepo = {
+  getBlockedUserIds: jest.fn(),
+};
+
 describe("FeedService", () => {
   let service: FeedService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockBlockRepo.getBlockedUserIds.mockResolvedValue([]);
 
     const module = await Test.createTestingModule({
       providers: [
         FeedService,
         { provide: FeedRepository, useValue: mockFeedRepo },
+        { provide: BlockRepository, useValue: mockBlockRepo },
       ],
     }).compile();
 
@@ -80,6 +87,22 @@ describe("FeedService", () => {
         limit: 20,
       });
     });
+
+    it("should exclude blocked user IDs from followingIds", async () => {
+      mockFeedRepo.getFollowingIds.mockResolvedValue(["user1", "user2", "user3"]);
+      mockBlockRepo.getBlockedUserIds.mockResolvedValue(["user2"]);
+      mockFeedRepo.getPostFeed.mockResolvedValue([]);
+
+      await service.getPostFeed("me", undefined, 10);
+
+      expect(mockBlockRepo.getBlockedUserIds).toHaveBeenCalledWith("me");
+      expect(mockFeedRepo.getPostFeed).toHaveBeenCalledWith({
+        userId: "me",
+        followingIds: ["user1", "user3"],
+        cursor: undefined,
+        limit: 10,
+      });
+    });
   });
 
   describe("getWorkoutFeed", () => {
@@ -138,6 +161,23 @@ describe("FeedService", () => {
         cursor: "cursor-xyz",
         limit: 15,
         excludeLinkedToPost: true,
+      });
+    });
+
+    it("should exclude blocked user IDs from followingIds", async () => {
+      mockFeedRepo.getFollowingIds.mockResolvedValue(["user1", "user2", "user3"]);
+      mockBlockRepo.getBlockedUserIds.mockResolvedValue(["user1", "user3"]);
+      mockFeedRepo.getWorkoutFeed.mockResolvedValue([]);
+
+      await service.getWorkoutFeed("me", undefined, 10);
+
+      expect(mockBlockRepo.getBlockedUserIds).toHaveBeenCalledWith("me");
+      expect(mockFeedRepo.getWorkoutFeed).toHaveBeenCalledWith({
+        userId: "me",
+        followingIds: ["user2"],
+        cursor: undefined,
+        limit: 10,
+        excludeLinkedToPost: undefined,
       });
     });
   });

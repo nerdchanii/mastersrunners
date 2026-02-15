@@ -1,7 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { ConflictException, NotFoundException } from "@nestjs/common";
+import { ConflictException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { FollowService } from "./follow.service";
 import { FollowRepository } from "./repositories/follow.repository";
+import { BlockRepository } from "../block/repositories/block.repository";
 
 const mockFollowRepository = {
   findFollow: jest.fn(),
@@ -14,15 +15,23 @@ const mockFollowRepository = {
   findUserIsPrivate: jest.fn(),
 };
 
+const mockBlockRepository = {
+  isBlocked: jest.fn(),
+  getBlockedUserIds: jest.fn(),
+};
+
 describe("FollowService", () => {
   let service: FollowService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockBlockRepository.isBlocked.mockResolvedValue(false);
+    mockBlockRepository.getBlockedUserIds.mockResolvedValue([]);
     const module = await Test.createTestingModule({
       providers: [
         FollowService,
         { provide: FollowRepository, useValue: mockFollowRepository },
+        { provide: BlockRepository, useValue: mockBlockRepository },
       ],
     }).compile();
     service = module.get(FollowService);
@@ -49,6 +58,17 @@ describe("FollowService", () => {
         new ConflictException("이미 팔로우하고 있습니다.")
       );
       expect(mockFollowRepository.findFollow).toHaveBeenCalledWith(followerId, followingId);
+    });
+
+    it("should throw ForbiddenException when block relationship exists", async () => {
+      const followerId = "user-1";
+      const followingId = "user-2";
+      mockFollowRepository.findFollow.mockResolvedValue(null);
+      mockBlockRepository.isBlocked.mockResolvedValue(true);
+
+      await expect(service.follow(followerId, followingId)).rejects.toThrow(ForbiddenException);
+      expect(mockBlockRepository.isBlocked).toHaveBeenCalledWith(followerId, followingId);
+      expect(mockFollowRepository.follow).not.toHaveBeenCalled();
     });
 
     it("should create follow with PENDING status for private user", async () => {
@@ -225,8 +245,20 @@ describe("FollowService", () => {
 
       const result = await service.getFollowers(userId);
 
-      expect(mockFollowRepository.findFollowers).toHaveBeenCalledWith(userId, "ACCEPTED");
+      expect(mockFollowRepository.findFollowers).toHaveBeenCalledWith(userId, "ACCEPTED", []);
       expect(result).toEqual(mockFollowers);
+    });
+
+    it("should pass blocked user IDs to exclude from followers list", async () => {
+      const userId = "user-1";
+      const blockedIds = ["blocked-1", "blocked-2"];
+      mockBlockRepository.getBlockedUserIds.mockResolvedValue(blockedIds);
+      mockFollowRepository.findFollowers.mockResolvedValue([]);
+
+      await service.getFollowers(userId);
+
+      expect(mockBlockRepository.getBlockedUserIds).toHaveBeenCalledWith(userId);
+      expect(mockFollowRepository.findFollowers).toHaveBeenCalledWith(userId, "ACCEPTED", blockedIds);
     });
   });
 
@@ -246,8 +278,20 @@ describe("FollowService", () => {
 
       const result = await service.getFollowing(userId);
 
-      expect(mockFollowRepository.findFollowing).toHaveBeenCalledWith(userId, "ACCEPTED");
+      expect(mockFollowRepository.findFollowing).toHaveBeenCalledWith(userId, "ACCEPTED", []);
       expect(result).toEqual(mockFollowing);
+    });
+
+    it("should pass blocked user IDs to exclude from following list", async () => {
+      const userId = "user-1";
+      const blockedIds = ["blocked-1"];
+      mockBlockRepository.getBlockedUserIds.mockResolvedValue(blockedIds);
+      mockFollowRepository.findFollowing.mockResolvedValue([]);
+
+      await service.getFollowing(userId);
+
+      expect(mockBlockRepository.getBlockedUserIds).toHaveBeenCalledWith(userId);
+      expect(mockFollowRepository.findFollowing).toHaveBeenCalledWith(userId, "ACCEPTED", blockedIds);
     });
   });
 

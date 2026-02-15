@@ -69,6 +69,11 @@
   - FOLLOWERS: 팔로워만 조회 가능
   - PUBLIC: 모든 유저 조회 가능
 
+## Block 필터링
+
+Feed와 Post 조회 시, 차단 관계에 있는 유저의 콘텐츠는 완전히 제외된다.
+상세 규칙은 [social.md](social.md)의 "Block 필터링 적용 범위" 및 [business-rules.md](business-rules.md)의 "필터링 우선순위" 참조.
+
 ## PostComment (포스트 댓글)
 
 ### 2단계 구조 with @멘션

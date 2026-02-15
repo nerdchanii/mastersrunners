@@ -2,8 +2,10 @@ import { Module } from "@nestjs/common";
 import { FollowController } from "./follow.controller.js";
 import { FollowService } from "./follow.service.js";
 import { FollowRepository } from "./repositories/follow.repository.js";
+import { BlockModule } from "../block/block.module.js";
 
 @Module({
+  imports: [BlockModule],
   controllers: [FollowController],
   providers: [FollowService, FollowRepository],
   exports: [FollowRepository],

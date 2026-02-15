@@ -1,10 +1,14 @@
 import { Injectable, ConflictException, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { WorkoutSocialRepository } from "./repositories/workout-social.repository.js";
+import { BlockRepository } from "../block/repositories/block.repository.js";
 import type { CreateWorkoutCommentDto } from "./dto/create-workout-comment.dto.js";
 
 @Injectable()
 export class WorkoutSocialService {
-  constructor(private readonly repo: WorkoutSocialRepository) {}
+  constructor(
+    private readonly repo: WorkoutSocialRepository,
+    private readonly blockRepo: BlockRepository,
+  ) {}
 
   async likeWorkout(userId: string, workoutId: string) {
     try {
@@ -48,7 +52,10 @@ export class WorkoutSocialService {
     return this.repo.deleteComment(commentId);
   }
 
-  async getComments(workoutId: string, cursor?: string, limit = 20) {
-    return this.repo.getComments(workoutId, cursor, limit);
+  async getComments(workoutId: string, currentUserId?: string, cursor?: string, limit = 20) {
+    const excludeUserIds = currentUserId
+      ? await this.blockRepo.getBlockedUserIds(currentUserId)
+      : [];
+    return this.repo.getComments(workoutId, cursor, limit, excludeUserIds);
   }
 }

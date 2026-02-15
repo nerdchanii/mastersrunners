@@ -62,11 +62,12 @@ export class FollowRepository {
     });
   }
 
-  async findFollowers(userId: string, status?: string) {
+  async findFollowers(userId: string, status?: string, excludeUserIds: string[] = []) {
     return this.db.prisma.follow.findMany({
       where: {
         followingId: userId,
         ...(status ? { status } : {}),
+        ...(excludeUserIds.length > 0 && { followerId: { notIn: excludeUserIds } }),
       },
       include: {
         follower: {
@@ -83,11 +84,12 @@ export class FollowRepository {
     });
   }
 
-  async findFollowing(userId: string, status?: string) {
+  async findFollowing(userId: string, status?: string, excludeUserIds: string[] = []) {
     return this.db.prisma.follow.findMany({
       where: {
         followerId: userId,
         ...(status ? { status } : {}),
+        ...(excludeUserIds.length > 0 && { followingId: { notIn: excludeUserIds } }),
       },
       include: {
         following: {

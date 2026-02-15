@@ -147,6 +147,33 @@ describe("PostSocialRepository", () => {
         expect.objectContaining({ take: 5 })
       );
     });
+
+    it("should exclude likers from specified users", async () => {
+      const postId = "post-456";
+      const excludeUserIds = ["blocked-1", "blocked-2"];
+      mockPrisma.postLike.findMany.mockResolvedValue([]);
+
+      await repository.getLikers(postId, 10, excludeUserIds);
+
+      expect(mockPrisma.postLike.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { postId, userId: { notIn: excludeUserIds } },
+        })
+      );
+    });
+
+    it("should not add userId filter when excludeUserIds is empty", async () => {
+      const postId = "post-456";
+      mockPrisma.postLike.findMany.mockResolvedValue([]);
+
+      await repository.getLikers(postId, 10, []);
+
+      expect(mockPrisma.postLike.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { postId },
+        })
+      );
+    });
   });
 
   describe("addComment", () => {
@@ -332,6 +359,52 @@ describe("PostSocialRepository", () => {
           take: 10,
         })
       );
+    });
+
+    it("should exclude comments from specified users", async () => {
+      const postId = "post-456";
+      const excludeUserIds = ["blocked-1", "blocked-2"];
+      mockPrisma.postComment.findMany.mockResolvedValue([]);
+
+      await repository.getComments(postId, undefined, 20, excludeUserIds);
+
+      expect(mockPrisma.postComment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: { notIn: excludeUserIds },
+          }),
+        })
+      );
+    });
+
+    it("should exclude replies from specified users", async () => {
+      const postId = "post-456";
+      const excludeUserIds = ["blocked-1"];
+      mockPrisma.postComment.findMany.mockResolvedValue([]);
+
+      await repository.getComments(postId, undefined, 20, excludeUserIds);
+
+      expect(mockPrisma.postComment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            replies: expect.objectContaining({
+              where: expect.objectContaining({
+                userId: { notIn: excludeUserIds },
+              }),
+            }),
+          }),
+        })
+      );
+    });
+
+    it("should not add userId filter when excludeUserIds is empty", async () => {
+      const postId = "post-456";
+      mockPrisma.postComment.findMany.mockResolvedValue([]);
+
+      await repository.getComments(postId, undefined, 20, []);
+
+      const callArgs = mockPrisma.postComment.findMany.mock.calls[0][0];
+      expect(callArgs.where.userId).toBeUndefined();
     });
   });
 

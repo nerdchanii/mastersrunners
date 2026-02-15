@@ -1,6 +1,7 @@
 import { Test } from "@nestjs/testing";
 import { PostSocialService } from "./post-social.service";
 import { PostSocialRepository } from "./repositories/post-social.repository";
+import { BlockRepository } from "../block/repositories/block.repository";
 import { NotFoundException, ForbiddenException, ConflictException } from "@nestjs/common";
 
 const mockPostSocialRepository = {
@@ -14,15 +15,21 @@ const mockPostSocialRepository = {
   findCommentById: jest.fn(),
 };
 
+const mockBlockRepository = {
+  getBlockedUserIds: jest.fn(),
+};
+
 describe("PostSocialService", () => {
   let service: PostSocialService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockBlockRepository.getBlockedUserIds.mockResolvedValue([]);
     const module = await Test.createTestingModule({
       providers: [
         PostSocialService,
         { provide: PostSocialRepository, useValue: mockPostSocialRepository },
+        { provide: BlockRepository, useValue: mockBlockRepository },
       ],
     }).compile();
     service = module.get(PostSocialService);
@@ -261,9 +268,9 @@ describe("PostSocialService", () => {
       ];
       mockPostSocialRepository.getComments.mockResolvedValue(mockComments);
 
-      const result = await service.getComments(postId, cursor, limit);
+      const result = await service.getComments(postId, "me", cursor, limit);
 
-      expect(mockPostSocialRepository.getComments).toHaveBeenCalledWith(postId, cursor, limit);
+      expect(mockPostSocialRepository.getComments).toHaveBeenCalledWith(postId, cursor, limit, []);
       expect(result).toEqual(mockComments);
     });
 
@@ -273,7 +280,32 @@ describe("PostSocialService", () => {
 
       await service.getComments(postId);
 
-      expect(mockPostSocialRepository.getComments).toHaveBeenCalledWith(postId, undefined, undefined);
+      expect(mockPostSocialRepository.getComments).toHaveBeenCalledWith(postId, undefined, undefined, []);
+    });
+
+    it("should pass blocked user IDs to repo as excludeUserIds", async () => {
+      const postId = "post-456";
+      const currentUserId = "me";
+      const blockedIds = ["blocked-1", "blocked-2"];
+      mockBlockRepository.getBlockedUserIds.mockResolvedValue(blockedIds);
+      mockPostSocialRepository.getComments.mockResolvedValue([]);
+
+      await service.getComments(postId, currentUserId);
+
+      expect(mockBlockRepository.getBlockedUserIds).toHaveBeenCalledWith(currentUserId);
+      expect(mockPostSocialRepository.getComments).toHaveBeenCalledWith(
+        postId, undefined, undefined, blockedIds,
+      );
+    });
+
+    it("should not call blockRepo when currentUserId is not provided", async () => {
+      const postId = "post-456";
+      mockPostSocialRepository.getComments.mockResolvedValue([]);
+
+      await service.getComments(postId);
+
+      expect(mockBlockRepository.getBlockedUserIds).not.toHaveBeenCalled();
+      expect(mockPostSocialRepository.getComments).toHaveBeenCalledWith(postId, undefined, undefined, []);
     });
   });
 });

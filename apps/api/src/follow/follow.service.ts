@@ -1,9 +1,13 @@
-import { Injectable, ConflictException, NotFoundException } from "@nestjs/common";
+import { Injectable, ConflictException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { FollowRepository } from "./repositories/follow.repository.js";
+import { BlockRepository } from "../block/repositories/block.repository.js";
 
 @Injectable()
 export class FollowService {
-  constructor(private readonly followRepo: FollowRepository) {}
+  constructor(
+    private readonly followRepo: FollowRepository,
+    private readonly blockRepo: BlockRepository,
+  ) {}
 
   async follow(followerId: string, followingId: string) {
     if (followerId === followingId) {
@@ -13,6 +17,11 @@ export class FollowService {
     const existing = await this.followRepo.findFollow(followerId, followingId);
     if (existing) {
       throw new ConflictException("이미 팔로우하고 있습니다.");
+    }
+
+    const blocked = await this.blockRepo.isBlocked(followerId, followingId);
+    if (blocked) {
+      throw new ForbiddenException("차단된 사용자를 팔로우할 수 없습니다.");
     }
 
     const isPrivate = await this.followRepo.findUserIsPrivate(followingId);
@@ -53,11 +62,13 @@ export class FollowService {
   }
 
   async getFollowers(userId: string) {
-    return this.followRepo.findFollowers(userId, "ACCEPTED");
+    const blockedUserIds = await this.blockRepo.getBlockedUserIds(userId);
+    return this.followRepo.findFollowers(userId, "ACCEPTED", blockedUserIds);
   }
 
   async getFollowing(userId: string) {
-    return this.followRepo.findFollowing(userId, "ACCEPTED");
+    const blockedUserIds = await this.blockRepo.getBlockedUserIds(userId);
+    return this.followRepo.findFollowing(userId, "ACCEPTED", blockedUserIds);
   }
 
   async getPendingRequests(userId: string) {

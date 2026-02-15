@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
+import { ForbiddenException } from "@nestjs/common";
 import { PostsService } from "./posts.service";
 import { PostRepository } from "./repositories/post.repository";
+import { BlockRepository } from "../block/repositories/block.repository";
 import type { CreatePostDto } from "./dto/create-post.dto";
 import type { UpdatePostDto } from "./dto/update-post.dto";
 
@@ -12,15 +14,21 @@ const mockPostRepository = {
   softDelete: jest.fn(),
 };
 
+const mockBlockRepository = {
+  isBlocked: jest.fn(),
+};
+
 describe("PostsService", () => {
   let service: PostsService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockBlockRepository.isBlocked.mockResolvedValue(false);
     const module = await Test.createTestingModule({
       providers: [
         PostsService,
         { provide: PostRepository, useValue: mockPostRepository },
+        { provide: BlockRepository, useValue: mockBlockRepository },
       ],
     }).compile();
     service = module.get(PostsService);
@@ -171,6 +179,37 @@ describe("PostsService", () => {
       expect(mockPostRepository.findById).toHaveBeenCalledWith(postId);
       expect(result).toEqual(mockPost);
     });
+
+    it("should throw ForbiddenException when post author is blocked by current user", async () => {
+      const postId = "post-123";
+      const currentUserId = "me";
+      const mockPost = {
+        id: postId,
+        userId: "blocked-user",
+        content: "테스트 포스트",
+      };
+      mockPostRepository.findById.mockResolvedValue(mockPost);
+      mockBlockRepository.isBlocked.mockResolvedValue(true);
+
+      await expect(service.findById(postId, currentUserId)).rejects.toThrow(ForbiddenException);
+      expect(mockBlockRepository.isBlocked).toHaveBeenCalledWith(currentUserId, "blocked-user");
+    });
+
+    it("should not check block when viewing own post", async () => {
+      const postId = "post-123";
+      const currentUserId = "user-123";
+      const mockPost = {
+        id: postId,
+        userId: "user-123",
+        content: "내 포스트",
+      };
+      mockPostRepository.findById.mockResolvedValue(mockPost);
+
+      const result = await service.findById(postId, currentUserId);
+
+      expect(mockBlockRepository.isBlocked).not.toHaveBeenCalled();
+      expect(result).toEqual(mockPost);
+    });
   });
 
   describe("findByUser", () => {
@@ -182,7 +221,7 @@ describe("PostsService", () => {
       ];
       mockPostRepository.findByUser.mockResolvedValue(mockPosts);
 
-      const result = await service.findByUser(userId);
+      const result = await service.findByUser(userId, userId);
 
       expect(mockPostRepository.findByUser).toHaveBeenCalledWith(userId, {
         cursor: undefined,
@@ -197,12 +236,30 @@ describe("PostsService", () => {
       const limit = 15;
       mockPostRepository.findByUser.mockResolvedValue([]);
 
-      await service.findByUser(userId, cursor, limit);
+      await service.findByUser(userId, undefined, cursor, limit);
 
       expect(mockPostRepository.findByUser).toHaveBeenCalledWith(userId, {
         cursor,
         limit,
       });
+    });
+
+    it("should throw ForbiddenException when viewing blocked user's posts", async () => {
+      const targetUserId = "blocked-user";
+      const currentUserId = "me";
+      mockBlockRepository.isBlocked.mockResolvedValue(true);
+
+      await expect(service.findByUser(targetUserId, currentUserId)).rejects.toThrow(ForbiddenException);
+      expect(mockBlockRepository.isBlocked).toHaveBeenCalledWith(currentUserId, targetUserId);
+    });
+
+    it("should not check block when viewing own posts", async () => {
+      const userId = "user-123";
+      mockPostRepository.findByUser.mockResolvedValue([]);
+
+      await service.findByUser(userId, userId);
+
+      expect(mockBlockRepository.isBlocked).not.toHaveBeenCalled();
     });
   });
 

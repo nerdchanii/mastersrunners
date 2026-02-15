@@ -39,6 +39,25 @@ export class BlockRepository {
     });
   }
 
+  async getBlockedUserIds(userId: string): Promise<string[]> {
+    const blocks = await this.db.prisma.block.findMany({
+      where: {
+        OR: [{ blockerId: userId }, { blockedId: userId }],
+      },
+      select: { blockerId: true, blockedId: true },
+    });
+
+    const ids = new Set<string>();
+    for (const block of blocks) {
+      if (block.blockerId === userId) {
+        ids.add(block.blockedId);
+      } else {
+        ids.add(block.blockerId);
+      }
+    }
+    return Array.from(ids);
+  }
+
   async isBlockedBy(blockerId: string, blockedId: string): Promise<boolean> {
     const block = await this.db.prisma.block.findUnique({
       where: {

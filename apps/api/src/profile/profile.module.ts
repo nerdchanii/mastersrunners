@@ -3,9 +3,10 @@ import { ProfileController } from "./profile.controller.js";
 import { ProfileService } from "./profile.service.js";
 import { AuthModule } from "../auth/auth.module.js";
 import { WorkoutsModule } from "../workouts/workouts.module.js";
+import { BlockModule } from "../block/block.module.js";
 
 @Module({
-  imports: [AuthModule, WorkoutsModule],
+  imports: [AuthModule, WorkoutsModule, BlockModule],
   controllers: [ProfileController],
   providers: [ProfileService],
 })

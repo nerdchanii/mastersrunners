@@ -2,8 +2,10 @@ import { Module } from "@nestjs/common";
 import { PostSocialController } from "./post-social.controller.js";
 import { PostSocialService } from "./post-social.service.js";
 import { PostSocialRepository } from "./repositories/post-social.repository.js";
+import { BlockModule } from "../block/block.module.js";
 
 @Module({
+  imports: [BlockModule],
   controllers: [PostSocialController],
   providers: [PostSocialService, PostSocialRepository],
   exports: [PostSocialRepository],

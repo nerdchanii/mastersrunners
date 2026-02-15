@@ -24,12 +24,13 @@ export class PostsController {
   ) {
     const { userId } = req.user as { userId: string };
     const parsedLimit = limit ? parseInt(limit, 10) : undefined;
-    return this.postsService.findByUser(userId, cursor, parsedLimit);
+    return this.postsService.findByUser(userId, userId, cursor, parsedLimit);
   }
 
   @Get(":id")
-  async findOne(@Param("id") id: string) {
-    const post = await this.postsService.findById(id);
+  async findOne(@Param("id") id: string, @Req() req: Request) {
+    const { userId } = req.user as { userId: string };
+    const post = await this.postsService.findById(id, userId);
     if (!post) throw new NotFoundException("게시글을 찾을 수 없습니다.");
     return post;
   }
@@ -37,7 +38,7 @@ export class PostsController {
   @Patch(":id")
   async update(@Param("id") id: string, @Req() req: Request, @Body() dto: UpdatePostDto) {
     const { userId } = req.user as { userId: string };
-    const post = await this.postsService.findById(id);
+    const post = await this.postsService.findById(id, userId);
     if (!post) throw new NotFoundException("게시글을 찾을 수 없습니다.");
     if (post.userId !== userId) throw new ForbiddenException("본인의 게시글만 수정할 수 있습니다.");
     return this.postsService.update(id, dto);

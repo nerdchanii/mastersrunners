@@ -41,11 +41,13 @@ export class WorkoutSocialController {
   @Get(":workoutId/comments")
   async getComments(
     @Param("workoutId") workoutId: string,
+    @Req() req: Request,
     @Query("cursor") cursor?: string,
     @Query("limit") limit?: string,
   ) {
+    const { userId } = req.user as { userId: string };
     const parsedLimit = limit ? parseInt(limit, 10) : 20;
-    return this.service.getComments(workoutId, cursor, parsedLimit);
+    return this.service.getComments(workoutId, userId, cursor, parsedLimit);
   }
 
   @Delete(":workoutId/comments/:commentId")

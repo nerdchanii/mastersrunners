@@ -1,16 +1,29 @@
 import { Injectable } from "@nestjs/common";
 import { FeedRepository } from "./repositories/feed.repository.js";
+import { BlockRepository } from "../block/repositories/block.repository.js";
 
 @Injectable()
 export class FeedService {
-  constructor(private readonly feedRepo: FeedRepository) {}
+  constructor(
+    private readonly feedRepo: FeedRepository,
+    private readonly blockRepo: BlockRepository,
+  ) {}
+
+  private async getFilteredFollowingIds(userId: string): Promise<string[]> {
+    const [rawFollowingIds, blockedUserIds] = await Promise.all([
+      this.feedRepo.getFollowingIds(userId),
+      this.blockRepo.getBlockedUserIds(userId),
+    ]);
+    const blockedSet = new Set(blockedUserIds);
+    return rawFollowingIds.filter((id) => !blockedSet.has(id));
+  }
 
   async getPostFeed(
     userId: string,
     cursor: string | undefined,
     limit: number,
   ) {
-    const followingIds = await this.feedRepo.getFollowingIds(userId);
+    const followingIds = await this.getFilteredFollowingIds(userId);
 
     const posts = await this.feedRepo.getPostFeed({
       userId,
@@ -32,7 +45,7 @@ export class FeedService {
     limit: number,
     excludeLinkedToPost?: boolean,
   ) {
-    const followingIds = await this.feedRepo.getFollowingIds(userId);
+    const followingIds = await this.getFilteredFollowingIds(userId);
 
     const workouts = await this.feedRepo.getWorkoutFeed({
       userId,

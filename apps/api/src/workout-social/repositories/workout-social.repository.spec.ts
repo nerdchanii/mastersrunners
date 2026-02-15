@@ -141,6 +141,33 @@ describe("WorkoutSocialRepository", () => {
         expect.objectContaining({ take: 5 }),
       );
     });
+
+    it("should exclude likers from specified users", async () => {
+      const workoutId = "workout-456";
+      const excludeUserIds = ["blocked-1", "blocked-2"];
+      mockPrisma.workoutLike.findMany.mockResolvedValue([]);
+
+      await repository.getLikers(workoutId, 10, excludeUserIds);
+
+      expect(mockPrisma.workoutLike.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { workoutId, userId: { notIn: excludeUserIds } },
+        }),
+      );
+    });
+
+    it("should not add userId filter when excludeUserIds is empty", async () => {
+      const workoutId = "workout-456";
+      mockPrisma.workoutLike.findMany.mockResolvedValue([]);
+
+      await repository.getLikers(workoutId, 10, []);
+
+      expect(mockPrisma.workoutLike.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { workoutId },
+        }),
+      );
+    });
   });
 
   describe("addComment", () => {
@@ -248,6 +275,32 @@ describe("WorkoutSocialRepository", () => {
           where: expect.objectContaining({ deletedAt: null }),
         }),
       );
+    });
+
+    it("should exclude comments from specified users", async () => {
+      const workoutId = "workout-456";
+      const excludeUserIds = ["blocked-1", "blocked-2"];
+      mockPrisma.workoutComment.findMany.mockResolvedValue([]);
+
+      await repository.getComments(workoutId, undefined, 20, excludeUserIds);
+
+      expect(mockPrisma.workoutComment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: { notIn: excludeUserIds },
+          }),
+        }),
+      );
+    });
+
+    it("should not add userId filter when excludeUserIds is empty", async () => {
+      const workoutId = "workout-456";
+      mockPrisma.workoutComment.findMany.mockResolvedValue([]);
+
+      await repository.getComments(workoutId, undefined, 20, []);
+
+      const callArgs = mockPrisma.workoutComment.findMany.mock.calls[0][0];
+      expect(callArgs.where.userId).toBeUndefined();
     });
   });
 

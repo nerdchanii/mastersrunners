@@ -136,6 +136,50 @@ describe("BlockRepository", () => {
     });
   });
 
+  describe("getBlockedUserIds", () => {
+    it("should return IDs of users blocked by and blocking the given user", async () => {
+      const userId = "user-me";
+      const mockBlocks = [
+        { blockerId: "user-me", blockedId: "user-a" },
+        { blockerId: "user-me", blockedId: "user-b" },
+        { blockerId: "user-c", blockedId: "user-me" },
+      ];
+      mockDatabaseService.prisma.block.findMany.mockResolvedValue(mockBlocks);
+
+      const result = await repository.getBlockedUserIds(userId);
+
+      expect(mockDatabaseService.prisma.block.findMany).toHaveBeenCalledWith({
+        where: {
+          OR: [{ blockerId: userId }, { blockedId: userId }],
+        },
+        select: { blockerId: true, blockedId: true },
+      });
+      expect(result).toEqual(expect.arrayContaining(["user-a", "user-b", "user-c"]));
+      expect(result).toHaveLength(3);
+    });
+
+    it("should deduplicate when same user appears in both directions", async () => {
+      const userId = "user-me";
+      const mockBlocks = [
+        { blockerId: "user-me", blockedId: "user-a" },
+        { blockerId: "user-a", blockedId: "user-me" },
+      ];
+      mockDatabaseService.prisma.block.findMany.mockResolvedValue(mockBlocks);
+
+      const result = await repository.getBlockedUserIds(userId);
+
+      expect(result).toEqual(["user-a"]);
+    });
+
+    it("should return empty array when no blocks exist", async () => {
+      mockDatabaseService.prisma.block.findMany.mockResolvedValue([]);
+
+      const result = await repository.getBlockedUserIds("user-me");
+
+      expect(result).toEqual([]);
+    });
+  });
+
   describe("isBlockedBy", () => {
     it("should return true when blockerId has blocked blockedId", async () => {
       const blockerId = "user-blocker";

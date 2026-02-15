@@ -43,9 +43,12 @@ export class PostSocialRepository {
     });
   }
 
-  async getLikers(postId: string, limit = 10) {
+  async getLikers(postId: string, limit = 10, excludeUserIds: string[] = []) {
     const likes = await this.db.prisma.postLike.findMany({
-      where: { postId },
+      where: {
+        postId,
+        ...(excludeUserIds.length > 0 && { userId: { notIn: excludeUserIds } }),
+      },
       take: limit,
       orderBy: { createdAt: "desc" },
       select: {
@@ -90,12 +93,14 @@ export class PostSocialRepository {
     });
   }
 
-  async getComments(postId: string, cursor?: string, limit = 20) {
+  async getComments(postId: string, cursor?: string, limit = 20, excludeUserIds: string[] = []) {
+    const userFilter = excludeUserIds.length > 0 ? { userId: { notIn: excludeUserIds } } : {};
     const topLevelComments = await this.db.prisma.postComment.findMany({
       where: {
         postId,
         parentId: null,
         deletedAt: null,
+        ...userFilter,
       },
       take: limit,
       ...(cursor && { skip: 1, cursor: { id: cursor } }),
@@ -109,7 +114,7 @@ export class PostSocialRepository {
           },
         },
         replies: {
-          where: { deletedAt: null },
+          where: { deletedAt: null, ...userFilter },
           orderBy: { createdAt: "asc" },
           include: {
             user: {

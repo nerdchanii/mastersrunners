@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException } from "@nestjs/common";
 import { PostSocialRepository } from "./repositories/post-social.repository.js";
+import { BlockRepository } from "../block/repositories/block.repository.js";
 
 @Injectable()
 export class PostSocialService {
-  constructor(private readonly postSocialRepo: PostSocialRepository) {}
+  constructor(
+    private readonly postSocialRepo: PostSocialRepository,
+    private readonly blockRepo: BlockRepository,
+  ) {}
 
   async likePost(userId: string, postId: string) {
     try {
@@ -59,7 +63,10 @@ export class PostSocialService {
     return this.postSocialRepo.deleteComment(commentId);
   }
 
-  async getComments(postId: string, cursor?: string, limit?: number) {
-    return this.postSocialRepo.getComments(postId, cursor, limit);
+  async getComments(postId: string, currentUserId?: string, cursor?: string, limit?: number) {
+    const excludeUserIds = currentUserId
+      ? await this.blockRepo.getBlockedUserIds(currentUserId)
+      : [];
+    return this.postSocialRepo.getComments(postId, cursor, limit, excludeUserIds);
   }
 }

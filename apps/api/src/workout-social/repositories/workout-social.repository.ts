@@ -36,9 +36,12 @@ export class WorkoutSocialRepository {
     });
   }
 
-  async getLikers(workoutId: string, limit = 10) {
+  async getLikers(workoutId: string, limit = 10, excludeUserIds: string[] = []) {
     return this.db.prisma.workoutLike.findMany({
-      where: { workoutId },
+      where: {
+        workoutId,
+        ...(excludeUserIds.length > 0 && { userId: { notIn: excludeUserIds } }),
+      },
       select: {
         user: {
           select: {
@@ -67,12 +70,13 @@ export class WorkoutSocialRepository {
     });
   }
 
-  async getComments(workoutId: string, cursor?: string, limit = 20) {
+  async getComments(workoutId: string, cursor?: string, limit = 20, excludeUserIds: string[] = []) {
     return this.db.prisma.workoutComment.findMany({
       where: {
         workoutId,
         deletedAt: null,
         ...(cursor ? { id: { lt: cursor } } : {}),
+        ...(excludeUserIds.length > 0 && { userId: { notIn: excludeUserIds } }),
       },
       select: {
         id: true,
