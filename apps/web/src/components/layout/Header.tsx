@@ -14,6 +14,7 @@ export default function Header() {
 
   const navLinks = [
     { href: "/feed", label: "피드", auth: false },
+    { href: "/crews", label: "크루", auth: true },
     { href: "/workouts", label: "내 기록", auth: true },
     { href: "/workouts/new", label: "기록 추가", auth: true },
     { href: "/profile", label: "프로필", auth: true },
