@@ -56,8 +56,17 @@ export class FeedService {
     });
 
     const hasMore = workouts.length > limit;
-    const items = hasMore ? workouts.slice(0, limit) : workouts;
-    const nextCursor = hasMore ? items[items.length - 1].id : null;
+    const rawItems = hasMore ? workouts.slice(0, limit) : workouts;
+    const nextCursor = hasMore ? rawItems[rawItems.length - 1].id : null;
+
+    // Map _count fields to frontend contract
+    const items = rawItems.map((workout) => ({
+      ...workout,
+      _count: {
+        likes: workout._count.workoutLikes,
+        comments: workout._count.workoutComments,
+      },
+    }));
 
     return { items, nextCursor, hasMore };
   }

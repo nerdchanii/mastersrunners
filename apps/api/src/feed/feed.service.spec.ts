@@ -108,7 +108,10 @@ describe("FeedService", () => {
   describe("getWorkoutFeed", () => {
     it("should fetch following IDs and return workout feed with pagination", async () => {
       mockFeedRepo.getFollowingIds.mockResolvedValue(["user1", "user2"]);
-      const workouts = Array.from({ length: 11 }, (_, i) => ({ id: `w${i}` }));
+      const workouts = Array.from({ length: 11 }, (_, i) => ({
+        id: `w${i}`,
+        _count: { workoutLikes: 5, workoutComments: 3 },
+      }));
       mockFeedRepo.getWorkoutFeed.mockResolvedValue(workouts);
 
       const result = await service.getWorkoutFeed("me", undefined, 10);
@@ -124,11 +127,12 @@ describe("FeedService", () => {
       expect(result.hasMore).toBe(true);
       expect(result.items).toHaveLength(10);
       expect(result.nextCursor).toBe("w9");
+      expect(result.items[0]._count).toEqual({ likes: 5, comments: 3 });
     });
 
     it("should set hasMore=false when no more workouts", async () => {
       mockFeedRepo.getFollowingIds.mockResolvedValue([]);
-      const workouts = [{ id: "w1" }];
+      const workouts = [{ id: "w1", _count: { workoutLikes: 1, workoutComments: 2 } }];
       mockFeedRepo.getWorkoutFeed.mockResolvedValue(workouts);
 
       const result = await service.getWorkoutFeed("me", undefined, 10);
@@ -136,6 +140,7 @@ describe("FeedService", () => {
       expect(result.hasMore).toBe(false);
       expect(result.items).toHaveLength(1);
       expect(result.nextCursor).toBeNull();
+      expect(result.items[0]._count).toEqual({ likes: 1, comments: 2 });
     });
 
     it("should return empty result when no workouts", async () => {

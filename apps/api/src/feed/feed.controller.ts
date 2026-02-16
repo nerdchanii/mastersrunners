@@ -1,13 +1,17 @@
 import { Controller, Get, Query, Req } from "@nestjs/common";
+import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { FeedService } from "./feed.service.js";
 
+@ApiTags("Feed")
 @SkipThrottle()
 @Controller("feed")
 export class FeedController {
   constructor(private readonly feedService: FeedService) {}
 
+  @ApiOperation({ summary: '게시글 피드 조회' })
+  @ApiResponse({ status: 200, description: '성공' })
   @Get("posts")
   getPostFeed(
     @Req() req: Request,
@@ -22,6 +26,8 @@ export class FeedController {
     return this.feedService.getPostFeed(userId, cursor, parsedLimit);
   }
 
+  @ApiOperation({ summary: '워크아웃 피드 조회' })
+  @ApiResponse({ status: 200, description: '성공' })
   @Get("workouts")
   getWorkoutFeed(
     @Req() req: Request,
