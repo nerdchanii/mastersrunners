@@ -20,6 +20,8 @@ const mockEventRegistrationRepository = {
   cancel: jest.fn(),
   findRegistration: jest.fn(),
   countRegistered: jest.fn(),
+  updateResult: jest.fn(),
+  findByEventWithResults: jest.fn(),
 };
 
 describe("EventsService", () => {
@@ -309,6 +311,83 @@ describe("EventsService", () => {
       mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
 
       await expect(service.cancel("event-123", "user-123")).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe("submitResult", () => {
+    it("should submit result for registered participant", async () => {
+      const eventId = "event-123";
+      const userId = "user-123";
+      const resultData = { resultTime: 12600, resultRank: 42, status: "COMPLETED" as const };
+      const mockRegistration = { id: "reg-1", eventId, userId, status: "REGISTERED" };
+      const mockUpdated = { ...mockRegistration, ...resultData };
+
+      mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
+      mockEventRegistrationRepository.updateResult.mockResolvedValue(mockUpdated);
+
+      const result = await service.submitResult(eventId, userId, resultData);
+
+      expect(mockEventRegistrationRepository.findRegistration).toHaveBeenCalledWith(eventId, userId);
+      expect(mockEventRegistrationRepository.updateResult).toHaveBeenCalledWith(eventId, userId, {
+        resultTime: 12600,
+        resultRank: 42,
+        bibNumber: undefined,
+        status: "COMPLETED",
+      });
+      expect(result).toEqual(mockUpdated);
+    });
+
+    it("should throw NotFoundException if not registered", async () => {
+      mockEventRegistrationRepository.findRegistration.mockResolvedValue(null);
+
+      await expect(
+        service.submitResult("event-123", "user-123", { resultTime: 12600, status: "COMPLETED" })
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe("getResults", () => {
+    it("should return results sorted by time", async () => {
+      const eventId = "event-123";
+      const mockEvent = { id: eventId };
+      const mockResults = [
+        { id: "reg-1", resultTime: 10800, resultRank: 1 },
+        { id: "reg-2", resultTime: 12600, resultRank: 2 },
+      ];
+
+      mockEventRepository.findById.mockResolvedValue(mockEvent);
+      mockEventRegistrationRepository.findByEventWithResults.mockResolvedValue(mockResults);
+
+      const result = await service.getResults(eventId, "resultTime");
+
+      expect(mockEventRegistrationRepository.findByEventWithResults).toHaveBeenCalledWith(eventId, "resultTime");
+      expect(result).toEqual(mockResults);
+    });
+
+    it("should throw NotFoundException if event not found", async () => {
+      mockEventRepository.findById.mockResolvedValue(null);
+
+      await expect(service.getResults("non-existent")).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe("getMyResult", () => {
+    it("should return my registration with result", async () => {
+      const eventId = "event-123";
+      const userId = "user-123";
+      const mockRegistration = { id: "reg-1", eventId, userId, resultTime: 12600, status: "COMPLETED" };
+
+      mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
+
+      const result = await service.getMyResult(eventId, userId);
+
+      expect(result).toEqual(mockRegistration);
+    });
+
+    it("should throw NotFoundException if not registered", async () => {
+      mockEventRegistrationRepository.findRegistration.mockResolvedValue(null);
+
+      await expect(service.getMyResult("event-123", "user-123")).rejects.toThrow(NotFoundException);
     });
   });
 });
