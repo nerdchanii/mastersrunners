@@ -15,11 +15,12 @@
 | [user-profile.md](user-profile.md) | 유저 프로필 & 알림 | Confirmed |
 | [external-integration.md](external-integration.md) | 외부 플랫폼 연동 | Confirmed |
 | [business-rules.md](business-rules.md) | 검증, 삭제, 권한 규칙 | Confirmed |
+| [dm.md](dm.md) | DM (1:1 메시지) 시스템 | Draft |
 | [comparison-dashboard.md](comparison-dashboard.md) | 비교 대시보드 | TBD |
 
 ## 아키텍처 개요
 
-- **Frontend**: Next.js 15 Static Export → Cloudflare Pages
+- **Frontend**: Vite + React Router v7 (SPA) → Cloudflare Pages
 - **API**: NestJS 11 (Self-hosted Docker) — 모든 비즈니스 로직, OAuth
 - **DB**: PostgreSQL (Self-hosted Docker)
 - **파일 저장**: Cloudflare R2 (Presigned URL)
