@@ -41,7 +41,7 @@ export default function EventsPage() {
       if (tab === "my") {
         path = "/events/my?limit=12";
       } else {
-        path = `/events?limit=12&period=${tab}`;
+        path = `/events?limit=12&upcoming=${tab === "upcoming"}`;
       }
 
       if (cursor) {

@@ -1,9 +1,9 @@
 "use client";
 
 interface EventResult {
-  rank: number | null;
-  bib: string | null;
-  time: number | null;
+  resultRank: number | null;
+  bibNumber: string | null;
+  resultTime: number | null;
   status: string;
   user: {
     id: string;
@@ -29,20 +29,18 @@ function formatTime(seconds: number): string {
 
 function statusLabel(status: string): string {
   switch (status) {
-    case "FINISHED": return "완주";
+    case "COMPLETED": return "완주";
     case "DNF": return "DNF";
     case "DNS": return "DNS";
-    case "DSQ": return "실격";
     default: return status;
   }
 }
 
 function statusColor(status: string): string {
   switch (status) {
-    case "FINISHED": return "text-green-700 bg-green-50";
+    case "COMPLETED": return "text-green-700 bg-green-50";
     case "DNF": return "text-red-700 bg-red-50";
     case "DNS": return "text-gray-700 bg-gray-100";
-    case "DSQ": return "text-orange-700 bg-orange-50";
     default: return "text-gray-700 bg-gray-100";
   }
 }
@@ -82,16 +80,16 @@ export default function EventResultsTable({ results, isLoading }: EventResultsTa
           {results.map((result, index) => (
             <tr key={result.user.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
               <td className="px-4 py-3 whitespace-nowrap text-sm">
-                {result.rank != null ? (
-                  <span className={`font-semibold ${result.rank <= 3 ? "text-indigo-600" : "text-gray-900"}`}>
-                    {result.rank}
+                {result.resultRank != null ? (
+                  <span className={`font-semibold ${result.resultRank <= 3 ? "text-indigo-600" : "text-gray-900"}`}>
+                    {result.resultRank}
                   </span>
                 ) : (
                   <span className="text-gray-400">-</span>
                 )}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                {result.bib || "-"}
+                {result.bibNumber || "-"}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                 <div className="flex items-center gap-2">
@@ -110,7 +108,7 @@ export default function EventResultsTable({ results, isLoading }: EventResultsTa
                 </div>
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-900">
-                {result.time != null ? formatTime(result.time) : "-"}
+                {result.resultTime != null ? formatTime(result.resultTime) : "-"}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusColor(result.status)}`}>

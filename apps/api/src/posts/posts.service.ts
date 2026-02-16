@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException } from "@nestjs/common";
+import { Injectable, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { PostRepository } from "./repositories/post.repository.js";
 import { BlockRepository } from "../block/repositories/block.repository.js";
 import type { CreatePostDto } from "./dto/create-post.dto.js";
@@ -54,10 +54,10 @@ export class PostsService {
   async softDelete(id: string, userId: string) {
     const post = await this.postRepo.findById(id);
     if (!post) {
-      throw new Error("게시글을 찾을 수 없습니다.");
+      throw new NotFoundException("게시글을 찾을 수 없습니다.");
     }
     if (post.userId !== userId) {
-      throw new Error("본인의 게시글만 삭제할 수 있습니다.");
+      throw new ForbiddenException("본인의 게시글만 삭제할 수 있습니다.");
     }
     return this.postRepo.softDelete(id);
   }

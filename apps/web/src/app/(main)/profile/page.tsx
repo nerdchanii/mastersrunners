@@ -113,19 +113,26 @@ export default function ProfilePage() {
     const fetchTabData = async () => {
       try {
         if (activeTab === "posts") {
-          // Fetch user's posts
-          const postsData = await api.fetch<{ posts: Post[] }>("/posts");
-          setPosts(postsData.posts || []);
+          const postsData = await api.fetch<Post[]>("/posts");
+          setPosts(Array.isArray(postsData) ? postsData : []);
         } else if (activeTab === "followers") {
-          const followersData = await api.fetch<{ followers: FollowUser[] }>(
+          const followersData = await api.fetch<Array<{ follower: FollowUser }>>(
             "/follow/followers"
           );
-          setFollowers(followersData.followers || []);
+          setFollowers(
+            Array.isArray(followersData)
+              ? followersData.map((f) => f.follower)
+              : []
+          );
         } else if (activeTab === "following") {
-          const followingData = await api.fetch<{ following: FollowUser[] }>(
+          const followingData = await api.fetch<Array<{ following: FollowUser }>>(
             "/follow/following"
           );
-          setFollowing(followingData.following || []);
+          setFollowing(
+            Array.isArray(followingData)
+              ? followingData.map((f) => f.following)
+              : []
+          );
         }
       } catch (err) {
         console.error("Failed to fetch tab data:", err);

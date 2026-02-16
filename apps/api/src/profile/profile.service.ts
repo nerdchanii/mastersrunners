@@ -2,6 +2,7 @@ import { Injectable, ForbiddenException, NotFoundException } from "@nestjs/commo
 import { UserRepository } from "../auth/repositories/user.repository.js";
 import { WorkoutRepository } from "../workouts/repositories/workout.repository.js";
 import { BlockRepository } from "../block/repositories/block.repository.js";
+import { FollowRepository } from "../follow/repositories/follow.repository.js";
 
 @Injectable()
 export class ProfileService {
@@ -9,6 +10,7 @@ export class ProfileService {
     private readonly userRepo: UserRepository,
     private readonly workoutRepo: WorkoutRepository,
     private readonly blockRepo: BlockRepository,
+    private readonly followRepo: FollowRepository,
   ) {}
 
   async getProfile(userId: string, currentUserId?: string) {
@@ -32,9 +34,23 @@ export class ProfileService {
     const totalDuration = stats._sum.duration ?? 0;
     const averagePace = totalDistance > 0 ? totalDuration / (totalDistance / 1000) : 0;
 
+    const [followersCount, followingCount] = await Promise.all([
+      this.followRepo.countFollowers(userId),
+      this.followRepo.countFollowing(userId),
+    ]);
+
+    let isFollowing: boolean | undefined;
+    if (currentUserId && currentUserId !== userId) {
+      const follow = await this.followRepo.findFollow(currentUserId, userId);
+      isFollowing = follow?.status === "ACCEPTED";
+    }
+
     return {
       user,
       stats: { totalWorkouts, totalDistance, totalDuration, averagePace },
+      followersCount,
+      followingCount,
+      isFollowing,
     };
   }
 }

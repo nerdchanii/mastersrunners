@@ -26,18 +26,18 @@ interface EventDetail {
 }
 
 interface EventResult {
-  rank: number | null;
-  bib: string | null;
-  time: number | null;
+  resultRank: number | null;
+  bibNumber: string | null;
+  resultTime: number | null;
   status: string;
   user: EventUser;
   workoutId?: string | null;
 }
 
 interface MyResult {
-  rank: number | null;
-  bib: string | null;
-  time: number | null;
+  resultRank: number | null;
+  bibNumber: string | null;
+  resultTime: number | null;
   status: string;
   workoutId: string | null;
 }
@@ -64,7 +64,7 @@ export default function EventDetailClient() {
   const [resultTime, setResultTime] = useState("");
   const [resultRank, setResultRank] = useState("");
   const [resultBib, setResultBib] = useState("");
-  const [resultStatus, setResultStatus] = useState("FINISHED");
+  const [resultStatus, setResultStatus] = useState("COMPLETED");
 
   // Workout link state
   const [showWorkoutLink, setShowWorkoutLink] = useState(false);
@@ -159,10 +159,10 @@ export default function EventDetailClient() {
         let seconds = 0;
         if (parts.length === 3) seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
         else if (parts.length === 2) seconds = parts[0] * 60 + parts[1];
-        body.time = seconds;
+        body.resultTime = seconds;
       }
-      if (resultRank) body.rank = Number(resultRank);
-      if (resultBib) body.bib = resultBib;
+      if (resultRank) body.resultRank = Number(resultRank);
+      if (resultBib) body.bibNumber = resultBib;
 
       await api.fetch(`/events/${eventId}/results`, {
         method: "PUT",
@@ -382,20 +382,20 @@ export default function EventDetailClient() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                     <div>
                       <span className="text-gray-500">순위</span>
-                      <p className="font-semibold text-gray-900">{myResult.rank ?? "-"}</p>
+                      <p className="font-semibold text-gray-900">{myResult.resultRank ?? "-"}</p>
                     </div>
                     <div>
                       <span className="text-gray-500">배번</span>
-                      <p className="font-semibold text-gray-900">{myResult.bib || "-"}</p>
+                      <p className="font-semibold text-gray-900">{myResult.bibNumber || "-"}</p>
                     </div>
                     <div>
                       <span className="text-gray-500">기록</span>
                       <p className="font-semibold text-gray-900">
-                        {myResult.time != null
+                        {myResult.resultTime != null
                           ? (() => {
-                              const h = Math.floor(myResult.time / 3600);
-                              const m = Math.floor((myResult.time % 3600) / 60);
-                              const s = myResult.time % 60;
+                              const h = Math.floor(myResult.resultTime / 3600);
+                              const m = Math.floor((myResult.resultTime % 3600) / 60);
+                              const s = myResult.resultTime % 60;
                               return h > 0
                                 ? `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`
                                 : `${m}:${s.toString().padStart(2, "0")}`;
@@ -406,7 +406,7 @@ export default function EventDetailClient() {
                     <div>
                       <span className="text-gray-500">상태</span>
                       <p className="font-semibold text-gray-900">
-                        {myResult.status === "FINISHED" ? "완주" : myResult.status}
+                        {myResult.status === "COMPLETED" ? "완주" : myResult.status}
                       </p>
                     </div>
                   </div>
@@ -503,7 +503,7 @@ export default function EventDetailClient() {
                             onChange={(e) => setResultStatus(e.target.value)}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
                           >
-                            <option value="FINISHED">완주</option>
+                            <option value="COMPLETED">완주</option>
                             <option value="DNF">DNF</option>
                             <option value="DNS">DNS</option>
                             <option value="DSQ">실격</option>

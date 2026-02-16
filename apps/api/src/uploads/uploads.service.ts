@@ -104,22 +104,10 @@ export class UploadsService {
         parsedData = await this.gpxParser.parse(buffer.toString("utf-8"));
       }
     } catch (parseError) {
-      // Parse failed — record WorkoutFile with FAILED status
+      // Parse failed — return error without creating orphaned WorkoutFile
+      // (WorkoutFile.workoutId is required and non-nullable, so we can't create one without a valid workout)
       const errorMessage = parseError instanceof Error ? parseError.message : "Unknown parse error";
-      const workoutFile = await this.db.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        return tx.workoutFile.create({
-          data: {
-            workoutId: "", // will be set below
-            fileType: input.fileType,
-            fileUrl: `${this.publicUrl}/${input.fileKey}`,
-            originalFileName: input.originalFileName,
-            fileSize: size,
-            processStatus: "FAILED",
-            processError: errorMessage,
-          },
-        });
-      });
-      return { workout: null, workoutFile, error: errorMessage };
+      return { workout: null, workoutFile: null, error: errorMessage };
     }
 
     // 3. Create Workout + WorkoutFile + WorkoutRoute in a transaction

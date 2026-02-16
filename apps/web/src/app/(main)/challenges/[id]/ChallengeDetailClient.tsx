@@ -162,7 +162,7 @@ export default function ChallengeDetailClient() {
     try {
       await api.fetch(`/challenges/${challengeId}/progress`, {
         method: "PATCH",
-        body: JSON.stringify({ value: Number(progressValue) }),
+        body: JSON.stringify({ currentValue: Number(progressValue) }),
       });
       setShowProgressForm(false);
       setProgressValue("");
