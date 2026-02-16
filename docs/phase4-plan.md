@@ -15,7 +15,7 @@ Phase 4는 실사용 가능한 프로덕트를 목표로 한다.
 
 Phase 3 → 4 사이에 발견된 API 스키마 계약 위반 문제. Phase 4 진입 전 반드시 해결.
 
-### 상태: 🔧 진행중
+### 상태: ✅ 완료
 
 ### API 스키마 계약 수정 (7건)
 
@@ -41,10 +41,10 @@ Phase 3 → 4 사이에 발견된 API 스키마 계약 위반 문제. Phase 4 �
 - Swagger UI: `http://localhost:3000/api-docs`
 
 ### 완료 기준
-- [ ] 7건 API 계약 위반 모두 수정
-- [ ] Swagger UI에서 전체 API 확인 가능
-- [ ] `pnpm --filter api test` 전체 통과
-- [ ] 프론트엔드에서 challenge/crew/feed/workout 페이지 에러 없음
+- [x] 7건 API 계약 위반 모두 수정
+- [x] Swagger UI에서 전체 API 확인 가능
+- [x] `pnpm --filter api test` 전체 통과 (42 suites, 565 tests)
+- [x] 프론트엔드에서 challenge/crew/feed/workout 페이지 에러 없음
 
 ---
 
