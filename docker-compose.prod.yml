@@ -1,0 +1,60 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: masters-runners-api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://masters:masters@db:5432/masters_runners
+      - API_PORT=4000
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ACCESS_TTL=${JWT_ACCESS_TTL:-900}
+      - JWT_REFRESH_TTL=${JWT_REFRESH_TTL:-604800}
+      - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID:-}
+      - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET:-}
+      - KAKAO_CALLBACK_URL=${KAKAO_CALLBACK_URL:-}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL:-}
+      - NAVER_CLIENT_ID=${NAVER_CLIENT_ID:-}
+      - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET:-}
+      - NAVER_CALLBACK_URL=${NAVER_CALLBACK_URL:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  db:
+    image: postgres:17-alpine
+    container_name: masters-runners-db-prod
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=masters
+      - POSTGRES_PASSWORD=masters
+      - POSTGRES_DB=masters_runners
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U masters -d masters_runners"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: masters-runners-redis-prod
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:

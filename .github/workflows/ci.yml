@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: masters
+          POSTGRES_PASSWORD: masters
+          POSTGRES_DB: masters_runners_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm -r run build
+
+      - name: Run API tests
+        run: pnpm --filter @masters/api test
+        env:
+          DATABASE_URL: postgresql://masters:masters@localhost:5432/masters_runners_test
+          JWT_SECRET: test-secret
+          JWT_ACCESS_TTL: 900
+          JWT_REFRESH_TTL: 604800
+          REDIS_URL: redis://localhost:6379
+
+      - name: Build web
+        run: pnpm --filter @masters/web build
+        env:
+          VITE_API_URL: http://localhost:4000
+
+  build-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          tags: masters-runners-api:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
