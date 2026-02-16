@@ -91,6 +91,18 @@ describe("ChallengeRepository", () => {
         include: {
           participants: { include: { user: true } },
           teams: true,
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              profileImage: true,
+            },
+          },
+          _count: {
+            select: {
+              participants: true,
+            },
+          },
         },
       });
       expect(result).toEqual(mockChallenge);
@@ -120,10 +132,17 @@ describe("ChallengeRepository", () => {
         where: { isPublic: true },
         cursor: { id: "challenge-10" },
         skip: 1,
-        take: 20,
+        take: 21,
         orderBy: { createdAt: "desc" },
+        include: {
+          _count: {
+            select: {
+              participants: true,
+            },
+          },
+        },
       });
-      expect(result).toEqual(mockChallenges);
+      expect(result).toMatchObject({ data: mockChallenges, nextCursor: null, hasMore: false });
     });
 
     it("should find challenges by crewId", async () => {
@@ -135,10 +154,17 @@ describe("ChallengeRepository", () => {
 
       expect(mockPrisma.challenge.findMany).toHaveBeenCalledWith({
         where: { crewId: "crew-123" },
-        take: 10,
+        take: 11,
         orderBy: { createdAt: "desc" },
+        include: {
+          _count: {
+            select: {
+              participants: true,
+            },
+          },
+        },
       });
-      expect(result).toEqual(mockChallenges);
+      expect(result).toMatchObject({ data: mockChallenges, nextCursor: null, hasMore: false });
     });
 
     it("should find all challenges without filters", async () => {
@@ -154,8 +180,16 @@ describe("ChallengeRepository", () => {
       expect(mockPrisma.challenge.findMany).toHaveBeenCalledWith({
         where: {},
         orderBy: { createdAt: "desc" },
+        take: 21,
+        include: {
+          _count: {
+            select: {
+              participants: true,
+            },
+          },
+        },
       });
-      expect(result).toEqual(mockChallenges);
+      expect(result).toMatchObject({ data: mockChallenges, nextCursor: null, hasMore: false });
     });
   });
 
@@ -172,9 +206,25 @@ describe("ChallengeRepository", () => {
 
       expect(mockPrisma.challenge.findMany).toHaveBeenCalledWith({
         where: { participants: { some: { userId } } },
+        take: 21,
         orderBy: { createdAt: "desc" },
+        include: {
+          participants: {
+            where: { userId },
+            select: { currentValue: true },
+          },
+          _count: {
+            select: {
+              participants: true,
+            },
+          },
+        },
       });
-      expect(result).toEqual(mockChallenges);
+      expect(result).toEqual({
+        data: mockChallenges,
+        nextCursor: null,
+        hasMore: false,
+      });
     });
   });
 

@@ -123,13 +123,36 @@ describe("ChallengesService", () => {
   describe("findOne", () => {
     it("should return challenge by id", async () => {
       const challengeId = "challenge-123";
-      const mockChallenge = { id: challengeId, title: "100km Challenge" };
+      const mockChallenge = {
+        id: challengeId,
+        title: "100km Challenge",
+        description: "Test",
+        type: "DISTANCE",
+        targetValue: 100000,
+        targetUnit: "KM",
+        startDate: new Date("2026-03-01"),
+        endDate: new Date("2026-03-31"),
+        isPublic: true,
+        creatorId: "user-123",
+        creator: { id: "user-123", name: "Test User", profileImage: null },
+        _count: { participants: 5 },
+        participants: [],
+      };
       mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
 
       const result = await service.findOne(challengeId);
 
       expect(mockChallengeRepository.findById).toHaveBeenCalledWith(challengeId);
-      expect(result).toEqual(mockChallenge);
+      expect(result).toMatchObject({
+        id: challengeId,
+        name: "100km Challenge",
+        goalType: "DISTANCE",
+        goalValue: 100000,
+        isPublic: true,
+        createdBy: "user-123",
+        isJoined: false,
+        myProgress: null,
+      });
     });
 
     it("should throw NotFoundException if challenge not found", async () => {
@@ -142,26 +165,73 @@ describe("ChallengesService", () => {
   describe("findAll", () => {
     it("should delegate to challengeRepo.findAll with options", async () => {
       const options = { isPublic: true, cursor: "challenge-10", limit: 20 };
-      const mockChallenges = [{ id: "challenge-11" }, { id: "challenge-12" }];
-      mockChallengeRepository.findAll.mockResolvedValue(mockChallenges);
+      const mockChallenges = [
+        {
+          id: "challenge-11",
+          title: "Challenge 11",
+          description: null,
+          type: "DISTANCE",
+          targetValue: 100000,
+          targetUnit: "KM",
+          startDate: new Date("2026-03-01"),
+          endDate: new Date("2026-03-31"),
+          isPublic: true,
+          _count: { participants: 5 },
+        },
+      ];
+      mockChallengeRepository.findAll.mockResolvedValue({ data: mockChallenges, nextCursor: null, hasMore: false });
 
       const result = await service.findAll(options);
 
       expect(mockChallengeRepository.findAll).toHaveBeenCalledWith(options);
-      expect(result).toEqual(mockChallenges);
+      expect(result).toMatchObject({
+        items: expect.arrayContaining([
+          expect.objectContaining({ id: "challenge-11", name: "Challenge 11", goalType: "DISTANCE" }),
+        ]),
+        nextCursor: null,
+        hasMore: false,
+      });
     });
   });
 
   describe("findMyChallenges", () => {
     it("should delegate to challengeRepo.findByUser", async () => {
       const userId = "user-123";
-      const mockChallenges = [{ id: "challenge-1" }, { id: "challenge-2" }];
-      mockChallengeRepository.findByUser.mockResolvedValue(mockChallenges);
+      const mockChallenges = [
+        {
+          id: "challenge-1",
+          title: "Challenge 1",
+          description: null,
+          type: "DISTANCE",
+          targetValue: 100000,
+          targetUnit: "KM",
+          startDate: new Date("2026-03-01"),
+          endDate: new Date("2026-03-31"),
+          isPublic: true,
+          _count: { participants: 5 },
+          participants: [{ currentValue: 50000 }],
+        },
+      ];
+      mockChallengeRepository.findByUser.mockResolvedValue({
+        data: mockChallenges,
+        nextCursor: null,
+        hasMore: false,
+      });
 
       const result = await service.findMyChallenges(userId);
 
-      expect(mockChallengeRepository.findByUser).toHaveBeenCalledWith(userId);
-      expect(result).toEqual(mockChallenges);
+      expect(mockChallengeRepository.findByUser).toHaveBeenCalledWith(userId, undefined);
+      expect(result).toMatchObject({
+        items: expect.arrayContaining([
+          expect.objectContaining({
+            id: "challenge-1",
+            name: "Challenge 1",
+            myProgress: 50000,
+          }),
+        ]),
+        nextCursor: null,
+        hasMore: false,
+      });
     });
   });
 
@@ -366,8 +436,8 @@ describe("ChallengesService", () => {
       const challengeId = "challenge-123";
       const mockChallenge = { id: challengeId };
       const mockLeaderboard = [
-        { id: "p1", userId: "user-1", currentValue: 100000 },
-        { id: "p2", userId: "user-2", currentValue: 80000 },
+        { id: "p1", userId: "user-1", currentValue: 100000, user: { id: "user-1", name: "User 1", profileImage: null } },
+        { id: "p2", userId: "user-2", currentValue: 80000, user: { id: "user-2", name: "User 2", profileImage: null } },
       ];
       mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
       mockChallengeParticipantRepository.findLeaderboard.mockResolvedValue(mockLeaderboard);
@@ -376,7 +446,10 @@ describe("ChallengesService", () => {
 
       expect(mockChallengeRepository.findById).toHaveBeenCalledWith(challengeId);
       expect(mockChallengeParticipantRepository.findLeaderboard).toHaveBeenCalledWith(challengeId, undefined);
-      expect(result).toEqual(mockLeaderboard);
+      expect(result).toEqual([
+        { rank: 1, progress: 100000, user: { id: "user-1", name: "User 1", profileImage: null } },
+        { rank: 2, progress: 80000, user: { id: "user-2", name: "User 2", profileImage: null } },
+      ]);
     });
 
     it("should throw NotFoundException if challenge not found", async () => {

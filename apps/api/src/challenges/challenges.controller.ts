@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Query } from "@nestjs/common";
+import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { ChallengesService } from "./challenges.service.js";
@@ -6,17 +7,22 @@ import { CreateChallengeDto } from "./dto/create-challenge.dto.js";
 import { UpdateChallengeDto } from "./dto/update-challenge.dto.js";
 import { UpdateProgressDto } from "./dto/update-progress.dto.js";
 
+@ApiTags("Challenges")
 @SkipThrottle()
 @Controller("challenges")
 export class ChallengesController {
   constructor(private readonly challengesService: ChallengesService) {}
 
+  @ApiOperation({ summary: '챌린지 생성' })
+  @ApiResponse({ status: 201, description: '생성 성공' })
   @Post()
   create(@Req() req: Request, @Body() dto: CreateChallengeDto) {
     const { userId } = req.user as { userId: string };
     return this.challengesService.create(userId, dto);
   }
 
+  @ApiOperation({ summary: '챌린지 목록 조회' })
+  @ApiResponse({ status: 200, description: '성공' })
   @Get()
   findAll(
     @Query("isPublic") isPublic?: string,
@@ -33,14 +39,24 @@ export class ChallengesController {
   }
 
   @Get("my")
-  findMyChallenges(@Req() req: Request) {
+  findMyChallenges(
+    @Req() req: Request,
+    @Query("cursor") cursor?: string,
+    @Query("limit") limit?: string,
+  ) {
     const { userId } = req.user as { userId: string };
-    return this.challengesService.findMyChallenges(userId);
+    return this.challengesService.findMyChallenges(userId, {
+      cursor,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 
+  @ApiOperation({ summary: '챌린지 상세 조회' })
+  @ApiResponse({ status: 200, description: '성공' })
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.challengesService.findOne(id);
+  findOne(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as { userId: string } | undefined)?.userId;
+    return this.challengesService.findOne(id, userId);
   }
 
   @Patch(":id")
@@ -73,6 +89,8 @@ export class ChallengesController {
     return this.challengesService.updateProgress(id, userId, dto.currentValue);
   }
 
+  @ApiOperation({ summary: '챌린지 리더보드 조회' })
+  @ApiResponse({ status: 200, description: '성공' })
   @Get(":id/leaderboard")
   getLeaderboard(@Param("id") id: string, @Query("limit") limit?: string) {
     return this.challengesService.getLeaderboard(id, limit ? parseInt(limit, 10) : undefined);

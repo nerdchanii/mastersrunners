@@ -34,18 +34,77 @@ export class ChallengesService {
     return challenge;
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId?: string) {
     const challenge = await this.challengeRepo.findById(id);
     if (!challenge) throw new NotFoundException("챌린지를 찾을 수 없습니다.");
-    return challenge;
+
+    // Compute isJoined and myProgress for the current user
+    let isJoined = false;
+    let myProgress: number | null = null;
+
+    if (userId) {
+      const participant = challenge.participants.find((p) => p.userId === userId);
+      if (participant) {
+        isJoined = true;
+        myProgress = participant.currentValue;
+      }
+    }
+
+    // Map to frontend contract
+    return {
+      id: challenge.id,
+      name: challenge.title,
+      description: challenge.description,
+      goalType: challenge.type,
+      goalValue: challenge.targetValue,
+      startDate: challenge.startDate.toISOString(),
+      endDate: challenge.endDate.toISOString(),
+      isPublic: challenge.isPublic,
+      createdBy: challenge.creatorId,
+      creator: challenge.creator,
+      _count: challenge._count,
+      isJoined,
+      myProgress,
+    };
   }
 
   async findAll(options: { isPublic?: boolean; crewId?: string; cursor?: string; limit?: number }) {
-    return this.challengeRepo.findAll(options);
+    const { data, nextCursor, hasMore } = await this.challengeRepo.findAll(options);
+
+    // Map to frontend contract
+    const items = data.map((challenge) => ({
+      id: challenge.id,
+      name: challenge.title,
+      description: challenge.description,
+      goalType: challenge.type,
+      goalValue: challenge.targetValue,
+      startDate: challenge.startDate.toISOString(),
+      endDate: challenge.endDate.toISOString(),
+      isPublic: challenge.isPublic,
+      _count: challenge._count,
+    }));
+
+    return { items, nextCursor, hasMore };
   }
 
-  async findMyChallenges(userId: string) {
-    return this.challengeRepo.findByUser(userId);
+  async findMyChallenges(userId: string, options?: { cursor?: string; limit?: number }) {
+    const { data, nextCursor, hasMore } = await this.challengeRepo.findByUser(userId, options);
+
+    // Map to frontend contract
+    const items = data.map((challenge) => ({
+      id: challenge.id,
+      name: challenge.title,
+      description: challenge.description,
+      goalType: challenge.type,
+      goalValue: challenge.targetValue,
+      startDate: challenge.startDate.toISOString(),
+      endDate: challenge.endDate.toISOString(),
+      isPublic: challenge.isPublic,
+      _count: challenge._count,
+      myProgress: challenge.participants[0]?.currentValue ?? null,
+    }));
+
+    return { items, nextCursor, hasMore };
   }
 
   async update(id: string, userId: string, dto: UpdateChallengeDto) {
@@ -108,7 +167,14 @@ export class ChallengesService {
     const challenge = await this.challengeRepo.findById(challengeId);
     if (!challenge) throw new NotFoundException("챌린지를 찾을 수 없습니다.");
 
-    return this.participantRepo.findLeaderboard(challengeId, limit);
+    const participants = await this.participantRepo.findLeaderboard(challengeId, limit);
+
+    // Map to frontend contract: add rank and map currentValue to progress
+    return participants.map((p, index) => ({
+      rank: index + 1,
+      progress: p.currentValue,
+      user: p.user,
+    }));
   }
 
   async createTeam(challengeId: string, userId: string, teamName: string) {
