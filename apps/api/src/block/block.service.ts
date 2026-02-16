@@ -1,4 +1,5 @@
 import { Injectable, ConflictException } from "@nestjs/common";
+import type { TransactionClient } from "@masters/database";
 import { BlockRepository } from "./repositories/block.repository.js";
 import { DatabaseService } from "../database/database.service.js";
 
@@ -14,7 +15,7 @@ export class BlockService {
       throw new ConflictException("자기 자신을 차단할 수 없습니다.");
     }
 
-    return this.db.prisma.$transaction(async (tx) => {
+    return this.db.prisma.$transaction(async (tx: TransactionClient) => {
       // Create block
       const block = await tx.block.create({
         data: { blockerId, blockedId },

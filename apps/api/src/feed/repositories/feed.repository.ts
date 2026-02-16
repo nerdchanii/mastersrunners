@@ -23,7 +23,7 @@ export class FeedRepository {
       },
     });
 
-    return follows.map((f) => f.followingId);
+    return follows.map((f: { followingId: string }) => f.followingId);
   }
 
   async getPostFeed(options: FeedOptions) {

@@ -78,24 +78,24 @@ export class ChallengeTeamRepository {
 
     // Get team names
     const teamIds = aggregated
-      .map((a) => a.challengeTeamId)
-      .filter((id): id is string => id !== null);
+      .map((a: { challengeTeamId: string | null }) => a.challengeTeamId)
+      .filter((id: string | null): id is string => id !== null);
 
     const teams = await this.db.prisma.challengeTeam.findMany({
       where: { id: { in: teamIds } },
       select: { id: true, name: true },
     });
 
-    const teamMap = new Map(teams.map((t) => [t.id, t.name]));
+    const teamMap = new Map(teams.map((t: { id: string; name: string }) => [t.id, t.name]));
 
     // Combine and sort
     return aggregated
-      .map((a) => ({
+      .map((a: { challengeTeamId: string | null; _sum: { currentValue: number | null }; _count: { userId: number } }) => ({
         teamId: a.challengeTeamId!,
         teamName: teamMap.get(a.challengeTeamId!) || "Unknown Team",
         totalValue: a._sum.currentValue || 0,
         memberCount: a._count.userId,
       }))
-      .sort((a, b) => b.totalValue - a.totalValue);
+      .sort((a: TeamLeaderboardEntry, b: TeamLeaderboardEntry) => b.totalValue - a.totalValue);
   }
 }

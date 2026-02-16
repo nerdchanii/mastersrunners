@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { Prisma } from "@masters/database";
+import type { TransactionClient } from "@masters/database";
 import { DatabaseService } from "../../database/database.service.js";
 
 interface CreateUserData {
@@ -61,7 +61,7 @@ export class UserRepository {
   }
 
   async createWithAccount(userData: CreateUserData, accountData: CreateAccountData) {
-    return this.db.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    return this.db.prisma.$transaction(async (tx: TransactionClient) => {
       const user = await tx.user.create({ data: userData });
 
       await tx.account.create({
