@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray, MaxLength, IsIn, ArrayMaxSize } from "class-validator";
+import { IsString, IsOptional, IsArray, MaxLength, IsIn, ArrayMaxSize, IsUrl } from "class-validator";
 
 export class CreatePostDto {
   @IsOptional()
@@ -24,6 +24,6 @@ export class CreatePostDto {
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
+  @IsUrl({}, { each: true })
   imageUrls?: string[];
 }
