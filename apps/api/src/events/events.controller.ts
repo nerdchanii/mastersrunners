@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Query } from "@nestjs/common";
+import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Req, Query } from "@nestjs/common";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { EventsService } from "./events.service.js";
@@ -62,5 +62,29 @@ export class EventsController {
   cancel(@Param("id") id: string, @Req() req: Request) {
     const { userId } = req.user as { userId: string };
     return this.eventsService.cancel(id, userId);
+  }
+
+  @Put(":id/results")
+  submitResult(
+    @Param("id") id: string,
+    @Req() req: Request,
+    @Body() body: { resultTime: number; resultRank?: number; bibNumber?: string; status: "COMPLETED" | "DNS" | "DNF" }
+  ) {
+    const { userId } = req.user as { userId: string };
+    return this.eventsService.submitResult(id, userId, body);
+  }
+
+  @Get(":id/results")
+  getResults(
+    @Param("id") id: string,
+    @Query("sortBy") sortBy?: "resultTime" | "resultRank"
+  ) {
+    return this.eventsService.getResults(id, sortBy);
+  }
+
+  @Get(":id/results/me")
+  getMyResult(@Param("id") id: string, @Req() req: Request) {
+    const { userId } = req.user as { userId: string };
+    return this.eventsService.getMyResult(id, userId);
   }
 }

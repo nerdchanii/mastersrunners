@@ -106,4 +106,37 @@ export class EventsService {
 
     return this.registrationRepo.cancel(eventId, userId);
   }
+
+  // ============ Result Methods ============
+
+  async submitResult(eventId: string, userId: string, data: {
+    resultTime: number;
+    resultRank?: number;
+    bibNumber?: string;
+    status: "COMPLETED" | "DNS" | "DNF";
+  }) {
+    const registration = await this.registrationRepo.findRegistration(eventId, userId);
+    if (!registration) throw new NotFoundException("등록하지 않은 이벤트입니다.");
+
+    return this.registrationRepo.updateResult(eventId, userId, {
+      resultTime: data.resultTime,
+      resultRank: data.resultRank,
+      bibNumber: data.bibNumber,
+      status: data.status,
+    });
+  }
+
+  async getResults(eventId: string, sortBy?: "resultTime" | "resultRank") {
+    const event = await this.eventRepo.findById(eventId);
+    if (!event) throw new NotFoundException("이벤트를 찾을 수 없습니다.");
+
+    return this.registrationRepo.findByEventWithResults(eventId, sortBy);
+  }
+
+  async getMyResult(eventId: string, userId: string) {
+    const registration = await this.registrationRepo.findRegistration(eventId, userId);
+    if (!registration) throw new NotFoundException("등록하지 않은 이벤트입니다.");
+
+    return registration;
+  }
 }
