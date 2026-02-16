@@ -1,7 +1,6 @@
-"use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
+
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 
@@ -179,11 +178,11 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
               >
                 <div className="relative h-10 w-10 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
                   {comment.user.profileImage ? (
-                    <Image
+                    <img
                       src={comment.user.profileImage}
                       alt={comment.user.name}
-                      fill
-                      className="object-cover"
+                      className="h-full w-full object-cover"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="h-full w-full flex items-center justify-center bg-indigo-600 text-white text-sm font-bold">

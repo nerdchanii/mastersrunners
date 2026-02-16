@@ -1,6 +1,5 @@
-"use client";
 
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import ProgressBar from "./ProgressBar";
 
 interface ChallengeCardProps {
@@ -62,7 +61,7 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
   const badge = statusBadge();
 
   return (
-    <Link href={`/challenges/${challenge.id}`}>
+    <Link to={`/challenges/${challenge.id}`}>
       <div className="bg-white shadow rounded-lg p-5 hover:shadow-md transition-shadow border border-gray-200 cursor-pointer">
         <div className="flex items-start justify-between mb-3">
           <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">

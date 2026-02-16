@@ -1,4 +1,3 @@
-"use client";
 
 import ShareToggle from "./ShareToggle";
 

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "react-router-dom";
 
 interface CrewCardProps {
   crew: {
@@ -21,7 +21,7 @@ interface CrewCardProps {
 
 export default function CrewCard({ crew }: CrewCardProps) {
   return (
-    <Link href={`/crews/${crew.id}`}>
+    <Link to={`/crews/${crew.id}`}>
       <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
         {/* Header */}
         <div className="flex items-start gap-3 mb-3">

@@ -1,5 +1,5 @@
-import Image from "next/image";
-import Link from "next/link";
+
+import { Link } from "react-router-dom";
 
 interface FeedCardProps {
   workout: {
@@ -70,18 +70,18 @@ export default function FeedCard({ workout }: FeedCardProps) {
   const visibilityBadge = getVisibilityBadge(workout.visibility);
 
   return (
-    <Link href={`/workouts/detail?id=${workout.id}`}>
+    <Link to={`/workouts/detail?id=${workout.id}`}>
       <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer">
         {/* User Info */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200">
               {workout.user.profileImage ? (
-                <Image
+                <img
                   src={workout.user.profileImage}
                   alt={workout.user.name}
-                  fill
-                  className="object-cover"
+                  className="h-full w-full object-cover"
+                  loading="lazy"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-500 font-semibold">

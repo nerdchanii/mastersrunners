@@ -1,5 +1,5 @@
-import Image from "next/image";
-import Link from "next/link";
+
+import { Link } from "react-router-dom";
 
 interface PostFeedCardProps {
   post: {
@@ -57,17 +57,17 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
   };
 
   return (
-    <Link href={`/posts/${post.id}`}>
+    <Link to={`/posts/${post.id}`}>
       <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer">
         {/* User Info */}
         <div className="flex items-center gap-3 mb-4">
           <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200">
             {post.user.profileImage ? (
-              <Image
+              <img
                 src={post.user.profileImage}
                 alt={post.user.name}
-                fill
-                className="object-cover"
+                className="h-full w-full object-cover"
+                loading="lazy"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-500 font-semibold">

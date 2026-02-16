@@ -1,4 +1,3 @@
-"use client";
 
 interface EventResult {
   resultRank: number | null;

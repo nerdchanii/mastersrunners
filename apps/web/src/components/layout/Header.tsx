@@ -1,13 +1,10 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 
 export default function Header() {
   const { isAuthenticated, isLoading, logout } = useAuth();
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => pathname === path;
@@ -15,6 +12,8 @@ export default function Header() {
   const navLinks = [
     { href: "/feed", label: "피드", auth: false },
     { href: "/crews", label: "크루", auth: true },
+    { href: "/events", label: "대회", auth: false },
+    { href: "/challenges", label: "챌린지", auth: false },
     { href: "/workouts", label: "내 기록", auth: true },
     { href: "/workouts/new", label: "기록 추가", auth: true },
     { href: "/profile", label: "프로필", auth: true },
@@ -28,20 +27,18 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-lg">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
           <Link
-            href="/"
+            to="/"
             className="text-xl font-bold tracking-tight text-gray-900 transition-colors hover:text-gray-700"
           >
             마스터스 러너스
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden items-center gap-8 md:flex">
             {visibleLinks.map((link) => (
               <Link
                 key={link.href}
-                href={link.href}
+                to={link.href}
                 className={`relative text-sm font-medium transition-colors ${
                   isActive(link.href)
                     ? "text-gray-900"
@@ -56,7 +53,6 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* Auth Buttons - Desktop */}
           <div className="hidden items-center gap-3 md:flex">
             {isLoading ? (
               <div className="h-9 w-20 animate-pulse rounded-lg bg-gray-200" />
@@ -69,7 +65,7 @@ export default function Header() {
               </button>
             ) : (
               <Link
-                href="/login"
+                to="/login"
                 className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-gray-800 active:scale-95"
               >
                 로그인
@@ -77,7 +73,6 @@ export default function Header() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-700 transition-colors hover:bg-gray-100 md:hidden"
@@ -108,7 +103,6 @@ export default function Header() {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         <div
           className={`overflow-hidden transition-all duration-300 ease-in-out md:hidden ${
             isMobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
@@ -118,7 +112,7 @@ export default function Header() {
             {visibleLinks.map((link) => (
               <Link
                 key={link.href}
-                href={link.href}
+                to={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
                   isActive(link.href)
@@ -143,7 +137,7 @@ export default function Header() {
                 </button>
               ) : (
                 <Link
-                  href="/login"
+                  to="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="rounded-lg bg-gray-900 px-4 py-3 text-center text-sm font-medium text-white transition-all active:scale-95"
                 >

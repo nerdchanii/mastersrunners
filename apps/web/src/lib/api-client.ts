@@ -1,5 +1,5 @@
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
+  import.meta.env.VITE_API_URL || "http://localhost:4000/api/v1";
 
 class ApiClient {
   private getStorage(): Storage | null {
