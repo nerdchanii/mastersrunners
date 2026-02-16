@@ -3,6 +3,7 @@ import { CrewRepository } from "./repositories/crew.repository.js";
 import { CrewMemberRepository } from "./repositories/crew-member.repository.js";
 import { CrewTagRepository } from "./repositories/crew-tag.repository.js";
 import { CrewActivityRepository } from "./repositories/crew-activity.repository.js";
+import { CrewBanRepository } from "./repositories/crew-ban.repository.js";
 import { DatabaseService } from "../database/database.service.js";
 import type { CreateCrewDto } from "./dto/create-crew.dto.js";
 import type { UpdateCrewDto } from "./dto/update-crew.dto.js";
@@ -15,6 +16,7 @@ export class CrewsService {
     private readonly crewMemberRepo: CrewMemberRepository,
     private readonly crewTagRepo: CrewTagRepository,
     private readonly crewActivityRepo: CrewActivityRepository,
+    private readonly crewBanRepo: CrewBanRepository,
     private readonly db: DatabaseService
   ) {}
 
@@ -132,7 +134,7 @@ export class CrewsService {
     return this.crewMemberRepo.removeMember(crewId, userId);
   }
 
-  async kickMember(crewId: string, adminUserId: string, targetUserId: string) {
+  async kickMember(crewId: string, adminUserId: string, targetUserId: string, reason?: string) {
     const crew = await this.crewRepo.findById(crewId);
     if (!crew) {
       throw new NotFoundException("크루를 찾을 수 없습니다.");
@@ -152,7 +154,10 @@ export class CrewsService {
       throw new ForbiddenException("크루 소유자는 추방할 수 없습니다.");
     }
 
-    return this.crewMemberRepo.removeMember(crewId, targetUserId);
+    await this.crewMemberRepo.removeMember(crewId, targetUserId);
+    await this.crewBanRepo.create({ crewId, userId: targetUserId, bannedBy: adminUserId, reason });
+
+    return { success: true };
   }
 
   async promoteToAdmin(crewId: string, ownerId: string, targetUserId: string) {
@@ -489,5 +494,41 @@ export class CrewsService {
     }
 
     return this.crewActivityRepo.getAttendees(activityId);
+  }
+
+  // ============ Ban Methods ============
+
+  async unbanMember(crewId: string, adminUserId: string, targetUserId: string) {
+    const crew = await this.crewRepo.findById(crewId);
+    if (!crew) {
+      throw new NotFoundException("크루를 찾을 수 없습니다.");
+    }
+
+    const adminMember = await this.crewMemberRepo.findMember(crewId, adminUserId);
+    if (!adminMember || (adminMember.role !== "OWNER" && adminMember.role !== "ADMIN")) {
+      throw new ForbiddenException("크루 관리자만 차단을 해제할 수 있습니다.");
+    }
+
+    const ban = await this.crewBanRepo.findByCrewAndUser(crewId, targetUserId);
+    if (!ban) {
+      throw new NotFoundException("차단된 사용자가 아닙니다.");
+    }
+
+    await this.crewBanRepo.remove(crewId, targetUserId);
+    return { success: true };
+  }
+
+  async getBannedMembers(crewId: string, userId: string) {
+    const crew = await this.crewRepo.findById(crewId);
+    if (!crew) {
+      throw new NotFoundException("크루를 찾을 수 없습니다.");
+    }
+
+    const member = await this.crewMemberRepo.findMember(crewId, userId);
+    if (!member || (member.role !== "OWNER" && member.role !== "ADMIN")) {
+      throw new ForbiddenException("크루 관리자만 차단 목록을 조회할 수 있습니다.");
+    }
+
+    return this.crewBanRepo.findByCrewId(crewId);
   }
 }
