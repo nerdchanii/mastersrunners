@@ -5,7 +5,6 @@ import { UploadsService } from "./uploads.service.js";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_FILE_TYPES = [...ALLOWED_IMAGE_TYPES, "application/octet-stream"]; // octet-stream for FIT/GPX
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 
 @SkipThrottle()
 @Controller("uploads")
@@ -36,10 +35,32 @@ export class UploadsController {
     return this.uploadsService.getUploadUrl(key, contentType);
   }
 
+  @Post("parse")
+  async parseFile(
+    @Req() req: Request,
+    @Body() body: { fileKey: string; fileType: string; originalFileName: string }
+  ) {
+    const { userId } = req.user as { userId: string };
+    const { fileKey, fileType, originalFileName } = body;
+
+    if (!fileKey || !fileType || !originalFileName) {
+      throw new BadRequestException("fileKey, fileType, and originalFileName are required");
+    }
+
+    if (fileType !== "FIT" && fileType !== "GPX") {
+      throw new BadRequestException("fileType must be FIT or GPX");
+    }
+
+    return this.uploadsService.parseAndCreateWorkout(userId, {
+      fileKey,
+      fileType: fileType as "FIT" | "GPX",
+      originalFileName,
+    });
+  }
+
   @Delete("*key")
   async deleteFile(@Req() req: Request, @Param("key") key: string) {
     const { userId } = req.user as { userId: string };
-    // Verify the key belongs to the user (key format: folder/userId/timestamp-filename)
     const parts = key.split("/");
     if (parts.length < 2 || parts[1] !== userId) {
       throw new BadRequestException("Cannot delete files owned by other users");
