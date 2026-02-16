@@ -114,12 +114,9 @@ Phase 3 → 4 사이에 발견된 API 스키마 계약 위반 문제. Phase 4 �
 | **QR 체크인** | 고정 QR 단순 스캔 (활동별 고정 QR 코드 → 스캔 시 출석 체크) |
 | **반응형** | 모바일 + 데스크탑 둘 다 지원 |
 
-### ⚠️ AMBIGUOUS — 미결정
-
-| 항목 | 설명 | 필요 시점 |
-|------|------|-----------|
-| **UI/UX 갈아엎기 범위** | 기존 페이지 완전 재작성? 점진적 개선? | A-4 시작 전 |
-| **다크모드** | A-5에서 "선택"으로 표기됨 — 구현 여부 최종 결정 필요 | A-5 시작 전 |
+| **UI 재작성 범위** | 완전 재작성 — Instagram + Strava 참고 |
+| **UI 재작성 순서** | Feed → Profile → Crew → Challenge → Events |
+| **다크모드** | Phase 5로 미루기 |
 
 ---
 
@@ -213,65 +210,51 @@ DELETE /messages/:id           → 메시지 삭제 (soft delete)
 
 ---
 
-## C. 멘션 자동완성 시스템
+## C. 답글/멘션 시스템
 
-**브랜치**: `feature/mention-autocomplete` (worktree)
+**브랜치**: `feature/mention-reply` (worktree)
 **범위**: `apps/api/` + `apps/web/`
 
-### 기능 설명
+### 기능 설명 (Instagram 스타일)
 
-1. **댓글/포스트 작성 시** `@` 입력 → 자동완성 드롭다운 표시
-2. 유저 선택 시 `@유저이름` 삽입 + `mentionedUserId` 기록
-3. **데스크탑**: 멘션된 유저 이름 클릭 또는 탭 → DM 대화 페이지로 이동
-4. **모바일**: 멘션된 유저 이름 탭 → 프로필 페이지로 이동
+1. **답글달기 버튼** → 댓글 옆 "답글 달기" 클릭 시 자동으로 `@원댓글작성자` 삽입 + 포커스
+2. 텍스트에 `@` 직접 입력으로는 멘션 검색 **불가** — 답글달기 UI로만 멘션
+3. **데스크탑**: 멘션된 유저 이름 클릭 → 프로필 페이지 이동
+4. **모바일**: 멘션된 유저 이름 탭 → 프로필 페이지 이동
 
-### 자동완성 우선순위
+### 멘션 대상 범위
 
-대댓글 작성 시 `@` 드롭다운의 정렬 우선순위:
+- 팔로잉 목록
+- 같은 크루 멤버
+- 대댓글 시: 원댓글 작성자 + 해당 댓글 스레드 참여자
 
-1. **현재 댓글 스레드 참여자** — 해당 1단계 댓글의 대댓글 작성자들 (가장 최근 활동 순)
-2. **포스트/워크아웃 작성자** — 원글 작성자
-3. **팔로잉 목록** — 내가 팔로우한 유저 (이름 검색 필터링)
+### 저장 방식
 
-포스트에 직접 댓글 작성 시:
-1. **기존 댓글 참여자** — 해당 포스트에 댓글 작성한 유저들
-2. **포스트 작성자**
-3. **팔로잉 목록**
-
-### API
-
+별도 `Mention` 테이블 — 정규화된 관계:
 ```
-GET /users/mention-suggestions?q=검색어&postId=xxx&commentId=xxx
-  → 컨텍스트 기반 멘션 자동완성 (스레드 참여자 우선)
+Mention: id, commentId, mentionedUserId, createdAt
 ```
 
 ### 프론트엔드 컴포넌트
 
-- `MentionInput` — textarea + 자동완성 드롭다운 통합 컴포넌트
-  - `@` 감지 → debounced 검색 API 호출
-  - 컨텍스트(postId, commentId) 전달하여 스레드 참여자 우선 표시
-  - 선택 시 텍스트 삽입 + mentionedUserIds 배열 관리
-- `MentionLink` — 렌더링 시 `@유저이름`을 클릭 가능한 링크로 변환
+- `ReplyButton` — 댓글 옆 "답글 달기" 버튼, 클릭 시 textarea에 `@유저이름 ` 삽입 + 포커스
+- `MentionLink` — 렌더링 시 `@유저이름`을 클릭 가능한 링크로 변환 (프로필 이동)
 
 ### 팀 구성
-- **executor** (Sonnet) × 1: API + 프론트엔드 컴포넌트
+- **executor** (Sonnet) × 1: API + 프론트엔드
 
 ### 의존성
-- DM 기능(B) 완성 후 "탭으로 DM 이동" 연동
+- DM 기능(B) 완성 후 연동
 
 ### 결정 완료
 
 | 항목 | 결정 |
 |------|------|
-| **멘션 저장 방식** | 별도 테이블 (Mention) — JSON 배열 대신 정규화된 관계 |
-
-### ⚠️ AMBIGUOUS — 미결정
-
-| 항목 | 설명 | 필요 시점 |
-|------|------|-----------|
-| **멘션 알림** | 멘션된 유저에게 알림을 보내야 하는지, Phase 5로 미룰지 | C 구현 시 |
-| **멘션 대상 범위** | 팔로잉 목록 외에 같은 크루 멤버도 멘션 가능? | C 기획 시 |
-| **MentionInput 라이브러리** | 자체 구현 vs 기존 라이브러리 | C 프론트 구현 시 |
+| **멘션 저장 방식** | 별도 테이블 (Mention) |
+| **멘션 UX** | Instagram 스타일 — 답글달기 버튼으로만 멘션, @검색 자동완성 없음 |
+| **멘션 대상 범위** | 팔로잉 + 크루 멤버 + 스레드 참여자 |
+| **멘션 알림** | Phase 5 (알림 시스템과 함께) |
+| **MentionInput 라이브러리** | 불필요 — 답글달기 버튼 방식이므로 자체 구현 |
 
 ---
 
@@ -340,13 +323,13 @@ GET /users/mention-suggestions?q=검색어&postId=xxx&commentId=xxx
 | 항목 | 결정 |
 |------|------|
 | **도메인** | 보유 중 (커스텀 도메인 사용) |
+| **API 서버 호스팅** | GCP Cloud Run (프리 티어 $300 소진) → 이후 AWS 전환 |
+| **HTTPS/인증서** | Cloudflare Proxy (무료 SSL + DDoS 보호 + 캐싱) |
 
 ### ⚠️ AMBIGUOUS — 미결정
 
 | 항목 | 설명 | 필요 시점 |
 |------|------|-----------|
-| **API 서버 호스팅** | AWS/GCP/Azure 또는 Cloudflare 서버리스 — 구체적 선택 필요 | E-1 배포 시 |
-| **HTTPS/인증서** | Let's Encrypt? Cloudflare Proxy? Caddy? | E-1 구현 시 |
 | **DB 백업 전략** | PostgreSQL 백업 주기, 복원 방법 | E-1 이후 |
 | **CI 러너 환경** | GitHub Actions free tier vs self-hosted | E-3 시작 시 |
 | **R2 CORS 설정** | 프로덕션 도메인 허용 정책 | E-2 시 |
@@ -452,45 +435,56 @@ Phase 4 실행 순서:
 
 ## 완료 기준
 
-### Phase 3.5 (선결 조건)
-- [ ] API 스키마 계약 7건 수정 완료
-- [ ] Swagger UI 동작 확인
-- [ ] 프론트엔드 주요 페이지 런타임 에러 0건
+### Phase 3.5 (선결 조건) ✅
+- [x] API 스키마 계약 7건 수정 완료
+- [x] Swagger UI 동작 확인
+- [x] 프론트엔드 주요 페이지 런타임 에러 0건
 
 ### Phase 4
-- [ ] Crew 태그/활동/출석 UI 동작
-- [ ] Challenge 팀 기능 UI 동작
-- [ ] DM 1:1 대화 가능
-- [ ] `@멘션` 자동완성 + 클릭 시 DM/프로필 이동
-- [ ] OAuth 실제 로그인 동작 (카카오/구글/네이버 중 최소 1개)
-- [ ] Docker 배포 가능
-- [ ] Cloudflare Pages 배포 가능
-- [ ] CI에서 lint + test 자동 실행
-- [ ] UI/UX 1차 개선 완료
+- [x] Crew 태그/활동/출석 UI 동작 ✅
+- [x] Challenge 팀 기능 UI 동작 ✅
+- [x] DM 1:1 대화 가능 (백엔드 + 프론트엔드 + SSE 완료) ✅
+- [x] 답글/멘션 시스템 (Instagram 스타일) ✅
+- [ ] OAuth 실제 로그인 동작 (카카오/구글/네이버 중 최소 1개) — 유저 직접 작업
+- [x] Docker 배포 가능 (Dockerfile + docker-compose.prod.yml) ✅
+- [ ] GCP Cloud Run 배포 — deploy.yml 준비 완료, GCP 프로젝트 설정 필요
+- [ ] Cloudflare Pages 배포 — _redirects 준비 완료, CF 연결 필요
+- [x] CI에서 lint + test 자동 실행 (GitHub Actions) ✅
+- [x] UI/UX 완전 재작성 (shadcn/UI + Instagram/Strava 참고) ✅
+- [x] 코드 스플리팅 (React.lazy + Suspense) ✅
+- [x] FIT/GPX 파일 업로드 UI ✅
+- [x] Error Boundary + 404 페이지 ✅
 
 ---
 
-## AMBIGUOUS 항목 총정리
+## 결정 완료 총정리
 
-Phase 4 전체에서 결정이 필요한 항목 모음. 각 영역 시작 전 유저와 논의 필요.
+| 영역 | 항목 | 결정 |
+|------|------|------|
+| A | 디자인 시스템 | shadcn/UI (Tailwind v4 + Radix UI) ✅ 세팅 완료 |
+| A | QR 체크인 | 고정 QR 단순 스캔 |
+| A | 반응형 | 모바일 + 데스크탑 둘 다 |
+| A | UI 재작성 범위 | 완전 재작성 (Instagram + Strava 참고) |
+| A | UI 재작성 순서 | Feed → Profile → Crew → Challenge → Events |
+| A | 다크모드 | Phase 5로 미루기 |
+| B | 실시간 전송 | SSE ✅ 구현 완료 |
+| B | 이미지 첨부 | Phase 4 텍스트만, Phase 5에서 이미지 |
+| C | 멘션 UX | Instagram 스타일 답글달기 버튼 (@ 검색 자동완성 없음) |
+| C | 멘션 저장 | 별도 Mention 테이블 |
+| C | 멘션 대상 범위 | 팔로잉 + 크루 멤버 + 스레드 참여자 |
+| C | 멘션 알림 | Phase 5 |
+| E | API 호스팅 | GCP Cloud Run ($300 프리 티어) → AWS |
+| E | 도메인 | 보유 중 |
+| E | HTTPS | Cloudflare Proxy |
+
+## AMBIGUOUS 미결정 항목
 
 | 영역 | 항목 | 우선순위 |
 |------|------|----------|
-| A | 디자인 시스템/CSS 프레임워크 선택 | HIGH — A-4 시작 전 필수 |
-| A | QR 체크인 메커니즘 상세 | MEDIUM — A-1 출석 구현 시 |
-| A | 반응형 전략 (모바일/데스크탑 우선) | HIGH — A-4 시작 전 필수 |
-| A | 다크모드 구현 여부 | LOW — A-5 시작 전 |
-| B | 폴링 주기 | LOW — B 프론트 구현 시 |
-| B | 비공개 계정 DM 정책 상세 | MEDIUM — B API 구현 시 |
-| B | 대화방 삭제/나가기 기능 | LOW — B 후반 |
-| B | 이미지/파일 첨부 여부 | MEDIUM — B 기획 시 |
-| C | 멘션 다중 저장 방식 (별도 테이블 vs JSON) | HIGH — C 스키마 설계 시 |
-| C | 멘션 알림 (Phase 4 vs 5) | MEDIUM — C 구현 시 |
-| C | MentionInput 라이브러리 선택 | MEDIUM — C 프론트 구현 시 |
+| B | 비공개 계정 DM 정책 상세 | LOW — 나중에 |
+| B | 대화방 삭제/나가기 | LOW — 나중에 |
 | D | OAuth 우선순위 (카카오/구글/네이버) | LOW — D 시작 시 |
 | D | 최초 가입 시 프로필 설정 플로우 | MEDIUM — D 연동 시 |
 | D | 동일 이메일 다중 OAuth 계정 연동 | MEDIUM — D 후반 |
-| E | API 서버 호스팅 환경 | HIGH — E-1 시작 전 필수 |
-| E | 도메인 보유/설정 | HIGH — E-2 시작 전 필수 |
-| E | HTTPS/인증서 방식 | MEDIUM — E-1 구현 시 |
+| E | DB 백업 전략 | LOW — 배포 후 |
 | F | 성능 목표 수치 | LOW — F 분석 시 |
