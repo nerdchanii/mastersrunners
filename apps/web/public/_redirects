@@ -1,5 +1,7 @@
 # Cloudflare Pages SPA fallback for dynamic routes
-# Next.js output: "export" generates placeholder HTML at /posts/_/
-# These rules rewrite any post ID to use the placeholder HTML shell
-/posts/*/edit/  /posts/_/edit/index.html  200
-/posts/*/       /posts/_/index.html       200
+# Next.js output: "export" generates placeholder HTML at placeholder paths
+# These rules rewrite any dynamic ID to use the placeholder HTML shell
+/posts/*/edit/      /posts/_/edit/index.html          200
+/posts/*/           /posts/_/index.html                200
+/crews/*/settings/  /crews/_/settings/index.html       200
+/crews/*/           /crews/_/index.html                200
