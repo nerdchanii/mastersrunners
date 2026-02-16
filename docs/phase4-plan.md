@@ -11,6 +11,43 @@ Phase 4는 실사용 가능한 프로덕트를 목표로 한다.
 
 ---
 
+## Phase 3.5: 선결 조건 (Phase 4 진입 전 필수)
+
+Phase 3 → 4 사이에 발견된 API 스키마 계약 위반 문제. Phase 4 진입 전 반드시 해결.
+
+### 상태: 🔧 진행중
+
+### API 스키마 계약 수정 (7건)
+
+| # | 심각도 | 도메인 | 문제 | 상태 |
+|---|--------|--------|------|------|
+| 1 | CRITICAL | Challenge | `findAll` raw 배열 반환 → `{ items, nextCursor, hasMore }` 필요 | 🔧 |
+| 2 | CRITICAL | Challenge | `findAll`에 `_count.participants` include 누락 | 🔧 |
+| 3 | CRITICAL | Challenge | 필드명 불일치: FE `name`/`goalType`/`goalValue` vs DB `title`/`type`/`targetValue` | 🔧 |
+| 4 | CRITICAL | Feed | workout `_count` 필드명: `workoutLikes`→`likes`, `workoutComments`→`comments` 매핑 필요 | 🔧 |
+| 5 | MODERATE | Crew | `findById`에 `creator` + `_count` include 누락 → 상세 페이지 크래시 | 🔧 |
+| 6 | MODERATE | Crew | `findByCrewId` (ban)에 `user` include 누락 → 설정 페이지 크래시 | 🔧 |
+| 7 | MODERATE | Challenge | 리더보드에 `rank`/`progress` 필드 누락 (raw `currentValue` 반환) | 🔧 |
+
+**근본 원인**: 서비스 레이어에 응답 변환(serialization) 없이 Prisma raw 객체를 그대로 전달.
+**수정 원칙**: 리포지토리는 최소 수정(include 추가), 매핑은 서비스 레이어에서 수행.
+
+### Swagger (OpenAPI) 설정
+
+- `@nestjs/swagger` 설치 + main.ts 설정
+- 모든 컨트롤러에 `@ApiTags` 추가
+- 주요 DTO에 `@ApiProperty` 추가
+- 핵심 엔드포인트에 `@ApiOperation` + `@ApiResponse` 추가
+- Swagger UI: `http://localhost:3000/api-docs`
+
+### 완료 기준
+- [ ] 7건 API 계약 위반 모두 수정
+- [ ] Swagger UI에서 전체 API 확인 가능
+- [ ] `pnpm --filter api test` 전체 통과
+- [ ] 프론트엔드에서 challenge/crew/feed/workout 페이지 에러 없음
+
+---
+
 ## 작업 영역 (6개)
 
 ### A. 프론트엔드 기능 구현 (worktree)
@@ -68,6 +105,16 @@ Phase 4는 실사용 가능한 프로덕트를 목표로 한다.
 - **designer** (Sonnet) × 1: UI/UX 설계
 - **executor** (Sonnet) × 2~3: 페이지별 구현 (파일 소유권 분리)
 - 총 2~3회 이터레이션 예상
+
+### ⚠️ AMBIGUOUS — 결정 필요
+
+| 항목 | 설명 | 필요 시점 |
+|------|------|-----------|
+| **디자인 시스템 기반** | Tailwind CSS? shadcn/ui? 자체 컴포넌트? CSS 프레임워크 선택 미정 | A-4 시작 전 |
+| **QR 체크인 메커니즘** | QR 코드 생성 방식 (시간 기반? 일회성 토큰?), 스캔 라이브러리 선택, 오프라인 대응 | A-1 출석 구현 시 |
+| **UI/UX 갈아엎기 범위** | "전체 갈아엎기"의 구체적 범위 — 기존 페이지 완전 재작성? 점진적 개선? 디자인 목업 필요 여부 | A-4 시작 전 |
+| **반응형 브레이크포인트** | 모바일 우선? 데스크탑 우선? 태블릿 지원 범위 | A-4 시작 전 |
+| **다크모드** | A-5에서 "선택"으로 표기됨 — 구현할 것인지 최종 결정 필요 | A-5 시작 전 |
 
 ---
 
@@ -144,6 +191,16 @@ DELETE /messages/:id           → 메시지 삭제 (soft delete)
 - WebSocket/SSE는 Phase 4에서 미구현 — 폴링 기반으로 시작
 - 실시간 알림은 Phase 5에서 WebSocket 도입 시 함께 추가
 
+### ⚠️ AMBIGUOUS — 결정 필요
+
+| 항목 | 설명 | 필요 시점 |
+|------|------|-----------|
+| **폴링 주기** | 대화 목록/메시지 목록 폴링 간격 미정 (5초? 10초? 페이지 포커스 시만?) | B 프론트 구현 시 |
+| **비공개 계정 DM 정책 상세** | "팔로워만 DM 가능 (또는 설정으로 제어)" — "설정으로 제어"의 구체적 옵션 미정 (유저 프로필에 DM 허용 토글?) | B API 구현 시 |
+| **대화방 삭제/나가기** | 대화방 자체를 삭제하거나 나가는 기능 필요 여부 미정 | B 후반 |
+| **메시지 최대 로드 수** | 대화 상세에서 한 번에 로드하는 메시지 수, 무한스크롤 방향 (위로 스크롤 = 이전 메시지) | B 프론트 구현 시 |
+| **이미지/파일 첨부** | Phase 4에서 텍스트만? 이미지 첨부 지원 여부 | B 기획 시 |
+
 ---
 
 ## C. 멘션 자동완성 시스템
@@ -192,6 +249,15 @@ GET /users/mention-suggestions?q=검색어&postId=xxx&commentId=xxx
 ### 의존성
 - DM 기능(B) 완성 후 "탭으로 DM 이동" 연동
 
+### ⚠️ AMBIGUOUS — 결정 필요
+
+| 항목 | 설명 | 필요 시점 |
+|------|------|-----------|
+| **멘션 저장 방식** | 현재 `PostComment.mentionedUserId` 단일 필드 → 다중 멘션 시 별도 테이블 필요? 아니면 JSON 배열? | C 스키마 설계 시 |
+| **멘션 알림** | 멘션된 유저에게 알림을 보내야 하는지, 알림 시스템이 아직 없으므로 Phase 5로 미룰지 | C 구현 시 |
+| **멘션 대상 범위** | 팔로잉 목록 외에 같은 크루 멤버도 멘션 가능해야 하는지 | C 기획 시 |
+| **MentionInput 라이브러리** | 자체 구현? 기존 라이브러리(`@draft-js-plugins/mention`, `tribute.js` 등) 사용? | C 프론트 구현 시 |
+
 ---
 
 ## D. OAuth 실제 연동
@@ -212,6 +278,14 @@ GET /users/mention-suggestions?q=검색어&postId=xxx&commentId=xxx
 - NestJS Passport strategy는 이미 구현됨 (mock/dev 상태)
 - `.env` 값만 설정하면 동작해야 함
 - 문제 발생 시 strategy 코드 디버깅 필요
+
+### ⚠️ AMBIGUOUS — 결정 필요
+
+| 항목 | 설명 | 필요 시점 |
+|------|------|-----------|
+| **OAuth 우선순위** | 카카오/구글/네이버 중 어떤 것부터 연동할지 | D 시작 시 |
+| **회원가입 플로우** | 최초 OAuth 로그인 시 프로필 설정 화면(이름, 프로필 사진 등) 필요 여부 | D 연동 시 |
+| **계정 연동** | 이미 카카오로 가입한 유저가 구글로도 로그인하면? 동일 이메일 기반 자동 연동? | D 후반 |
 
 ---
 
@@ -246,6 +320,17 @@ GET /users/mention-suggestions?q=검색어&postId=xxx&commentId=xxx
 ### 팀 구성
 - **executor** (Sonnet) × 1
 
+### ⚠️ AMBIGUOUS — 결정 필요
+
+| 항목 | 설명 | 필요 시점 |
+|------|------|-----------|
+| **API 서버 호스팅** | Docker 배포 대상 — VPS(Hetzner? DigitalOcean?)? 자체 서버? 클라우드(AWS/GCP)? | E-1 시작 전 |
+| **도메인** | 커스텀 도메인 보유 여부, API 도메인(api.example.com) 설정 | E-2 시작 전 |
+| **HTTPS/인증서** | Let's Encrypt? Cloudflare Proxy? Caddy reverse proxy? | E-1 구현 시 |
+| **DB 백업 전략** | PostgreSQL 백업 주기, 복원 테스트 방법 | E-1 이후 |
+| **CI 러너 환경** | GitHub Actions free tier 충분한지, self-hosted runner 필요 여부 | E-3 시작 시 |
+| **R2 CORS 설정** | Cloudflare R2 presigned URL의 CORS 정책, 프로덕션 도메인 허용 | E-2 시 |
+
 ---
 
 ## F. 성능/UX 분석 + 개선
@@ -272,6 +357,14 @@ GET /users/mention-suggestions?q=검색어&postId=xxx&commentId=xxx
 ### 팀 구성
 - **analyst** (Opus) × 1: 분석
 - **executor** (Sonnet) × 1~2: 구현 (분석 완료 후)
+
+### ⚠️ AMBIGUOUS — 결정 필요
+
+| 항목 | 설명 | 필요 시점 |
+|------|------|-----------|
+| **성능 목표** | LCP, FCP, TTI 등 구체적 수치 목표 미정 | F 분석 시 |
+| **UX 감사 기준** | 어떤 UX 프레임워크/체크리스트로 감사할지 (WCAG 2.1 AA? 자체 기준?) | F 분석 시 |
+| **스켈레톤 로딩 범위** | 모든 페이지? 핵심 페이지만? | F 구현 시 |
 
 ---
 
@@ -339,6 +432,12 @@ Phase 4 실행 순서:
 
 ## 완료 기준
 
+### Phase 3.5 (선결 조건)
+- [ ] API 스키마 계약 7건 수정 완료
+- [ ] Swagger UI 동작 확인
+- [ ] 프론트엔드 주요 페이지 런타임 에러 0건
+
+### Phase 4
 - [ ] Crew 태그/활동/출석 UI 동작
 - [ ] Challenge 팀 기능 UI 동작
 - [ ] DM 1:1 대화 가능
@@ -348,3 +447,30 @@ Phase 4 실행 순서:
 - [ ] Cloudflare Pages 배포 가능
 - [ ] CI에서 lint + test 자동 실행
 - [ ] UI/UX 1차 개선 완료
+
+---
+
+## AMBIGUOUS 항목 총정리
+
+Phase 4 전체에서 결정이 필요한 항목 모음. 각 영역 시작 전 유저와 논의 필요.
+
+| 영역 | 항목 | 우선순위 |
+|------|------|----------|
+| A | 디자인 시스템/CSS 프레임워크 선택 | HIGH — A-4 시작 전 필수 |
+| A | QR 체크인 메커니즘 상세 | MEDIUM — A-1 출석 구현 시 |
+| A | 반응형 전략 (모바일/데스크탑 우선) | HIGH — A-4 시작 전 필수 |
+| A | 다크모드 구현 여부 | LOW — A-5 시작 전 |
+| B | 폴링 주기 | LOW — B 프론트 구현 시 |
+| B | 비공개 계정 DM 정책 상세 | MEDIUM — B API 구현 시 |
+| B | 대화방 삭제/나가기 기능 | LOW — B 후반 |
+| B | 이미지/파일 첨부 여부 | MEDIUM — B 기획 시 |
+| C | 멘션 다중 저장 방식 (별도 테이블 vs JSON) | HIGH — C 스키마 설계 시 |
+| C | 멘션 알림 (Phase 4 vs 5) | MEDIUM — C 구현 시 |
+| C | MentionInput 라이브러리 선택 | MEDIUM — C 프론트 구현 시 |
+| D | OAuth 우선순위 (카카오/구글/네이버) | LOW — D 시작 시 |
+| D | 최초 가입 시 프로필 설정 플로우 | MEDIUM — D 연동 시 |
+| D | 동일 이메일 다중 OAuth 계정 연동 | MEDIUM — D 후반 |
+| E | API 서버 호스팅 환경 | HIGH — E-1 시작 전 필수 |
+| E | 도메인 보유/설정 | HIGH — E-2 시작 전 필수 |
+| E | HTTPS/인증서 방식 | MEDIUM — E-1 구현 시 |
+| F | 성능 목표 수치 | LOW — F 분석 시 |
