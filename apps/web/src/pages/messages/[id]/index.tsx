@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { api } from "@/lib/api-client";
+import { api, API_BASE } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -92,6 +92,45 @@ export default function MessageDetailPage() {
       fetchConversation();
       markAsRead();
     }
+  }, [id]);
+
+  // SSE connection for real-time messages
+  useEffect(() => {
+    if (!id) return;
+
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+
+    const eventSource = new EventSource(
+      `${API_BASE}/conversations/sse?token=${encodeURIComponent(token)}`
+    );
+
+    eventSource.addEventListener("new-message", (event) => {
+      try {
+        const message = JSON.parse(event.data) as Message;
+        // Only add message if it belongs to current conversation
+        if (message.conversationId === id) {
+          setMessages((prev) => {
+            // Avoid duplicates
+            if (prev.some((m) => m.id === message.id)) return prev;
+            return [...prev, message];
+          });
+          // Auto-mark as read when new message arrives
+          markAsRead();
+        }
+      } catch (err) {
+        console.error("Failed to parse SSE message:", err);
+      }
+    });
+
+    eventSource.onerror = (err) => {
+      console.error("SSE error:", err);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
   }, [id]);
 
   useEffect(() => {

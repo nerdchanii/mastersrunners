@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { api } from "@/lib/api-client";
+import { api, API_BASE } from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
 
 interface ConversationsResponse {
@@ -40,10 +40,30 @@ export default function Header() {
       }
     };
 
+    // Initial fetch
     fetchUnreadCount();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
+
+    // Set up SSE connection for real-time updates
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+
+    const eventSource = new EventSource(
+      `${API_BASE}/conversations/sse?token=${encodeURIComponent(token)}`
+    );
+
+    eventSource.addEventListener("new-message", () => {
+      // When a new message arrives, refresh the unread count
+      fetchUnreadCount();
+    });
+
+    eventSource.onerror = (err) => {
+      console.error("SSE error in header:", err);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
   }, [isAuthenticated]);
 
   const visibleLinks = navLinks.filter(

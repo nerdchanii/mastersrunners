@@ -9,16 +9,24 @@ import {
   Query,
   UseGuards,
   Req,
+  Sse,
+  MessageEvent,
 } from "@nestjs/common";
+import { Observable } from "rxjs";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard.js";
+import { JwtSseGuard } from "../auth/guards/jwt-sse.guard.js";
 import { ConversationsService } from "./conversations.service.js";
+import { ConversationsSseService } from "./conversations-sse.service.js";
 import { CreateConversationDto } from "./dto/create-conversation.dto.js";
 import { SendMessageDto } from "./dto/send-message.dto.js";
 
 @Controller("conversations")
 @UseGuards(JwtAuthGuard)
 export class ConversationsController {
-  constructor(private readonly conversationsService: ConversationsService) {}
+  constructor(
+    private readonly conversationsService: ConversationsService,
+    private readonly sseService: ConversationsSseService,
+  ) {}
 
   @Post()
   async startConversation(
@@ -78,5 +86,11 @@ export class ConversationsController {
     @Param("id") id: string,
   ) {
     return this.conversationsService.deleteMessage(id, req.user.userId);
+  }
+
+  @Sse("sse")
+  @UseGuards(JwtSseGuard)
+  sse(@Req() req: { user: { userId: string } }): Observable<MessageEvent> {
+    return this.sseService.addConnection(req.user.userId);
   }
 }

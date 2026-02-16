@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { AuthController } from "./auth.controller.js";
 import { AuthService } from "./auth.service.js";
 import { JwtStrategy } from "./strategies/jwt.strategy.js";
+import { JwtSseGuard } from "./guards/jwt-sse.guard.js";
 import { KakaoStrategy } from "./strategies/kakao.strategy.js";
 import { GoogleStrategy } from "./strategies/google.strategy.js";
 import { NaverStrategy } from "./strategies/naver.strategy.js";
@@ -33,7 +34,7 @@ if (process.env.NAVER_CLIENT_ID) oauthStrategies.push(NaverStrategy);
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, ...oauthStrategies, UserRepository, AccountRepository],
-  exports: [AuthService, UserRepository],
+  providers: [AuthService, JwtStrategy, JwtSseGuard, ...oauthStrategies, UserRepository, AccountRepository],
+  exports: [AuthService, UserRepository, JwtModule, JwtSseGuard],
 })
 export class AuthModule {}

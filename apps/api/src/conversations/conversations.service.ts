@@ -6,12 +6,14 @@ import {
 } from "@nestjs/common";
 import { ConversationsRepository } from "./repositories/conversations.repository.js";
 import { BlockRepository } from "../block/repositories/block.repository.js";
+import { ConversationsSseService } from "./conversations-sse.service.js";
 
 @Injectable()
 export class ConversationsService {
   constructor(
     private readonly conversationsRepo: ConversationsRepository,
     private readonly blockRepo: BlockRepository,
+    private readonly sseService: ConversationsSseService,
   ) {}
 
   async startConversation(userId: string, participantId: string) {
@@ -126,7 +128,14 @@ export class ConversationsService {
     }
 
     // Create message + update conversation updatedAt
-    return this.conversationsRepo.createMessage(conversationId, userId, content);
+    const message = await this.conversationsRepo.createMessage(conversationId, userId, content);
+
+    // Send SSE event to recipient
+    if (otherParticipant) {
+      this.sseService.sendToUser(otherParticipant.userId, message);
+    }
+
+    return message;
   }
 
   async markAsRead(conversationId: string, userId: string) {

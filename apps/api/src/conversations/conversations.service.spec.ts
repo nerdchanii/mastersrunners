@@ -3,6 +3,7 @@ import { BadRequestException, ForbiddenException, NotFoundException } from "@nes
 import { ConversationsService } from "./conversations.service";
 import { ConversationsRepository } from "./repositories/conversations.repository";
 import { BlockRepository } from "../block/repositories/block.repository";
+import { ConversationsSseService } from "./conversations-sse.service";
 
 const mockConversationsRepository = {
   findOrCreateDirect: jest.fn(),
@@ -21,6 +22,10 @@ const mockBlockRepository = {
   isBlocked: jest.fn(),
 };
 
+const mockSseService = {
+  sendToUser: jest.fn(),
+};
+
 describe("ConversationsService", () => {
   let service: ConversationsService;
 
@@ -31,6 +36,7 @@ describe("ConversationsService", () => {
         ConversationsService,
         { provide: ConversationsRepository, useValue: mockConversationsRepository },
         { provide: BlockRepository, useValue: mockBlockRepository },
+        { provide: ConversationsSseService, useValue: mockSseService },
       ],
     }).compile();
     service = module.get(ConversationsService);
@@ -353,6 +359,38 @@ describe("ConversationsService", () => {
       await expect(
         service.sendMessage(conversationId, userId, content),
       ).rejects.toThrow("차단된 사용자에게 메시지를 보낼 수 없습니다.");
+    });
+
+    it("should send SSE event to recipient when message is created", async () => {
+      const conversationId = "conv-1";
+      const userId = "user-1";
+      const recipientId = "user-2";
+      const content = "Hello";
+      const conversation = {
+        id: conversationId,
+        participants: [
+          { userId: "user-1" },
+          { userId: recipientId },
+        ],
+      };
+      const createdMessage = {
+        id: "msg-1",
+        conversationId,
+        senderId: userId,
+        content,
+        createdAt: new Date(),
+        deletedAt: null,
+        sender: { id: userId, name: "User 1", profileImage: null },
+      };
+
+      mockConversationsRepository.isParticipant.mockResolvedValue(true);
+      mockConversationsRepository.findById.mockResolvedValue(conversation);
+      mockBlockRepository.isBlocked.mockResolvedValue(false);
+      mockConversationsRepository.createMessage.mockResolvedValue(createdMessage);
+
+      await service.sendMessage(conversationId, userId, content);
+
+      expect(mockSseService.sendToUser).toHaveBeenCalledWith(recipientId, createdMessage);
     });
   });
 
