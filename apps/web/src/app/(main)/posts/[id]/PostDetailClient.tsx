@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { PostCard } from "@/components/post/PostCard";
@@ -34,11 +34,11 @@ interface Post {
   workouts?: Workout[];
 }
 
-function PostDetailContent() {
-  const searchParams = useSearchParams();
+export default function PostDetailClient() {
+  const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const postId = searchParams.get("id");
+  const postId = params.id as string;
 
   const [post, setPost] = useState<Post | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +46,7 @@ function PostDetailContent() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    if (!postId) return;
+    if (!postId || postId === "_") return;
     const fetchPost = async () => {
       try {
         setIsLoading(true);
@@ -99,7 +99,7 @@ function PostDetailContent() {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  if (!postId) {
+  if (!postId || postId === "_") {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
         <p className="text-gray-500">게시글 ID가 필요합니다.</p>
@@ -152,6 +152,12 @@ function PostDetailContent() {
     <div className="max-w-2xl mx-auto space-y-6">
       {isOwner && (
         <div className="flex justify-end gap-3">
+          <button
+            onClick={() => router.push(`/posts/${postId}/edit`)}
+            className="px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-300 rounded-md hover:bg-indigo-100"
+          >
+            수정
+          </button>
           <button
             onClick={handleDelete}
             disabled={isDeleting}
@@ -216,13 +222,5 @@ function PostDetailContent() {
         </button>
       </div>
     </div>
-  );
-}
-
-export default function PostDetailPage() {
-  return (
-    <Suspense fallback={<div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" /></div>}>
-      <PostDetailContent />
-    </Suspense>
   );
 }

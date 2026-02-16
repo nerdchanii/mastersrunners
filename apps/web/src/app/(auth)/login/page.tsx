@@ -8,7 +8,7 @@ import { api, API_BASE } from "@/lib/api-client";
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, refreshUser } = useAuth();
   const error = searchParams.get("error");
 
   useEffect(() => {
@@ -76,6 +76,7 @@ function LoginContent() {
                 if (!res.ok) throw new Error("Dev login failed");
                 const data = await res.json();
                 api.setTokens(data.accessToken, data.refreshToken);
+                await refreshUser();
                 router.replace("/");
               } catch {
                 // silently fail

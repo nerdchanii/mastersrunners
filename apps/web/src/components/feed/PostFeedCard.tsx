@@ -57,7 +57,7 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
   };
 
   return (
-    <Link href={`/posts/detail?id=${post.id}`}>
+    <Link href={`/posts/${post.id}`}>
       <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer">
         {/* User Info */}
         <div className="flex items-center gap-3 mb-4">

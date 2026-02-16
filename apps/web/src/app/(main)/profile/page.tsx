@@ -360,7 +360,7 @@ export default function ProfilePage() {
                   <div
                     key={post.id}
                     className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
-                    onClick={() => router.push(`/posts/detail?id=${post.id}`)}
+                    onClick={() => router.push(`/posts/${post.id}`)}
                   >
                     <p className="text-gray-900 line-clamp-3">{post.content}</p>
                     <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
