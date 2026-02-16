@@ -1,11 +1,18 @@
 import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api-client";
+import { Badge } from "@/components/ui/badge";
+
+interface ConversationsResponse {
+  data: Array<{ unreadCount: number }>;
+}
 
 export default function Header() {
   const { isAuthenticated, isLoading, logout } = useAuth();
   const { pathname } = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const isActive = (path: string) => pathname === path;
 
@@ -14,10 +21,30 @@ export default function Header() {
     { href: "/crews", label: "크루", auth: true },
     { href: "/events", label: "대회", auth: false },
     { href: "/challenges", label: "챌린지", auth: false },
+    { href: "/messages", label: "메시지", auth: true, badge: unreadCount > 0 },
     { href: "/workouts", label: "내 기록", auth: true },
     { href: "/workouts/new", label: "기록 추가", auth: true },
     { href: "/profile", label: "프로필", auth: true },
   ];
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const fetchUnreadCount = async () => {
+      try {
+        const data = await api.fetch<ConversationsResponse>("/conversations?limit=100");
+        const total = data.data.reduce((sum, conv) => sum + conv.unreadCount, 0);
+        setUnreadCount(total);
+      } catch (err) {
+        console.error("Failed to fetch unread count:", err);
+      }
+    };
+
+    fetchUnreadCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   const visibleLinks = navLinks.filter(
     (link) => !link.auth || isAuthenticated
@@ -39,13 +66,21 @@ export default function Header() {
               <Link
                 key={link.href}
                 to={link.href}
-                className={`relative text-sm font-medium transition-colors ${
+                className={`relative text-sm font-medium transition-colors flex items-center gap-1 ${
                   isActive(link.href)
                     ? "text-gray-900"
                     : "text-gray-600 hover:text-gray-900"
                 }`}
               >
                 {link.label}
+                {link.badge && (
+                  <Badge
+                    variant="default"
+                    className="bg-red-600 text-white h-4 min-w-[16px] px-1 text-[10px] flex items-center justify-center"
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </Badge>
+                )}
                 {isActive(link.href) && (
                   <span className="absolute -bottom-[21px] left-0 h-0.5 w-full bg-gray-900" />
                 )}
@@ -114,13 +149,21 @@ export default function Header() {
                 key={link.href}
                 to={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+                className={`rounded-lg px-4 py-3 text-sm font-medium transition-colors flex items-center justify-between ${
                   isActive(link.href)
                     ? "bg-gray-100 text-gray-900"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
                 {link.label}
+                {link.badge && (
+                  <Badge
+                    variant="default"
+                    className="bg-red-600 text-white h-4 min-w-[16px] px-1 text-[10px] flex items-center justify-center"
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </Badge>
+                )}
               </Link>
             ))}
 

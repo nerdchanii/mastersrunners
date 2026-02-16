@@ -26,6 +26,8 @@ import ChallengeDetailPage from "@/pages/challenges/[id]";
 import EventsPage from "@/pages/events";
 import EventNewPage from "@/pages/events/new";
 import EventDetailPage from "@/pages/events/[id]";
+import MessagesPage from "@/pages/messages";
+import MessageDetailPage from "@/pages/messages/[id]";
 
 function RootLayout() {
   return (
@@ -97,6 +99,8 @@ export const router = createBrowserRouter([
           { path: "/events", element: <EventsPage /> },
           { path: "/events/new", element: <EventNewPage /> },
           { path: "/events/:id", element: <EventDetailPage /> },
+          { path: "/messages", element: <MessagesPage /> },
+          { path: "/messages/:id", element: <MessageDetailPage /> },
         ],
       },
     ],
