@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Query } from "@nestjs/common";
+import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { CrewsService } from "./crews.service.js";
@@ -9,17 +10,22 @@ import { UpdateCrewTagDto } from "./dto/update-crew-tag.dto.js";
 import { CreateCrewActivityDto } from "./dto/create-crew-activity.dto.js";
 import { UpdateCrewActivityDto } from "./dto/update-crew-activity.dto.js";
 
+@ApiTags("Crews")
 @SkipThrottle()
 @Controller("crews")
 export class CrewsController {
   constructor(private readonly crewsService: CrewsService) {}
 
+  @ApiOperation({ summary: '크루 생성' })
+  @ApiResponse({ status: 201, description: '생성 성공' })
   @Post()
   create(@Req() req: Request, @Body() dto: CreateCrewDto) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.create(userId, dto);
   }
 
+  @ApiOperation({ summary: '크루 목록 조회' })
+  @ApiResponse({ status: 200, description: '성공' })
   @Get()
   findAll(
     @Query("isPublic") isPublic?: string,
@@ -39,6 +45,8 @@ export class CrewsController {
     return this.crewsService.findMyCrews(userId);
   }
 
+  @ApiOperation({ summary: '크루 상세 조회' })
+  @ApiResponse({ status: 200, description: '성공' })
   @Get(":id")
   findOne(@Param("id") id: string) {
     return this.crewsService.findOne(id);

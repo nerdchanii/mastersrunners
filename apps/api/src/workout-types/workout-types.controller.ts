@@ -1,8 +1,10 @@
 import { Controller, Get, Param } from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
 import { Public } from "../common/decorators/public.decorator.js";
 import { WorkoutTypesService } from "./workout-types.service.js";
 
+@ApiTags("Workout Types")
 @Controller("workout-types")
 @Public()
 @SkipThrottle()

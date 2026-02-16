@@ -1,9 +1,11 @@
 import { Controller, Post, Get, Delete, Param, Body, Req, Query } from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { WorkoutSocialService } from "./workout-social.service.js";
 import { CreateWorkoutCommentDto } from "./dto/create-workout-comment.dto.js";
 
+@ApiTags("Workout Social")
 @SkipThrottle()
 @Controller("workouts")
 export class WorkoutSocialController {

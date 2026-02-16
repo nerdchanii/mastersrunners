@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Req, ForbiddenException, NotFoundException } from "@nestjs/common";
+import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { WorkoutsService } from "./workouts.service.js";
@@ -6,23 +7,30 @@ import { CreateWorkoutDto } from "./dto/create-workout.dto.js";
 import { UpdateWorkoutDto } from "./dto/update-workout.dto.js";
 import { Public } from "../common/decorators/public.decorator.js";
 
+@ApiTags("Workouts")
 @SkipThrottle()
 @Controller("workouts")
 export class WorkoutsController {
   constructor(private readonly workoutsService: WorkoutsService) {}
 
+  @ApiOperation({ summary: '내 워크아웃 목록 조회' })
+  @ApiResponse({ status: 200, description: '성공' })
   @Get()
   findAll(@Req() req: Request) {
     const { userId } = req.user as { userId: string };
     return this.workoutsService.findAll(userId);
   }
 
+  @ApiOperation({ summary: '워크아웃 생성' })
+  @ApiResponse({ status: 201, description: '생성 성공' })
   @Post()
   create(@Req() req: Request, @Body() dto: CreateWorkoutDto) {
     const { userId } = req.user as { userId: string };
     return this.workoutsService.create(userId, dto);
   }
 
+  @ApiOperation({ summary: '워크아웃 상세 조회' })
+  @ApiResponse({ status: 200, description: '성공' })
   @Public()
   @Get(":id")
   async findOne(@Param("id") id: string, @Req() req: Request) {

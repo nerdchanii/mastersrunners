@@ -1,8 +1,10 @@
 import { Controller, Get, Post, Delete, Param, Req } from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { FollowService } from "./follow.service.js";
 
+@ApiTags("Follow")
 @SkipThrottle()
 @Controller("follow")
 export class FollowController {

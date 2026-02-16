@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Req, Res, UseGuards, NotFoundException } from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
 import { ConfigService } from "@nestjs/config";
 import { SkipThrottle } from "@nestjs/throttler";
@@ -8,6 +9,7 @@ import type { OAuthProfile } from "./auth.service.js";
 import { RefreshTokenDto } from "./dto/refresh-token.dto.js";
 import { Public } from "../common/decorators/public.decorator.js";
 
+@ApiTags("Auth")
 @SkipThrottle()
 @Controller("auth")
 export class AuthController {

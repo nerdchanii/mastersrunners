@@ -1,8 +1,10 @@
 import { Controller, Post, Delete, Get, Param, Req } from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { BlockService } from "./block.service.js";
 
+@ApiTags("Block")
 @SkipThrottle()
 @Controller("block")
 export class BlockController {

@@ -1,10 +1,12 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Query, ForbiddenException, NotFoundException } from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { PostsService } from "./posts.service.js";
 import { CreatePostDto } from "./dto/create-post.dto.js";
 import { UpdatePostDto } from "./dto/update-post.dto.js";
 
+@ApiTags("Posts")
 @SkipThrottle()
 @Controller("posts")
 export class PostsController {
