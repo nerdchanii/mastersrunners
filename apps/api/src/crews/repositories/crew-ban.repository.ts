@@ -19,6 +19,15 @@ export class CrewBanRepository {
     return this.db.prisma.crewBan.findMany({
       where: { crewId },
       orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            profileImage: true,
+          },
+        },
+      },
     });
   }
 

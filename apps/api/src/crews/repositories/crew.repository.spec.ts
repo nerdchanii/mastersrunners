@@ -103,6 +103,18 @@ describe("CrewRepository", () => {
             include: { user: { select: { id: true, name: true, profileImage: true } } },
           },
           tags: true,
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              profileImage: true,
+            },
+          },
+          _count: {
+            select: {
+              members: { where: { status: "ACTIVE" } },
+            },
+          },
         },
       });
       expect(result).toEqual(mockCrew);

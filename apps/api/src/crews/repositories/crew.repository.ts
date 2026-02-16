@@ -49,6 +49,18 @@ export class CrewRepository {
           },
         },
         tags: true,
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            profileImage: true,
+          },
+        },
+        _count: {
+          select: {
+            members: { where: { status: "ACTIVE" } },
+          },
+        },
       },
     });
   }

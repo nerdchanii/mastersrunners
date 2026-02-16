@@ -106,6 +106,7 @@ model User {
   // Group
   crewMemberships CrewMember[]
   createdCrews    Crew[]
+  crewBans        CrewBan[]
 
   // Challenge
   challengeParticipations ChallengeParticipant[]
@@ -493,6 +494,7 @@ model CrewBan {
   crewId    String
   userId    String
   crew      Crew     @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   bannedBy  String
   reason    String?
   createdAt DateTime @default(now())

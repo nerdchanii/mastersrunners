@@ -75,6 +75,15 @@ describe("CrewBanRepository", () => {
       expect(mockPrisma.crewBan.findMany).toHaveBeenCalledWith({
         where: { crewId: "crew-1" },
         orderBy: { createdAt: "desc" },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              profileImage: true,
+            },
+          },
+        },
       });
       expect(result).toEqual(mockBans);
     });
