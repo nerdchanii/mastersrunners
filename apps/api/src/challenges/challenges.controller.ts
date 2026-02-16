@@ -77,4 +77,40 @@ export class ChallengesController {
   getLeaderboard(@Param("id") id: string, @Query("limit") limit?: string) {
     return this.challengesService.getLeaderboard(id, limit ? parseInt(limit, 10) : undefined);
   }
+
+  // ============ Teams ============
+
+  @Post(":id/teams")
+  createTeam(@Param("id") id: string, @Req() req: Request, @Body("teamName") teamName: string) {
+    const { userId } = req.user as { userId: string };
+    return this.challengesService.createTeam(id, userId, teamName);
+  }
+
+  @Get(":id/teams")
+  getTeams(@Param("id") id: string) {
+    return this.challengesService.getTeams(id);
+  }
+
+  @Post(":id/teams/:teamId/join")
+  joinTeam(@Param("id") id: string, @Param("teamId") teamId: string, @Req() req: Request) {
+    const { userId } = req.user as { userId: string };
+    return this.challengesService.joinTeam(id, userId, teamId);
+  }
+
+  @Delete(":id/teams/leave")
+  leaveTeam(@Param("id") id: string, @Req() req: Request) {
+    const { userId } = req.user as { userId: string };
+    return this.challengesService.leaveTeam(id, userId);
+  }
+
+  @Delete(":id/teams/:teamId")
+  removeTeam(@Param("id") id: string, @Param("teamId") teamId: string, @Req() req: Request) {
+    const { userId } = req.user as { userId: string };
+    return this.challengesService.removeTeam(teamId, userId);
+  }
+
+  @Get(":id/teams/leaderboard")
+  getTeamLeaderboard(@Param("id") id: string) {
+    return this.challengesService.getTeamLeaderboard(id);
+  }
 }

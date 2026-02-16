@@ -1,4 +1,17 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsBoolean, IsDateString, IsIn } from "class-validator";
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsBoolean, IsDateString, IsIn, IsPositive, Validate, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from "class-validator";
+
+@ValidatorConstraint({ name: "isAfterStartDate", async: false })
+class IsAfterStartDate implements ValidatorConstraintInterface {
+  validate(value: string, args: ValidationArguments) {
+    const obj = args.object as CreateChallengeDto;
+    if (!obj.startDate || !value) return true;
+    return new Date(value) > new Date(obj.startDate);
+  }
+
+  defaultMessage() {
+    return "종료일은 시작일 이후여야 합니다.";
+  }
+}
 
 export class CreateChallengeDto {
   @IsString()
@@ -15,6 +28,7 @@ export class CreateChallengeDto {
   type!: string;
 
   @IsNumber()
+  @IsPositive()
   targetValue!: number;
 
   @IsString()
@@ -26,6 +40,7 @@ export class CreateChallengeDto {
   startDate!: string;
 
   @IsDateString()
+  @Validate(IsAfterStartDate)
   endDate!: string;
 
   @IsOptional()
