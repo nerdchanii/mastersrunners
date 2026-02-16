@@ -1,10 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { Upload, FileText, Activity, Clock, Route, Eye } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/common/PageHeader";
+import { formatDistance, formatDuration, formatPace } from "@/lib/format";
+
+interface ParsedWorkoutData {
+  distance: number; // meters
+  duration: number; // seconds
+  startTime: string; // ISO string
+}
 
 export default function NewWorkoutPage() {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [activeTab, setActiveTab] = useState<"file" | "manual">("file");
   const [date, setDate] = useState("");
   const [distance, setDistance] = useState("");
   const [hours, setHours] = useState("");
@@ -14,29 +32,117 @@ export default function NewWorkoutPage() {
   const [visibility, setVisibility] = useState<"PRIVATE" | "FOLLOWERS" | "PUBLIC">("FOLLOWERS");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pace, setPace] = useState<string>("");
+  const [parsedData, setParsedData] = useState<ParsedWorkoutData | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
     setDate(today);
   }, []);
 
-  useEffect(() => {
+  const pace = (() => {
     const distanceNum = parseFloat(distance);
     const hoursNum = parseInt(hours) || 0;
     const minutesNum = parseInt(minutes) || 0;
     const secondsNum = parseInt(seconds) || 0;
     const totalSeconds = hoursNum * 3600 + minutesNum * 60 + secondsNum;
     if (distanceNum > 0 && totalSeconds > 0) {
-      const paceInMinutes = totalSeconds / 60 / distanceNum;
-      const paceMinutes = Math.floor(paceInMinutes);
-      const paceSeconds = Math.round((paceInMinutes - paceMinutes) * 60);
-      setPace(`${paceMinutes}:${paceSeconds.toString().padStart(2, "0")} min/km`);
-    } else {
-      setPace("");
+      const secPerKm = totalSeconds / distanceNum;
+      return formatPace(secPerKm);
     }
-  }, [distance, hours, minutes, seconds]);
+    return null;
+  })();
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileUpload(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileUpload(e.target.files[0]);
+    }
+  };
+
+  const handleFileUpload = async (file: File) => {
+    setError(null);
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (!ext || !["fit", "gpx"].includes(ext)) {
+      setError("FIT 또는 GPX 파일만 업로드 가능합니다.");
+      return;
+    }
+
+    setUploadedFile(file);
+    setIsUploading(true);
+
+    try {
+      // Step 1: Get presigned URL
+      const presignData = await api.fetch<{ uploadUrl: string; key: string }>("/uploads/presign", {
+        method: "POST",
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type || "application/octet-stream",
+        }),
+      });
+
+      // Step 2: Upload to R2
+      const uploadRes = await fetch(presignData.uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+        },
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error("파일 업로드에 실패했습니다.");
+      }
+
+      setIsUploading(false);
+      setIsParsing(true);
+
+      // Step 3: Parse the file
+      const parsed = await api.fetch<ParsedWorkoutData>("/uploads/parse", {
+        method: "POST",
+        body: JSON.stringify({ key: presignData.key }),
+      });
+
+      setParsedData(parsed);
+      setIsParsing(false);
+
+      // Auto-fill form fields
+      setDistance((parsed.distance / 1000).toFixed(2));
+      const h = Math.floor(parsed.duration / 3600);
+      const m = Math.floor((parsed.duration % 3600) / 60);
+      const s = parsed.duration % 60;
+      setHours(h > 0 ? h.toString() : "");
+      setMinutes(m > 0 ? m.toString() : "");
+      setSeconds(s > 0 ? s.toString() : "");
+      setDate(new Date(parsed.startTime).toISOString().split("T")[0]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "파일 처리 중 오류가 발생했습니다.");
+      setIsUploading(false);
+      setIsParsing(false);
+    }
+  };
 
   const validateForm = (): string | null => {
     if (!date) return "날짜를 입력해주세요.";
@@ -54,7 +160,10 @@ export default function NewWorkoutPage() {
     e.preventDefault();
     setError(null);
     const validationError = validateForm();
-    if (validationError) { setError(validationError); return; }
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setIsSubmitting(true);
     try {
       const hoursNum = parseInt(hours) || 0;
@@ -63,7 +172,13 @@ export default function NewWorkoutPage() {
       const duration = hoursNum * 3600 + minutesNum * 60 + secondsNum;
       await api.fetch("/workouts", {
         method: "POST",
-        body: JSON.stringify({ distance: parseFloat(distance), duration, date, memo: memo.trim() || undefined, visibility }),
+        body: JSON.stringify({
+          distance: parseFloat(distance),
+          duration,
+          date,
+          memo: memo.trim() || undefined,
+          visibility,
+        }),
       });
       navigate("/workouts");
     } catch (err) {
@@ -73,92 +188,251 @@ export default function NewWorkoutPage() {
     }
   };
 
-  const handleCancel = () => { navigate(-1); };
+  const handleCancel = () => {
+    navigate(-1);
+  };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">새 기록 추가</h1>
-        <p className="mt-2 text-sm text-gray-600">훈련 기록을 추가하세요.</p>
-      </div>
+    <div className="container max-w-3xl py-6">
+      <PageHeader title="새 기록 추가" description="훈련 파일을 업로드하거나 직접 기록을 입력하세요." />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         {error && (
-          <div className="rounded-md bg-red-50 p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3"><p className="text-sm font-medium text-red-800">{error}</p></div>
-            </div>
-          </div>
+          <Card className="border-destructive/50 bg-destructive/10">
+            <CardContent className="pt-6">
+              <p className="text-sm font-medium text-destructive">{error}</p>
+            </CardContent>
+          </Card>
         )}
 
-        <div className="bg-white shadow sm:rounded-lg">
-          <div className="px-4 py-5 sm:p-6 space-y-6">
-            <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-700">날짜 <span className="text-red-500">*</span></label>
-              <input type="date" id="date" value={date} onChange={(e) => setDate(e.target.value)} required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border" />
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "file" | "manual")}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="file">
+              <Upload className="mr-2" />
+              파일로 기록하기
+            </TabsTrigger>
+            <TabsTrigger value="manual">
+              <FileText className="mr-2" />
+              직접 입력하기
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="file" className="space-y-6 mt-6">
+            <Card>
+              <CardContent className="pt-6">
+                <div
+                  className={`relative rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+                    dragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25"
+                  }`}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".fit,.gpx"
+                    className="hidden"
+                    onChange={handleFileChange}
+                    disabled={isUploading || isParsing}
+                  />
+                  <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <div className="mt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading || isParsing}
+                    >
+                      파일 선택
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    또는 FIT/GPX 파일을 드래그 앤 드롭하세요
+                  </p>
+                  {uploadedFile && (
+                    <Badge variant="outline" className="mt-4">
+                      {uploadedFile.name}
+                    </Badge>
+                  )}
+                  {isUploading && (
+                    <p className="mt-4 text-sm text-muted-foreground">업로드 중...</p>
+                  )}
+                  {isParsing && (
+                    <p className="mt-4 text-sm text-muted-foreground">파일 분석 중...</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {parsedData && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="mb-4 text-sm font-semibold">파싱된 데이터 미리보기</h3>
+                  <div className="grid gap-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Route className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">거리:</span>
+                      <span className="font-medium">{formatDistance(parsedData.distance)} km</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">시간:</span>
+                      <span className="font-medium">{formatDuration(parsedData.duration)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">페이스:</span>
+                      <span className="font-medium">
+                        {formatPace(parsedData.duration / (parsedData.distance / 1000))} /km
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    아래에서 값을 수정할 수 있습니다.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="manual" className="mt-6">
+            <p className="text-sm text-muted-foreground mb-6">
+              수동으로 훈련 기록을 입력하세요.
+            </p>
+          </TabsContent>
+        </Tabs>
+
+        <Card>
+          <CardContent className="pt-6 space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="date">
+                날짜 <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                type="date"
+                id="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
             </div>
 
-            <div>
-              <label htmlFor="distance" className="block text-sm font-medium text-gray-700">거리 (km) <span className="text-red-500">*</span></label>
-              <input type="number" id="distance" value={distance} onChange={(e) => setDistance(e.target.value)} step="0.01" min="0.01" placeholder="5.0" required className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border" />
+            <div className="space-y-2">
+              <Label htmlFor="distance">
+                거리 (km) <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                type="number"
+                id="distance"
+                value={distance}
+                onChange={(e) => setDistance(e.target.value)}
+                step="0.01"
+                min="0.01"
+                placeholder="5.0"
+                required
+              />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">시간 <span className="text-red-500">*</span></label>
+            <div className="space-y-2">
+              <Label>
+                시간 <span className="text-destructive">*</span>
+              </Label>
               <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label htmlFor="hours" className="block text-xs text-gray-500 mb-1">시간</label>
-                  <input type="number" id="hours" value={hours} onChange={(e) => setHours(e.target.value)} min="0" placeholder="0" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border" />
+                <div className="space-y-2">
+                  <Label htmlFor="hours" className="text-xs text-muted-foreground">
+                    시간
+                  </Label>
+                  <Input
+                    type="number"
+                    id="hours"
+                    value={hours}
+                    onChange={(e) => setHours(e.target.value)}
+                    min="0"
+                    placeholder="0"
+                  />
                 </div>
-                <div>
-                  <label htmlFor="minutes" className="block text-xs text-gray-500 mb-1">분</label>
-                  <input type="number" id="minutes" value={minutes} onChange={(e) => setMinutes(e.target.value)} min="0" max="59" placeholder="30" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border" />
+                <div className="space-y-2">
+                  <Label htmlFor="minutes" className="text-xs text-muted-foreground">
+                    분
+                  </Label>
+                  <Input
+                    type="number"
+                    id="minutes"
+                    value={minutes}
+                    onChange={(e) => setMinutes(e.target.value)}
+                    min="0"
+                    max="59"
+                    placeholder="30"
+                  />
                 </div>
-                <div>
-                  <label htmlFor="seconds" className="block text-xs text-gray-500 mb-1">초</label>
-                  <input type="number" id="seconds" value={seconds} onChange={(e) => setSeconds(e.target.value)} min="0" max="59" placeholder="0" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border" />
+                <div className="space-y-2">
+                  <Label htmlFor="seconds" className="text-xs text-muted-foreground">
+                    초
+                  </Label>
+                  <Input
+                    type="number"
+                    id="seconds"
+                    value={seconds}
+                    onChange={(e) => setSeconds(e.target.value)}
+                    min="0"
+                    max="59"
+                    placeholder="0"
+                  />
                 </div>
               </div>
             </div>
 
             {pace && (
-              <div className="bg-indigo-50 rounded-md p-4">
-                <div className="flex items-center">
-                  <svg className="h-5 w-5 text-indigo-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-sm font-medium text-indigo-900">예상 페이스: {pace}</span>
-                </div>
-              </div>
+              <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-primary" />
+                    <span className="text-sm font-medium">예상 페이스: {pace} /km</span>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
-            <div>
-              <label htmlFor="memo" className="block text-sm font-medium text-gray-700">메모 (선택)</label>
-              <textarea id="memo" value={memo} onChange={(e) => setMemo(e.target.value)} rows={4} placeholder="오늘의 훈련에 대한 메모를 남겨보세요..." className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border" />
+            <div className="space-y-2">
+              <Label htmlFor="memo">메모 (선택)</Label>
+              <Textarea
+                id="memo"
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                rows={4}
+                placeholder="오늘의 훈련에 대한 메모를 남겨보세요..."
+              />
             </div>
 
-            <div>
-              <label htmlFor="visibility" className="block text-sm font-medium text-gray-700">공개 설정</label>
-              <select id="visibility" value={visibility} onChange={(e) => setVisibility(e.target.value as "PRIVATE" | "FOLLOWERS" | "PUBLIC")} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border">
+            <div className="space-y-2">
+              <Label htmlFor="visibility">
+                <Eye className="inline h-4 w-4 mr-1" />
+                공개 설정
+              </Label>
+              <select
+                id="visibility"
+                value={visibility}
+                onChange={(e) => setVisibility(e.target.value as "PRIVATE" | "FOLLOWERS" | "PUBLIC")}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+              >
                 <option value="PRIVATE">비공개</option>
                 <option value="FOLLOWERS">팔로워 공개</option>
                 <option value="PUBLIC">전체 공개</option>
               </select>
-              <p className="mt-1 text-xs text-gray-500">누가 이 기록을 볼 수 있는지 설정합니다.</p>
+              <p className="text-xs text-muted-foreground">누가 이 기록을 볼 수 있는지 설정합니다.</p>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         <div className="flex justify-end gap-3">
-          <button type="button" onClick={handleCancel} disabled={isSubmitting} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">취소</button>
-          <button type="submit" disabled={isSubmitting} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center">
-            {isSubmitting ? (<><svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>저장 중...</>) : "저장"}
-          </button>
+          <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting}>
+            취소
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "저장 중..." : "저장"}
+          </Button>
         </div>
       </form>
     </div>

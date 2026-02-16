@@ -1,7 +1,12 @@
-
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Plus, Zap } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { PageHeader } from "@/components/common/PageHeader";
+import { EmptyState } from "@/components/common/EmptyState";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import ChallengeCard from "@/components/challenge/ChallengeCard";
 
 interface Challenge {
@@ -26,6 +31,7 @@ interface ChallengeListResponse {
 type ChallengeTab = "all" | "my";
 
 export default function ChallengesPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ChallengeTab>("all");
 
   const [items, setItems] = useState<Challenge[]>([]);
@@ -41,7 +47,7 @@ export default function ChallengesPage() {
 
       let path: string;
       if (tab === "my") {
-        path = "/challenges/my?limit=12";
+        path = "/challenges?joined=true&limit=12";
       } else {
         path = "/challenges?limit=12";
       }
@@ -51,15 +57,16 @@ export default function ChallengesPage() {
       }
 
       const data = await api.fetch<ChallengeListResponse>(path);
+      const items = data?.items ?? [];
 
       if (cursor) {
-        setItems((prev) => [...prev, ...data.items]);
+        setItems((prev) => [...prev, ...items]);
       } else {
-        setItems(data.items);
+        setItems(items);
       }
 
-      setNextCursor(data.nextCursor);
-      setHasMore(data.hasMore);
+      setNextCursor(data?.nextCursor ?? null);
+      setHasMore(data?.hasMore ?? false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "챌린지 목록을 불러올 수 없습니다.");
     } finally {
@@ -80,110 +87,79 @@ export default function ChallengesPage() {
     }
   };
 
-  const tabs: { key: ChallengeTab; label: string }[] = [
-    { key: "all", label: "전체" },
-    { key: "my", label: "내 챌린지" },
-  ];
-
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">챌린지</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            목표를 설정하고 함께 도전하세요.
-          </p>
-        </div>
-        <Link
-          to="/challenges/new"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          챌린지 만들기
-        </Link>
-      </div>
+    <div className="container max-w-7xl py-6 space-y-6">
+      <PageHeader
+        title="챌린지"
+        description="목표를 설정하고 함께 도전하세요"
+        actions={
+          <Button asChild>
+            <Link to="/challenges/new">
+              <Plus className="mr-2 size-4" />
+              챌린지 만들기
+            </Link>
+          </Button>
+        }
+      />
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 font-semibold transition-colors ${
-              activeTab === tab.key
-                ? "text-indigo-600 border-b-2 border-indigo-600"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ChallengeTab)}>
+        <TabsList variant="line">
+          <TabsTrigger value="all">전체</TabsTrigger>
+          <TabsTrigger value="my">내 챌린지</TabsTrigger>
+        </TabsList>
 
-      {/* Error */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{error}</p>
-          <button
-            onClick={() => fetchChallenges(activeTab)}
-            className="mt-2 text-red-600 hover:text-red-700 underline text-sm"
-          >
-            다시 시도
-          </button>
-        </div>
-      )}
+        <TabsContent value={activeTab} className="mt-6">
+          {error && (
+            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+              <p className="text-sm text-destructive font-medium">{error}</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => fetchChallenges(activeTab)}
+                className="mt-2 h-8"
+              >
+                다시 시도
+              </Button>
+            </div>
+          )}
 
-      {/* Grid */}
-      {items.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((challenge) => (
-            <ChallengeCard key={challenge.id} challenge={challenge} />
-          ))}
-        </div>
-      )}
+          {isLoading && items.length === 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-48 rounded-xl" />
+              ))}
+            </div>
+          ) : items.length > 0 ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {items.map((challenge) => (
+                  <ChallengeCard key={challenge.id} challenge={challenge} />
+                ))}
+              </div>
 
-      {/* Loading */}
-      {isLoading && (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-        </div>
-      )}
-
-      {/* Load More */}
-      {!isLoading && hasMore && items.length > 0 && (
-        <div className="flex justify-center">
-          <button
-            onClick={handleLoadMore}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-          >
-            더보기
-          </button>
-        </div>
-      )}
-
-      {/* No More */}
-      {!isLoading && !hasMore && items.length > 0 && (
-        <div className="text-center py-8 text-gray-500">
-          더 이상 챌린지가 없습니다.
-        </div>
-      )}
-
-      {/* Empty */}
-      {!isLoading && items.length === 0 && !error && (
-        <div className="text-center py-12">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          <p className="text-gray-500 text-lg mt-4">
-            {activeTab === "my" ? "참가한 챌린지가 없습니다." : "등록된 챌린지가 없습니다."}
-          </p>
-          <p className="text-gray-400 text-sm mt-2">
-            새로운 챌린지를 만들어보세요!
-          </p>
-        </div>
-      )}
+              {hasMore && (
+                <div className="flex justify-center pt-6">
+                  <Button
+                    onClick={handleLoadMore}
+                    disabled={isLoading}
+                    variant="outline"
+                  >
+                    {isLoading ? "불러오는 중..." : "더보기"}
+                  </Button>
+                </div>
+              )}
+            </>
+          ) : !error ? (
+            <EmptyState
+              icon={Zap}
+              title={activeTab === "my" ? "참가한 챌린지가 없습니다" : "등록된 챌린지가 없습니다"}
+              description="새로운 챌린지를 만들고 목표를 달성해보세요"
+              actionLabel="챌린지 만들기"
+              onAction={() => navigate("/challenges/new")}
+            />
+          ) : null}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

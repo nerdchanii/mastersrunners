@@ -1,23 +1,25 @@
-
-import { useState, useEffect } from "react";
-
+import { useState, useEffect, useRef } from "react";
+import { Send, Trash2 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { UserAvatar } from "@/components/common/UserAvatar";
+import { TimeAgo } from "@/components/common/TimeAgo";
+import { CommentContent } from "@/components/social/MentionLink";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 interface Comment {
   id: string;
   content: string;
   createdAt: string;
+  parentId?: string | null;
+  mentionedUserId?: string | null;
   user: {
     id: string;
     name: string;
     profileImage: string | null;
   };
-}
-
-interface CommentsResponse {
-  comments: Comment[];
-  nextCursor: string | null;
+  replies?: Comment[];
 }
 
 interface CommentListProps {
@@ -28,47 +30,47 @@ interface CommentListProps {
 export function CommentList({ entityType, entityId }: CommentListProps) {
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const fetchComments = async (cursor?: string) => {
+  const endpoint =
+    entityType === "workout"
+      ? `/workouts/${entityId}/comments`
+      : `/posts/${entityId}/comments`;
+
+  const fetchComments = async () => {
     try {
-      const endpoint =
-        entityType === "workout"
-          ? `/workouts/${entityId}/comments`
-          : `/posts/${entityId}/comments`;
-
-      const params = new URLSearchParams();
-      params.set("limit", "20");
-      if (cursor) params.set("cursor", cursor);
-
-      const data = await api.fetch<CommentsResponse | Comment[]>(
-        `${endpoint}?${params.toString()}`
+      setIsLoading(true);
+      const data = await api.fetch<{ data: Comment[]; cursor: string | null; hasMore: boolean } | Comment[]>(
+        `${endpoint}?limit=50`
       );
 
-      // API may return array directly or { comments, nextCursor }
-      const items = Array.isArray(data) ? data : (data.comments ?? []);
-      const newCursor = Array.isArray(data) ? null : (data.nextCursor ?? null);
+      const items = Array.isArray(data) ? data : (data.data ?? []);
 
-      if (cursor) {
-        setComments((prev) => [...prev, ...items]);
-      } else {
-        setComments(items);
-      }
-      setNextCursor(newCursor);
-    } catch (error) {
-      console.error("Failed to fetch comments:", error);
+      // Organize into parent-reply structure
+      const parents = items.filter((c) => !c.parentId);
+      const replies = items.filter((c) => c.parentId);
+
+      const organized = parents.map((parent) => ({
+        ...parent,
+        replies: replies.filter((r) => r.parentId === parent.id),
+      }));
+
+      setComments(organized);
+    } catch {
+      // silent
     } finally {
       setIsLoading(false);
-      setIsLoadingMore(false);
     }
   };
 
   useEffect(() => {
     fetchComments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityType, entityId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,172 +79,165 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
 
     setIsSubmitting(true);
     try {
-      const endpoint =
-        entityType === "workout"
-          ? `/workouts/${entityId}/comments`
-          : `/posts/${entityId}/comments`;
+      const body: Record<string, string> = { content: newComment.trim() };
+      if (replyingTo) {
+        body.parentId = replyingTo.id;
+        body.mentionedUserId = replyingTo.user.id;
+      }
 
-      const comment = await api.fetch<Comment>(endpoint, {
+      await api.fetch(endpoint, {
         method: "POST",
-        body: JSON.stringify({ content: newComment.trim() }),
+        body: JSON.stringify(body),
       });
 
-      setComments((prev) => [comment, ...prev]);
       setNewComment("");
-    } catch (error) {
-      console.error("Failed to submit comment:", error);
+      setReplyingTo(null);
+      await fetchComments();
+    } catch {
+      // silent
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async (commentId: string) => {
-    if (!confirm("댓글을 삭제하시겠습니까?")) return;
+  const handleReply = (comment: Comment) => {
+    setReplyingTo(comment);
+    setNewComment(`@${comment.user.name} `);
+    inputRef.current?.focus();
+  };
 
+  const handleCancelReply = () => {
+    setReplyingTo(null);
+    setNewComment("");
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      const endpoint =
-        entityType === "workout"
-          ? `/workouts/${entityId}/comments/${commentId}`
-          : `/posts/${entityId}/comments/${commentId}`;
-
-      await api.fetch(endpoint, { method: "DELETE" });
-      setComments((prev) => prev.filter((c) => c.id !== commentId));
-    } catch (error) {
-      console.error("Failed to delete comment:", error);
+      await api.fetch(`${endpoint}/${deleteTarget}`, { method: "DELETE" });
+      setDeleteTarget(null);
+      await fetchComments();
+    } catch {
+      // silent
     }
   };
 
-  const handleLoadMore = () => {
-    if (nextCursor && !isLoadingMore) {
-      setIsLoadingMore(true);
-      fetchComments(nextCursor);
-    }
-  };
-
-  const formatDate = (dateStr: string): string => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return "방금 전";
-    if (diffMins < 60) return `${diffMins}분 전`;
-    if (diffHours < 24) return `${diffHours}시간 전`;
-    if (diffDays < 7) return `${diffDays}일 전`;
-
-    return date.toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+  const renderComment = (comment: Comment, isReply = false) => (
+    <div
+      key={comment.id}
+      className={isReply ? "ml-10 mt-2" : ""}
+    >
+      <div className="flex gap-2.5">
+        <UserAvatar
+          user={comment.user}
+          size="sm"
+          linkToProfile
+          className="mt-0.5"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm font-semibold text-foreground">
+              {comment.user.name}
+            </span>
+            <TimeAgo date={comment.createdAt} />
+          </div>
+          <p className="text-sm text-foreground mt-0.5 whitespace-pre-wrap break-words">
+            <CommentContent content={comment.content} />
+          </p>
+          <div className="flex items-center gap-3 mt-1">
+            {!isReply && (
+              <button
+                onClick={() => handleReply(comment)}
+                className="text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                답글 달기
+              </button>
+            )}
+            {user?.id === comment.user.id && (
+              <button
+                onClick={() => setDeleteTarget(comment.id)}
+                className="text-xs text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 className="size-3" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Comment input form */}
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="댓글을 입력하세요..."
-          rows={3}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-        />
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={!newComment.trim() || isSubmitting}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isSubmitting ? "작성 중..." : "댓글 작성"}
-          </button>
+    <div className="space-y-4">
+      {/* Comment list */}
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground text-center py-4">
+          로딩 중...
+        </p>
+      ) : comments.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6">
+          첫 댓글을 작성해보세요
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {comments.map((comment) => (
+            <div key={comment.id}>
+              {renderComment(comment)}
+              {comment.replies?.map((reply) => renderComment(reply, true))}
+            </div>
+          ))}
         </div>
-      </form>
+      )}
 
-      {/* Comments list */}
-      <div className="space-y-4">
-        {isLoading ? (
-          <div className="text-center py-8 text-gray-500">로딩 중...</div>
-        ) : comments.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            첫 댓글을 작성해보세요
-          </div>
-        ) : (
-          <>
-            {comments.map((comment) => (
-              <div
-                key={comment.id}
-                className="flex gap-3 p-4 bg-gray-50 rounded-lg"
+      {/* Comment input */}
+      {user && (
+        <form onSubmit={handleSubmit} className="border-t pt-3">
+          {replyingTo && (
+            <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+              <span>
+                {replyingTo.user.name}님에게 답글 작성 중
+              </span>
+              <button
+                type="button"
+                onClick={handleCancelReply}
+                className="text-primary hover:underline"
               >
-                <div className="relative h-10 w-10 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                  {comment.user.profileImage ? (
-                    <img
-                      src={comment.user.profileImage}
-                      alt={comment.user.name}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center bg-indigo-600 text-white text-sm font-bold">
-                      {comment.user.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
+                취소
+              </button>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <UserAvatar user={user} size="sm" linkToProfile={false} />
+            <input
+              ref={inputRef}
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="댓글 달기..."
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+            <Button
+              type="submit"
+              size="sm"
+              variant="ghost"
+              disabled={!newComment.trim() || isSubmitting}
+              className="shrink-0"
+            >
+              <Send className="size-4" />
+            </Button>
+          </div>
+        </form>
+      )}
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-gray-900">
-                      {comment.user.name}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {formatDate(comment.createdAt)}
-                    </span>
-                  </div>
-                  <p className="text-gray-800 whitespace-pre-wrap break-words">
-                    {comment.content}
-                  </p>
-                </div>
-
-                {user?.id === comment.user.id && (
-                  <button
-                    onClick={() => handleDelete(comment.id)}
-                    className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                    aria-label="삭제"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="w-5 h-5"
-                    >
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            ))}
-
-            {nextCursor && (
-              <div className="text-center pt-4">
-                <button
-                  onClick={handleLoadMore}
-                  disabled={isLoadingMore}
-                  className="px-6 py-2 text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isLoadingMore ? "로딩 중..." : "더보기"}
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="댓글 삭제"
+        description="이 댓글을 삭제하시겠습니까?"
+        confirmLabel="삭제"
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

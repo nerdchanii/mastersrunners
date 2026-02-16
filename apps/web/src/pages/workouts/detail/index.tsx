@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Trash2, Calendar, Activity as ActivityIcon, Timer } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api-client";
-import { WorkoutDetail } from "@/components/workout/WorkoutDetail";
+import { UserAvatar } from "@/components/common/UserAvatar";
+import { LoadingPage } from "@/components/common/LoadingPage";
+import { StatItem } from "@/components/common/StatItem";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { LikeButton } from "@/components/social/LikeButton";
 import { CommentList } from "@/components/social/CommentList";
+import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 
 interface WorkoutData {
   id: string;
@@ -65,23 +72,31 @@ export default function WorkoutDetailPage() {
 
   if (!workoutId) {
     return (
-      <div className="max-w-2xl mx-auto text-center py-12">
-        <p className="text-gray-500">워크아웃 ID가 필요합니다.</p>
-        <button onClick={() => navigate("/workouts")} className="mt-4 text-indigo-600 hover:underline">워크아웃 목록으로</button>
-      </div>
+      <Card className="p-8">
+        <div className="text-center">
+          <p className="text-muted-foreground">워크아웃 ID가 필요합니다.</p>
+          <Button onClick={() => navigate("/workouts")} className="mt-4" variant="outline">
+            워크아웃 목록으로
+          </Button>
+        </div>
+      </Card>
     );
   }
 
   if (authLoading || isLoading) {
-    return <div className="flex justify-center items-center min-h-[400px]"><div className="text-gray-500">로딩 중...</div></div>;
+    return <LoadingPage variant="detail" />;
   }
 
   if (error) {
     return (
-      <div className="flex flex-col justify-center items-center min-h-[400px] gap-4">
-        <div className="text-red-500">{error}</div>
-        <button onClick={() => navigate(-1)} className="px-4 py-2 text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50">돌아가기</button>
-      </div>
+      <Card className="p-8">
+        <div className="text-center">
+          <p className="text-destructive">{error}</p>
+          <Button onClick={() => navigate(-1)} className="mt-4" variant="outline">
+            돌아가기
+          </Button>
+        </div>
+      </Card>
     );
   }
 
@@ -90,44 +105,90 @@ export default function WorkoutDetailPage() {
   const isOwner = currentUser?.id === workout.user.id;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+    <div className="mx-auto max-w-2xl space-y-4">
       <div className="flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><polyline points="15 18 9 12 15 6" /></svg>
-          <span>돌아가기</span>
-        </button>
+        <Button onClick={() => navigate(-1)} variant="ghost" size="sm">
+          <ArrowLeft className="size-4" />
+          돌아가기
+        </Button>
         {isOwner && (
-          <button onClick={handleDelete} disabled={isDeleting} className="px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors">
+          <Button onClick={handleDelete} disabled={isDeleting} variant="destructive" size="sm">
+            <Trash2 className="size-4" />
             {isDeleting ? "삭제 중..." : "삭제"}
-          </button>
+          </Button>
         )}
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center gap-3">
-          <div className="relative h-12 w-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-            {workout.user.profileImage ? (
-              <img src={workout.user.profileImage} alt={workout.user.name} className="h-full w-full object-cover" loading="lazy" />
-            ) : (
-              <div className="h-full w-full flex items-center justify-center bg-indigo-600 text-white text-lg font-bold">
-                {workout.user.name.charAt(0).toUpperCase()}
-              </div>
-            )}
+      <Card>
+        <CardHeader>
+          <UserAvatar user={workout.user} showName subtitle={
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Calendar className="size-3" />
+              {new Date(workout.date).toLocaleDateString("ko-KR", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </div>
+          } />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-around py-4 border-y">
+            <StatItem value={`${formatDistance(workout.distance)} km`} label="거리" />
+            <StatItem value={formatDuration(workout.duration)} label="시간" />
+            <StatItem value={`${formatPace(workout.pace)}/km`} label="페이스" />
           </div>
-          <div className="font-medium text-gray-900">{workout.user.name}</div>
-        </div>
-      </div>
 
-      <WorkoutDetail distance={workout.distance} duration={workout.duration} pace={workout.pace} date={workout.date} memo={workout.memo} workoutType={workout.workoutType} shoe={workout.shoe} visibility={workout.visibility} />
+          {workout.workoutType && (
+            <div className="flex items-center gap-2">
+              <ActivityIcon className="size-4 text-muted-foreground" />
+              <Badge variant="secondary">
+                {workout.workoutType.name}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                {workout.workoutType.category}
+              </span>
+            </div>
+          )}
 
-      <div className="bg-white rounded-lg shadow-sm p-4">
-        <LikeButton entityType="workout" entityId={workout.id} initialLiked={workout.liked} initialCount={workout.likeCount} />
-      </div>
+          {workout.shoe && (
+            <div className="flex items-center gap-2">
+              <Timer className="size-4 text-muted-foreground" />
+              <span className="text-sm text-foreground">
+                {workout.shoe.brand} {workout.shoe.model}
+              </span>
+            </div>
+          )}
 
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">댓글 {workout.commentCount}개</h2>
-        <CommentList entityType="workout" entityId={workout.id} />
-      </div>
+          {workout.memo && (
+            <div className="rounded-lg bg-muted p-4">
+              <p className="text-sm text-foreground whitespace-pre-wrap">{workout.memo}</p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-2">
+            <LikeButton
+              entityType="workout"
+              entityId={workout.id}
+              initialLiked={workout.liked}
+              initialCount={workout.likeCount}
+            />
+            <Badge variant="outline" className="capitalize">
+              {workout.visibility.toLowerCase()}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>댓글</CardTitle>
+          <CardDescription>{workout.commentCount}개의 댓글</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CommentList entityType="workout" entityId={workout.id} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

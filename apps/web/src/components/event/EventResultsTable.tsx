@@ -1,3 +1,6 @@
+import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/common/UserAvatar";
+import { Trophy, Medal, Award } from "lucide-react";
 
 interface EventResult {
   resultRank: number | null;
@@ -28,20 +31,22 @@ function formatTime(seconds: number): string {
 
 function statusLabel(status: string): string {
   switch (status) {
-    case "COMPLETED": return "완주";
-    case "DNF": return "DNF";
-    case "DNS": return "DNS";
-    default: return status;
+    case "COMPLETED":
+      return "완주";
+    case "DNF":
+      return "DNF";
+    case "DNS":
+      return "DNS";
+    default:
+      return status;
   }
 }
 
-function statusColor(status: string): string {
-  switch (status) {
-    case "COMPLETED": return "text-green-700 bg-green-50";
-    case "DNF": return "text-red-700 bg-red-50";
-    case "DNS": return "text-gray-700 bg-gray-100";
-    default: return "text-gray-700 bg-gray-100";
-  }
+function getRankIcon(rank: number | null) {
+  if (rank === 1) return <Trophy className="h-4 w-4 text-yellow-500" />;
+  if (rank === 2) return <Medal className="h-4 w-4 text-gray-400" />;
+  if (rank === 3) return <Award className="h-4 w-4 text-amber-600" />;
+  return null;
 }
 
 export default function EventResultsTable({ results, isLoading }: EventResultsTableProps) {
@@ -49,7 +54,7 @@ export default function EventResultsTable({ results, isLoading }: EventResultsTa
     return (
       <div className="animate-pulse space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-12 bg-gray-200 rounded" />
+          <div key={i} className="h-16 bg-gray-200 rounded" />
         ))}
       </div>
     );
@@ -57,7 +62,8 @@ export default function EventResultsTable({ results, isLoading }: EventResultsTa
 
   if (results.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-12 text-muted-foreground">
+        <Trophy className="h-12 w-12 mx-auto mb-3 text-gray-300" />
         <p>아직 등록된 결과가 없습니다.</p>
       </div>
     );
@@ -65,54 +71,75 @@ export default function EventResultsTable({ results, isLoading }: EventResultsTa
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+      <table className="min-w-full divide-y divide-border">
+        <thead className="bg-muted/50">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">순위</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">배번</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">이름</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">기록</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              순위
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              배번
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              이름
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              기록
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              상태
+            </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {results.map((result, index) => (
-            <tr key={result.user.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-              <td className="px-4 py-3 whitespace-nowrap text-sm">
+        <tbody className="bg-card divide-y divide-border">
+          {results.map((result) => (
+            <tr key={result.user.id} className="hover:bg-muted/50 transition-colors">
+              <td className="px-4 py-4 whitespace-nowrap text-sm">
                 {result.resultRank != null ? (
-                  <span className={`font-semibold ${result.resultRank <= 3 ? "text-indigo-600" : "text-gray-900"}`}>
-                    {result.resultRank}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {getRankIcon(result.resultRank)}
+                    <span
+                      className={`font-semibold ${result.resultRank <= 3 ? "text-primary" : "text-foreground"}`}
+                    >
+                      {result.resultRank}
+                    </span>
+                  </div>
                 ) : (
-                  <span className="text-gray-400">-</span>
+                  <span className="text-muted-foreground">-</span>
                 )}
               </td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+              <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">
                 {result.bibNumber || "-"}
               </td>
-              <td className="px-4 py-3 whitespace-nowrap">
-                <div className="flex items-center gap-2">
-                  {result.user.profileImage ? (
-                    <img
-                      src={result.user.profileImage}
-                      alt={result.user.name}
-                      className="w-7 h-7 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-7 h-7 rounded-full bg-gray-300 flex items-center justify-center">
-                      <span className="text-xs text-gray-600">{result.user.name.charAt(0)}</span>
-                    </div>
-                  )}
-                  <span className="text-sm font-medium text-gray-900">{result.user.name}</span>
+              <td className="px-4 py-4 whitespace-nowrap">
+                <div className="flex items-center gap-3">
+                  <UserAvatar
+                    user={{
+                      id: result.user.id,
+                      name: result.user.name,
+                      profileImage: result.user.profileImage,
+                    }}
+                    size="sm"
+                    linkToProfile={false}
+                  />
+                  <span className="text-sm font-medium text-foreground">{result.user.name}</span>
                 </div>
               </td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-gray-900">
+              <td className="px-4 py-4 whitespace-nowrap text-sm font-mono font-semibold text-foreground">
                 {result.resultTime != null ? formatTime(result.resultTime) : "-"}
               </td>
-              <td className="px-4 py-3 whitespace-nowrap">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusColor(result.status)}`}>
+              <td className="px-4 py-4 whitespace-nowrap">
+                <Badge
+                  variant={
+                    result.status === "COMPLETED"
+                      ? "default"
+                      : result.status === "DNF"
+                        ? "destructive"
+                        : "secondary"
+                  }
+                >
                   {statusLabel(result.status)}
-                </span>
+                </Badge>
               </td>
             </tr>
           ))}

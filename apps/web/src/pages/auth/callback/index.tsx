@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api-client";
+import { Loader2 } from "lucide-react";
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -19,15 +20,9 @@ export default function AuthCallbackPage() {
   }, [searchParams, navigate]);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-      }}
-    >
-      <p>로그인 처리 중...</p>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4">
+      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <p className="text-muted-foreground">로그인 처리 중...</p>
     </div>
   );
 }

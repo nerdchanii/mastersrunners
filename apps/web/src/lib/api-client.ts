@@ -1,6 +1,29 @@
 const API_BASE =
   import.meta.env.VITE_API_URL || "http://localhost:4000/api/v1";
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public body?: unknown,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+
+  get isUnauthorized() {
+    return this.status === 401;
+  }
+
+  get isForbidden() {
+    return this.status === 403;
+  }
+
+  get isNotFound() {
+    return this.status === 404;
+  }
+}
+
 class ApiClient {
   private getStorage(): Storage | null {
     try {
@@ -79,15 +102,34 @@ class ApiClient {
       if (refreshed) {
         headers.set("Authorization", `Bearer ${this.getAccessToken()}`);
         res = await fetch(url, { ...options, headers });
+      } else {
+        // Refresh failed → session expired
+        this.clearTokens();
+        window.location.href = "/login";
+        throw new ApiError("세션이 만료되었습니다", 401);
       }
     }
 
-    if (!res.ok) {
-      const error = await res.json().catch(() => ({ message: "Request failed" }));
-      throw new Error(error.message || `HTTP ${res.status}`);
+    // Not logged in at all → redirect to login
+    if (res.status === 401 && !token) {
+      window.location.href = "/login";
+      throw new ApiError("로그인이 필요합니다", 401);
     }
 
-    return res.json();
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ message: "Request failed" }));
+      throw new ApiError(
+        body.message || `HTTP ${res.status}`,
+        res.status,
+        body,
+      );
+    }
+
+    // Handle empty responses (204 No Content, etc.)
+    const text = await res.text();
+    if (!text) return undefined as T;
+
+    return JSON.parse(text);
   }
 }
 

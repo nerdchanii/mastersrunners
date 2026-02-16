@@ -1,10 +1,18 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Calendar, Users, Target, User, Trash2, LogOut, UserPlus, Edit } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import ProgressBar from "@/components/challenge/ProgressBar";
 import LeaderboardTable from "@/components/challenge/LeaderboardTable";
+import ChallengeTeams from "@/components/challenge/ChallengeTeams";
 
 interface ChallengeUser {
   id: string;
@@ -37,8 +45,8 @@ interface LeaderboardEntry {
 function goalTypeLabel(type: string): string {
   switch (type) {
     case "DISTANCE": return "거리";
-    case "COUNT": return "횟수";
-    case "DURATION": return "일수";
+    case "FREQUENCY": return "횟수";
+    case "STREAK": return "연속";
     case "PACE": return "페이스";
     default: return type;
   }
@@ -47,8 +55,8 @@ function goalTypeLabel(type: string): string {
 function goalTypeUnit(type: string): string {
   switch (type) {
     case "DISTANCE": return "KM";
-    case "COUNT": return "COUNT";
-    case "DURATION": return "DAYS";
+    case "FREQUENCY": return "COUNT";
+    case "STREAK": return "DAYS";
     case "PACE": return "SEC_PER_KM";
     default: return type;
   }
@@ -57,16 +65,16 @@ function goalTypeUnit(type: string): string {
 function goalTypeDisplayUnit(type: string): string {
   switch (type) {
     case "DISTANCE": return "km";
-    case "COUNT": return "회";
-    case "DURATION": return "일";
-    case "PACE": return "초/km";
+    case "FREQUENCY": return "회";
+    case "STREAK": return "일";
+    case "PACE": return "";
     default: return "";
   }
 }
 
-type DetailTab = "info" | "leaderboard";
+type DetailTab = "info" | "leaderboard" | "teams";
 
-export default function ChallengeDetailClient() {
+export default function ChallengeDetailPage() {
   const params = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -79,8 +87,6 @@ export default function ChallengeDetailClient() {
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-
-  // Progress update state
   const [showProgressForm, setShowProgressForm] = useState(false);
   const [progressValue, setProgressValue] = useState("");
 
@@ -174,28 +180,24 @@ export default function ChallengeDetailClient() {
     }
   };
 
-  // Placeholder guard
   if (!challengeId || challengeId === "_") {
     return (
-      <div className="max-w-3xl mx-auto text-center py-12">
-        <p className="text-gray-500">챌린지 ID가 필요합니다.</p>
-        <button onClick={() => navigate("/challenges")} className="mt-4 text-indigo-600 hover:underline">
+      <div className="container max-w-3xl py-12 text-center">
+        <p className="text-muted-foreground">챌린지 ID가 필요합니다.</p>
+        <Button variant="link" onClick={() => navigate("/challenges")} className="mt-4">
           챌린지 목록으로 돌아가기
-        </button>
+        </Button>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="max-w-3xl mx-auto">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-300 rounded w-1/2" />
-          <div className="h-4 bg-gray-300 rounded w-3/4" />
-          <div className="space-y-3">
-            <div className="h-4 bg-gray-300 rounded" />
-            <div className="h-4 bg-gray-300 rounded w-5/6" />
-          </div>
+      <div className="container max-w-4xl py-6">
+        <div className="space-y-6">
+          <Skeleton className="h-12 w-2/3" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-64 rounded-xl" />
         </div>
       </div>
     );
@@ -203,14 +205,16 @@ export default function ChallengeDetailClient() {
 
   if (error || !challenge) {
     return (
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-red-800 mb-2">오류</h2>
-          <p className="text-red-600">{error || "챌린지를 찾을 수 없습니다."}</p>
-          <button onClick={() => navigate(-1)} className="mt-4 px-4 py-2 text-sm font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200">
-            돌아가기
-          </button>
-        </div>
+      <div className="container max-w-3xl py-6">
+        <Card className="border-destructive/50 bg-destructive/10">
+          <CardContent className="p-6">
+            <h2 className="text-lg font-semibold text-destructive mb-2">오류</h2>
+            <p className="text-destructive/90">{error || "챌린지를 찾을 수 없습니다."}</p>
+            <Button variant="outline" onClick={() => navigate(-1)} className="mt-4">
+              돌아가기
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -224,9 +228,9 @@ export default function ChallengeDetailClient() {
   const participantCount = challenge._count?.participants ?? 0;
 
   const statusBadge = () => {
-    if (isActive) return { label: "진행 중", className: "bg-green-100 text-green-700" };
-    if (isUpcoming) return { label: "예정", className: "bg-blue-100 text-blue-700" };
-    return { label: "종료", className: "bg-gray-100 text-gray-700" };
+    if (isActive) return { label: "진행중", variant: "default" as const };
+    if (isUpcoming) return { label: "예정", variant: "secondary" as const };
+    return { label: "완료", variant: "outline" as const };
   };
 
   const badge = statusBadge();
@@ -240,192 +244,210 @@ export default function ChallengeDetailClient() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{challenge.name}</h1>
-          <div className="mt-2 flex items-center gap-3">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.className}`}>
-              {badge.label}
-            </span>
+    <div className="container max-w-4xl py-6 space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2 min-w-0 flex-1">
+          <h1 className="text-3xl font-bold tracking-tight">{challenge.name}</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant={badge.variant}>{badge.label}</Badge>
             {!challenge.isPublic && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
-                비공개
-              </span>
+              <Badge variant="outline" className="bg-yellow-50">비공개</Badge>
             )}
             {challenge.isJoined && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
-                참가 중
-              </span>
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                참가중
+              </Badge>
             )}
           </div>
         </div>
         {isOwner && (
-          <button
+          <Button
+            variant="destructive"
+            size="sm"
             onClick={handleDeleteChallenge}
-            className="px-3 py-1.5 text-sm text-red-700 bg-red-50 border border-red-300 rounded-md hover:bg-red-100"
           >
-            삭제
-          </button>
+            <Trash2 className="size-4" />
+          </Button>
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab("info")}
-          className={`px-4 py-2 font-semibold transition-colors ${activeTab === "info" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-gray-600 hover:text-gray-900"}`}
-        >
-          챌린지 정보
-        </button>
-        <button
-          onClick={() => setActiveTab("leaderboard")}
-          className={`px-4 py-2 font-semibold transition-colors ${activeTab === "leaderboard" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-gray-600 hover:text-gray-900"}`}
-        >
-          리더보드
-        </button>
-      </div>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DetailTab)}>
+        <TabsList variant="line">
+          <TabsTrigger value="info">정보</TabsTrigger>
+          <TabsTrigger value="leaderboard">리더보드</TabsTrigger>
+          <TabsTrigger value="teams">팀</TabsTrigger>
+        </TabsList>
 
-      {/* Info Tab */}
-      {activeTab === "info" && (
-        <div className="space-y-6">
-          <div className="bg-white shadow rounded-lg p-6 space-y-4">
-            {challenge.description && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">설명</h3>
-                <p className="text-gray-900 whitespace-pre-wrap">{challenge.description}</p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">기간</h3>
-                <p className="text-gray-900">{formatDate(challenge.startDate)} ~ {formatDate(challenge.endDate)}</p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">목표</h3>
-                <p className="text-gray-900">
-                  {goalTypeLabel(challenge.goalType)} {challenge.goalValue} {goalTypeDisplayUnit(challenge.goalType)}
-                </p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">참가자</h3>
-                <p className="text-gray-900">{participantCount}명</p>
-              </div>
-
-              {challenge.creator && (
+        <TabsContent value="info" className="space-y-6">
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              {challenge.description && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">만든이</h3>
-                  <p className="text-gray-900">{challenge.creator.name}</p>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">설명</h3>
+                  <p className="text-foreground whitespace-pre-wrap">{challenge.description}</p>
                 </div>
               )}
-            </div>
-          </div>
 
-          {/* Join / Leave */}
+              <Separator />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="size-4" />
+                    <span className="text-sm font-medium">기간</span>
+                  </div>
+                  <p className="text-sm">{formatDate(challenge.startDate)} ~ {formatDate(challenge.endDate)}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Target className="size-4" />
+                    <span className="text-sm font-medium">목표</span>
+                  </div>
+                  <p className="text-sm">
+                    {goalTypeLabel(challenge.goalType)} {challenge.goalValue} {goalTypeDisplayUnit(challenge.goalType)}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Users className="size-4" />
+                    <span className="text-sm font-medium">참가자</span>
+                  </div>
+                  <p className="text-sm">{participantCount}명</p>
+                </div>
+
+                {challenge.creator && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <User className="size-4" />
+                      <span className="text-sm font-medium">만든이</span>
+                    </div>
+                    <p className="text-sm">{challenge.creator.name}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {!isOwner && (
             <div className="flex gap-3">
               {challenge.isJoined ? (
-                <button
+                <Button
+                  variant="destructive"
                   onClick={handleLeave}
                   disabled={actionLoading}
-                  className="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-300 rounded-md hover:bg-red-100 disabled:opacity-50"
                 >
-                  {actionLoading ? "처리 중..." : "챌린지 나가기"}
-                </button>
+                  <LogOut className="mr-2 size-4" />
+                  {actionLoading ? "처리중..." : "나가기"}
+                </Button>
               ) : (
-                <button
+                <Button
                   onClick={handleJoin}
                   disabled={actionLoading || (!isActive && !isUpcoming)}
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  {actionLoading ? "처리 중..." : "참가하기"}
-                </button>
+                  <UserPlus className="mr-2 size-4" />
+                  {actionLoading ? "처리중..." : "참가하기"}
+                </Button>
               )}
             </div>
           )}
 
-          {/* My Progress */}
           {challenge.isJoined && (
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">내 진행 현황</h3>
+            <Card>
+              <CardHeader>
+                <CardTitle>내 진행 현황</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ProgressBar
+                  current={challenge.myProgress ?? 0}
+                  target={challenge.goalValue}
+                  unit={goalTypeUnit(challenge.goalType)}
+                />
 
-              <ProgressBar
-                current={challenge.myProgress ?? 0}
-                target={challenge.goalValue}
-                unit={goalTypeUnit(challenge.goalType)}
-                className="mb-4"
-              />
-
-              {isActive && (
-                <div>
-                  {!showProgressForm ? (
-                    <button
-                      onClick={() => setShowProgressForm(true)}
-                      className="text-sm text-indigo-600 hover:text-indigo-700 underline"
-                    >
-                      진행도 업데이트
-                    </button>
-                  ) : (
-                    <form onSubmit={handleUpdateProgress} className="flex gap-2 mt-2">
-                      <div className="relative flex-1">
-                        <input
-                          type="number"
-                          value={progressValue}
-                          onChange={(e) => setProgressValue(e.target.value)}
-                          min="0"
-                          step="any"
-                          placeholder="새 진행 값"
-                          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border pr-12"
-                        />
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                          <span className="text-gray-500 text-xs">{goalTypeDisplayUnit(challenge.goalType)}</span>
+                {isActive && (
+                  <div>
+                    {!showProgressForm ? (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={() => setShowProgressForm(true)}
+                        className="px-0"
+                      >
+                        <Edit className="mr-2 size-4" />
+                        진행도 업데이트
+                      </Button>
+                    ) : (
+                      <form onSubmit={handleUpdateProgress} className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Input
+                            type="number"
+                            value={progressValue}
+                            onChange={(e) => setProgressValue(e.target.value)}
+                            min="0"
+                            step="any"
+                            placeholder="새 진행 값"
+                          />
+                          {goalTypeDisplayUnit(challenge.goalType) && (
+                            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                              <span className="text-xs text-muted-foreground">
+                                {goalTypeDisplayUnit(challenge.goalType)}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                      <button
-                        type="submit"
-                        disabled={actionLoading || !progressValue}
-                        className="px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50"
-                      >
-                        {actionLoading ? "..." : "업데이트"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setShowProgressForm(false); setProgressValue(""); }}
-                        className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                      >
-                        취소
-                      </button>
-                    </form>
-                  )}
-                </div>
-              )}
-            </div>
+                        <Button
+                          type="submit"
+                          disabled={actionLoading || !progressValue}
+                          size="sm"
+                        >
+                          {actionLoading ? "..." : "업데이트"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setShowProgressForm(false);
+                            setProgressValue("");
+                          }}
+                        >
+                          취소
+                        </Button>
+                      </form>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
-        </div>
-      )}
+        </TabsContent>
 
-      {/* Leaderboard Tab */}
-      {activeTab === "leaderboard" && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">리더보드</h3>
-          <LeaderboardTable
-            entries={leaderboard}
-            goalValue={challenge.goalValue}
-            goalType={challenge.goalType}
-            isLoading={leaderboardLoading}
-          />
-        </div>
-      )}
+        <TabsContent value="leaderboard">
+          <Card>
+            <CardHeader>
+              <CardTitle>개인 리더보드</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LeaderboardTable
+                entries={leaderboard}
+                goalValue={challenge.goalValue}
+                goalType={challenge.goalType}
+                isLoading={leaderboardLoading}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Back button */}
-      <div className="flex justify-center">
-        <button onClick={() => navigate("/challenges")} className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+        <TabsContent value="teams">
+          <ChallengeTeams challengeId={challengeId} isJoined={challenge.isJoined ?? false} />
+        </TabsContent>
+      </Tabs>
+
+      <div className="flex justify-center pt-4">
+        <Button variant="outline" onClick={() => navigate("/challenges")}>
           목록으로
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,5 +1,10 @@
-
 import { Link } from "react-router-dom";
+import { MessageCircle, Share2, MoreHorizontal } from "lucide-react";
+import { UserAvatar } from "@/components/common/UserAvatar";
+import { StatItem } from "@/components/common/StatItem";
+import { TimeAgo } from "@/components/common/TimeAgo";
+import { LikeButton } from "@/components/social/LikeButton";
+import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 
 interface FeedCardProps {
   workout: {
@@ -20,150 +25,80 @@ interface FeedCardProps {
       likes: number;
       comments: number;
     };
+    isLiked?: boolean;
   };
 }
 
 export default function FeedCard({ workout }: FeedCardProps) {
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const getVisibilityBadge = (visibility: string) => {
-    const colors = {
-      PUBLIC: "bg-green-100 text-green-700",
-      FOLLOWERS_ONLY: "bg-blue-100 text-blue-700",
-      PRIVATE: "bg-gray-100 text-gray-700",
-    };
-    const labels = {
-      PUBLIC: "전체공개",
-      FOLLOWERS_ONLY: "팔로워공개",
-      PRIVATE: "비공개",
-    };
-    return {
-      color: colors[visibility as keyof typeof colors] || colors.PRIVATE,
-      label: labels[visibility as keyof typeof labels] || "비공개",
-    };
-  };
-
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours}시간 ${minutes}분 ${secs}초`;
-    }
-    return `${minutes}분 ${secs}초`;
-  };
-
-  const formatPace = (pace: number) => {
-    const minutes = Math.floor(pace);
-    const seconds = Math.round((pace - minutes) * 60);
-    return `${minutes}'${seconds.toString().padStart(2, "0")}"`;
-  };
-
-  const visibilityBadge = getVisibilityBadge(workout.visibility);
-
   return (
-    <Link to={`/workouts/detail?id=${workout.id}`}>
-      <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer">
-        {/* User Info */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200">
-              {workout.user.profileImage ? (
-                <img
-                  src={workout.user.profileImage}
-                  alt={workout.user.name}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-500 font-semibold">
-                  {workout.user.name.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">{workout.user.name}</p>
-              <p className="text-sm text-gray-500">{formatDate(workout.createdAt)}</p>
-            </div>
-          </div>
-          <span className={`text-xs px-2 py-1 rounded-full ${visibilityBadge.color}`}>
-            {visibilityBadge.label}
-          </span>
-        </div>
-
-      {/* Workout Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        <div className="text-center">
-          <p className="text-2xl font-bold text-blue-600">
-            {workout.distance.toFixed(2)}
-          </p>
-          <p className="text-sm text-gray-600">km</p>
-        </div>
-        <div className="text-center">
-          <p className="text-2xl font-bold text-green-600">
-            {formatDuration(workout.duration)}
-          </p>
-          <p className="text-sm text-gray-600">시간</p>
-        </div>
-        <div className="text-center">
-          <p className="text-2xl font-bold text-purple-600">
-            {formatPace(workout.pace)}
-          </p>
-          <p className="text-sm text-gray-600">/km</p>
-        </div>
+    <article className="border-b bg-card">
+      {/* User Header */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <UserAvatar
+          user={workout.user}
+          showName
+          subtitle={<TimeAgo date={workout.createdAt} />}
+        />
+        <button className="rounded-full p-1.5 text-muted-foreground hover:bg-accent">
+          <MoreHorizontal className="size-5" />
+        </button>
       </div>
+
+      {/* Workout Hero Stats — Strava style */}
+      <Link to={`/workouts/detail?id=${workout.id}`}>
+        <div className="mx-4 rounded-xl bg-muted/50 p-4">
+          <div className="grid grid-cols-3 gap-2">
+            <StatItem
+              value={formatDistance(workout.distance)}
+              label="km"
+              size="lg"
+            />
+            <StatItem
+              value={formatDuration(workout.duration)}
+              label="시간"
+              size="lg"
+            />
+            <StatItem
+              value={formatPace(workout.pace)}
+              label="/km"
+              size="lg"
+            />
+          </div>
+        </div>
+      </Link>
 
       {/* Memo */}
       {workout.memo && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <p className="text-gray-700 whitespace-pre-wrap">{workout.memo}</p>
+        <div className="px-4 pt-3">
+          <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+            {workout.memo}
+          </p>
         </div>
       )}
 
-      {/* Like & Comment Count */}
-      <div className="flex items-center gap-4 text-sm text-gray-500 mt-4">
-        <div className="flex items-center gap-1">
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-            />
-          </svg>
-          <span>{workout._count.likes}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-            />
-          </svg>
-          <span>{workout._count.comments}</span>
-        </div>
+      {/* Action Bar */}
+      <div className="flex items-center gap-1 px-2 py-1">
+        <LikeButton
+          entityType="workout"
+          entityId={workout.id}
+          initialLiked={workout.isLiked}
+          initialCount={workout._count.likes}
+        />
+        <Link
+          to={`/workouts/detail?id=${workout.id}`}
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-muted-foreground hover:bg-accent"
+        >
+          <MessageCircle className="size-5" />
+          {workout._count.comments > 0 && (
+            <span className="text-sm font-medium tabular-nums">
+              {workout._count.comments}
+            </span>
+          )}
+        </Link>
+        <button className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent ml-auto">
+          <Share2 className="size-5" />
+        </button>
       </div>
-    </div>
-    </Link>
+    </article>
   );
 }

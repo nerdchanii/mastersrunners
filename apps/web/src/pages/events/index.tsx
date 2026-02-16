@@ -1,8 +1,12 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { api } from "@/lib/api-client";
 import EventCard from "@/components/event/EventCard";
+import { PageHeader } from "@/components/common/PageHeader";
+import { EmptyState } from "@/components/common/EmptyState";
+import { Button } from "@/components/ui/button";
+import { Calendar, Plus, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Event {
   id: string;
@@ -48,15 +52,16 @@ export default function EventsPage() {
       }
 
       const data = await api.fetch<EventListResponse>(path);
+      const items = data?.items ?? [];
 
       if (cursor) {
-        setItems((prev) => [...prev, ...data.items]);
+        setItems((prev) => [...prev, ...items]);
       } else {
-        setItems(data.items);
+        setItems(items);
       }
 
-      setNextCursor(data.nextCursor);
-      setHasMore(data.hasMore);
+      setNextCursor(data?.nextCursor ?? null);
+      setHasMore(data?.hasMore ?? false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "대회 목록을 불러올 수 없습니다.");
     } finally {
@@ -78,64 +83,65 @@ export default function EventsPage() {
   };
 
   const tabs: { key: EventTab; label: string }[] = [
-    { key: "upcoming", label: "다가오는 대회" },
-    { key: "past", label: "지난 대회" },
+    { key: "upcoming", label: "다가오는" },
+    { key: "past", label: "지난" },
     { key: "my", label: "내 대회" },
   ];
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">대회</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            마스터즈 러너들의 대회 일정을 확인하세요.
-          </p>
-        </div>
-        <Link
-          to="/events/new"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          대회 등록
-        </Link>
-      </div>
+    <div className="space-y-6 max-w-6xl mx-auto">
+      <PageHeader
+        title="대회"
+        description="마스터즈 러너들의 대회 일정을 확인하세요."
+        actions={
+          <Button asChild>
+            <Link to="/events/new">
+              <Plus className="h-4 w-4 mr-2" />
+              대회 등록
+            </Link>
+          </Button>
+        }
+      />
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
+      <div className="flex gap-1 border-b border-border">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 font-semibold transition-colors ${
+            className={cn(
+              "px-4 py-2.5 font-medium text-sm transition-all relative",
               activeTab === tab.key
-                ? "text-indigo-600 border-b-2 border-indigo-600"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            )}
           >
             {tab.label}
+            {activeTab === tab.key && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
           </button>
         ))}
       </div>
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{error}</p>
-          <button
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+          <p className="text-destructive font-medium">{error}</p>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => fetchEvents(activeTab)}
-            className="mt-2 text-red-600 hover:text-red-700 underline text-sm"
+            className="mt-2 text-destructive hover:text-destructive"
           >
             다시 시도
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Grid */}
       {items.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
@@ -144,43 +150,34 @@ export default function EventsPage() {
 
       {/* Loading */}
       {isLoading && (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       )}
 
       {/* Load More */}
       {!isLoading && hasMore && items.length > 0 && (
         <div className="flex justify-center">
-          <button
-            onClick={handleLoadMore}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-          >
+          <Button onClick={handleLoadMore} variant="outline" size="lg">
             더보기
-          </button>
+          </Button>
         </div>
       )}
 
       {/* No More */}
       {!isLoading && !hasMore && items.length > 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-muted-foreground text-sm">
           더 이상 대회가 없습니다.
         </div>
       )}
 
       {/* Empty */}
       {!isLoading && items.length === 0 && !error && (
-        <div className="text-center py-12">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <p className="text-gray-500 text-lg mt-4">
-            {activeTab === "my" ? "참가한 대회가 없습니다." : "등록된 대회가 없습니다."}
-          </p>
-          <p className="text-gray-400 text-sm mt-2">
-            새로운 대회를 등록해보세요!
-          </p>
-        </div>
+        <EmptyState
+          icon={Calendar}
+          title={activeTab === "my" ? "참가한 대회가 없습니다" : "등록된 대회가 없습니다"}
+          description="새로운 대회를 등록해보세요!"
+        />
       )}
     </div>
   );
