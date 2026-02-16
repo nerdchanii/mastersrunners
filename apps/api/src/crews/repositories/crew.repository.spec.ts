@@ -118,19 +118,22 @@ describe("CrewRepository", () => {
   });
 
   describe("findAll", () => {
-    it("should find public crews with cursor pagination", async () => {
+    it("should return { data, nextCursor } with cursor pagination", async () => {
       const options = { isPublic: true, cursor: "crew-100", limit: 20 };
-      const mockCrews = [
-        { id: "crew-101", name: "Crew A", isPublic: true, deletedAt: null },
-        { id: "crew-102", name: "Crew B", isPublic: true, deletedAt: null },
-      ];
+      // 21개 반환 → hasMore=true
+      const mockCrews = Array.from({ length: 21 }, (_, i) => ({
+        id: `crew-${101 + i}`,
+        name: `Crew ${i}`,
+        isPublic: true,
+        deletedAt: null,
+      }));
       mockPrisma.crew.findMany.mockResolvedValue(mockCrews);
 
       const result = await repository.findAll(options);
 
       expect(mockPrisma.crew.findMany).toHaveBeenCalledWith({
         where: { isPublic: true, deletedAt: null },
-        take: 20,
+        take: 21,
         skip: 1,
         cursor: { id: "crew-100" },
         orderBy: { createdAt: "desc" },
@@ -139,10 +142,11 @@ describe("CrewRepository", () => {
           creator: { select: { id: true, name: true, profileImage: true } },
         },
       });
-      expect(result).toEqual(mockCrews);
+      expect(result.data).toHaveLength(20);
+      expect(result.nextCursor).toBe("crew-120");
     });
 
-    it("should find all crews without filters when no options provided", async () => {
+    it("should return nextCursor=null when no more items", async () => {
       const mockCrews = [
         { id: "crew-1", name: "Crew A", deletedAt: null },
         { id: "crew-2", name: "Crew B", deletedAt: null },
@@ -153,33 +157,38 @@ describe("CrewRepository", () => {
 
       expect(mockPrisma.crew.findMany).toHaveBeenCalledWith({
         where: { deletedAt: null },
-        take: 20,
+        take: 21,
         orderBy: { createdAt: "desc" },
         include: {
           _count: { select: { members: { where: { status: "ACTIVE" } } } },
           creator: { select: { id: true, name: true, profileImage: true } },
         },
       });
-      expect(result).toEqual(mockCrews);
+      expect(result.data).toEqual(mockCrews);
+      expect(result.nextCursor).toBeNull();
     });
 
-    it("should find crews without cursor pagination", async () => {
-      const options = { isPublic: true, limit: 10 };
-      const mockCrews = [{ id: "crew-1", name: "Crew A", isPublic: true, deletedAt: null }];
+    it("should return nextCursor=null when exactly limit items", async () => {
+      const options = { isPublic: true, limit: 2 };
+      const mockCrews = [
+        { id: "crew-1", name: "Crew A", isPublic: true, deletedAt: null },
+        { id: "crew-2", name: "Crew B", isPublic: true, deletedAt: null },
+      ];
       mockPrisma.crew.findMany.mockResolvedValue(mockCrews);
 
       const result = await repository.findAll(options);
 
       expect(mockPrisma.crew.findMany).toHaveBeenCalledWith({
         where: { isPublic: true, deletedAt: null },
-        take: 10,
+        take: 3,
         orderBy: { createdAt: "desc" },
         include: {
           _count: { select: { members: { where: { status: "ACTIVE" } } } },
           creator: { select: { id: true, name: true, profileImage: true } },
         },
       });
-      expect(result).toEqual(mockCrews);
+      expect(result.data).toHaveLength(2);
+      expect(result.nextCursor).toBeNull();
     });
   });
 

@@ -163,18 +163,21 @@ describe("CrewsService", () => {
   });
 
   describe("findAll", () => {
-    it("should delegate to crewRepo.findAll", async () => {
+    it("should delegate to crewRepo.findAll and return { data, nextCursor }", async () => {
       const options = { isPublic: true, cursor: "crew-100", limit: 20 };
-      const mockCrews = [
-        { id: "crew-101", name: "Crew A" },
-        { id: "crew-102", name: "Crew B" },
-      ];
-      mockCrewRepository.findAll.mockResolvedValue(mockCrews);
+      const mockResponse = {
+        data: [
+          { id: "crew-101", name: "Crew A" },
+          { id: "crew-102", name: "Crew B" },
+        ],
+        nextCursor: null,
+      };
+      mockCrewRepository.findAll.mockResolvedValue(mockResponse);
 
       const result = await service.findAll(options);
 
       expect(mockCrewRepository.findAll).toHaveBeenCalledWith(options);
-      expect(result).toEqual(mockCrews);
+      expect(result).toEqual(mockResponse);
     });
   });
 

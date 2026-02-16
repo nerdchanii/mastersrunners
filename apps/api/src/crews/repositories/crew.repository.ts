@@ -60,9 +60,9 @@ export class CrewRepository {
       where.isPublic = isPublic;
     }
 
-    return this.db.prisma.crew.findMany({
+    const items = await this.db.prisma.crew.findMany({
       where,
-      take: limit,
+      take: limit + 1,
       ...(cursor && { skip: 1, cursor: { id: cursor } }),
       orderBy: { createdAt: "desc" },
       include: {
@@ -80,6 +80,12 @@ export class CrewRepository {
         },
       },
     });
+
+    const hasMore = items.length > limit;
+    const data = hasMore ? items.slice(0, limit) : items;
+    const nextCursor = hasMore ? data[data.length - 1].id : null;
+
+    return { data, nextCursor };
   }
 
   async findByUser(userId: string) {
