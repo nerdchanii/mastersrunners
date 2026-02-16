@@ -43,9 +43,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# turborepo
-.turbo
-
 # compiled output
 **/dist
 

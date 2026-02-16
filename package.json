@@ -3,17 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "lint": "turbo lint",
+    "dev": "pnpm --parallel -r run dev",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
     "db:migrate": "pnpm --filter @masters/database db:migrate",
     "db:push": "pnpm --filter @masters/database db:push",
     "db:studio": "pnpm --filter @masters/database db:studio",
     "db:generate": "pnpm --filter @masters/database db:generate",
-    "clean": "turbo clean"
+    "clean": "pnpm -r run clean"
   },
   "devDependencies": {
-    "turbo": "^2",
     "typescript": "^5"
   },
   "packageManager": "pnpm@10.28.2"
