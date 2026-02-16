@@ -123,6 +123,10 @@ model User {
   // Notification
   notifications      Notification[] @relation("recipient")
   actedNotifications Notification[] @relation("actor")
+
+  // DM
+  conversationParticipants ConversationParticipant[]
+  sentMessages             Message[]                 @relation("sender")
 }
 
 model Workout {
@@ -696,4 +700,44 @@ model Notification {
   createdAt     DateTime @default(now())
 
   @@index([userId, isRead, createdAt])
+}
+
+// ============================================================================
+// Direct Message
+// ============================================================================
+
+model Conversation {
+  id        String   @id @default(cuid())
+  type      String   @default("DIRECT") // DIRECT (1:1), GROUP (future)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  conversationId String
+  userId         String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime?
+  joinedAt       DateTime     @default(now())
+
+  @@id([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
 }

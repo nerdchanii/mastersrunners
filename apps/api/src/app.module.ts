@@ -24,6 +24,8 @@ import { CrewsModule } from "./crews/crews.module.js";
 import { ChallengesModule } from "./challenges/challenges.module.js";
 import { EventsModule } from "./events/events.module.js";
 import { UploadsModule } from "./uploads/uploads.module.js";
+import { HealthModule } from "./health/health.module.js";
+import { ConversationsModule } from "./conversations/conversations.module.js";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard.js";
 import { AppController } from "./app.controller.js";
 import { AppService } from "./app.service.js";
@@ -50,6 +52,8 @@ import { AppService } from "./app.service.js";
     EventsModule,
     UploadsModule,
     ProfileModule,
+    HealthModule,
+    ConversationsModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
   ],
   controllers: [AppController],
