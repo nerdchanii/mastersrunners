@@ -61,4 +61,27 @@ export class CrewMemberRepository {
       where: { crewId, status: "ACTIVE" },
     });
   }
+
+  async updateStatus(crewId: string, userId: string, status: string) {
+    return this.db.prisma.crewMember.update({
+      where: { crewId_userId: { crewId, userId } },
+      data: { status },
+    });
+  }
+
+  async findPendingMembers(crewId: string) {
+    return this.db.prisma.crewMember.findMany({
+      where: { crewId, status: "PENDING" },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            profileImage: true,
+          },
+        },
+      },
+      orderBy: { joinedAt: "asc" },
+    });
+  }
 }

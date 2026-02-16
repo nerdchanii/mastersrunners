@@ -1,6 +1,7 @@
 import { Test } from "@nestjs/testing";
 import { WorkoutsService } from "./workouts.service";
 import { WorkoutRepository } from "./repositories/workout.repository";
+import { ChallengeAggregationService } from "../challenges/challenge-aggregation.service";
 
 const mockWorkoutRepo = {
   findAllByUser: jest.fn(),
@@ -8,6 +9,10 @@ const mockWorkoutRepo = {
   create: jest.fn(),
   update: jest.fn(),
   softDelete: jest.fn(),
+};
+
+const mockChallengeAggregation = {
+  onWorkoutCreated: jest.fn(),
 };
 
 describe("WorkoutsService", () => {
@@ -20,6 +25,7 @@ describe("WorkoutsService", () => {
       providers: [
         WorkoutsService,
         { provide: WorkoutRepository, useValue: mockWorkoutRepo },
+        { provide: ChallengeAggregationService, useValue: mockChallengeAggregation },
       ],
     }).compile();
 
@@ -42,6 +48,7 @@ describe("WorkoutsService", () => {
     it("should calculate pace correctly: duration / (distance / 1000)", async () => {
       const dto = { distance: 10000, duration: 3600, date: "2026-01-01", memo: "long run", visibility: "PUBLIC" };
       mockWorkoutRepo.create.mockResolvedValue({ id: "w1" });
+      mockChallengeAggregation.onWorkoutCreated.mockResolvedValue(undefined);
 
       await service.create("u1", dto);
 
@@ -55,6 +62,7 @@ describe("WorkoutsService", () => {
     it("should convert date string to Date object", async () => {
       const dto = { distance: 5000, duration: 1500, date: "2026-06-15" };
       mockWorkoutRepo.create.mockResolvedValue({ id: "w1" });
+      mockChallengeAggregation.onWorkoutCreated.mockResolvedValue(undefined);
 
       await service.create("u1", dto);
 
@@ -66,6 +74,7 @@ describe("WorkoutsService", () => {
     it("should default optional fields to null/FOLLOWERS when not provided", async () => {
       const dto = { distance: 5000, duration: 1500, date: "2026-01-01" };
       mockWorkoutRepo.create.mockResolvedValue({ id: "w1" });
+      mockChallengeAggregation.onWorkoutCreated.mockResolvedValue(undefined);
 
       await service.create("u1", dto);
 
@@ -89,6 +98,7 @@ describe("WorkoutsService", () => {
         shoeId: "shoe1",
       };
       mockWorkoutRepo.create.mockResolvedValue({ id: "w1" });
+      mockChallengeAggregation.onWorkoutCreated.mockResolvedValue(undefined);
 
       await service.create("u1", dto);
 
@@ -98,6 +108,40 @@ describe("WorkoutsService", () => {
       expect(call.memo).toBe("Felt great");
       expect(call.visibility).toBe("PUBLIC");
       expect(call.shoeId).toBe("shoe1");
+    });
+
+    it("should call challengeAggregation.onWorkoutCreated after creating workout", async () => {
+      const dto = { distance: 5000, duration: 1500, date: "2026-01-01" };
+      mockWorkoutRepo.create.mockResolvedValue({ id: "w1" });
+      mockChallengeAggregation.onWorkoutCreated.mockResolvedValue(undefined);
+
+      await service.create("u1", dto);
+
+      expect(mockChallengeAggregation.onWorkoutCreated).toHaveBeenCalledWith("u1", {
+        distance: 5000,
+        duration: 1500,
+        pace: 1500 / (5000 / 1000), // 300 sec/km
+        date: expect.any(Date),
+      });
+    });
+
+    it("should succeed even if challenge aggregation fails", async () => {
+      const dto = { distance: 5000, duration: 1500, date: "2026-01-01" };
+      const workout = { id: "w1" };
+      mockWorkoutRepo.create.mockResolvedValue(workout);
+      mockChallengeAggregation.onWorkoutCreated.mockRejectedValue(new Error("Aggregation failed"));
+
+      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+
+      const result = await service.create("u1", dto);
+
+      expect(result).toEqual(workout);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Failed to aggregate challenge progress:",
+        expect.any(Error)
+      );
+
+      consoleErrorSpy.mockRestore();
     });
   });
 

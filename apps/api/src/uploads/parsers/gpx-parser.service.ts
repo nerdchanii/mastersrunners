@@ -4,27 +4,71 @@ import type { ParsedWorkoutData } from "./fit-parser.service.js";
 @Injectable()
 export class GpxParserService {
   async parse(xmlString: string): Promise<ParsedWorkoutData> {
-    // Basic GPX parsing using regex for track points
-    // GPX format: <trkpt lat="..." lon="..."><time>...</time></trkpt>
-    const trackPoints = this.extractTrackPoints(xmlString);
+    // Extract track points with optional extensions (elevation, HR, cadence)
+    const enrichedPoints = this.extractEnrichedTrackPoints(xmlString);
 
-    if (trackPoints.length < 2) {
+    if (enrichedPoints.length < 2) {
       throw new Error("GPX file has insufficient track points");
     }
 
-    const startTime = trackPoints[0].timestamp;
-    const endTime = trackPoints[trackPoints.length - 1].timestamp;
+    const startTime = enrichedPoints[0].timestamp;
+    const endTime = enrichedPoints[enrichedPoints.length - 1].timestamp;
     const duration = (endTime.getTime() - startTime.getTime()) / 1000;
 
     let totalDistance = 0;
-    for (let i = 1; i < trackPoints.length; i++) {
+    for (let i = 1; i < enrichedPoints.length; i++) {
       totalDistance += this.haversineDistance(
-        trackPoints[i - 1].lat, trackPoints[i - 1].lon,
-        trackPoints[i].lat, trackPoints[i].lon
+        enrichedPoints[i - 1].lat, enrichedPoints[i - 1].lon,
+        enrichedPoints[i].lat, enrichedPoints[i].lon
       );
     }
 
     const avgPace = duration / (totalDistance / 1000); // seconds per km
+
+    // Calculate elevation gain (sum of positive elevation changes)
+    let elevationGain: number | undefined;
+    const elevations = enrichedPoints
+      .map(p => p.elevation)
+      .filter((e): e is number => e !== undefined);
+    if (elevations.length >= 2) {
+      let gain = 0;
+      for (let i = 1; i < elevations.length; i++) {
+        const diff = elevations[i] - elevations[i - 1];
+        if (diff > 0) {
+          gain += diff;
+        }
+      }
+      elevationGain = gain;
+    }
+
+    // Calculate heart rate stats
+    const heartRates = enrichedPoints
+      .map(p => p.heartRate)
+      .filter((hr): hr is number => hr !== undefined);
+    const avgHeartRate = heartRates.length > 0
+      ? heartRates.reduce((sum, hr) => sum + hr, 0) / heartRates.length
+      : undefined;
+    const maxHeartRate = heartRates.length > 0
+      ? Math.max(...heartRates)
+      : undefined;
+
+    // Calculate cadence stats
+    const cadences = enrichedPoints
+      .map(p => p.cadence)
+      .filter((cad): cad is number => cad !== undefined);
+    const avgCadence = cadences.length > 0
+      ? cadences.reduce((sum, cad) => sum + cad, 0) / cadences.length
+      : undefined;
+    const maxCadence = cadences.length > 0
+      ? Math.max(...cadences)
+      : undefined;
+
+    // Build gpsTrack array (only lat, lon, timestamp per interface)
+    const gpsTrack = enrichedPoints.map(p => ({
+      lat: p.lat,
+      lon: p.lon,
+      timestamp: p.timestamp,
+    }));
 
     return {
       distance: totalDistance,
@@ -32,24 +76,64 @@ export class GpxParserService {
       startTime,
       endTime,
       avgPace,
-      gpsTrack: trackPoints,
+      elevationGain,
+      avgHeartRate,
+      maxHeartRate,
+      avgCadence,
+      maxCadence,
+      gpsTrack,
     };
   }
 
-  private extractTrackPoints(xml: string): Array<{ lat: number; lon: number; timestamp: Date }> {
-    const points: Array<{ lat: number; lon: number; timestamp: Date }> = [];
-    const trkptRegex = /<trkpt\s+(?:lat="([^"]+)"\s+lon="([^"]+)"|lon="([^"]+)"\s+lat="([^"]+)")[^>]*>[\s\S]*?<time>([^<]+)<\/time>[\s\S]*?<\/trkpt>/g;
+  private extractEnrichedTrackPoints(xml: string): Array<{
+    lat: number;
+    lon: number;
+    timestamp: Date;
+    elevation?: number;
+    heartRate?: number;
+    cadence?: number;
+  }> {
+    const points: Array<{
+      lat: number;
+      lon: number;
+      timestamp: Date;
+      elevation?: number;
+      heartRate?: number;
+      cadence?: number;
+    }> = [];
+
+    const trkptRegex = /<trkpt\s+(?:lat="([^"]+)"\s+lon="([^"]+)"|lon="([^"]+)"\s+lat="([^"]+)")[^>]*>([\s\S]*?)<\/trkpt>/g;
     let match;
     while ((match = trkptRegex.exec(xml)) !== null) {
       // Handle both attribute orders: lat-lon or lon-lat
       const lat = match[1] ? parseFloat(match[1]) : parseFloat(match[4]);
       const lon = match[2] ? parseFloat(match[2]) : parseFloat(match[3]);
-      const timestamp = match[5];
+      const content = match[5];
+
+      // Extract time (required)
+      const timeMatch = /<time>([^<]+)<\/time>/.exec(content);
+      if (!timeMatch) continue;
+      const timestamp = new Date(timeMatch[1]);
+
+      // Extract optional elevation
+      const eleMatch = /<ele>([^<]+)<\/ele>/.exec(content);
+      const elevation = eleMatch ? parseFloat(eleMatch[1]) : undefined;
+
+      // Extract optional heart rate (multiple namespace patterns)
+      const hrMatch = /<(?:gpxtpx:)?(?:ns3:)?hr>([^<]+)<\/(?:gpxtpx:)?(?:ns3:)?hr>/.exec(content);
+      const heartRate = hrMatch ? parseInt(hrMatch[1], 10) : undefined;
+
+      // Extract optional cadence (multiple namespace patterns)
+      const cadMatch = /<(?:gpxtpx:)?(?:ns3:)?(?:cad|RunCadence)>([^<]+)<\/(?:gpxtpx:)?(?:ns3:)?(?:cad|RunCadence)>/.exec(content);
+      const cadence = cadMatch ? parseInt(cadMatch[1], 10) : undefined;
 
       points.push({
         lat,
         lon,
-        timestamp: new Date(timestamp),
+        timestamp,
+        elevation,
+        heartRate,
+        cadence,
       });
     }
     return points;

@@ -1,11 +1,15 @@
 import { Injectable } from "@nestjs/common";
 import { WorkoutRepository } from "./repositories/workout.repository.js";
+import { ChallengeAggregationService } from "../challenges/challenge-aggregation.service.js";
 import type { CreateWorkoutDto } from "./dto/create-workout.dto.js";
 import type { UpdateWorkoutDto } from "./dto/update-workout.dto.js";
 
 @Injectable()
 export class WorkoutsService {
-  constructor(private readonly workoutRepo: WorkoutRepository) {}
+  constructor(
+    private readonly workoutRepo: WorkoutRepository,
+    private readonly challengeAggregation: ChallengeAggregationService
+  ) {}
 
   async findAll(userId: string) {
     return this.workoutRepo.findAllByUser(userId);
@@ -13,7 +17,7 @@ export class WorkoutsService {
 
   async create(userId: string, dto: CreateWorkoutDto) {
     const pace = dto.duration / (dto.distance / 1000);
-    return this.workoutRepo.create({
+    const workout = await this.workoutRepo.create({
       userId,
       distance: dto.distance,
       duration: dto.duration,
@@ -25,6 +29,21 @@ export class WorkoutsService {
       visibility: dto.visibility || "FOLLOWERS",
       shoeId: dto.shoeId || null,
     });
+
+    // Aggregate challenge progress (non-blocking)
+    try {
+      await this.challengeAggregation.onWorkoutCreated(userId, {
+        distance: dto.distance,
+        duration: dto.duration,
+        pace,
+        date: new Date(dto.date),
+      });
+    } catch (error) {
+      // Log error but don't fail workout creation
+      console.error("Failed to aggregate challenge progress:", error);
+    }
+
+    return workout;
   }
 
   async findOne(id: string) {

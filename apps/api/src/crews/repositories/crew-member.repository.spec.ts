@@ -292,4 +292,99 @@ describe("CrewMemberRepository", () => {
       expect(result).toBe(0);
     });
   });
+
+  describe("updateStatus", () => {
+    it("should update member status", async () => {
+      const crewId = "crew-123";
+      const userId = "user-456";
+      const newStatus = "ACTIVE";
+      const mockUpdated = {
+        id: "member-123",
+        crewId,
+        userId,
+        role: "MEMBER",
+        status: newStatus,
+      };
+      mockPrisma.crewMember.update.mockResolvedValue(mockUpdated);
+
+      const result = await repository.updateStatus(crewId, userId, newStatus);
+
+      expect(mockPrisma.crewMember.update).toHaveBeenCalledWith({
+        where: { crewId_userId: { crewId, userId } },
+        data: { status: newStatus },
+      });
+      expect(result).toEqual(mockUpdated);
+    });
+
+    it("should change PENDING to ACTIVE", async () => {
+      const crewId = "crew-123";
+      const userId = "user-pending";
+      const mockUpdated = {
+        id: "member-123",
+        crewId,
+        userId,
+        role: "MEMBER",
+        status: "ACTIVE",
+      };
+      mockPrisma.crewMember.update.mockResolvedValue(mockUpdated);
+
+      const result = await repository.updateStatus(crewId, userId, "ACTIVE");
+
+      expect(mockPrisma.crewMember.update).toHaveBeenCalledWith({
+        where: { crewId_userId: { crewId, userId } },
+        data: { status: "ACTIVE" },
+      });
+      expect(result).toEqual(mockUpdated);
+    });
+  });
+
+  describe("findPendingMembers", () => {
+    it("should find members with PENDING status", async () => {
+      const crewId = "crew-123";
+      const mockPendingMembers = [
+        {
+          id: "member-1",
+          crewId,
+          userId: "user-1",
+          role: "MEMBER",
+          status: "PENDING",
+          user: { id: "user-1", name: "User One", profileImage: null },
+        },
+        {
+          id: "member-2",
+          crewId,
+          userId: "user-2",
+          role: "MEMBER",
+          status: "PENDING",
+          user: { id: "user-2", name: "User Two", profileImage: null },
+        },
+      ];
+      mockPrisma.crewMember.findMany.mockResolvedValue(mockPendingMembers);
+
+      const result = await repository.findPendingMembers(crewId);
+
+      expect(mockPrisma.crewMember.findMany).toHaveBeenCalledWith({
+        where: { crewId, status: "PENDING" },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              profileImage: true,
+            },
+          },
+        },
+        orderBy: { joinedAt: "asc" },
+      });
+      expect(result).toEqual(mockPendingMembers);
+    });
+
+    it("should return empty array if no pending members", async () => {
+      mockPrisma.crewMember.findMany.mockResolvedValue([]);
+
+      const result = await repository.findPendingMembers("crew-123");
+
+      expect(result).toEqual([]);
+    });
+  });
 });

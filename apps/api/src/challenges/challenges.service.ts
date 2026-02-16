@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from "@nestjs/common";
 import { ChallengeRepository } from "./repositories/challenge.repository.js";
 import { ChallengeParticipantRepository } from "./repositories/challenge-participant.repository.js";
+import { ChallengeTeamRepository } from "./repositories/challenge-team.repository.js";
 import type { CreateChallengeDto } from "./dto/create-challenge.dto.js";
 import type { UpdateChallengeDto } from "./dto/update-challenge.dto.js";
 
@@ -9,6 +10,7 @@ export class ChallengesService {
   constructor(
     private readonly challengeRepo: ChallengeRepository,
     private readonly participantRepo: ChallengeParticipantRepository,
+    private readonly teamRepo: ChallengeTeamRepository,
   ) {}
 
   async create(userId: string, dto: CreateChallengeDto) {
@@ -107,5 +109,63 @@ export class ChallengesService {
     if (!challenge) throw new NotFoundException("챌린지를 찾을 수 없습니다.");
 
     return this.participantRepo.findLeaderboard(challengeId, limit);
+  }
+
+  async createTeam(challengeId: string, userId: string, teamName: string) {
+    const challenge = await this.challengeRepo.findById(challengeId);
+    if (!challenge) throw new NotFoundException("챌린지를 찾을 수 없습니다.");
+
+    if (challenge.creatorId !== userId) {
+      const participant = await this.participantRepo.findParticipant(challengeId, userId);
+      if (!participant) throw new ForbiddenException("챌린지 참여자만 팀을 생성할 수 있습니다.");
+    }
+
+    return this.teamRepo.create(challengeId, teamName);
+  }
+
+  async joinTeam(challengeId: string, userId: string, teamId: string) {
+    const challenge = await this.challengeRepo.findById(challengeId);
+    if (!challenge) throw new NotFoundException("챌린지를 찾을 수 없습니다.");
+
+    const participant = await this.participantRepo.findParticipant(challengeId, userId);
+    if (!participant) throw new NotFoundException("참여하지 않은 챌린지입니다.");
+
+    return this.participantRepo.updateTeamId(challengeId, userId, teamId);
+  }
+
+  async leaveTeam(challengeId: string, userId: string) {
+    const challenge = await this.challengeRepo.findById(challengeId);
+    if (!challenge) throw new NotFoundException("챌린지를 찾을 수 없습니다.");
+
+    const participant = await this.participantRepo.findParticipant(challengeId, userId);
+    if (!participant) throw new NotFoundException("참여하지 않은 챌린지입니다.");
+    if (!participant.challengeTeamId) throw new BadRequestException("팀에 속해 있지 않습니다.");
+
+    return this.participantRepo.updateTeamId(challengeId, userId, null);
+  }
+
+  async getTeams(challengeId: string) {
+    const challenge = await this.challengeRepo.findById(challengeId);
+    if (!challenge) throw new NotFoundException("챌린지를 찾을 수 없습니다.");
+
+    return this.teamRepo.findByChallengeId(challengeId);
+  }
+
+  async removeTeam(teamId: string, userId: string) {
+    const team = await this.teamRepo.findById(teamId);
+    if (!team) throw new NotFoundException("팀을 찾을 수 없습니다.");
+
+    const challenge = await this.challengeRepo.findById(team.challengeId);
+    if (!challenge) throw new NotFoundException("챌린지를 찾을 수 없습니다.");
+    if (challenge.creatorId !== userId) throw new ForbiddenException("챌린지 생성자만 팀을 삭제할 수 있습니다.");
+
+    return this.teamRepo.remove(teamId);
+  }
+
+  async getTeamLeaderboard(challengeId: string): Promise<{ teamId: string; teamName: string; totalValue: number; memberCount: number }[]> {
+    const challenge = await this.challengeRepo.findById(challengeId);
+    if (!challenge) throw new NotFoundException("챌린지를 찾을 수 없습니다.");
+
+    return this.teamRepo.getTeamLeaderboard(challengeId);
   }
 }

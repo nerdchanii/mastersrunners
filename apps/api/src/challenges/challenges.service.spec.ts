@@ -3,6 +3,7 @@ import { BadRequestException, ForbiddenException, NotFoundException } from "@nes
 import { ChallengesService } from "./challenges.service.js";
 import { ChallengeRepository } from "./repositories/challenge.repository.js";
 import { ChallengeParticipantRepository } from "./repositories/challenge-participant.repository.js";
+import { ChallengeTeamRepository } from "./repositories/challenge-team.repository.js";
 import type { CreateChallengeDto } from "./dto/create-challenge.dto.js";
 import type { UpdateChallengeDto } from "./dto/update-challenge.dto.js";
 
@@ -19,8 +20,17 @@ const mockChallengeParticipantRepository = {
   join: jest.fn(),
   leave: jest.fn(),
   updateProgress: jest.fn(),
+  updateTeamId: jest.fn(),
   findParticipant: jest.fn(),
   findLeaderboard: jest.fn(),
+};
+
+const mockChallengeTeamRepository = {
+  create: jest.fn(),
+  findById: jest.fn(),
+  findByChallengeId: jest.fn(),
+  remove: jest.fn(),
+  getTeamLeaderboard: jest.fn(),
 };
 
 describe("ChallengesService", () => {
@@ -33,6 +43,7 @@ describe("ChallengesService", () => {
         ChallengesService,
         { provide: ChallengeRepository, useValue: mockChallengeRepository },
         { provide: ChallengeParticipantRepository, useValue: mockChallengeParticipantRepository },
+        { provide: ChallengeTeamRepository, useValue: mockChallengeTeamRepository },
       ],
     }).compile();
     service = module.get(ChallengesService);
@@ -372,6 +383,220 @@ describe("ChallengesService", () => {
       mockChallengeRepository.findById.mockResolvedValue(null);
 
       await expect(service.getLeaderboard("non-existent")).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe("createTeam", () => {
+    it("should create team if user is challenge creator", async () => {
+      const challengeId = "challenge-123";
+      const userId = "user-123";
+      const teamName = "Team Alpha";
+      const mockChallenge = { id: challengeId, creatorId: userId };
+      const mockTeam = { id: "team-1", challengeId, name: teamName };
+      mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
+      mockChallengeParticipantRepository.findParticipant.mockResolvedValue(null);
+      mockChallengeTeamRepository.create.mockResolvedValue(mockTeam);
+
+      const result = await service.createTeam(challengeId, userId, teamName);
+
+      expect(mockChallengeRepository.findById).toHaveBeenCalledWith(challengeId);
+      expect(mockChallengeTeamRepository.create).toHaveBeenCalledWith(challengeId, teamName);
+      expect(result).toEqual(mockTeam);
+    });
+
+    it("should create team if user is participant", async () => {
+      const challengeId = "challenge-123";
+      const userId = "user-999";
+      const teamName = "Team Beta";
+      const mockChallenge = { id: challengeId, creatorId: "user-creator" };
+      const mockParticipant = { id: "p1", challengeId, userId };
+      const mockTeam = { id: "team-2", challengeId, name: teamName };
+      mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
+      mockChallengeParticipantRepository.findParticipant.mockResolvedValue(mockParticipant);
+      mockChallengeTeamRepository.create.mockResolvedValue(mockTeam);
+
+      const result = await service.createTeam(challengeId, userId, teamName);
+
+      expect(mockChallengeTeamRepository.create).toHaveBeenCalledWith(challengeId, teamName);
+      expect(result).toEqual(mockTeam);
+    });
+
+    it("should throw NotFoundException if challenge not found", async () => {
+      mockChallengeRepository.findById.mockResolvedValue(null);
+
+      await expect(service.createTeam("non-existent", "user-123", "Team")).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw ForbiddenException if user is not creator or participant", async () => {
+      const mockChallenge = { id: "challenge-123", creatorId: "user-creator" };
+      mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
+      mockChallengeParticipantRepository.findParticipant.mockResolvedValue(null);
+
+      await expect(service.createTeam("challenge-123", "user-stranger", "Team")).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe("joinTeam", () => {
+    it("should update participant's challengeTeamId", async () => {
+      const challengeId = "challenge-123";
+      const userId = "user-123";
+      const teamId = "team-1";
+      const mockChallenge = { id: challengeId };
+      const mockParticipant = { id: "p1", challengeId, userId, challengeTeamId: null };
+      const mockUpdated = { ...mockParticipant, challengeTeamId: teamId };
+      mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
+      mockChallengeParticipantRepository.findParticipant.mockResolvedValue(mockParticipant);
+      mockChallengeParticipantRepository.updateTeamId.mockResolvedValue(mockUpdated);
+
+      const result = await service.joinTeam(challengeId, userId, teamId);
+
+      expect(mockChallengeRepository.findById).toHaveBeenCalledWith(challengeId);
+      expect(mockChallengeParticipantRepository.findParticipant).toHaveBeenCalledWith(challengeId, userId);
+      expect(mockChallengeParticipantRepository.updateTeamId).toHaveBeenCalledWith(challengeId, userId, teamId);
+      expect(result).toEqual(mockUpdated);
+    });
+
+    it("should throw NotFoundException if challenge not found", async () => {
+      mockChallengeRepository.findById.mockResolvedValue(null);
+
+      await expect(service.joinTeam("non-existent", "user-123", "team-1")).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw NotFoundException if user is not participating", async () => {
+      const mockChallenge = { id: "challenge-123" };
+      mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
+      mockChallengeParticipantRepository.findParticipant.mockResolvedValue(null);
+
+      await expect(service.joinTeam("challenge-123", "user-123", "team-1")).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe("leaveTeam", () => {
+    it("should set participant's challengeTeamId to null", async () => {
+      const challengeId = "challenge-123";
+      const userId = "user-123";
+      const mockChallenge = { id: challengeId };
+      const mockParticipant = { id: "p1", challengeId, userId, challengeTeamId: "team-1" };
+      const mockUpdated = { ...mockParticipant, challengeTeamId: null };
+      mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
+      mockChallengeParticipantRepository.findParticipant.mockResolvedValue(mockParticipant);
+      mockChallengeParticipantRepository.updateTeamId.mockResolvedValue(mockUpdated);
+
+      const result = await service.leaveTeam(challengeId, userId);
+
+      expect(mockChallengeRepository.findById).toHaveBeenCalledWith(challengeId);
+      expect(mockChallengeParticipantRepository.findParticipant).toHaveBeenCalledWith(challengeId, userId);
+      expect(mockChallengeParticipantRepository.updateTeamId).toHaveBeenCalledWith(challengeId, userId, null);
+      expect(result).toEqual(mockUpdated);
+    });
+
+    it("should throw NotFoundException if challenge not found", async () => {
+      mockChallengeRepository.findById.mockResolvedValue(null);
+
+      await expect(service.leaveTeam("non-existent", "user-123")).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw NotFoundException if not participating", async () => {
+      const mockChallenge = { id: "challenge-123" };
+      mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
+      mockChallengeParticipantRepository.findParticipant.mockResolvedValue(null);
+
+      await expect(service.leaveTeam("challenge-123", "user-123")).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw BadRequestException if not in a team", async () => {
+      const mockChallenge = { id: "challenge-123" };
+      const mockParticipant = { id: "p1", challengeId: "challenge-123", userId: "user-123", challengeTeamId: null };
+      mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
+      mockChallengeParticipantRepository.findParticipant.mockResolvedValue(mockParticipant);
+
+      await expect(service.leaveTeam("challenge-123", "user-123")).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe("getTeams", () => {
+    it("should return all teams for a challenge", async () => {
+      const challengeId = "challenge-123";
+      const mockChallenge = { id: challengeId };
+      const mockTeams = [
+        { id: "team-1", challengeId, name: "Team Alpha" },
+        { id: "team-2", challengeId, name: "Team Beta" },
+      ];
+      mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
+      mockChallengeTeamRepository.findByChallengeId.mockResolvedValue(mockTeams);
+
+      const result = await service.getTeams(challengeId);
+
+      expect(mockChallengeRepository.findById).toHaveBeenCalledWith(challengeId);
+      expect(mockChallengeTeamRepository.findByChallengeId).toHaveBeenCalledWith(challengeId);
+      expect(result).toEqual(mockTeams);
+    });
+
+    it("should throw NotFoundException if challenge not found", async () => {
+      mockChallengeRepository.findById.mockResolvedValue(null);
+
+      await expect(service.getTeams("non-existent")).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe("removeTeam", () => {
+    it("should remove team if user is challenge creator", async () => {
+      const teamId = "team-1";
+      const challengeId = "challenge-123";
+      const userId = "user-123";
+      const mockTeam = { id: teamId, challengeId };
+      const mockChallenge = { id: challengeId, creatorId: userId };
+      const mockDeleted = { ...mockTeam };
+      mockChallengeTeamRepository.findById.mockResolvedValue(mockTeam);
+      mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
+      mockChallengeTeamRepository.remove.mockResolvedValue(mockDeleted);
+
+      const result = await service.removeTeam(teamId, userId);
+
+      expect(mockChallengeTeamRepository.findById).toHaveBeenCalledWith(teamId);
+      expect(mockChallengeRepository.findById).toHaveBeenCalledWith(challengeId);
+      expect(mockChallengeTeamRepository.remove).toHaveBeenCalledWith(teamId);
+      expect(result).toEqual(mockDeleted);
+    });
+
+    it("should throw NotFoundException if team not found", async () => {
+      mockChallengeTeamRepository.findById.mockResolvedValue(null);
+
+      await expect(service.removeTeam("non-existent", "user-123")).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw ForbiddenException if user is not challenge creator", async () => {
+      const mockTeam = { id: "team-1", challengeId: "challenge-123" };
+      const mockChallenge = { id: "challenge-123", creatorId: "user-creator" };
+      mockChallengeTeamRepository.findById.mockResolvedValue(mockTeam);
+      mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
+
+      await expect(service.removeTeam("team-1", "user-stranger")).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe("getTeamLeaderboard", () => {
+    it("should return team leaderboard for a challenge", async () => {
+      const challengeId = "challenge-123";
+      const mockChallenge = { id: challengeId };
+      const mockLeaderboard = [
+        { teamId: "team-1", teamName: "Team Alpha", totalValue: 500, memberCount: 5 },
+        { teamId: "team-2", teamName: "Team Beta", totalValue: 300, memberCount: 3 },
+      ];
+      mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
+      mockChallengeTeamRepository.getTeamLeaderboard.mockResolvedValue(mockLeaderboard);
+
+      const result = await service.getTeamLeaderboard(challengeId);
+
+      expect(mockChallengeRepository.findById).toHaveBeenCalledWith(challengeId);
+      expect(mockChallengeTeamRepository.getTeamLeaderboard).toHaveBeenCalledWith(challengeId);
+      expect(result).toEqual(mockLeaderboard);
+    });
+
+    it("should throw NotFoundException if challenge not found", async () => {
+      mockChallengeRepository.findById.mockResolvedValue(null);
+
+      await expect(service.getTeamLeaderboard("non-existent")).rejects.toThrow(NotFoundException);
     });
   });
 });

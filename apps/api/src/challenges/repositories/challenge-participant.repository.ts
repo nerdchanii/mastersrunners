@@ -57,4 +57,35 @@ export class ChallengeParticipantRepository {
       take: limit,
     });
   }
+
+  async findActiveByUser(userId: string) {
+    const now = new Date();
+    return this.db.prisma.challengeParticipant.findMany({
+      where: {
+        userId,
+        challenge: {
+          endDate: {
+            gte: now,
+          },
+        },
+      },
+      include: {
+        challenge: {
+          select: {
+            id: true,
+            type: true,
+            targetValue: true,
+            endDate: true,
+          },
+        },
+      },
+    });
+  }
+
+  async updateTeamId(challengeId: string, userId: string, teamId: string | null) {
+    return this.db.prisma.challengeParticipant.update({
+      where: { challengeId_userId: { challengeId, userId } },
+      data: { challengeTeamId: teamId },
+    });
+  }
 }
