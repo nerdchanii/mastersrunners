@@ -42,6 +42,20 @@ export class EventRegistrationRepository {
     });
   }
 
+  async linkWorkout(eventId: string, userId: string, workoutId: string, resultTime: number) {
+    return this.db.prisma.eventParticipant.update({
+      where: { eventId_userId: { eventId, userId } },
+      data: { workoutId, resultTime, status: "COMPLETED" },
+    });
+  }
+
+  async unlinkWorkout(eventId: string, userId: string) {
+    return this.db.prisma.eventParticipant.update({
+      where: { eventId_userId: { eventId, userId } },
+      data: { workoutId: null },
+    });
+  }
+
   async findByEventWithResults(eventId: string, sortBy: "resultTime" | "resultRank" = "resultTime") {
     return this.db.prisma.eventParticipant.findMany({
       where: {

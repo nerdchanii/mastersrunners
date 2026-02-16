@@ -4,9 +4,10 @@ import { EventsService } from "./events.service.js";
 import { EventRepository } from "./repositories/event.repository.js";
 import { EventRegistrationRepository } from "./repositories/event-registration.repository.js";
 import { DatabaseModule } from "../database/database.module.js";
+import { WorkoutsModule } from "../workouts/workouts.module.js";
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, WorkoutsModule],
   controllers: [EventsController],
   providers: [EventsService, EventRepository, EventRegistrationRepository],
   exports: [EventsService],

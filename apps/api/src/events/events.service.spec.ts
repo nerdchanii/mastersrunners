@@ -3,6 +3,7 @@ import { BadRequestException, ForbiddenException, NotFoundException } from "@nes
 import { EventsService } from "./events.service.js";
 import { EventRepository } from "./repositories/event.repository.js";
 import { EventRegistrationRepository } from "./repositories/event-registration.repository.js";
+import { WorkoutRepository } from "../workouts/repositories/workout.repository.js";
 import type { CreateEventDto } from "./dto/create-event.dto.js";
 import type { UpdateEventDto } from "./dto/update-event.dto.js";
 
@@ -22,6 +23,12 @@ const mockEventRegistrationRepository = {
   countRegistered: jest.fn(),
   updateResult: jest.fn(),
   findByEventWithResults: jest.fn(),
+  linkWorkout: jest.fn(),
+  unlinkWorkout: jest.fn(),
+};
+
+const mockWorkoutRepository = {
+  findByIdWithUser: jest.fn(),
 };
 
 describe("EventsService", () => {
@@ -34,6 +41,7 @@ describe("EventsService", () => {
         EventsService,
         { provide: EventRepository, useValue: mockEventRepository },
         { provide: EventRegistrationRepository, useValue: mockEventRegistrationRepository },
+        { provide: WorkoutRepository, useValue: mockWorkoutRepository },
       ],
     }).compile();
     service = module.get(EventsService);
@@ -388,6 +396,87 @@ describe("EventsService", () => {
       mockEventRegistrationRepository.findRegistration.mockResolvedValue(null);
 
       await expect(service.getMyResult("event-123", "user-123")).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe("linkWorkout", () => {
+    it("should link workout and set resultTime + COMPLETED", async () => {
+      const eventId = "event-123";
+      const userId = "user-123";
+      const workoutId = "workout-456";
+      const mockRegistration = { id: "reg-1", eventId, userId, workoutId: null };
+      const mockWorkout = { id: workoutId, userId, duration: 12600 };
+      const mockLinked = { ...mockRegistration, workoutId, resultTime: 12600, status: "COMPLETED" };
+
+      mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
+      mockWorkoutRepository.findByIdWithUser.mockResolvedValue(mockWorkout);
+      mockEventRegistrationRepository.linkWorkout.mockResolvedValue(mockLinked);
+
+      const result = await service.linkWorkout(eventId, userId, workoutId);
+
+      expect(mockWorkoutRepository.findByIdWithUser).toHaveBeenCalledWith(workoutId);
+      expect(mockEventRegistrationRepository.linkWorkout).toHaveBeenCalledWith(eventId, userId, workoutId, 12600);
+      expect(result).toEqual(mockLinked);
+    });
+
+    it("should throw NotFoundException if not registered", async () => {
+      mockEventRegistrationRepository.findRegistration.mockResolvedValue(null);
+
+      await expect(service.linkWorkout("event-123", "user-123", "workout-456")).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw NotFoundException if workout not found", async () => {
+      const mockRegistration = { id: "reg-1", workoutId: null };
+      mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
+      mockWorkoutRepository.findByIdWithUser.mockResolvedValue(null);
+
+      await expect(service.linkWorkout("event-123", "user-123", "workout-456")).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw ForbiddenException if workout belongs to another user", async () => {
+      const mockRegistration = { id: "reg-1", workoutId: null };
+      const mockWorkout = { id: "workout-456", userId: "other-user", duration: 12600 };
+      mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
+      mockWorkoutRepository.findByIdWithUser.mockResolvedValue(mockWorkout);
+
+      await expect(service.linkWorkout("event-123", "user-123", "workout-456")).rejects.toThrow(ForbiddenException);
+    });
+
+    it("should throw BadRequestException if workout already linked", async () => {
+      const mockRegistration = { id: "reg-1", workoutId: "existing-workout" };
+      mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
+
+      await expect(service.linkWorkout("event-123", "user-123", "workout-456")).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe("unlinkWorkout", () => {
+    it("should unlink workout", async () => {
+      const eventId = "event-123";
+      const userId = "user-123";
+      const mockRegistration = { id: "reg-1", eventId, userId, workoutId: "workout-456" };
+      const mockUnlinked = { ...mockRegistration, workoutId: null };
+
+      mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
+      mockEventRegistrationRepository.unlinkWorkout.mockResolvedValue(mockUnlinked);
+
+      const result = await service.unlinkWorkout(eventId, userId);
+
+      expect(mockEventRegistrationRepository.unlinkWorkout).toHaveBeenCalledWith(eventId, userId);
+      expect(result).toEqual(mockUnlinked);
+    });
+
+    it("should throw NotFoundException if not registered", async () => {
+      mockEventRegistrationRepository.findRegistration.mockResolvedValue(null);
+
+      await expect(service.unlinkWorkout("event-123", "user-123")).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw BadRequestException if no workout linked", async () => {
+      const mockRegistration = { id: "reg-1", workoutId: null };
+      mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
+
+      await expect(service.unlinkWorkout("event-123", "user-123")).rejects.toThrow(BadRequestException);
     });
   });
 });

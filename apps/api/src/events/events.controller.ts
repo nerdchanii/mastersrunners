@@ -87,4 +87,16 @@ export class EventsController {
     const { userId } = req.user as { userId: string };
     return this.eventsService.getMyResult(id, userId);
   }
+
+  @Post(":id/link-workout")
+  linkWorkout(@Param("id") id: string, @Req() req: Request, @Body("workoutId") workoutId: string) {
+    const { userId } = req.user as { userId: string };
+    return this.eventsService.linkWorkout(id, userId, workoutId);
+  }
+
+  @Delete(":id/link-workout")
+  unlinkWorkout(@Param("id") id: string, @Req() req: Request) {
+    const { userId } = req.user as { userId: string };
+    return this.eventsService.unlinkWorkout(id, userId);
+  }
 }

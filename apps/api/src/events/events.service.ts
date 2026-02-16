@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from "@nestjs/common";
 import { EventRepository } from "./repositories/event.repository.js";
 import { EventRegistrationRepository } from "./repositories/event-registration.repository.js";
+import { WorkoutRepository } from "../workouts/repositories/workout.repository.js";
 import type { CreateEventDto } from "./dto/create-event.dto.js";
 import type { UpdateEventDto } from "./dto/update-event.dto.js";
 
@@ -9,6 +10,7 @@ export class EventsService {
   constructor(
     private readonly eventRepo: EventRepository,
     private readonly registrationRepo: EventRegistrationRepository,
+    private readonly workoutRepo: WorkoutRepository,
   ) {}
 
   async create(userId: string, dto: CreateEventDto) {
@@ -138,5 +140,33 @@ export class EventsService {
     if (!registration) throw new NotFoundException("등록하지 않은 이벤트입니다.");
 
     return registration;
+  }
+
+  // ============ Workout Link Methods ============
+
+  async linkWorkout(eventId: string, userId: string, workoutId: string) {
+    const registration = await this.registrationRepo.findRegistration(eventId, userId);
+    if (!registration) throw new NotFoundException("등록하지 않은 이벤트입니다.");
+
+    if (registration.workoutId) {
+      throw new BadRequestException("이미 워크아웃이 연결되어 있습니다. 먼저 연결을 해제해주세요.");
+    }
+
+    const workout = await this.workoutRepo.findByIdWithUser(workoutId);
+    if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
+    if (workout.userId !== userId) throw new ForbiddenException("본인의 워크아웃만 연결할 수 있습니다.");
+
+    return this.registrationRepo.linkWorkout(eventId, userId, workoutId, workout.duration);
+  }
+
+  async unlinkWorkout(eventId: string, userId: string) {
+    const registration = await this.registrationRepo.findRegistration(eventId, userId);
+    if (!registration) throw new NotFoundException("등록하지 않은 이벤트입니다.");
+
+    if (!registration.workoutId) {
+      throw new BadRequestException("연결된 워크아웃이 없습니다.");
+    }
+
+    return this.registrationRepo.unlinkWorkout(eventId, userId);
   }
 }
