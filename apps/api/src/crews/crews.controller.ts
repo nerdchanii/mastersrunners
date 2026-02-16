@@ -65,9 +65,14 @@ export class CrewsController {
   }
 
   @Delete(":id/members/:userId")
-  kickMember(@Param("id") id: string, @Param("userId") targetUserId: string, @Req() req: Request) {
+  kickMember(
+    @Param("id") id: string,
+    @Param("userId") targetUserId: string,
+    @Req() req: Request,
+    @Body("reason") reason?: string
+  ) {
     const { userId } = req.user as { userId: string };
-    return this.crewsService.kickMember(id, userId, targetUserId);
+    return this.crewsService.kickMember(id, userId, targetUserId, reason);
   }
 
   @Patch(":id/members/:userId/role")
@@ -84,5 +89,17 @@ export class CrewsController {
       return this.crewsService.demoteToMember(id, userId, targetUserId);
     }
     throw new Error("Invalid role. Only ADMIN or MEMBER allowed.");
+  }
+
+  @Get(":id/bans")
+  getBannedMembers(@Param("id") id: string, @Req() req: Request) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.getBannedMembers(id, userId);
+  }
+
+  @Delete(":id/bans/:userId")
+  unbanMember(@Param("id") id: string, @Param("userId") targetUserId: string, @Req() req: Request) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.unbanMember(id, userId, targetUserId);
   }
 }

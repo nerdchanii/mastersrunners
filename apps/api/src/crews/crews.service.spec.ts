@@ -5,6 +5,7 @@ import { CrewRepository } from "./repositories/crew.repository.js";
 import { CrewMemberRepository } from "./repositories/crew-member.repository.js";
 import { CrewTagRepository } from "./repositories/crew-tag.repository.js";
 import { CrewActivityRepository } from "./repositories/crew-activity.repository.js";
+import { CrewBanRepository } from "./repositories/crew-ban.repository.js";
 import { DatabaseService } from "../database/database.service.js";
 import type { CreateCrewDto } from "./dto/create-crew.dto.js";
 import type { UpdateCrewDto } from "./dto/update-crew.dto.js";
@@ -50,6 +51,14 @@ const mockCrewActivityRepository = {
   getAttendees: jest.fn(),
 };
 
+const mockCrewBanRepository = {
+  create: jest.fn(),
+  findByCrewAndUser: jest.fn(),
+  findByCrewId: jest.fn(),
+  remove: jest.fn(),
+  isBanned: jest.fn(),
+};
+
 const mockDatabaseService = {
   prisma: {
     crewBan: {
@@ -76,6 +85,7 @@ describe("CrewsService", () => {
         { provide: CrewMemberRepository, useValue: mockCrewMemberRepository },
         { provide: CrewTagRepository, useValue: mockCrewTagRepository },
         { provide: CrewActivityRepository, useValue: mockCrewActivityRepository },
+        { provide: CrewBanRepository, useValue: mockCrewBanRepository },
         { provide: DatabaseService, useValue: mockDatabaseService },
       ],
     }).compile();
@@ -455,24 +465,30 @@ describe("CrewsService", () => {
   });
 
   describe("kickMember", () => {
-    it("should remove member if admin kicks member", async () => {
+    it("should remove member and create ban record", async () => {
       const crewId = "crew-123";
       const adminUserId = "user-admin";
       const targetUserId = "user-target";
       const mockCrew = { id: crewId };
       const mockAdmin = { role: "ADMIN" };
       const mockTarget = { role: "MEMBER" };
-      const mockRemoved = { crewId, userId: targetUserId };
 
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(mockAdmin);
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(mockTarget);
-      mockCrewMemberRepository.removeMember.mockResolvedValue(mockRemoved);
+      mockCrewMemberRepository.removeMember.mockResolvedValue({});
+      mockCrewBanRepository.create.mockResolvedValue({});
 
-      const result = await service.kickMember(crewId, adminUserId, targetUserId);
+      const result = await service.kickMember(crewId, adminUserId, targetUserId, "spam");
 
       expect(mockCrewMemberRepository.removeMember).toHaveBeenCalledWith(crewId, targetUserId);
-      expect(result).toEqual(mockRemoved);
+      expect(mockCrewBanRepository.create).toHaveBeenCalledWith({
+        crewId,
+        userId: targetUserId,
+        bannedBy: adminUserId,
+        reason: "spam",
+      });
+      expect(result).toEqual({ success: true });
     });
 
     it("should throw NotFoundException if crew not found", async () => {
@@ -1316,6 +1332,101 @@ describe("CrewsService", () => {
       mockCrewActivityRepository.findById.mockResolvedValue(null);
 
       await expect(service.getAttendees("non-existent")).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ============ Ban Tests ============
+
+  describe("unbanMember", () => {
+    it("should unban a banned user", async () => {
+      const crewId = "crew-123";
+      const adminUserId = "user-admin";
+      const targetUserId = "user-banned";
+      const mockCrew = { id: crewId };
+      const mockAdmin = { role: "ADMIN" };
+      const mockBan = { id: "ban-1", crewId, userId: targetUserId };
+
+      mockCrewRepository.findById.mockResolvedValue(mockCrew);
+      mockCrewMemberRepository.findMember.mockResolvedValue(mockAdmin);
+      mockCrewBanRepository.findByCrewAndUser.mockResolvedValue(mockBan);
+      mockCrewBanRepository.remove.mockResolvedValue(mockBan);
+
+      const result = await service.unbanMember(crewId, adminUserId, targetUserId);
+
+      expect(mockCrewBanRepository.findByCrewAndUser).toHaveBeenCalledWith(crewId, targetUserId);
+      expect(mockCrewBanRepository.remove).toHaveBeenCalledWith(crewId, targetUserId);
+      expect(result).toEqual({ success: true });
+    });
+
+    it("should throw NotFoundException if crew not found", async () => {
+      mockCrewRepository.findById.mockResolvedValue(null);
+
+      await expect(service.unbanMember("non-existent", "user-1", "user-2")).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw ForbiddenException if requester is not OWNER or ADMIN", async () => {
+      const crewId = "crew-123";
+      const userId = "user-member";
+      const mockCrew = { id: crewId };
+      const mockMember = { role: "MEMBER" };
+
+      mockCrewRepository.findById.mockResolvedValue(mockCrew);
+      mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
+
+      await expect(service.unbanMember(crewId, userId, "user-banned")).rejects.toThrow(ForbiddenException);
+    });
+
+    it("should throw NotFoundException if user is not banned", async () => {
+      const crewId = "crew-123";
+      const adminUserId = "user-admin";
+      const mockCrew = { id: crewId };
+      const mockAdmin = { role: "ADMIN" };
+
+      mockCrewRepository.findById.mockResolvedValue(mockCrew);
+      mockCrewMemberRepository.findMember.mockResolvedValue(mockAdmin);
+      mockCrewBanRepository.findByCrewAndUser.mockResolvedValue(null);
+
+      await expect(service.unbanMember(crewId, adminUserId, "user-not-banned")).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe("getBannedMembers", () => {
+    it("should return banned members list if user is OWNER", async () => {
+      const crewId = "crew-123";
+      const userId = "user-owner";
+      const mockCrew = { id: crewId };
+      const mockMember = { role: "OWNER" };
+      const mockBans = [
+        { id: "ban-1", crewId, userId: "user-1", reason: "spam" },
+        { id: "ban-2", crewId, userId: "user-2", reason: "harassment" },
+      ];
+
+      mockCrewRepository.findById.mockResolvedValue(mockCrew);
+      mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
+      mockCrewBanRepository.findByCrewId.mockResolvedValue(mockBans);
+
+      const result = await service.getBannedMembers(crewId, userId);
+
+      expect(mockCrewBanRepository.findByCrewId).toHaveBeenCalledWith(crewId);
+      expect(result).toEqual(mockBans);
+    });
+
+    it("should throw NotFoundException if crew not found", async () => {
+      mockCrewRepository.findById.mockResolvedValue(null);
+
+      await expect(service.getBannedMembers("non-existent", "user-1")).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw ForbiddenException if requester is not OWNER or ADMIN", async () => {
+      const crewId = "crew-123";
+      const userId = "user-member";
+      const mockCrew = { id: crewId };
+      const mockMember = { role: "MEMBER" };
+
+      mockCrewRepository.findById.mockResolvedValue(mockCrew);
+      mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
+
+      await expect(service.getBannedMembers(crewId, userId)).rejects.toThrow(ForbiddenException);
     });
   });
 });
