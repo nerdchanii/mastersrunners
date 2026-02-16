@@ -1,0 +1,12 @@
+services:
+  test-db:
+    image: postgres:17-alpine
+    container_name: masters-runners-test-db
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: masters_runners_test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
