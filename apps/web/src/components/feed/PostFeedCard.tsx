@@ -24,6 +24,11 @@ interface PostFeedCardProps {
       comments: number;
     };
     isLiked?: boolean;
+    images?: Array<{
+      id: string;
+      url: string;
+      order: number;
+    }>;
     workouts: Array<{
       workout: {
         id: string;
@@ -71,6 +76,40 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
                 #{tag}
               </Badge>
             ))}
+          </div>
+        )}
+
+        {/* Post Images */}
+        {(post.images?.length ?? 0) > 0 && (
+          <div className="mt-3">
+            {post.images!.length === 1 ? (
+              <img
+                src={post.images![0].url}
+                alt="게시글 이미지"
+                loading="lazy"
+                className="w-full max-h-96 object-cover"
+              />
+            ) : (
+              <div className={`grid gap-0.5 ${post.images!.length === 2 ? "grid-cols-2" : "grid-cols-2 grid-rows-2"}`}>
+                {post.images!.slice(0, 4).map((image, idx) => (
+                  <div key={image.id} className="relative aspect-square overflow-hidden">
+                    <img
+                      src={image.url}
+                      alt={`게시글 이미지 ${idx + 1}번`}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
+                    {idx === 3 && post.images!.length > 4 && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <span className="text-white text-xl font-bold">
+                          +{post.images!.length - 4}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

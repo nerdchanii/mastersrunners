@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 import ShareToggle from "./ShareToggle";
 
@@ -39,12 +40,12 @@ export default function WorkoutCard({
   });
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-      <div className="flex justify-between items-start mb-4">
-        <div>
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+      <div className="flex justify-between items-start p-6 pb-0">
+        <Link to={`/workouts/detail?id=${workout.id}`} className="flex-1 min-w-0">
           <h3 className="text-lg font-semibold text-gray-900">{dateString}</h3>
-        </div>
-        <div>
+        </Link>
+        <div className="ml-4 flex-shrink-0">
           {isOwner && showShareToggle ? (
             <ShareToggle
               workoutId={workout.id}
@@ -58,34 +59,36 @@ export default function WorkoutCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        <div>
-          <p className="text-sm text-gray-500 mb-1">거리</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {formatDistance(workout.distance)}
-            <span className="text-sm font-normal text-gray-500 ml-1">km</span>
-          </p>
+      <Link to={`/workouts/detail?id=${workout.id}`} className="block p-6 pt-4">
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <div>
+            <p className="text-sm text-gray-500 mb-1">거리</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {formatDistance(workout.distance)}
+              <span className="text-sm font-normal text-gray-500 ml-1">km</span>
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 mb-1">시간</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {formatDuration(workout.duration)}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 mb-1">페이스</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {formatPace(workout.pace)}
+              <span className="text-sm font-normal text-gray-500 ml-1">/km</span>
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm text-gray-500 mb-1">시간</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {formatDuration(workout.duration)}
-          </p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-500 mb-1">페이스</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {formatPace(workout.pace)}
-            <span className="text-sm font-normal text-gray-500 ml-1">/km</span>
-          </p>
-        </div>
-      </div>
 
-      {workout.memo && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <p className="text-sm text-gray-600">{workout.memo}</p>
-        </div>
-      )}
+        {workout.memo && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-sm text-gray-600">{workout.memo}</p>
+          </div>
+        )}
+      </Link>
     </div>
   );
 }
