@@ -1,15 +1,17 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useChallenge } from "@/hooks/useChallenges";
 import { api } from "@/lib/api-client";
-import { challengeKeys } from "@/hooks/useChallenges";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/common/PageHeader";
+import { LoadingPage } from "@/components/common/LoadingPage";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { challengeKeys } from "@/hooks/useChallenges";
 
 type GoalType = "DISTANCE" | "COUNT" | "DURATION" | "PACE";
 
@@ -20,9 +22,11 @@ const goalTypeOptions: { value: GoalType; label: string; placeholder: string; un
   { value: "PACE", label: "페이스 (초/km)", placeholder: "예: 300", unit: "초/km" },
 ];
 
-export default function NewChallengePage() {
+export default function EditChallengePage() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { data: challenge, isLoading } = useChallenge(id ?? "");
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -33,6 +37,18 @@ export default function NewChallengePage() {
   const [isPublic, setIsPublic] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (challenge) {
+      setName(challenge.name);
+      setDescription(challenge.description ?? "");
+      setGoalType(challenge.goalType as GoalType);
+      setGoalValue(String(challenge.goalValue));
+      setStartDate(new Date(challenge.startDate).toISOString().split("T")[0]);
+      setEndDate(new Date(challenge.endDate).toISOString().split("T")[0]);
+      setIsPublic(challenge.isPublic);
+    }
+  }, [challenge]);
 
   const currentGoalOption = goalTypeOptions.find((o) => o.value === goalType)!;
 
@@ -47,38 +63,39 @@ export default function NewChallengePage() {
 
     setIsSubmitting(true);
     try {
-      const body: Record<string, unknown> = {
-        name: name.trim(),
-        goalType,
-        goalValue: Number(goalValue),
-        startDate: new Date(startDate).toISOString(),
-        endDate: new Date(endDate).toISOString(),
-        isPublic,
-      };
-      if (description.trim()) body.description = description.trim();
-
-      const created = await api.fetch<{ id: string }>("/challenges", {
-        method: "POST",
-        body: JSON.stringify(body),
+      await api.fetch(`/challenges/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim() || undefined,
+          goalType,
+          goalValue: Number(goalValue),
+          startDate: new Date(startDate).toISOString(),
+          endDate: new Date(endDate).toISOString(),
+          isPublic,
+        }),
       });
       queryClient.invalidateQueries({ queryKey: challengeKeys.all });
-      toast.success("챌린지가 생성되었습니다.");
-      navigate(`/challenges/${created.id}`);
+      toast.success("챌린지가 수정되었습니다.");
+      navigate(`/challenges/${id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "챌린지 생성에 실패했습니다.");
+      setError(err instanceof Error ? err.message : "수정에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (!id) return null;
+  if (isLoading) return <LoadingPage />;
+
   return (
     <div className="max-w-2xl mx-auto">
-      <PageHeader title="새 챌린지 만들기" description="목표를 설정하고 함께 도전할 챌린지를 만들어보세요." />
+      <PageHeader title="챌린지 수정" description="챌린지 정보를 수정하세요." />
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         {error && (
           <Card className="border-destructive/50 bg-destructive/10">
-            <CardContent className="pt-4 pb-4">
+            <CardContent className="pt-6">
               <p className="text-sm font-medium text-destructive">{error}</p>
             </CardContent>
           </Card>
@@ -166,11 +183,11 @@ export default function NewChallengePage() {
         </Card>
 
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={isSubmitting}>
+          <Button type="button" variant="outline" onClick={() => navigate(`/challenges/${id}`)} disabled={isSubmitting}>
             취소
           </Button>
           <Button type="submit" disabled={isSubmitting || !name.trim() || !goalValue || !startDate || !endDate}>
-            {isSubmitting ? "생성 중..." : "챌린지 만들기"}
+            {isSubmitting ? "저장 중..." : "저장"}
           </Button>
         </div>
       </form>

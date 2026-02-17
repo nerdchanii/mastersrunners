@@ -9,18 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-
-const WORKOUT_TYPES = [
-  { id: "road-running", label: "로드 러닝", emoji: "🏃" },
-  { id: "trail-running", label: "트레일 러닝", emoji: "⛰️" },
-  { id: "track", label: "트랙 달리기", emoji: "🏟️" },
-  { id: "marathon", label: "마라톤", emoji: "🏅" },
-  { id: "cycling", label: "사이클", emoji: "🚴" },
-  { id: "triathlon", label: "철인3종", emoji: "🏊" },
-  { id: "hiking", label: "하이킹", emoji: "🥾" },
-  { id: "strength", label: "근력 운동", emoji: "💪" },
-];
+import { useWorkoutTypes } from "@/hooks/useMessages";
 
 const STEPS = [
   { icon: User, label: "프로필" },
@@ -32,6 +23,7 @@ const STEPS = [
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
+  const { data: workoutTypes = [], isLoading: workoutTypesLoading } = useWorkoutTypes();
 
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -161,33 +153,40 @@ export default function OnboardingPage() {
                     여러 개 선택할 수 있습니다 (선택 사항)
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {WORKOUT_TYPES.map((type) => (
-                    <button
-                      key={type.id}
-                      onClick={() => toggleType(type.id)}
-                      className={cn(
-                        "flex items-center gap-2 rounded-lg border p-3 text-sm font-medium transition-colors text-left",
-                        selectedTypes.includes(type.id)
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border hover:bg-accent",
-                      )}
-                    >
-                      <span>{type.emoji}</span>
-                      <span>{type.label}</span>
-                      {selectedTypes.includes(type.id) && (
-                        <Check className="size-3.5 ml-auto" />
-                      )}
-                    </button>
-                  ))}
-                </div>
+                {workoutTypesLoading ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <Skeleton key={i} className="h-11 w-full rounded-lg" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    {workoutTypes.map((type) => (
+                      <button
+                        key={type.id}
+                        onClick={() => toggleType(type.id)}
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg border p-3 text-sm font-medium transition-colors text-left",
+                          selectedTypes.includes(type.id)
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border hover:bg-accent",
+                        )}
+                      >
+                        <span className="truncate">{type.name}</span>
+                        {selectedTypes.includes(type.id) && (
+                          <Check className="size-3.5 ml-auto shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {selectedTypes.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {selectedTypes.map((id) => {
-                      const type = WORKOUT_TYPES.find((t) => t.id === id);
+                      const type = workoutTypes.find((t) => t.id === id);
                       return type ? (
                         <Badge key={id} variant="secondary">
-                          {type.emoji} {type.label}
+                          {type.name}
                         </Badge>
                       ) : null;
                     })}

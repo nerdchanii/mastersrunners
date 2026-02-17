@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate, Outlet, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { ThemeProvider } from "@/lib/theme-context";
 import Header from "@/components/layout/Header";
 import { BottomNav } from "@/components/common/BottomNav";
 import { LoadingPage } from "@/components/common/LoadingPage";
@@ -15,6 +16,9 @@ const FeedPage = lazy(() => import("@/pages/feed"));
 const WorkoutsPage = lazy(() => import("@/pages/workouts"));
 const NewWorkoutPage = lazy(() => import("@/pages/workouts/new"));
 const WorkoutDetailPage = lazy(() => import("@/pages/workouts/detail"));
+const EditWorkoutPage = lazy(() => import("@/pages/workouts/[id]/edit"));
+const EditChallengePage = lazy(() => import("@/pages/challenges/[id]/edit/index"));
+const EditEventPage = lazy(() => import("@/pages/events/[id]/edit/index"));
 const PostNewPage = lazy(() => import("@/pages/posts/new"));
 const PostDetailPage = lazy(() => import("@/pages/posts/[id]"));
 const EditPostPage = lazy(() => import("@/pages/posts/[id]/edit"));
@@ -59,9 +63,11 @@ function ProtectedRoute() {
 
 function RootLayout() {
   return (
-    <AuthProvider>
-      <Outlet />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
@@ -134,6 +140,9 @@ export const router = createBrowserRouter([
               { path: "/workouts", element: <WorkoutsPage /> },
               { path: "/workouts/new", element: <NewWorkoutPage /> },
               { path: "/workouts/:id", element: <WorkoutDetailPage /> },
+              { path: "/workouts/:id/edit", element: <EditWorkoutPage /> },
+              { path: "/challenges/:id/edit", element: <EditChallengePage /> },
+              { path: "/events/:id/edit", element: <EditEventPage /> },
               { path: "/posts/new", element: <PostNewPage /> },
               { path: "/posts/:id/edit", element: <EditPostPage /> },
               { path: "/profile", element: <ProfilePage /> },

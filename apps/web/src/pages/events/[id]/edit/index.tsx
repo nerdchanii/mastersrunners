@@ -1,19 +1,22 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useEvent, eventKeys } from "@/hooks/useEvents";
 import { api } from "@/lib/api-client";
-import { eventKeys } from "@/hooks/useEvents";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/common/PageHeader";
+import { LoadingPage } from "@/components/common/LoadingPage";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
-export default function NewEventPage() {
+export default function EditEventPage() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { data: event, isLoading } = useEvent(id ?? "");
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -22,6 +25,17 @@ export default function NewEventPage() {
   const [maxParticipants, setMaxParticipants] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (event) {
+      setName(event.name);
+      setDescription(event.description ?? "");
+      // datetime-local input format
+      setDate(new Date(event.date).toISOString().slice(0, 16));
+      setLocation(event.location ?? "");
+      setMaxParticipants(event.maxParticipants ? String(event.maxParticipants) : "");
+    }
+  }, [event]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,36 +46,37 @@ export default function NewEventPage() {
 
     setIsSubmitting(true);
     try {
-      const body: Record<string, unknown> = {
-        name: name.trim(),
-        date: new Date(date).toISOString(),
-      };
-      if (description.trim()) body.description = description.trim();
-      if (location.trim()) body.location = location.trim();
-      if (maxParticipants) body.maxParticipants = Number(maxParticipants);
-
-      const created = await api.fetch<{ id: string }>("/events", {
-        method: "POST",
-        body: JSON.stringify(body),
+      await api.fetch(`/events/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim() || undefined,
+          date: new Date(date).toISOString(),
+          location: location.trim() || undefined,
+          maxParticipants: maxParticipants ? Number(maxParticipants) : undefined,
+        }),
       });
       queryClient.invalidateQueries({ queryKey: eventKeys.all });
-      toast.success("대회가 등록되었습니다.");
-      navigate(`/events/${created.id}`);
+      toast.success("대회 정보가 수정되었습니다.");
+      navigate(`/events/${id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "대회 등록에 실패했습니다.");
+      setError(err instanceof Error ? err.message : "수정에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (!id) return null;
+  if (isLoading) return <LoadingPage />;
+
   return (
     <div className="max-w-2xl mx-auto">
-      <PageHeader title="새 대회 등록" description="대회 정보를 입력하고 등록하세요." />
+      <PageHeader title="대회 수정" description="대회 정보를 수정하세요." />
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         {error && (
           <Card className="border-destructive/50 bg-destructive/10">
-            <CardContent className="pt-4 pb-4">
+            <CardContent className="pt-6">
               <p className="text-sm font-medium text-destructive">{error}</p>
             </CardContent>
           </Card>
@@ -126,11 +141,11 @@ export default function NewEventPage() {
         </Card>
 
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={isSubmitting}>
+          <Button type="button" variant="outline" onClick={() => navigate(`/events/${id}`)} disabled={isSubmitting}>
             취소
           </Button>
           <Button type="submit" disabled={isSubmitting || !name.trim() || !date}>
-            {isSubmitting ? "등록 중..." : "대회 등록"}
+            {isSubmitting ? "저장 중..." : "저장"}
           </Button>
         </div>
       </form>
