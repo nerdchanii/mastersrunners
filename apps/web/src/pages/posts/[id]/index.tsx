@@ -92,7 +92,7 @@ export default function PostDetailClient() {
 
   const calculatePace = (distance: number, duration: number): string => {
     if (distance === 0) return "-";
-    const paceInSeconds = duration / distance;
+    const paceInSeconds = duration / (distance / 1000);
     const minutes = Math.floor(paceInSeconds / 60);
     const seconds = Math.floor(paceInSeconds % 60);
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
@@ -193,7 +193,7 @@ export default function PostDetailClient() {
                   <div className="grid grid-cols-3 gap-4 text-sm text-right">
                     <div>
                       <p className="text-gray-500 text-xs">거리</p>
-                      <p className="font-medium">{workout.distance.toFixed(2)} km</p>
+                      <p className="font-medium">{(workout.distance / 1000).toFixed(2)} km</p>
                     </div>
                     <div>
                       <p className="text-gray-500 text-xs">시간</p>

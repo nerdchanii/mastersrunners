@@ -70,9 +70,9 @@ export default function EditPostClient() {
     return `${minutes}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const calculatePace = (distance: number, duration: number): string => {
-    if (distance === 0) return "-";
-    const paceInSeconds = duration / distance;
+  const calculatePace = (distanceInKm: number, duration: number): string => {
+    if (distanceInKm === 0) return "-";
+    const paceInSeconds = duration / distanceInKm;
     const minutes = Math.floor(paceInSeconds / 60);
     const seconds = Math.floor(paceInSeconds % 60);
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;

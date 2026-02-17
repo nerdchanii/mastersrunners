@@ -1,4 +1,4 @@
-
+import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 import ShareToggle from "./ShareToggle";
 
 type Visibility = "PRIVATE" | "FOLLOWERS" | "PUBLIC";
@@ -38,18 +38,6 @@ export default function WorkoutCard({
     weekday: "short",
   });
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const formatPace = (paceInMinPerKm: number) => {
-    const mins = Math.floor(paceInMinPerKm);
-    const secs = Math.round((paceInMinPerKm - mins) * 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
   return (
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
       <div className="flex justify-between items-start mb-4">
@@ -74,7 +62,7 @@ export default function WorkoutCard({
         <div>
           <p className="text-sm text-gray-500 mb-1">거리</p>
           <p className="text-2xl font-bold text-gray-900">
-            {workout.distance.toFixed(2)}
+            {formatDistance(workout.distance)}
             <span className="text-sm font-normal text-gray-500 ml-1">km</span>
           </p>
         </div>

@@ -89,7 +89,7 @@ export default function CrewDetailClient() {
     if (!crewId) return;
     setIsJoining(true);
     try {
-      await api.fetch(`/crews/${crewId}/members`, { method: "POST" });
+      await api.fetch(`/crews/${crewId}/join`, { method: "POST" });
       await fetchCrew();
     } catch (err) {
       alert(err instanceof Error ? err.message : "가입에 실패했습니다.");
@@ -101,7 +101,7 @@ export default function CrewDetailClient() {
   const handleLeave = async () => {
     if (!crewId) return;
     try {
-      await api.fetch(`/crews/${crewId}/members`, { method: "DELETE" });
+      await api.fetch(`/crews/${crewId}/leave`, { method: "DELETE" });
       setShowLeaveDialog(false);
       navigate("/crews");
     } catch (err) {

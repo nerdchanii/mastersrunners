@@ -1,3 +1,4 @@
+import { formatDistance, formatPace } from "@/lib/format";
 
 interface WorkoutType {
   id: string;
@@ -36,12 +37,6 @@ function formatDuration(seconds: number): string {
   }
 }
 
-function formatPace(pace: number): string {
-  const minutes = Math.floor(pace);
-  const seconds = Math.floor((pace - minutes) * 60);
-  return `${minutes}'${seconds.toString().padStart(2, "0")}"`;
-}
-
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   return date.toLocaleDateString("ko-KR", {
@@ -77,7 +72,7 @@ export function WorkoutDetail({
         <div className="bg-white rounded-lg shadow-sm p-6 text-center">
           <div className="text-sm font-medium text-gray-500 mb-2">거리</div>
           <div className="text-3xl font-bold text-indigo-600">
-            {distance.toFixed(2)}
+            {formatDistance(distance)}
           </div>
           <div className="text-sm text-gray-600 mt-1">km</div>
         </div>
