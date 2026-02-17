@@ -25,6 +25,11 @@ interface PostFeedItem {
     comments: number;
   };
   isLiked?: boolean;
+  images?: Array<{
+    id: string;
+    url: string;
+    order: number;
+  }>;
   workouts: Array<{
     workout: {
       id: string;

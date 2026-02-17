@@ -20,6 +20,8 @@ const PostDetailPage = lazy(() => import("@/pages/posts/[id]"));
 const EditPostPage = lazy(() => import("@/pages/posts/[id]/edit"));
 const ProfilePage = lazy(() => import("@/pages/profile"));
 const UserProfilePage = lazy(() => import("@/pages/profile/[id]"));
+const FollowersPage = lazy(() => import("@/pages/profile/[id]/followers"));
+const FollowingPage = lazy(() => import("@/pages/profile/[id]/following"));
 const CrewsPage = lazy(() => import("@/pages/crews"));
 const CrewNewPage = lazy(() => import("@/pages/crews/new"));
 const CrewDetailPage = lazy(() => import("@/pages/crews/[id]"));
@@ -101,6 +103,8 @@ export const router = createBrowserRouter([
           { path: "/posts/:id/edit", element: <EditPostPage /> },
           { path: "/profile", element: <ProfilePage /> },
           { path: "/profile/:id", element: <UserProfilePage /> },
+          { path: "/profile/:id/followers", element: <FollowersPage /> },
+          { path: "/profile/:id/following", element: <FollowingPage /> },
           { path: "/settings/profile", element: <EditProfilePage /> },
           { path: "/crews", element: <CrewsPage /> },
           { path: "/crews/new", element: <CrewNewPage /> },
