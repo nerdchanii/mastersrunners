@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Trash2,
@@ -7,8 +7,10 @@ import {
   Activity as ActivityIcon,
   Footprints,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
-import { api } from "@/lib/api-client";
+import { useWorkout, useDeleteWorkout } from "@/hooks/useWorkouts";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { LoadingPage } from "@/components/common/LoadingPage";
 import { StatItem } from "@/components/common/StatItem";
@@ -27,7 +29,7 @@ import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 
 interface WorkoutRoute {
   id: string;
-  routeData: string; // JSON string of GpsPoint[]
+  routeData: string;
 }
 
 interface WorkoutData {
@@ -56,42 +58,24 @@ interface WorkoutData {
 }
 
 export default function WorkoutDetailPage() {
-  const [searchParams] = useSearchParams();
+  const { id: workoutId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user: currentUser, isLoading: authLoading, isAuthenticated } = useAuth();
-  const [workout, setWorkout] = useState<WorkoutData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const { user: currentUser } = useAuth();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const workoutId = searchParams.get("id");
+  const { data: workout, isLoading, error } = useWorkout(workoutId ?? "");
+  const deleteWorkout = useDeleteWorkout();
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!isAuthenticated) { navigate("/login", { replace: true }); return; }
-    if (!workoutId) return;
-
-    const fetchWorkout = async () => {
-      try {
-        const data = await api.fetch<WorkoutData>(`/workouts/${workoutId}`);
-        setWorkout(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "워크아웃을 불러오는데 실패했습니다.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchWorkout();
-  }, [authLoading, isAuthenticated, navigate, workoutId]);
+  const typedWorkout = workout as WorkoutData | undefined;
 
   const routeData = useMemo<GpsPoint[]>(() => {
-    if (!workout?.workoutRoutes?.length) return [];
+    if (!typedWorkout?.workoutRoutes?.length) return [];
     try {
-      return JSON.parse(workout.workoutRoutes[0].routeData) as GpsPoint[];
+      return JSON.parse(typedWorkout.workoutRoutes[0].routeData) as GpsPoint[];
     } catch {
       return [];
     }
-  }, [workout]);
+  }, [typedWorkout]);
 
   const hasElevation = useMemo(
     () => routeData.some((p) => p.elevation != null),
@@ -103,27 +87,27 @@ export default function WorkoutDetailPage() {
   );
 
   const metricsData = useMemo<WorkoutMetricsData | null>(() => {
-    if (!workout) return null;
+    if (!typedWorkout) return null;
     return {
-      calories: workout.calories,
-      elevationGain: workout.elevationGain,
-      avgHeartRate: workout.avgHeartRate,
-      maxHeartRate: workout.maxHeartRate,
-      avgCadence: workout.avgCadence,
-      maxCadence: workout.maxCadence,
+      calories: typedWorkout.calories,
+      elevationGain: typedWorkout.elevationGain,
+      avgHeartRate: typedWorkout.avgHeartRate,
+      maxHeartRate: typedWorkout.maxHeartRate,
+      avgCadence: typedWorkout.avgCadence,
+      maxCadence: typedWorkout.maxCadence,
     };
-  }, [workout]);
+  }, [typedWorkout]);
 
   const handleDelete = async () => {
-    if (!workoutId || !confirm("이 워크아웃을 삭제하시겠습니까?")) return;
-    setIsDeleting(true);
+    if (!workoutId) return;
     try {
-      await api.fetch(`/workouts/${workoutId}`, { method: "DELETE" });
+      await deleteWorkout.mutateAsync(workoutId);
+      toast.success("워크아웃이 삭제되었습니다.");
       navigate("/workouts");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "삭제에 실패했습니다.");
-      setIsDeleting(false);
+      toast.error(err instanceof Error ? err.message : "삭제에 실패했습니다.");
     }
+    setConfirmOpen(false);
   };
 
   if (!workoutId) {
@@ -139,7 +123,7 @@ export default function WorkoutDetailPage() {
     );
   }
 
-  if (authLoading || isLoading) {
+  if (isLoading) {
     return <LoadingPage variant="detail" />;
   }
 
@@ -147,7 +131,7 @@ export default function WorkoutDetailPage() {
     return (
       <Card className="p-8">
         <div className="text-center">
-          <p className="text-destructive">{error}</p>
+          <p className="text-destructive">{error.message || "워크아웃을 불러오는데 실패했습니다."}</p>
           <Button onClick={() => navigate(-1)} className="mt-4" variant="outline">
             돌아가기
           </Button>
@@ -156,14 +140,25 @@ export default function WorkoutDetailPage() {
     );
   }
 
-  if (!workout) return null;
+  if (!typedWorkout) return null;
 
-  const isOwner = currentUser?.id === workout.user.id;
-  const laps = workout.workoutLaps ?? [];
-  const sourceFile = workout.workoutFiles?.[0] ?? null;
+  const isOwner = currentUser?.id === typedWorkout.user.id;
+  const laps = typedWorkout.workoutLaps ?? [];
+  const sourceFile = typedWorkout.workoutFiles?.[0] ?? null;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="워크아웃 삭제"
+        description="이 워크아웃을 삭제하시겠습니까? 삭제 후 복구할 수 없습니다."
+        confirmLabel="삭제"
+        variant="destructive"
+        onConfirm={handleDelete}
+        loading={deleteWorkout.isPending}
+      />
+
       {/* Navigation */}
       <div className="flex items-center justify-between">
         <Button onClick={() => navigate(-1)} variant="ghost" size="sm">
@@ -171,9 +166,9 @@ export default function WorkoutDetailPage() {
           돌아가기
         </Button>
         {isOwner && (
-          <Button onClick={handleDelete} disabled={isDeleting} variant="destructive" size="sm">
+          <Button onClick={() => setConfirmOpen(true)} variant="destructive" size="sm">
             <Trash2 className="size-4" />
-            {isDeleting ? "삭제 중..." : "삭제"}
+            삭제
           </Button>
         )}
       </div>
@@ -181,10 +176,10 @@ export default function WorkoutDetailPage() {
       {/* Basic Info */}
       <Card>
         <CardHeader>
-          <UserAvatar user={workout.user} showName subtitle={
+          <UserAvatar user={typedWorkout.user} showName subtitle={
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Calendar className="size-3" />
-              {new Date(workout.date).toLocaleDateString("ko-KR", {
+              {new Date(typedWorkout.date).toLocaleDateString("ko-KR", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
@@ -194,28 +189,28 @@ export default function WorkoutDetailPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-around py-4 border-y">
-            <StatItem value={`${formatDistance(workout.distance)} km`} label="거리" />
-            <StatItem value={formatDuration(workout.duration)} label="시간" />
-            <StatItem value={`${formatPace(workout.pace)}/km`} label="페이스" />
+            <StatItem value={`${formatDistance(typedWorkout.distance)} km`} label="거리" />
+            <StatItem value={formatDuration(typedWorkout.duration)} label="시간" />
+            <StatItem value={`${formatPace(typedWorkout.pace)}/km`} label="페이스" />
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {workout.workoutType && (
+            {typedWorkout.workoutType && (
               <>
                 <ActivityIcon className="size-4 text-muted-foreground" />
-                <Badge variant="secondary">{workout.workoutType.name}</Badge>
+                <Badge variant="secondary">{typedWorkout.workoutType.name}</Badge>
                 <span className="text-xs text-muted-foreground">
-                  {workout.workoutType.category}
+                  {typedWorkout.workoutType.category}
                 </span>
               </>
             )}
           </div>
 
-          {workout.shoe && (
+          {typedWorkout.shoe && (
             <div className="flex items-center gap-2">
               <Footprints className="size-4 text-muted-foreground" />
               <span className="text-sm text-foreground">
-                {workout.shoe.brand} {workout.shoe.model}
+                {typedWorkout.shoe.brand} {typedWorkout.shoe.model}
               </span>
             </div>
           )}
@@ -242,21 +237,21 @@ export default function WorkoutDetailPage() {
       {/* Memo + Source + Social */}
       <Card>
         <CardContent className="space-y-4 pt-6">
-          {workout.memo && (
+          {typedWorkout.memo && (
             <div className="rounded-lg bg-muted p-4">
-              <p className="text-sm text-foreground whitespace-pre-wrap">{workout.memo}</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{typedWorkout.memo}</p>
             </div>
           )}
 
           <div className="flex items-center justify-between">
             <LikeButton
               entityType="workout"
-              entityId={workout.id}
-              initialLiked={workout.liked}
-              initialCount={workout.likeCount}
+              entityId={typedWorkout.id}
+              initialLiked={typedWorkout.liked}
+              initialCount={typedWorkout.likeCount}
             />
             <Badge variant="outline" className="capitalize">
-              {workout.visibility.toLowerCase()}
+              {typedWorkout.visibility.toLowerCase()}
             </Badge>
           </div>
 
@@ -272,10 +267,10 @@ export default function WorkoutDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle>댓글</CardTitle>
-          <CardDescription>{workout.commentCount}개의 댓글</CardDescription>
+          <CardDescription>{typedWorkout.commentCount}개의 댓글</CardDescription>
         </CardHeader>
         <CardContent>
-          <CommentList entityType="workout" entityId={workout.id} />
+          <CommentList entityType="workout" entityId={typedWorkout.id} />
         </CardContent>
       </Card>
     </div>

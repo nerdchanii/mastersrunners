@@ -1,11 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { MessageCircle } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
-import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { PageHeader } from "@/components/common/PageHeader";
+import { EmptyState } from "@/components/common/EmptyState";
+import { TimeAgo } from "@/components/common/TimeAgo";
 
 interface Conversation {
   id: string;
@@ -64,57 +69,27 @@ export default function MessagesPage() {
     fetchConversations();
   }, []);
 
-  const handleLoadMore = () => {
-    if (nextCursor && !loading) {
-      fetchConversations(nextCursor);
-    }
-  };
+  const getOtherUser = (conversation: Conversation) =>
+    conversation.participants.find((p) => p.userId !== user?.id)?.user;
 
-  const getOtherUser = (conversation: Conversation) => {
-    return conversation.participants.find((p) => p.userId !== user?.id)?.user;
-  };
+  const getLastMessage = (conversation: Conversation) => conversation.messages[0];
 
-  const getLastMessage = (conversation: Conversation) => {
-    return conversation.messages[0];
-  };
-
-  const formatRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInMinutes = Math.floor(diffInMs / 60000);
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    const diffInDays = Math.floor(diffInHours / 24);
-
-    if (diffInMinutes < 1) return "방금";
-    if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
-    if (diffInHours < 24) return `${diffInHours}시간 전`;
-    if (diffInDays < 7) return `${diffInDays}일 전`;
-    return date.toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
-  };
-
-  const truncateText = (text: string, maxLength: number) => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + "...";
-  };
+  const truncate = (text: string, max: number) =>
+    text.length <= max ? text : text.substring(0, max) + "...";
 
   if (initialLoading) {
     return (
-      <div className="space-y-6 max-w-2xl mx-auto">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">메시지</h1>
-          <p className="text-gray-600 mt-2">러너들과 대화하세요</p>
-        </div>
+      <div className="max-w-2xl mx-auto space-y-6">
+        <PageHeader title="메시지" description="러너들과 대화하세요" />
         <div className="space-y-3">
-          {[1, 2, 3, 4, 5].map((i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <Card key={i} className="p-4">
               <div className="flex items-center gap-3">
-                <Skeleton className="h-12 w-12 rounded-full" />
+                <Skeleton className="size-12 rounded-full" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-3 w-full" />
                 </div>
-                <Skeleton className="h-5 w-5 rounded-full" />
               </div>
             </Card>
           ))}
@@ -125,63 +100,49 @@ export default function MessagesPage() {
 
   if (error) {
     return (
-      <div className="space-y-6 max-w-2xl mx-auto">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">메시지</h1>
-          <p className="text-gray-600 mt-2">러너들과 대화하세요</p>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{error}</p>
-          <button
-            onClick={() => fetchConversations()}
-            className="mt-2 text-red-600 hover:text-red-700 underline text-sm"
-          >
+      <div className="max-w-2xl mx-auto space-y-6">
+        <PageHeader title="메시지" description="러너들과 대화하세요" />
+        <Card className="p-6 border-destructive/30">
+          <p className="text-destructive">{error}</p>
+          <Button onClick={() => fetchConversations()} variant="outline" className="mt-3" size="sm">
             다시 시도
-          </button>
-        </div>
+          </Button>
+        </Card>
       </div>
     );
   }
 
-  if (!initialLoading && conversations.length === 0) {
+  if (conversations.length === 0) {
     return (
-      <div className="space-y-6 max-w-2xl mx-auto">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">메시지</h1>
-          <p className="text-gray-600 mt-2">러너들과 대화하세요</p>
-        </div>
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">아직 대화가 없습니다</p>
-          <p className="text-gray-400 text-sm mt-2">
-            다른 러너의 프로필에서 메시지를 보내보세요
-          </p>
-        </div>
+      <div className="max-w-2xl mx-auto space-y-6">
+        <PageHeader title="메시지" description="러너들과 대화하세요" />
+        <EmptyState
+          icon={MessageCircle}
+          title="아직 대화가 없습니다"
+          description="다른 러너의 프로필에서 메시지를 보내보세요"
+        />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">메시지</h1>
-        <p className="text-gray-600 mt-2">러너들과 대화하세요</p>
-      </div>
+    <div className="max-w-2xl mx-auto space-y-6">
+      <PageHeader title="메시지" description="러너들과 대화하세요" />
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {conversations.map((conversation) => {
           const otherUser = getOtherUser(conversation);
           const lastMessage = getLastMessage(conversation);
-
           if (!otherUser) return null;
 
           return (
             <Card
               key={conversation.id}
-              className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+              className="p-4 cursor-pointer hover:bg-accent/50 transition-colors"
               onClick={() => navigate(`/messages/${conversation.id}`)}
             >
               <div className="flex items-start gap-3">
-                <Avatar className="h-12 w-12">
+                <Avatar className="size-12">
                   {otherUser.profileImage && (
                     <AvatarImage src={otherUser.profileImage} alt={otherUser.name} />
                   )}
@@ -189,32 +150,21 @@ export default function MessagesPage() {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-semibold text-gray-900 truncate">
-                      {otherUser.name}
-                    </h3>
+                    <h3 className="font-semibold truncate">{otherUser.name}</h3>
                     {lastMessage && (
-                      <span className="text-xs text-gray-500 whitespace-nowrap">
-                        {formatRelativeTime(lastMessage.createdAt)}
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        <TimeAgo date={lastMessage.createdAt} />
                       </span>
                     )}
                   </div>
                   {lastMessage && (
-                    <p
-                      className={`text-sm mt-1 ${
-                        conversation.unreadCount > 0
-                          ? "text-gray-900 font-medium"
-                          : "text-gray-600"
-                      }`}
-                    >
-                      {truncateText(lastMessage.content, 50)}
+                    <p className={`text-sm mt-0.5 ${conversation.unreadCount > 0 ? "font-medium text-foreground" : "text-muted-foreground"}`}>
+                      {truncate(lastMessage.content, 50)}
                     </p>
                   )}
                 </div>
                 {conversation.unreadCount > 0 && (
-                  <Badge
-                    variant="default"
-                    className="bg-blue-600 text-white h-5 min-w-[20px] px-1.5 flex items-center justify-center"
-                  >
+                  <Badge className="min-w-[20px] h-5 px-1.5 text-[10px] flex items-center justify-center rounded-full">
                     {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
                   </Badge>
                 )}
@@ -225,25 +175,16 @@ export default function MessagesPage() {
       </div>
 
       {loading && (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="flex justify-center py-4">
+          <div className="size-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
       {!loading && nextCursor && (
-        <div className="flex justify-center mt-6">
-          <button
-            onClick={handleLoadMore}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-          >
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={() => fetchConversations(nextCursor)}>
             더보기
-          </button>
-        </div>
-      )}
-
-      {!loading && !nextCursor && conversations.length > 0 && (
-        <div className="text-center py-8 text-gray-500">
-          더 이상 대화가 없습니다
+          </Button>
         </div>
       )}
     </div>

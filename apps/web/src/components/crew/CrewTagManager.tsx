@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { Plus, X, Tag } from "lucide-react";
 import { api } from "@/lib/api-client";
@@ -100,7 +101,7 @@ export default function CrewTagManager({ crewId, isAdmin, members }: CrewTagMana
       setShowCreateForm(false);
       fetchTags();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "태그 생성에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "태그 생성에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -116,7 +117,7 @@ export default function CrewTagManager({ crewId, isAdmin, members }: CrewTagMana
       setDeleteTarget(null);
       fetchTags();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "태그 삭제에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "태그 삭제에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -130,7 +131,7 @@ export default function CrewTagManager({ crewId, isAdmin, members }: CrewTagMana
       });
       fetchTags();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "태그 할당에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "태그 할당에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -144,7 +145,7 @@ export default function CrewTagManager({ crewId, isAdmin, members }: CrewTagMana
       });
       fetchTags();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "태그 제거에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "태그 제거에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }

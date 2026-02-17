@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "@/lib/api-client";
@@ -185,7 +186,7 @@ export default function EventDetailPage() {
       await api.fetch(`/events/${eventId}/register`, { method: "POST" });
       await fetchEvent();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "참가 등록에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "참가 등록에 실패했습니다.");
     } finally {
       setActionLoading(false);
     }
@@ -199,7 +200,7 @@ export default function EventDetailPage() {
       setMyResult(null);
       setShowCancelDialog(false);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "참가 취소에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "참가 취소에 실패했습니다.");
     } finally {
       setActionLoading(false);
     }
@@ -210,7 +211,7 @@ export default function EventDetailPage() {
       await api.fetch(`/events/${eventId}`, { method: "DELETE" });
       navigate("/events");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "삭제에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "삭제에 실패했습니다.");
     }
   };
 
@@ -234,7 +235,7 @@ export default function EventDetailPage() {
       await fetchEvent();
       if (activeTab === "results") await fetchResults();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "결과 등록에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "결과 등록에 실패했습니다.");
     } finally {
       setActionLoading(false);
     }
@@ -253,7 +254,7 @@ export default function EventDetailPage() {
       setWorkoutId("");
       await fetchEvent();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "워크아웃 연결에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "워크아웃 연결에 실패했습니다.");
     } finally {
       setActionLoading(false);
     }
@@ -265,7 +266,7 @@ export default function EventDetailPage() {
       await api.fetch(`/events/${eventId}/link-workout`, { method: "DELETE" });
       await fetchEvent();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "워크아웃 연결 해제에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "워크아웃 연결 해제에 실패했습니다.");
     } finally {
       setActionLoading(false);
     }

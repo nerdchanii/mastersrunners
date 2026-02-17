@@ -1,8 +1,10 @@
+import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Calendar, Users, Target, User, Trash2, LogOut, UserPlus, Edit } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,6 +91,8 @@ export default function ChallengeDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showProgressForm, setShowProgressForm] = useState(false);
   const [progressValue, setProgressValue] = useState("");
+  const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (!challengeId || challengeId === "_") return;
@@ -131,33 +135,35 @@ export default function ChallengeDetailPage() {
       await api.fetch(`/challenges/${challengeId}/join`, { method: "POST" });
       await fetchChallenge();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "참가에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "참가에 실패했습니다.");
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleLeave = async () => {
-    if (!confirm("챌린지를 나가시겠습니까?")) return;
     setActionLoading(true);
     try {
       await api.fetch(`/challenges/${challengeId}/leave`, { method: "DELETE" });
       await fetchChallenge();
+      toast.success("챌린지에서 나갔습니다.");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "챌린지 나가기에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "챌린지 나가기에 실패했습니다.");
     } finally {
       setActionLoading(false);
+      setConfirmLeaveOpen(false);
     }
   };
 
   const handleDeleteChallenge = async () => {
-    if (!confirm("챌린지를 삭제하시겠습니까?")) return;
     try {
       await api.fetch(`/challenges/${challengeId}`, { method: "DELETE" });
+      toast.success("챌린지가 삭제되었습니다.");
       navigate("/challenges");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "삭제에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "삭제에 실패했습니다.");
     }
+    setConfirmDeleteOpen(false);
   };
 
   const handleUpdateProgress = async (e: React.FormEvent) => {
@@ -174,7 +180,7 @@ export default function ChallengeDetailPage() {
       await fetchChallenge();
       if (activeTab === "leaderboard") await fetchLeaderboard();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "진행도 업데이트에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "진행도 업데이트에 실패했습니다.");
     } finally {
       setActionLoading(false);
     }
@@ -245,6 +251,25 @@ export default function ChallengeDetailPage() {
 
   return (
     <div className="container max-w-4xl py-6 space-y-6">
+      <ConfirmDialog
+        open={confirmLeaveOpen}
+        onOpenChange={setConfirmLeaveOpen}
+        title="챌린지 나가기"
+        description="챌린지를 나가시겠습니까?"
+        confirmLabel="나가기"
+        variant="destructive"
+        onConfirm={handleLeave}
+        loading={actionLoading}
+      />
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="챌린지 삭제"
+        description="이 챌린지를 삭제하시겠습니까? 삭제 후 복구할 수 없습니다."
+        confirmLabel="삭제"
+        variant="destructive"
+        onConfirm={handleDeleteChallenge}
+      />
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2 min-w-0 flex-1">
           <h1 className="text-3xl font-bold tracking-tight">{challenge.name}</h1>
@@ -264,7 +289,7 @@ export default function ChallengeDetailPage() {
           <Button
             variant="destructive"
             size="sm"
-            onClick={handleDeleteChallenge}
+            onClick={() => setConfirmDeleteOpen(true)}
           >
             <Trash2 className="size-4" />
           </Button>
@@ -335,11 +360,11 @@ export default function ChallengeDetailPage() {
               {challenge.isJoined ? (
                 <Button
                   variant="destructive"
-                  onClick={handleLeave}
+                  onClick={() => setConfirmLeaveOpen(true)}
                   disabled={actionLoading}
                 >
                   <LogOut className="mr-2 size-4" />
-                  {actionLoading ? "처리중..." : "나가기"}
+                  나가기
                 </Button>
               ) : (
                 <Button

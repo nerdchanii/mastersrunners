@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { Check, X } from "lucide-react";
 import { api } from "@/lib/api-client";
@@ -56,7 +57,7 @@ export default function PendingMemberList({ crewId, onUpdate }: PendingMemberLis
       await fetchPendingMembers();
       onUpdate();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "승인에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "승인에 실패했습니다.");
     } finally {
       setProcessingId(null);
     }
@@ -71,7 +72,7 @@ export default function PendingMemberList({ crewId, onUpdate }: PendingMemberLis
       await fetchPendingMembers();
       onUpdate();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "거절에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "거절에 실패했습니다.");
     } finally {
       setProcessingId(null);
     }

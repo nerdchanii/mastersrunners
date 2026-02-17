@@ -434,145 +434,133 @@ export default function NewWorkoutPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="manual" className="mt-6">
-            <p className="text-sm text-muted-foreground mb-6">
-              수동으로 훈련 기록을 입력하세요.
-            </p>
+          <TabsContent value="manual" className="mt-6 space-y-4">
+            <Card>
+              <CardContent className="pt-6 space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="date-manual">
+                    날짜 <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    type="date"
+                    id="date-manual"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="distance-manual">
+                    거리 (km) <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    type="number"
+                    id="distance-manual"
+                    value={distance}
+                    onChange={(e) => setDistance(e.target.value)}
+                    step="0.01"
+                    min="0.01"
+                    placeholder="5.0"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>
+                    시간 <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="hours-m" className="text-xs text-muted-foreground">시간</Label>
+                      <Input type="number" id="hours-m" value={hours} onChange={(e) => setHours(e.target.value)} min="0" placeholder="0" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="minutes-m" className="text-xs text-muted-foreground">분</Label>
+                      <Input type="number" id="minutes-m" value={minutes} onChange={(e) => setMinutes(e.target.value)} min="0" max="59" placeholder="30" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="seconds-m" className="text-xs text-muted-foreground">초</Label>
+                      <Input type="number" id="seconds-m" value={seconds} onChange={(e) => setSeconds(e.target.value)} min="0" max="59" placeholder="0" />
+                    </div>
+                  </div>
+                </div>
+
+                {pace && (
+                  <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/20 px-4 py-3">
+                    <Activity className="size-4 text-primary" />
+                    <span className="text-sm font-medium">예상 페이스: {pace} /km</span>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="memo-manual">메모 (선택)</Label>
+                  <Textarea
+                    id="memo-manual"
+                    value={memo}
+                    onChange={(e) => setMemo(e.target.value)}
+                    rows={3}
+                    placeholder="오늘의 훈련에 대한 메모를 남겨보세요..."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>
+                    <Eye className="inline size-4 mr-1" />
+                    공개 설정
+                  </Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(["FOLLOWERS", "PUBLIC", "PRIVATE"] as const).map((v) => {
+                      const labels = { FOLLOWERS: "팔로워", PUBLIC: "전체 공개", PRIVATE: "비공개" };
+                      return (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setVisibility(v)}
+                          className={`rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all ${visibility === v ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}
+                        >
+                          {labels[v]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 
-        <Card>
-          <CardContent className="pt-6 space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="date">
-                날짜 <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                type="date"
-                id="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-                disabled={workoutCreated}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="distance">
-                거리 (km) <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                type="number"
-                id="distance"
-                value={distance}
-                onChange={(e) => setDistance(e.target.value)}
-                step="0.01"
-                min="0.01"
-                placeholder="5.0"
-                required
-                disabled={workoutCreated}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>
-                시간 <span className="text-destructive">*</span>
-              </Label>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="hours" className="text-xs text-muted-foreground">
-                    시간
-                  </Label>
-                  <Input
-                    type="number"
-                    id="hours"
-                    value={hours}
-                    onChange={(e) => setHours(e.target.value)}
-                    min="0"
-                    placeholder="0"
-                    disabled={workoutCreated}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="minutes" className="text-xs text-muted-foreground">
-                    분
-                  </Label>
-                  <Input
-                    type="number"
-                    id="minutes"
-                    value={minutes}
-                    onChange={(e) => setMinutes(e.target.value)}
-                    min="0"
-                    max="59"
-                    placeholder="30"
-                    disabled={workoutCreated}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="seconds" className="text-xs text-muted-foreground">
-                    초
-                  </Label>
-                  <Input
-                    type="number"
-                    id="seconds"
-                    value={seconds}
-                    onChange={(e) => setSeconds(e.target.value)}
-                    min="0"
-                    max="59"
-                    placeholder="0"
-                    disabled={workoutCreated}
-                  />
+        {/* File tab: show date/memo/visibility only after file parsed */}
+        {activeTab === "file" && workoutCreated && (
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <h3 className="text-sm font-semibold text-muted-foreground">저장 후 설정</h3>
+              <div className="space-y-2">
+                <Label htmlFor="memo">메모 (선택)</Label>
+                <Textarea id="memo" value={memo} onChange={(e) => setMemo(e.target.value)} rows={3} placeholder="오늘의 훈련에 대한 메모를 남겨보세요..." />
+              </div>
+              <div className="space-y-2">
+                <Label>공개 설정</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["FOLLOWERS", "PUBLIC", "PRIVATE"] as const).map((v) => {
+                    const labels = { FOLLOWERS: "팔로워", PUBLIC: "전체 공개", PRIVATE: "비공개" };
+                    return (
+                      <button key={v} type="button" onClick={() => setVisibility(v)} className={`rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all ${visibility === v ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}>
+                        {labels[v]}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
-
-            {pace && (
-              <Card className="bg-primary/5 border-primary/20">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-primary" />
-                    <span className="text-sm font-medium">예상 페이스: {pace} /km</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="memo">메모 (선택)</Label>
-              <Textarea
-                id="memo"
-                value={memo}
-                onChange={(e) => setMemo(e.target.value)}
-                rows={4}
-                placeholder="오늘의 훈련에 대한 메모를 남겨보세요..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="visibility">
-                <Eye className="inline h-4 w-4 mr-1" />
-                공개 설정
-              </Label>
-              <select
-                id="visibility"
-                value={visibility}
-                onChange={(e) => setVisibility(e.target.value as "PRIVATE" | "FOLLOWERS" | "PUBLIC")}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-              >
-                <option value="PRIVATE">비공개</option>
-                <option value="FOLLOWERS">팔로워 공개</option>
-                <option value="PUBLIC">전체 공개</option>
-              </select>
-              <p className="text-xs text-muted-foreground">누가 이 기록을 볼 수 있는지 설정합니다.</p>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting}>
             취소
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || (activeTab === "file" && !workoutCreated && !parsedData)}>
             {isSubmitting ? "저장 중..." : workoutCreated ? "완료" : "저장"}
           </Button>
         </div>

@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Activity } from "lucide-react";
 import WorkoutCard from "@/components/workout/WorkoutCard";
@@ -7,37 +6,11 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingPage } from "@/components/common/LoadingPage";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { api } from "@/lib/api-client";
-
-interface Workout {
-  id: string;
-  distance: number;
-  duration: number;
-  pace: number;
-  date: string;
-  memo: string | null;
-  visibility: "PRIVATE" | "FOLLOWERS" | "PUBLIC";
-}
+import { useWorkouts } from "@/hooks/useWorkouts";
 
 export default function WorkoutsPage() {
   const navigate = useNavigate();
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchWorkouts = async () => {
-      try {
-        const data = await api.fetch<Workout[]>("/workouts");
-        setWorkouts(Array.isArray(data) ? data : []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchWorkouts();
-  }, []);
+  const { data: workouts = [], isLoading, error } = useWorkouts();
 
   if (isLoading) {
     return <LoadingPage variant="list" />;
@@ -47,7 +20,9 @@ export default function WorkoutsPage() {
     return (
       <Card className="p-8">
         <div className="text-center">
-          <p className="text-destructive">{error}</p>
+          <p className="text-destructive">
+            {error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."}
+          </p>
           <Button onClick={() => window.location.reload()} className="mt-4" variant="outline">
             다시 시도
           </Button>

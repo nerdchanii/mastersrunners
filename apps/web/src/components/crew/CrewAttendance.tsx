@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { QrCode, Check } from "lucide-react";
 import { api } from "@/lib/api-client";
@@ -59,7 +60,7 @@ export default function CrewAttendance({ crewId, activityId, isAdmin, isMember }
       });
       await fetchAttendees();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "출석 체크에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "출석 체크에 실패했습니다.");
     } finally {
       setIsCheckingIn(false);
     }

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Message {
   id: string;
@@ -212,7 +214,7 @@ export default function MessageDetailPage() {
   if (loading) {
     return (
       <div className="flex flex-col h-[calc(100vh-4rem)]">
-        <div className="border-b border-gray-200 bg-white p-4">
+        <div className="border-b bg-background p-4">
           <div className="flex items-center gap-3">
             <Skeleton className="h-10 w-10 rounded-full" />
             <Skeleton className="h-6 w-32" />
@@ -235,11 +237,11 @@ export default function MessageDetailPage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md">
-          <p className="text-red-800">{error}</p>
+        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 max-w-md">
+          <p className="text-destructive">{error}</p>
           <button
             onClick={() => fetchConversation()}
-            className="mt-2 text-red-600 hover:text-red-700 underline text-sm"
+            className="mt-2 text-destructive hover:text-destructive/80 underline text-sm"
           >
             다시 시도
           </button>
@@ -253,7 +255,7 @@ export default function MessageDetailPage() {
   if (!conversation || !otherUser) {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
-        <p className="text-gray-500">대화를 찾을 수 없습니다</p>
+        <p className="text-muted-foreground">대화를 찾을 수 없습니다</p>
         <Button onClick={() => navigate("/messages")} className="mt-4">
           메시지 목록으로
         </Button>
@@ -264,7 +266,7 @@ export default function MessageDetailPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] max-w-4xl mx-auto">
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white p-4">
+      <div className="border-b bg-background/95 backdrop-blur-sm p-4">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -272,19 +274,7 @@ export default function MessageDetailPage() {
             onClick={() => navigate("/messages")}
             className="shrink-0"
           >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
+            <ChevronLeft className="h-5 w-5" />
           </Button>
           <Avatar className="h-10 w-10">
             {otherUser.profileImage && (
@@ -292,7 +282,7 @@ export default function MessageDetailPage() {
             )}
             <AvatarFallback>{otherUser.name[0]}</AvatarFallback>
           </Avatar>
-          <h2 className="font-semibold text-lg text-gray-900">
+          <h2 className="font-semibold text-lg">
             {otherUser.name}
           </h2>
         </div>
@@ -322,7 +312,7 @@ export default function MessageDetailPage() {
               <div key={message.id}>
                 {showDate && (
                   <div className="flex justify-center my-4">
-                    <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                    <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
                       {formatDate(message.createdAt)}
                     </span>
                   </div>
@@ -350,13 +340,14 @@ export default function MessageDetailPage() {
                       className={`flex flex-col ${isOwn ? "items-end" : "items-start"}`}
                     >
                       <div
-                        className={`rounded-lg px-4 py-2 ${
+                        className={cn(
+                          "rounded-lg px-4 py-2",
                           message.deletedAt
-                            ? "bg-gray-100 text-gray-500 italic"
+                            ? "bg-muted text-muted-foreground italic"
                             : isOwn
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-200 text-gray-900"
-                        }`}
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-foreground"
+                        )}
                       >
                         {message.deletedAt ? (
                           <p className="text-sm">삭제된 메시지입니다</p>
@@ -366,7 +357,7 @@ export default function MessageDetailPage() {
                           </p>
                         )}
                       </div>
-                      <span className="text-xs text-gray-500 mt-1">
+                      <span className="text-xs text-muted-foreground mt-1">
                         {formatTime(message.createdAt)}
                       </span>
                     </div>
@@ -380,7 +371,7 @@ export default function MessageDetailPage() {
       </ScrollArea>
 
       {/* Input area */}
-      <div className="border-t border-gray-200 bg-white p-4">
+      <div className="border-t bg-background/95 backdrop-blur-sm p-4">
         <div className="flex gap-2">
           <Textarea
             value={content}

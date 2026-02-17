@@ -1,32 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Zap } from "lucide-react";
-import { api } from "@/lib/api-client";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import ChallengeCard from "@/components/challenge/ChallengeCard";
-
-interface Challenge {
-  id: string;
-  name: string;
-  description: string | null;
-  goalType: string;
-  goalValue: number;
-  startDate: string;
-  endDate: string;
-  isPublic: boolean;
-  _count?: { participants: number };
-  myProgress?: number | null;
-}
-
-interface ChallengeListResponse {
-  items: Challenge[];
-  nextCursor: string | null;
-  hasMore: boolean;
-}
+import { useInfiniteChallenges } from "@/hooks/useChallenges";
 
 type ChallengeTab = "all" | "my";
 
@@ -34,57 +15,41 @@ export default function ChallengesPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ChallengeTab>("all");
 
-  const [items, setItems] = useState<Challenge[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: allData,
+    isLoading: allLoading,
+    error: allError,
+    fetchNextPage: fetchMoreAll,
+    hasNextPage: allHasMore,
+    isFetchingNextPage: allFetching,
+    refetch: refetchAll,
+  } = useInfiniteChallenges(false);
 
-  const fetchChallenges = async (tab: ChallengeTab, cursor?: string | null) => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  const {
+    data: myData,
+    isLoading: myLoading,
+    error: myError,
+    fetchNextPage: fetchMoreMy,
+    hasNextPage: myHasMore,
+    isFetchingNextPage: myFetching,
+    refetch: refetchMy,
+  } = useInfiniteChallenges(true);
 
-      let path: string;
-      if (tab === "my") {
-        path = "/challenges?joined=true&limit=12";
-      } else {
-        path = "/challenges?limit=12";
-      }
+  const allItems = allData?.pages.flatMap((p) => p?.items ?? []) ?? [];
+  const myItems = myData?.pages.flatMap((p) => p?.items ?? []) ?? [];
 
-      if (cursor) {
-        path += `&cursor=${encodeURIComponent(cursor)}`;
-      }
-
-      const data = await api.fetch<ChallengeListResponse>(path);
-      const items = data?.items ?? [];
-
-      if (cursor) {
-        setItems((prev) => [...prev, ...items]);
-      } else {
-        setItems(items);
-      }
-
-      setNextCursor(data?.nextCursor ?? null);
-      setHasMore(data?.hasMore ?? false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "챌린지 목록을 불러올 수 없습니다.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    setItems([]);
-    setNextCursor(null);
-    setHasMore(true);
-    fetchChallenges(activeTab);
-  }, [activeTab]);
-
+  const isLoading = activeTab === "all" ? allLoading : myLoading;
+  const error = activeTab === "all" ? allError : myError;
+  const items = activeTab === "all" ? allItems : myItems;
+  const hasMore = activeTab === "all" ? (allHasMore ?? false) : (myHasMore ?? false);
+  const isFetching = activeTab === "all" ? allFetching : myFetching;
   const handleLoadMore = () => {
-    if (nextCursor && !isLoading) {
-      fetchChallenges(activeTab, nextCursor);
-    }
+    if (activeTab === "all") fetchMoreAll();
+    else fetchMoreMy();
+  };
+  const handleRetry = () => {
+    if (activeTab === "all") refetchAll();
+    else refetchMy();
   };
 
   return (
@@ -111,11 +76,13 @@ export default function ChallengesPage() {
         <TabsContent value={activeTab} className="mt-6">
           {error && (
             <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-              <p className="text-sm text-destructive font-medium">{error}</p>
+              <p className="text-sm text-destructive font-medium">
+                {error instanceof Error ? error.message : "챌린지 목록을 불러올 수 없습니다."}
+              </p>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => fetchChallenges(activeTab)}
+                onClick={handleRetry}
                 className="mt-2 h-8"
               >
                 다시 시도
@@ -133,7 +100,10 @@ export default function ChallengesPage() {
             <>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((challenge) => (
-                  <ChallengeCard key={challenge.id} challenge={challenge} />
+                  <ChallengeCard
+                    key={challenge.id}
+                    challenge={challenge}
+                  />
                 ))}
               </div>
 
@@ -141,10 +111,10 @@ export default function ChallengesPage() {
                 <div className="flex justify-center pt-6">
                   <Button
                     onClick={handleLoadMore}
-                    disabled={isLoading}
+                    disabled={isFetching}
                     variant="outline"
                   >
-                    {isLoading ? "불러오는 중..." : "더보기"}
+                    {isFetching ? "불러오는 중..." : "더보기"}
                   </Button>
                 </div>
               )}

@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
-import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
-import { AuthProvider } from "@/lib/auth-context";
+import { createBrowserRouter, Navigate, Outlet, useNavigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/lib/auth-context";
 import Header from "@/components/layout/Header";
 import { BottomNav } from "@/components/common/BottomNav";
 import { LoadingPage } from "@/components/common/LoadingPage";
@@ -35,7 +35,27 @@ const EventDetailPage = lazy(() => import("@/pages/events/[id]"));
 const MessagesPage = lazy(() => import("@/pages/messages"));
 const MessageDetailPage = lazy(() => import("@/pages/messages/[id]"));
 const EditProfilePage = lazy(() => import("@/pages/settings/profile"));
+const NotificationsPage = lazy(() => import("@/pages/notifications"));
+const SearchPage = lazy(() => import("@/pages/search"));
+const OnboardingPage = lazy(() => import("@/pages/onboarding"));
 const NotFoundPage = lazy(() => import("@/pages/not-found"));
+
+/** 인증 가드 - 미인증 시 /login으로 리다이렉트 */
+function ProtectedRoute() {
+  const { isLoading, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  if (isLoading) {
+    return <LoadingPage />;
+  }
+
+  if (!isAuthenticated) {
+    navigate("/login", { replace: true });
+    return null;
+  }
+
+  return <Outlet />;
+}
 
 function RootLayout() {
   return (
@@ -90,34 +110,45 @@ export const router = createBrowserRouter([
       // Auth callback (no layout)
       { path: "/auth/callback", element: <AuthCallbackPage /> },
 
-      // Main layout
+      // Main layout (public routes)
       {
         element: <MainLayout />,
         children: [
           { path: "/feed", element: <FeedPage /> },
-          { path: "/workouts", element: <WorkoutsPage /> },
-          { path: "/workouts/new", element: <NewWorkoutPage /> },
-          { path: "/workouts/detail", element: <WorkoutDetailPage /> },
-          { path: "/posts/new", element: <PostNewPage /> },
+          { path: "/crews", element: <CrewsPage /> },
+          { path: "/crews/:id", element: <CrewDetailPage /> },
+          { path: "/challenges", element: <ChallengesPage /> },
+          { path: "/challenges/:id", element: <ChallengeDetailPage /> },
+          { path: "/events", element: <EventsPage /> },
+          { path: "/events/:id", element: <EventDetailPage /> },
           { path: "/posts/:id", element: <PostDetailPage /> },
-          { path: "/posts/:id/edit", element: <EditPostPage /> },
-          { path: "/profile", element: <ProfilePage /> },
           { path: "/profile/:id", element: <UserProfilePage /> },
           { path: "/profile/:id/followers", element: <FollowersPage /> },
           { path: "/profile/:id/following", element: <FollowingPage /> },
-          { path: "/settings/profile", element: <EditProfilePage /> },
-          { path: "/crews", element: <CrewsPage /> },
-          { path: "/crews/new", element: <CrewNewPage /> },
-          { path: "/crews/:id", element: <CrewDetailPage /> },
-          { path: "/crews/:id/settings", element: <CrewSettingsPage /> },
-          { path: "/challenges", element: <ChallengesPage /> },
-          { path: "/challenges/new", element: <ChallengeNewPage /> },
-          { path: "/challenges/:id", element: <ChallengeDetailPage /> },
-          { path: "/events", element: <EventsPage /> },
-          { path: "/events/new", element: <EventNewPage /> },
-          { path: "/events/:id", element: <EventDetailPage /> },
-          { path: "/messages", element: <MessagesPage /> },
-          { path: "/messages/:id", element: <MessageDetailPage /> },
+          { path: "/search", element: <SearchPage /> },
+
+          // Protected routes (auth required)
+          {
+            element: <ProtectedRoute />,
+            children: [
+              { path: "/workouts", element: <WorkoutsPage /> },
+              { path: "/workouts/new", element: <NewWorkoutPage /> },
+              { path: "/workouts/:id", element: <WorkoutDetailPage /> },
+              { path: "/posts/new", element: <PostNewPage /> },
+              { path: "/posts/:id/edit", element: <EditPostPage /> },
+              { path: "/profile", element: <ProfilePage /> },
+              { path: "/settings/profile", element: <EditProfilePage /> },
+              { path: "/crews/new", element: <CrewNewPage /> },
+              { path: "/crews/:id/settings", element: <CrewSettingsPage /> },
+              { path: "/challenges/new", element: <ChallengeNewPage /> },
+              { path: "/events/new", element: <EventNewPage /> },
+              { path: "/messages", element: <MessagesPage /> },
+              { path: "/messages/:id", element: <MessageDetailPage /> },
+              { path: "/notifications", element: <NotificationsPage /> },
+              { path: "/onboarding", element: <OnboardingPage /> },
+            ],
+          },
+
           { path: "*", element: <NotFoundPage /> },
         ],
       },
