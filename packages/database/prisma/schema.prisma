@@ -73,6 +73,7 @@ model User {
   email                 String    @unique
   name                  String
   profileImage          String?
+  backgroundImage       String?
   bio                   String?
   emailVerified         DateTime?
   isPrivate             Boolean   @default(false)

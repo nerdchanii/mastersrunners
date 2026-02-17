@@ -361,6 +361,12 @@ Mention: id, commentId, mentionedUserId, createdAt
 - **analyst** (Opus) × 1: 분석
 - **executor** (Sonnet) × 1~2: 구현 (분석 완료 후)
 
+### 백로그 (언젠가 할 일)
+
+| 항목 | 설명 |
+|------|------|
+| **구조화된 로깅 시스템** | dev에서 모든 요청/에러 로그를 명확히 볼 수 있고, 환경별(dev/staging/prod) 로그 레벨을 플래그로 관리할 수 있는 시스템. NestJS Logger + pino/winston 도입 검토 |
+
 ### ⚠️ AMBIGUOUS — 결정 필요
 
 | 항목 | 설명 | 필요 시점 |
