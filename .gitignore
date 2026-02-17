@@ -55,3 +55,6 @@ next-env.d.ts
 # oh-my-claudecode
 .omc/
 .playwright-report
+
+# local file uploads (disk storage)
+/uploads/

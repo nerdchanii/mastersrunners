@@ -72,6 +72,7 @@ describe("FitParserService", () => {
         avgCadence: 85,
         maxCadence: 95,
         gpsTrack: undefined,
+        laps: undefined,
       });
     });
 
@@ -196,6 +197,291 @@ describe("FitParserService", () => {
       await expect(service.parse(fitBuffer)).rejects.toThrow(
         "Failed to parse FIT file: Invalid FIT format"
       );
+    });
+
+    it("should parse lap data from FIT file", async () => {
+      const fitBuffer = Buffer.alloc(100);
+      fitBuffer[0] = 12;
+
+      jest
+        .spyOn(service as any, "parseFitBuffer")
+        .mockResolvedValueOnce({
+          sessions: [
+            {
+              total_distance: 5000,
+              total_timer_time: 1500,
+              start_time: new Date("2026-02-16T10:00:00Z"),
+              timestamp: new Date("2026-02-16T10:25:00Z"),
+            },
+          ],
+          records: [],
+          laps: [
+            {
+              start_time: new Date("2026-02-16T10:00:00Z"),
+              timestamp: new Date("2026-02-16T10:05:00Z"),
+              total_distance: 1000,
+              total_timer_time: 300,
+              avg_heart_rate: 145,
+              max_heart_rate: 160,
+              avg_cadence: 82,
+              total_calories: 60,
+            },
+            {
+              start_time: new Date("2026-02-16T10:05:00Z"),
+              timestamp: new Date("2026-02-16T10:10:00Z"),
+              total_distance: 1000,
+              total_timer_time: 290,
+              avg_heart_rate: 155,
+              max_heart_rate: 170,
+              avg_cadence: 85,
+              total_calories: 65,
+            },
+            {
+              start_time: new Date("2026-02-16T10:10:00Z"),
+              timestamp: new Date("2026-02-16T10:15:00Z"),
+              total_distance: 1000,
+              total_timer_time: 310,
+              avg_heart_rate: 150,
+              max_heart_rate: 165,
+              avg_cadence: 80,
+              total_calories: 62,
+            },
+          ],
+        });
+
+      const result = await service.parse(fitBuffer);
+
+      expect(result.laps).toBeDefined();
+      expect(result.laps).toHaveLength(3);
+
+      // First lap
+      expect(result.laps![0]).toEqual({
+        lapNumber: 1,
+        startTime: new Date("2026-02-16T10:00:00Z"),
+        distance: 1000,
+        duration: 300,
+        avgPace: 300, // 300 / 1 = 300 sec/km
+        avgHeartRate: 145,
+        maxHeartRate: 160,
+        avgCadence: 82,
+        calories: 60,
+      });
+
+      // Second lap
+      expect(result.laps![1]).toEqual({
+        lapNumber: 2,
+        startTime: new Date("2026-02-16T10:05:00Z"),
+        distance: 1000,
+        duration: 290,
+        avgPace: 290, // 290 / 1 = 290 sec/km
+        avgHeartRate: 155,
+        maxHeartRate: 170,
+        avgCadence: 85,
+        calories: 65,
+      });
+    });
+
+    it("should handle laps with missing optional fields", async () => {
+      const fitBuffer = Buffer.alloc(100);
+      fitBuffer[0] = 12;
+
+      jest
+        .spyOn(service as any, "parseFitBuffer")
+        .mockResolvedValueOnce({
+          sessions: [
+            {
+              total_distance: 2000,
+              total_timer_time: 600,
+              start_time: new Date("2026-02-16T10:00:00Z"),
+              timestamp: new Date("2026-02-16T10:10:00Z"),
+            },
+          ],
+          records: [],
+          laps: [
+            {
+              start_time: new Date("2026-02-16T10:00:00Z"),
+              total_distance: 1000,
+              total_timer_time: 300,
+              // no heart_rate, cadence, calories
+            },
+          ],
+        });
+
+      const result = await service.parse(fitBuffer);
+
+      expect(result.laps).toHaveLength(1);
+      expect(result.laps![0].avgHeartRate).toBeUndefined();
+      expect(result.laps![0].maxHeartRate).toBeUndefined();
+      expect(result.laps![0].avgCadence).toBeUndefined();
+      expect(result.laps![0].calories).toBeUndefined();
+    });
+
+    it("should return undefined laps when no lap data exists", async () => {
+      const fitBuffer = Buffer.alloc(100);
+      fitBuffer[0] = 12;
+
+      jest
+        .spyOn(service as any, "parseFitBuffer")
+        .mockResolvedValueOnce({
+          sessions: [
+            {
+              total_distance: 5000,
+              total_timer_time: 1500,
+              start_time: new Date("2026-02-16T10:00:00Z"),
+              timestamp: new Date("2026-02-16T10:25:00Z"),
+            },
+          ],
+          records: [],
+          // no laps field
+        });
+
+      const result = await service.parse(fitBuffer);
+      expect(result.laps).toBeUndefined();
+    });
+
+    it("should extract per-point elevation, heartRate, cadence from records", async () => {
+      const fitBuffer = Buffer.alloc(100);
+      fitBuffer[0] = 12;
+
+      jest
+        .spyOn(service as any, "parseFitBuffer")
+        .mockResolvedValueOnce({
+          sessions: [
+            {
+              total_distance: 1000,
+              total_timer_time: 300,
+              start_time: new Date("2026-02-16T10:00:00Z"),
+              timestamp: new Date("2026-02-16T10:05:00Z"),
+            },
+          ],
+          records: [
+            {
+              position_lat: 376739502,
+              position_long: 1268315888,
+              timestamp: new Date("2026-02-16T10:00:00Z"),
+              altitude: 52.5,
+              heart_rate: 142,
+              cadence: 83,
+            },
+            {
+              position_lat: 376740000,
+              position_long: 1268316000,
+              timestamp: new Date("2026-02-16T10:01:00Z"),
+              altitude: 55.2,
+              heart_rate: 148,
+              cadence: 85,
+            },
+          ],
+        });
+
+      const result = await service.parse(fitBuffer);
+
+      expect(result.gpsTrack).toHaveLength(2);
+      expect(result.gpsTrack![0]).toMatchObject({
+        lat: expect.any(Number),
+        lon: expect.any(Number),
+        elevation: 52.5,
+        heartRate: 142,
+        cadence: 83,
+      });
+      expect(result.gpsTrack![1]).toMatchObject({
+        elevation: 55.2,
+        heartRate: 148,
+        cadence: 85,
+      });
+    });
+
+    it("should use enhanced_altitude when altitude is not available", async () => {
+      const fitBuffer = Buffer.alloc(100);
+      fitBuffer[0] = 12;
+
+      jest
+        .spyOn(service as any, "parseFitBuffer")
+        .mockResolvedValueOnce({
+          sessions: [
+            {
+              total_distance: 1000,
+              total_timer_time: 300,
+              start_time: new Date("2026-02-16T10:00:00Z"),
+              timestamp: new Date("2026-02-16T10:05:00Z"),
+            },
+          ],
+          records: [
+            {
+              position_lat: 376739502,
+              position_long: 1268315888,
+              timestamp: new Date("2026-02-16T10:00:00Z"),
+              enhanced_altitude: 100.3,
+              // no altitude field
+            },
+          ],
+        });
+
+      const result = await service.parse(fitBuffer);
+
+      expect(result.gpsTrack![0].elevation).toBe(100.3);
+    });
+
+    it("should handle records without per-point metrics", async () => {
+      const fitBuffer = Buffer.alloc(100);
+      fitBuffer[0] = 12;
+
+      jest
+        .spyOn(service as any, "parseFitBuffer")
+        .mockResolvedValueOnce({
+          sessions: [
+            {
+              total_distance: 1000,
+              total_timer_time: 300,
+              start_time: new Date("2026-02-16T10:00:00Z"),
+              timestamp: new Date("2026-02-16T10:05:00Z"),
+            },
+          ],
+          records: [
+            {
+              position_lat: 376739502,
+              position_long: 1268315888,
+              timestamp: new Date("2026-02-16T10:00:00Z"),
+              // no altitude, heart_rate, cadence
+            },
+          ],
+        });
+
+      const result = await service.parse(fitBuffer);
+
+      expect(result.gpsTrack![0].elevation).toBeUndefined();
+      expect(result.gpsTrack![0].heartRate).toBeUndefined();
+      expect(result.gpsTrack![0].cadence).toBeUndefined();
+    });
+
+    it("should handle lap with zero distance (avgPace = 0)", async () => {
+      const fitBuffer = Buffer.alloc(100);
+      fitBuffer[0] = 12;
+
+      jest
+        .spyOn(service as any, "parseFitBuffer")
+        .mockResolvedValueOnce({
+          sessions: [
+            {
+              total_distance: 1000,
+              total_timer_time: 300,
+              start_time: new Date("2026-02-16T10:00:00Z"),
+              timestamp: new Date("2026-02-16T10:05:00Z"),
+            },
+          ],
+          records: [],
+          laps: [
+            {
+              start_time: new Date("2026-02-16T10:00:00Z"),
+              total_distance: 0,
+              total_timer_time: 10,
+            },
+          ],
+        });
+
+      const result = await service.parse(fitBuffer);
+
+      expect(result.laps![0].avgPace).toBe(0);
     });
 
     it("should calculate avgPace correctly from distance and duration", async () => {

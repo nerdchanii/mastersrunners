@@ -1,5 +1,17 @@
 import { Injectable } from "@nestjs/common";
 
+export interface ParsedLapData {
+  lapNumber: number;
+  startTime: Date;
+  distance: number; // meters
+  duration: number; // seconds
+  avgPace: number; // seconds per km
+  avgHeartRate?: number;
+  maxHeartRate?: number;
+  avgCadence?: number;
+  calories?: number;
+}
+
 export interface ParsedWorkoutData {
   distance: number; // meters
   duration: number; // seconds
@@ -12,7 +24,15 @@ export interface ParsedWorkoutData {
   elevationGain?: number;
   avgCadence?: number;
   maxCadence?: number;
-  gpsTrack?: Array<{ lat: number; lon: number; timestamp: Date }>;
+  gpsTrack?: Array<{
+    lat: number;
+    lon: number;
+    timestamp: Date;
+    elevation?: number;
+    heartRate?: number;
+    cadence?: number;
+  }>;
+  laps?: ParsedLapData[];
 }
 
 @Injectable()
@@ -41,8 +61,8 @@ export class FitParserService {
       const distanceInKm = session.total_distance / 1000;
       const avgPace = session.total_timer_time / distanceInKm;
 
-      // Extract GPS track if available
-      let gpsTrack: Array<{ lat: number; lon: number; timestamp: Date }> | undefined;
+      // Extract GPS track with per-point metrics if available
+      let gpsTrack: ParsedWorkoutData["gpsTrack"];
       if (fitData.records && fitData.records.length > 0) {
         const tracks = fitData.records
           .filter((record: any) => record.position_lat != null && record.position_long != null)
@@ -50,11 +70,37 @@ export class FitParserService {
             lat: this.semicirclesToDegrees(record.position_lat),
             lon: this.semicirclesToDegrees(record.position_long),
             timestamp: record.timestamp,
+            elevation: record.altitude ?? record.enhanced_altitude,
+            heartRate: record.heart_rate,
+            cadence: record.cadence,
           }));
 
         if (tracks.length > 0) {
           gpsTrack = tracks;
         }
+      }
+
+      // Extract lap data
+      let laps: ParsedLapData[] | undefined;
+      if (fitData.laps && fitData.laps.length > 0) {
+        laps = fitData.laps.map((lap: any, index: number) => {
+          const lapDistance = lap.total_distance ?? 0;
+          const lapDuration = lap.total_timer_time ?? lap.total_elapsed_time ?? 0;
+          const lapDistanceKm = lapDistance / 1000;
+          const lapAvgPace = lapDistanceKm > 0 ? lapDuration / lapDistanceKm : 0;
+
+          return {
+            lapNumber: index + 1,
+            startTime: lap.start_time ?? lap.timestamp,
+            distance: lapDistance,
+            duration: lapDuration,
+            avgPace: lapAvgPace,
+            avgHeartRate: lap.avg_heart_rate,
+            maxHeartRate: lap.max_heart_rate,
+            avgCadence: lap.avg_cadence,
+            calories: lap.total_calories,
+          };
+        });
       }
 
       return {
@@ -70,6 +116,7 @@ export class FitParserService {
         avgCadence: session.avg_cadence,
         maxCadence: session.max_cadence,
         gpsTrack,
+        laps,
       };
     } catch (error) {
       if (error instanceof Error && error.message === "No session data found in FIT file") {

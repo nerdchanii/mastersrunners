@@ -4,6 +4,15 @@ import { UploadsService } from "./uploads.service.js";
 import { FitParserService } from "./parsers/fit-parser.service.js";
 import { GpxParserService } from "./parsers/gpx-parser.service.js";
 import { DatabaseService } from "../database/database.service.js";
+import { STORAGE_ADAPTER } from "./storage/storage-adapter.interface.js";
+
+const mockStorageAdapter = {
+  getUploadUrl: jest.fn(),
+  getDownloadUrl: jest.fn(),
+  getPublicUrl: jest.fn(),
+  downloadFile: jest.fn(),
+  deleteFile: jest.fn(),
+};
 
 const mockFitParser = {
   parse: jest.fn(),
@@ -19,34 +28,16 @@ const mockDatabaseService = {
   },
 };
 
-// Mock S3Client to avoid AWS dependency
-jest.mock("@aws-sdk/client-s3", () => ({
-  S3Client: jest.fn().mockImplementation(() => ({
-    send: jest.fn(),
-  })),
-  PutObjectCommand: jest.fn(),
-  GetObjectCommand: jest.fn(),
-  DeleteObjectCommand: jest.fn(),
-}));
-
-jest.mock("@aws-sdk/s3-request-presigner", () => ({
-  getSignedUrl: jest.fn().mockResolvedValue("https://signed-url.example.com"),
-}));
-
 describe("UploadsService", () => {
   let service: UploadsService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    process.env.R2_BUCKET = "test-bucket";
-    process.env.R2_PUBLIC_URL = "https://cdn.example.com";
-    process.env.R2_ENDPOINT = "https://test.r2.cloudflarestorage.com";
-    process.env.R2_ACCESS_KEY_ID = "test-key";
-    process.env.R2_SECRET_ACCESS_KEY = "test-secret";
 
     const module = await Test.createTestingModule({
       providers: [
         UploadsService,
+        { provide: STORAGE_ADAPTER, useValue: mockStorageAdapter },
         { provide: FitParserService, useValue: mockFitParser },
         { provide: GpxParserService, useValue: mockGpxParser },
         { provide: DatabaseService, useValue: mockDatabaseService },
@@ -65,6 +56,45 @@ describe("UploadsService", () => {
     it("should sanitize special characters", () => {
       const result = service.generateKey("user456", "files", "my file@#$.txt");
       expect(result).toMatch(/^files\/user456\/\d+-my_file___.txt$/);
+    });
+  });
+
+  describe("getUploadUrl", () => {
+    it("should delegate to storage adapter", async () => {
+      const expected = { uploadUrl: "http://upload", key: "k", publicUrl: "http://pub" };
+      mockStorageAdapter.getUploadUrl.mockResolvedValue(expected);
+
+      const result = await service.getUploadUrl("k", "image/png");
+      expect(result).toEqual(expected);
+      expect(mockStorageAdapter.getUploadUrl).toHaveBeenCalledWith("k", "image/png", 3600);
+    });
+  });
+
+  describe("getDownloadUrl", () => {
+    it("should delegate to storage adapter", async () => {
+      mockStorageAdapter.getDownloadUrl.mockResolvedValue("http://download");
+
+      const result = await service.getDownloadUrl("k");
+      expect(result).toBe("http://download");
+    });
+  });
+
+  describe("deleteFile", () => {
+    it("should delegate to storage adapter", async () => {
+      mockStorageAdapter.deleteFile.mockResolvedValue(undefined);
+
+      await service.deleteFile("k");
+      expect(mockStorageAdapter.deleteFile).toHaveBeenCalledWith("k");
+    });
+  });
+
+  describe("downloadFile", () => {
+    it("should delegate to storage adapter", async () => {
+      const expected = { buffer: Buffer.from("data"), size: 4 };
+      mockStorageAdapter.downloadFile.mockResolvedValue(expected);
+
+      const result = await service.downloadFile("k");
+      expect(result).toEqual(expected);
     });
   });
 
@@ -95,24 +125,20 @@ describe("UploadsService", () => {
     };
 
     it("should parse FIT file and create workout with route", async () => {
-      // Mock S3 download
       const mockBuffer = Buffer.from("fake-fit-data");
-      (service as any).s3.send = jest.fn().mockResolvedValue({
-        Body: { transformToByteArray: () => Promise.resolve(new Uint8Array(mockBuffer)) },
-        ContentLength: mockBuffer.length,
-      });
+      mockStorageAdapter.downloadFile.mockResolvedValue({ buffer: mockBuffer, size: mockBuffer.length });
+      mockStorageAdapter.getPublicUrl.mockReturnValue("https://cdn.example.com/files/user-1/12345-run.fit");
 
       mockFitParser.parse.mockResolvedValue(mockParsedData);
 
       const mockWorkout = { id: "workout-1", ...mockParsedData };
       const mockWorkoutFile = { id: "file-1", workoutId: "workout-1" };
-      const mockRoute = { id: "route-1", workoutId: "workout-1" };
 
       mockDatabaseService.prisma.$transaction.mockImplementation(async (cb: any) => {
         const tx = {
           workout: { create: jest.fn().mockResolvedValue(mockWorkout) },
           workoutFile: { create: jest.fn().mockResolvedValue(mockWorkoutFile) },
-          workoutRoute: { create: jest.fn().mockResolvedValue(mockRoute) },
+          workoutRoute: { create: jest.fn().mockResolvedValue({ id: "route-1" }) },
         };
         return cb(tx);
       });
@@ -128,10 +154,8 @@ describe("UploadsService", () => {
     it("should parse GPX file and create workout", async () => {
       const gpxInput = { ...baseInput, fileKey: "files/user-1/run.gpx", fileType: "GPX" as const, originalFileName: "run.gpx" };
 
-      (service as any).s3.send = jest.fn().mockResolvedValue({
-        Body: { transformToByteArray: () => Promise.resolve(new TextEncoder().encode("<gpx>...</gpx>")) },
-        ContentLength: 100,
-      });
+      mockStorageAdapter.downloadFile.mockResolvedValue({ buffer: Buffer.from("<gpx>...</gpx>"), size: 100 });
+      mockStorageAdapter.getPublicUrl.mockReturnValue("https://cdn.example.com/files/user-1/run.gpx");
 
       mockGpxParser.parse.mockResolvedValue(mockParsedData);
 
@@ -154,10 +178,8 @@ describe("UploadsService", () => {
     it("should create workout without route when no GPS data", async () => {
       const noGpsData = { ...mockParsedData, gpsTrack: undefined };
 
-      (service as any).s3.send = jest.fn().mockResolvedValue({
-        Body: { transformToByteArray: () => Promise.resolve(new Uint8Array(Buffer.from("data"))) },
-        ContentLength: 4,
-      });
+      mockStorageAdapter.downloadFile.mockResolvedValue({ buffer: Buffer.from("data"), size: 4 });
+      mockStorageAdapter.getPublicUrl.mockReturnValue("https://cdn.example.com/files/user-1/12345-run.fit");
 
       mockFitParser.parse.mockResolvedValue(noGpsData);
 
@@ -174,30 +196,18 @@ describe("UploadsService", () => {
       const result = await service.parseAndCreateWorkout(userId, baseInput);
 
       expect(result.workout).toBeDefined();
-      // workoutRoute.create should NOT be called
       expect(mockDatabaseService.prisma.$transaction).toHaveBeenCalled();
     });
 
-    it("should handle parse failure gracefully with FAILED status", async () => {
-      (service as any).s3.send = jest.fn().mockResolvedValue({
-        Body: { transformToByteArray: () => Promise.resolve(new Uint8Array(Buffer.from("bad"))) },
-        ContentLength: 3,
-      });
+    it("should handle parse failure gracefully", async () => {
+      mockStorageAdapter.downloadFile.mockResolvedValue({ buffer: Buffer.from("bad"), size: 3 });
 
       mockFitParser.parse.mockRejectedValue(new Error("Invalid FIT file"));
-
-      const mockFailedFile = { id: "file-fail", processStatus: "FAILED" };
-      mockDatabaseService.prisma.$transaction.mockImplementation(async (cb: any) => {
-        const tx = {
-          workoutFile: { create: jest.fn().mockResolvedValue(mockFailedFile) },
-        };
-        return cb(tx);
-      });
 
       const result = await service.parseAndCreateWorkout(userId, baseInput);
 
       expect(result.workout).toBeNull();
-      expect(result.workoutFile).toBeDefined();
+      expect(result.workoutFile).toBeNull();
       expect(result.error).toBe("Invalid FIT file");
     });
 

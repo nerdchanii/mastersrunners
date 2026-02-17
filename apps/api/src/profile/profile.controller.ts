@@ -1,8 +1,9 @@
-import { Controller, Get, Param, Req } from "@nestjs/common";
+import { Controller, Get, Patch, Param, Body, Req } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { ProfileService } from "./profile.service.js";
+import { UpdateProfileDto } from "./dto/update-profile.dto.js";
 
 @ApiTags("Profile")
 @SkipThrottle()
@@ -14,6 +15,12 @@ export class ProfileController {
   getProfile(@Req() req: Request) {
     const { userId } = req.user as { userId: string };
     return this.profileService.getProfile(userId, userId);
+  }
+
+  @Patch()
+  updateProfile(@Body() dto: UpdateProfileDto, @Req() req: Request) {
+    const { userId } = req.user as { userId: string };
+    return this.profileService.updateProfile(userId, dto);
   }
 
   @Get(":userId")

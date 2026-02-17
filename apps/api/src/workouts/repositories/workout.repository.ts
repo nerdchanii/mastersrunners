@@ -48,6 +48,9 @@ export class WorkoutRepository {
       include: {
         user: { select: { id: true, name: true, profileImage: true } },
         workoutType: { select: { id: true, category: true, name: true } },
+        file: true,
+        route: true,
+        laps: { orderBy: { lapNumber: "asc" } },
       },
     });
   }

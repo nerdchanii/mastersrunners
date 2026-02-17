@@ -1,10 +1,9 @@
-import { Injectable, BadRequestException } from "@nestjs/common";
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Injectable, Inject, BadRequestException } from "@nestjs/common";
 import type { TransactionClient } from "@masters/database";
 import { FitParserService } from "./parsers/fit-parser.service.js";
 import { GpxParserService } from "./parsers/gpx-parser.service.js";
 import { DatabaseService } from "../database/database.service.js";
+import { STORAGE_ADAPTER, type StorageAdapter } from "./storage/storage-adapter.interface.js";
 
 export interface ParseAndCreateResult {
   workout: any | null;
@@ -14,55 +13,23 @@ export interface ParseAndCreateResult {
 
 @Injectable()
 export class UploadsService {
-  private readonly s3: S3Client;
-  private readonly bucket: string;
-  private readonly publicUrl: string;
-
   constructor(
+    @Inject(STORAGE_ADAPTER) private readonly storage: StorageAdapter,
     private readonly fitParser: FitParserService,
     private readonly gpxParser: GpxParserService,
     private readonly db: DatabaseService,
-  ) {
-    this.bucket = process.env.R2_BUCKET || "masters-runners";
-    this.publicUrl = process.env.R2_PUBLIC_URL || "";
-    this.s3 = new S3Client({
-      region: "auto",
-      endpoint: process.env.R2_ENDPOINT || "",
-      credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
-      },
-    });
-  }
+  ) {}
 
-  async getUploadUrl(key: string, contentType: string, expiresIn = 3600): Promise<{ uploadUrl: string; key: string; publicUrl: string }> {
-    const command = new PutObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-      ContentType: contentType,
-    });
-    const uploadUrl = await getSignedUrl(this.s3, command, { expiresIn });
-    return {
-      uploadUrl,
-      key,
-      publicUrl: `${this.publicUrl}/${key}`,
-    };
+  async getUploadUrl(key: string, contentType: string, expiresIn = 3600) {
+    return this.storage.getUploadUrl(key, contentType, expiresIn);
   }
 
   async getDownloadUrl(key: string, expiresIn = 3600): Promise<string> {
-    const command = new GetObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-    });
-    return getSignedUrl(this.s3, command, { expiresIn });
+    return this.storage.getDownloadUrl(key, expiresIn);
   }
 
   async deleteFile(key: string): Promise<void> {
-    const command = new DeleteObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-    });
-    await this.s3.send(command);
+    return this.storage.deleteFile(key);
   }
 
   generateKey(userId: string, folder: string, filename: string): string {
@@ -72,16 +39,7 @@ export class UploadsService {
   }
 
   async downloadFile(key: string): Promise<{ buffer: Buffer; size: number }> {
-    const command = new GetObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-    });
-    const response = await this.s3.send(command);
-    const bytes = await response.Body!.transformToByteArray();
-    return {
-      buffer: Buffer.from(bytes),
-      size: response.ContentLength || bytes.length,
-    };
+    return this.storage.downloadFile(key);
   }
 
   async parseAndCreateWorkout(
@@ -92,8 +50,8 @@ export class UploadsService {
       throw new BadRequestException(`Unsupported file type: ${input.fileType}. Only FIT and GPX are supported.`);
     }
 
-    // 1. Download file from R2
-    const { buffer, size } = await this.downloadFile(input.fileKey);
+    // 1. Download file from storage
+    const { buffer, size } = await this.storage.downloadFile(input.fileKey);
 
     // 2. Parse
     let parsedData;
@@ -104,13 +62,12 @@ export class UploadsService {
         parsedData = await this.gpxParser.parse(buffer.toString("utf-8"));
       }
     } catch (parseError) {
-      // Parse failed — return error without creating orphaned WorkoutFile
-      // (WorkoutFile.workoutId is required and non-nullable, so we can't create one without a valid workout)
       const errorMessage = parseError instanceof Error ? parseError.message : "Unknown parse error";
       return { workout: null, workoutFile: null, error: errorMessage };
     }
 
     // 3. Create Workout + WorkoutFile + WorkoutRoute in a transaction
+    const publicUrl = this.storage.getPublicUrl(input.fileKey);
     return this.db.prisma.$transaction(async (tx: TransactionClient) => {
       const workout = await tx.workout.create({
         data: {
@@ -140,7 +97,7 @@ export class UploadsService {
         data: {
           workoutId: workout.id,
           fileType: input.fileType,
-          fileUrl: `${this.publicUrl}/${input.fileKey}`,
+          fileUrl: publicUrl,
           originalFileName: input.originalFileName,
           fileSize: size,
           processStatus: "COMPLETED",
@@ -165,6 +122,28 @@ export class UploadsService {
             totalPoints: parsedData.gpsTrack.length,
           },
         });
+      }
+
+      // Create laps if available
+      if (parsedData.laps && parsedData.laps.length > 0) {
+        await Promise.all(
+          parsedData.laps.map((lap) =>
+            tx.workoutLap.create({
+              data: {
+                workoutId: workout.id,
+                lapNumber: lap.lapNumber,
+                distance: lap.distance,
+                duration: lap.duration,
+                pace: lap.avgPace,
+                avgHeartRate: lap.avgHeartRate,
+                maxHeartRate: lap.maxHeartRate,
+                avgCadence: lap.avgCadence,
+                calories: lap.calories,
+                startedAt: lap.startTime,
+              },
+            }),
+          ),
+        );
       }
 
       return { workout, workoutFile };

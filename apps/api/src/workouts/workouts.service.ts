@@ -47,7 +47,15 @@ export class WorkoutsService {
   }
 
   async findOne(id: string) {
-    return this.workoutRepo.findByIdWithUser(id);
+    const workout = await this.workoutRepo.findByIdWithUser(id);
+    if (!workout) return null;
+    const { file, route, laps, ...rest } = workout;
+    return {
+      ...rest,
+      workoutFiles: file ? [file] : [],
+      workoutRoutes: route ? [route] : [],
+      workoutLaps: laps,
+    };
   }
 
   async update(id: string, dto: UpdateWorkoutDto) {

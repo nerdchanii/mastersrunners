@@ -4,12 +4,17 @@ import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import express from "express";
 import { AppModule } from "./app.module.js";
 import { AllExceptionsFilter } from "./common/filters/http-exception.filter.js";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
   const config = app.get(ConfigService);
+
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  app.use(express.raw({ type: "application/octet-stream", limit: "50mb" }));
 
   app.enableCors({
     origin: config.get<string>("FRONTEND_URL", "http://localhost:3000"),

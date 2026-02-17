@@ -7,7 +7,9 @@ import { BlockRepository } from "../block/repositories/block.repository";
 import { FollowRepository } from "../follow/repositories/follow.repository";
 
 const mockUserRepo = {
+  findById: jest.fn(),
   findByIdBasicSelect: jest.fn(),
+  update: jest.fn(),
 };
 
 const mockWorkoutRepo = {
@@ -165,6 +167,74 @@ describe("ProfileService", () => {
       const result = await service.getProfile(targetUserId, currentUserId);
 
       expect(result.isFollowing).toBe(false);
+    });
+  });
+
+  describe("updateProfile", () => {
+    it("should update user name", async () => {
+      const userId = "u1";
+      const dto = { name: "New Name" };
+      const updatedUser = { id: userId, email: "t@t.com", name: "New Name", profileImage: null, bio: null, backgroundImage: null };
+
+      mockUserRepo.findById.mockResolvedValue({ id: userId });
+      mockUserRepo.update.mockResolvedValue(updatedUser);
+
+      const result = await service.updateProfile(userId, dto);
+
+      expect(mockUserRepo.update).toHaveBeenCalledWith(userId, dto);
+      expect(result.name).toBe("New Name");
+    });
+
+    it("should update bio", async () => {
+      const userId = "u1";
+      const dto = { bio: "I love running" };
+      const updatedUser = { id: userId, name: "Test", bio: "I love running" };
+
+      mockUserRepo.findById.mockResolvedValue({ id: userId });
+      mockUserRepo.update.mockResolvedValue(updatedUser);
+
+      const result = await service.updateProfile(userId, dto);
+
+      expect(mockUserRepo.update).toHaveBeenCalledWith(userId, dto);
+      expect(result.bio).toBe("I love running");
+    });
+
+    it("should update profileImage and backgroundImage", async () => {
+      const userId = "u1";
+      const dto = {
+        profileImage: "https://example.com/avatar.jpg",
+        backgroundImage: "https://example.com/bg.jpg",
+      };
+      const updatedUser = { id: userId, ...dto };
+
+      mockUserRepo.findById.mockResolvedValue({ id: userId });
+      mockUserRepo.update.mockResolvedValue(updatedUser);
+
+      const result = await service.updateProfile(userId, dto);
+
+      expect(mockUserRepo.update).toHaveBeenCalledWith(userId, dto);
+      expect(result.profileImage).toBe("https://example.com/avatar.jpg");
+      expect(result.backgroundImage).toBe("https://example.com/bg.jpg");
+    });
+
+    it("should throw NotFoundException when user not found", async () => {
+      mockUserRepo.findById.mockResolvedValue(null);
+
+      await expect(service.updateProfile("unknown", { name: "Test" })).rejects.toThrow(NotFoundException);
+    });
+
+    it("should update multiple fields at once", async () => {
+      const userId = "u1";
+      const dto = { name: "Updated", bio: "New bio", backgroundImage: "https://example.com/bg.jpg" };
+      const updatedUser = { id: userId, ...dto };
+
+      mockUserRepo.findById.mockResolvedValue({ id: userId });
+      mockUserRepo.update.mockResolvedValue(updatedUser);
+
+      const result = await service.updateProfile(userId, dto);
+
+      expect(mockUserRepo.update).toHaveBeenCalledWith(userId, dto);
+      expect(result).toEqual(updatedUser);
     });
   });
 });

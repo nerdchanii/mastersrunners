@@ -61,13 +61,14 @@ describe("UserRepository", () => {
   });
 
   describe("findByIdBasicSelect", () => {
-    it("should NOT include bio in select", async () => {
+    it("should include bio and backgroundImage in select", async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
       await repository.findByIdBasicSelect("u1");
 
       const call = mockPrisma.user.findUnique.mock.calls[0][0];
-      expect(call.select.bio).toBeUndefined();
+      expect(call.select.bio).toBe(true);
+      expect(call.select.backgroundImage).toBe(true);
       expect(call.select.id).toBe(true);
       expect(call.select.email).toBe(true);
     });

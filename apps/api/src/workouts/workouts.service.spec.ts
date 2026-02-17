@@ -146,14 +146,61 @@ describe("WorkoutsService", () => {
   });
 
   describe("findOne", () => {
-    it("should delegate to workoutRepo.findByIdWithUser", async () => {
-      const mockData = { id: "w1", user: { id: "u1" } };
+    it("should map Prisma relations to frontend field names", async () => {
+      const mockData = { id: "w1", user: { id: "u1" }, file: null, route: null, laps: [] };
       mockWorkoutRepo.findByIdWithUser.mockResolvedValue(mockData);
 
       const result = await service.findOne("w1");
 
       expect(mockWorkoutRepo.findByIdWithUser).toHaveBeenCalledWith("w1");
-      expect(result).toEqual(mockData);
+      expect(result).toMatchObject({ id: "w1", workoutFiles: [], workoutRoutes: [], workoutLaps: [] });
+    });
+
+    it("should return null when workout not found", async () => {
+      mockWorkoutRepo.findByIdWithUser.mockResolvedValue(null);
+      const result = await service.findOne("nonexistent");
+      expect(result).toBeNull();
+    });
+
+    it("should return workout with workoutFiles, workoutRoutes, and workoutLaps", async () => {
+      const mockData = {
+        id: "w1",
+        user: { id: "u1", name: "Test", profileImage: null },
+        workoutType: { id: "wt1", category: "EASY", name: "Easy Run" },
+        file: {
+          id: "f1",
+          fileType: "FIT",
+          fileUrl: "https://example.com/run.fit",
+          originalFileName: "run.fit",
+          fileSize: 50000,
+        },
+        route: {
+          id: "r1",
+          encodedPolyline: "abc123",
+          routeData: "[{\"lat\":37.5,\"lon\":127.0}]",
+          boundNorth: 37.6,
+          boundSouth: 37.4,
+          boundEast: 127.1,
+          boundWest: 126.9,
+          totalPoints: 100,
+        },
+        laps: [
+          { id: "l1", lapNumber: 1, distance: 1000, duration: 300, pace: 300 },
+          { id: "l2", lapNumber: 2, distance: 1000, duration: 290, pace: 290 },
+        ],
+      };
+      mockWorkoutRepo.findByIdWithUser.mockResolvedValue(mockData);
+
+      const result = await service.findOne("w1");
+
+      expect(result).toBeDefined();
+      expect(result!.workoutFiles).toHaveLength(1);
+      expect(result!.workoutFiles[0].id).toBe("f1");
+      expect(result!.workoutRoutes).toHaveLength(1);
+      expect(result!.workoutRoutes[0].id).toBe("r1");
+      expect(result!.workoutLaps).toHaveLength(2);
+      expect(result!.workoutLaps[0].lapNumber).toBe(1);
+      expect(result!.workoutLaps[1].lapNumber).toBe(2);
     });
   });
 

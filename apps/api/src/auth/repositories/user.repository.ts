@@ -49,6 +49,8 @@ export class UserRepository {
         email: true,
         name: true,
         profileImage: true,
+        backgroundImage: true,
+        bio: true,
         createdAt: true,
       },
     });
@@ -57,6 +59,13 @@ export class UserRepository {
   async findByEmail(email: string) {
     return this.db.prisma.user.findUnique({
       where: { email },
+    });
+  }
+
+  async update(id: string, data: { name?: string; bio?: string; profileImage?: string; backgroundImage?: string }) {
+    return this.db.prisma.user.update({
+      where: { id },
+      data,
     });
   }
 

@@ -3,6 +3,7 @@ import { UserRepository } from "../auth/repositories/user.repository.js";
 import { WorkoutRepository } from "../workouts/repositories/workout.repository.js";
 import { BlockRepository } from "../block/repositories/block.repository.js";
 import { FollowRepository } from "../follow/repositories/follow.repository.js";
+import type { UpdateProfileDto } from "./dto/update-profile.dto.js";
 
 @Injectable()
 export class ProfileService {
@@ -52,5 +53,14 @@ export class ProfileService {
       followingCount,
       isFollowing,
     };
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.userRepo.findById(userId);
+    if (!user) {
+      throw new NotFoundException("사용자를 찾을 수 없습니다.");
+    }
+
+    return this.userRepo.update(userId, dto);
   }
 }
