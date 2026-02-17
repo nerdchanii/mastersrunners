@@ -47,11 +47,11 @@ export default function MessagesPage() {
       if (cursor) path += `&cursor=${encodeURIComponent(cursor)}`;
       const data = await api.fetch<ConversationsResponse>(path);
       if (cursor) {
-        setConversations((prev) => [...prev, ...data.data]);
+        setConversations((prev) => [...prev, ...(data?.data ?? [])]);
       } else {
-        setConversations(data.data);
+        setConversations(data?.data ?? []);
       }
-      setNextCursor(data.nextCursor);
+      setNextCursor(data?.nextCursor ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
     } finally {

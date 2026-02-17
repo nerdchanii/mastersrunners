@@ -107,6 +107,7 @@ export default function UserProfilePage() {
     const fetchProfile = async () => {
       try {
         const data = await api.fetch<ProfileApiResponse>(`/profile/${userId}`);
+        if (!data) return;
         setProfileData({
           user: data.user,
           isFollowing: data.isFollowing ?? false,
@@ -145,7 +146,7 @@ export default function UserProfilePage() {
           setWorkouts(Array.isArray(data) ? data : []);
         } else if (activeTab === "crews") {
           const data = await api.fetch<{ data: Crew[] }>(`/crews?userId=${userId}`);
-          setCrews(data.data || []);
+          setCrews(data?.data ?? []);
         }
       } catch (err) {
         console.error("Failed to fetch tab data:", err);

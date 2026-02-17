@@ -51,7 +51,7 @@ export default function NewPostPage() {
 
   const loadWorkouts = async () => {
     setLoadingWorkouts(true);
-    try { const data = await api.fetch<Workout[]>("/workouts"); setWorkouts(data); }
+    try { const data = await api.fetch<Workout[]>("/workouts"); setWorkouts(Array.isArray(data) ? data : []); }
     catch (err) { console.error("Failed to load workouts:", err); }
     finally { setLoadingWorkouts(false); }
   };

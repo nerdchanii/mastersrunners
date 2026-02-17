@@ -70,7 +70,7 @@ export default function CrewTagManager({ crewId, isAdmin, members }: CrewTagMana
     setIsLoading(true);
     try {
       const data = await api.fetch<TagWithMembers[]>(`/crews/${crewId}/tags`);
-      setTags(data);
+      setTags(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to load tags:", err);
     } finally {

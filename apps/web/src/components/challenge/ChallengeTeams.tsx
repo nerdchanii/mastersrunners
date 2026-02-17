@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Users, Plus, LogOut, UserPlus, Trophy } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ interface ChallengeTeamsProps {
 }
 
 export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeamsProps) {
+  const { user } = useAuth();
   const [teams, setTeams] = useState<Team[]>([]);
   const [myTeam, setMyTeam] = useState<Team | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,10 +47,11 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
     try {
       setIsLoading(true);
       const data = await api.fetch<Team[]>(`/challenges/${challengeId}/teams`);
-      setTeams(data);
+      const teamsArray = Array.isArray(data) ? data : [];
+      setTeams(teamsArray);
 
       // Find my team
-      const myTeamData = data.find((team) => team.members?.some((member) => member.id === "me"));
+      const myTeamData = teamsArray.find((team) => team.members?.some((member) => member.id === user?.id));
       setMyTeam(myTeamData || null);
     } catch (err) {
       console.error("Failed to fetch teams:", err);

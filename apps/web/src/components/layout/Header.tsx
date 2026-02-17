@@ -34,7 +34,7 @@ export default function Header() {
         const data = await api.fetch<ConversationsResponse>(
           "/conversations?limit=100"
         );
-        const total = data.data.reduce((sum, conv) => sum + conv.unreadCount, 0);
+        const total = data?.data?.reduce((sum, conv) => sum + conv.unreadCount, 0) ?? 0;
         setUnreadCount(total);
       } catch (err) {
         console.error("Failed to fetch unread count:", err);

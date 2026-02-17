@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { QrCode, Check } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,6 +28,7 @@ interface CrewAttendanceProps {
 }
 
 export default function CrewAttendance({ crewId, activityId, isAdmin, isMember }: CrewAttendanceProps) {
+  const { user } = useAuth();
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
@@ -37,7 +39,7 @@ export default function CrewAttendance({ crewId, activityId, isAdmin, isMember }
       const data = await api.fetch<Attendee[]>(
         `/crews/${crewId}/activities/${activityId}/attendance`
       );
-      setAttendees(data);
+      setAttendees(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to load attendees:", err);
     } finally {
@@ -118,7 +120,7 @@ export default function CrewAttendance({ crewId, activityId, isAdmin, isMember }
             <Button
               size="lg"
               onClick={handleCheckIn}
-              disabled={isCheckingIn || attendees.some((a) => a.userId === "current-user-id")}
+              disabled={isCheckingIn || attendees.some((a) => a.userId === user?.id)}
               className="w-full max-w-sm"
             >
               <Check className="w-5 h-5 mr-2" />

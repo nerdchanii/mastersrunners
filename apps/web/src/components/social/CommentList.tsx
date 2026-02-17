@@ -49,7 +49,7 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
         `${endpoint}?limit=50`
       );
 
-      const items = Array.isArray(data) ? data : (data.data ?? []);
+      const items = Array.isArray(data) ? data : (data?.data ?? []);
 
       // Organize into parent-reply structure
       const parents = items.filter((c) => !c.parentId);

@@ -171,7 +171,7 @@ export default function EventDetailPage() {
     try {
       setResultsLoading(true);
       const data = await api.fetch<EventResult[]>(`/events/${eventId}/results`);
-      setResults(data);
+      setResults(Array.isArray(data) ? data : []);
     } catch {
       // silently fail
     } finally {

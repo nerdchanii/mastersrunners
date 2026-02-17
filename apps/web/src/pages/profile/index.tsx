@@ -93,6 +93,7 @@ export default function ProfilePage() {
     const fetchProfile = async () => {
       try {
         const data = await api.fetch<ProfileApiResponse>("/profile");
+        if (!data) return;
         setProfileStats({
           postCount: 0, // TODO: 포스트 카운트 API 추가 필요
           followerCount: data.followersCount,
@@ -123,7 +124,7 @@ export default function ProfilePage() {
           setWorkouts(Array.isArray(data) ? data : []);
         } else if (activeTab === "crews") {
           const data = await api.fetch<{ data: Crew[] }>("/crews?my=true");
-          setCrews(data.data || []);
+          setCrews(data?.data ?? []);
         }
       } catch (err) {
         console.error("Failed to fetch tab data:", err);

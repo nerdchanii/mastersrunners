@@ -117,7 +117,7 @@ export default function ChallengeDetailPage() {
     try {
       setLeaderboardLoading(true);
       const data = await api.fetch<LeaderboardEntry[]>(`/challenges/${challengeId}/leaderboard?limit=50`);
-      setLeaderboard(data);
+      setLeaderboard(Array.isArray(data) ? data : []);
     } catch {
       // silently fail
     } finally {

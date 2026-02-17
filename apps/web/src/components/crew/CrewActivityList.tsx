@@ -39,7 +39,7 @@ export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActi
     setIsLoading(true);
     try {
       const data = await api.fetch<Activity[]>(`/crews/${crewId}/activities`);
-      setActivities(data);
+      setActivities(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to load activities:", err);
     } finally {

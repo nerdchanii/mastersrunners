@@ -82,14 +82,14 @@ export default function FeedCard({ workout }: FeedCardProps) {
           entityType="workout"
           entityId={workout.id}
           initialLiked={workout.isLiked}
-          initialCount={workout._count.likes}
+          initialCount={workout._count?.likes ?? 0}
         />
         <Link
           to={`/workouts/detail?id=${workout.id}`}
           className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-muted-foreground hover:bg-accent"
         >
           <MessageCircle className="size-5" />
-          {workout._count.comments > 0 && (
+          {(workout._count?.comments ?? 0) > 0 && (
             <span className="text-sm font-medium tabular-nums">
               {workout._count.comments}
             </span>

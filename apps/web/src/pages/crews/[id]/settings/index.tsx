@@ -92,7 +92,7 @@ export default function CrewSettingsClient() {
     if (!crewId || crewId === "_") return;
     try {
       const data = await api.fetch<BannedUser[]>(`/crews/${crewId}/bans`);
-      setBans(data);
+      setBans(Array.isArray(data) ? data : []);
     } catch {
       // Bans may fail if user isn't authorized; ignore silently
     }

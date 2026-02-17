@@ -62,15 +62,16 @@ export default function MessageDetailPage() {
       let path = `/conversations/${id}?limit=50`;
       if (cursor) path += `&cursor=${encodeURIComponent(cursor)}`;
       const data = await api.fetch<ConversationDetailResponse>(path);
+      if (!data) return;
 
       setConversation(data.conversation);
       if (cursor) {
         // Prepend older messages
-        setMessages((prev) => [...data.messages, ...prev]);
+        setMessages((prev) => [...(data.messages ?? []), ...prev]);
       } else {
-        setMessages(data.messages);
+        setMessages(data.messages ?? []);
       }
-      setNextCursor(data.nextCursor);
+      setNextCursor(data.nextCursor ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
     } finally {

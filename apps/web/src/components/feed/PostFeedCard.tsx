@@ -60,9 +60,9 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
         </div>
 
         {/* Hashtags */}
-        {post.hashtags.length > 0 && (
+        {(post.hashtags?.length ?? 0) > 0 && (
           <div className="flex flex-wrap gap-1.5 px-4 pt-2">
-            {post.hashtags.map((tag, idx) => (
+            {(post.hashtags ?? []).map((tag, idx) => (
               <Badge
                 key={idx}
                 variant="secondary"
@@ -75,9 +75,9 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
         )}
 
         {/* Attached Workouts */}
-        {post.workouts.length > 0 && (
+        {(post.workouts?.length ?? 0) > 0 && (
           <div className="mx-4 mt-3 rounded-xl bg-muted/50 p-3 space-y-2">
-            {post.workouts.map(({ workout }) => (
+            {(post.workouts ?? []).map(({ workout }) => (
               <div
                 key={workout.id}
                 className="grid grid-cols-3 gap-2"
@@ -109,14 +109,14 @@ export default function PostFeedCard({ post }: PostFeedCardProps) {
           entityType="post"
           entityId={post.id}
           initialLiked={post.isLiked}
-          initialCount={post._count.likes}
+          initialCount={post._count?.likes ?? 0}
         />
         <Link
           to={`/posts/${post.id}`}
           className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-muted-foreground hover:bg-accent"
         >
           <MessageCircle className="size-5" />
-          {post._count.comments > 0 && (
+          {(post._count?.comments ?? 0) > 0 && (
             <span className="text-sm font-medium tabular-nums">
               {post._count.comments}
             </span>

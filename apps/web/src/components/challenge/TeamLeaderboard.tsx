@@ -30,7 +30,7 @@ export default function TeamLeaderboard({ challengeId }: TeamLeaderboardProps) {
       const data = await api.fetch<TeamLeaderboardEntry[]>(
         `/challenges/${challengeId}/teams/leaderboard?limit=50`
       );
-      setEntries(data);
+      setEntries(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch team leaderboard:", err);
     } finally {

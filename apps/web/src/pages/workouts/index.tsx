@@ -29,7 +29,7 @@ export default function WorkoutsPage() {
     const fetchWorkouts = async () => {
       try {
         const data = await api.fetch<Workout[]>("/workouts");
-        setWorkouts(data);
+        setWorkouts(Array.isArray(data) ? data : []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");
       } finally {

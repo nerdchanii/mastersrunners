@@ -33,7 +33,7 @@ export default function PendingMemberList({ crewId, onUpdate }: PendingMemberLis
     setIsLoading(true);
     try {
       const allMembers = await api.fetch<PendingMember[]>(`/crews/${crewId}/members`);
-      const pending = allMembers.filter((m) => m.status === "PENDING");
+      const pending = (Array.isArray(allMembers) ? allMembers : []).filter((m) => m.status === "PENDING");
       setPendingMembers(pending);
     } catch (err) {
       console.error("Failed to load pending members:", err);

@@ -79,7 +79,7 @@ export default function CrewDetailClient() {
     fetchCrew();
   }, [fetchCrew]);
 
-  const currentMember = crew?.members.find((m) => m.userId === user?.id);
+  const currentMember = crew?.members?.find((m) => m.userId === user?.id);
   const isMember = !!currentMember && currentMember.status === "ACTIVE";
   const currentUserRole = currentMember?.role ?? null;
   const isOwnerOrAdmin =
