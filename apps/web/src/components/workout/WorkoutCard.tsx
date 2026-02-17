@@ -42,7 +42,7 @@ export default function WorkoutCard({
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
       <div className="flex justify-between items-start p-6 pb-0">
-        <Link to={`/workouts/detail?id=${workout.id}`} className="flex-1 min-w-0">
+        <Link to={`/workouts/${workout.id}`} className="flex-1 min-w-0">
           <h3 className="text-lg font-semibold text-gray-900">{dateString}</h3>
         </Link>
         <div className="ml-4 flex-shrink-0">
@@ -59,7 +59,7 @@ export default function WorkoutCard({
         </div>
       </div>
 
-      <Link to={`/workouts/detail?id=${workout.id}`} className="block p-6 pt-4">
+      <Link to={`/workouts/${workout.id}`} className="block p-6 pt-4">
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div>
             <p className="text-sm text-gray-500 mb-1">거리</p>

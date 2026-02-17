@@ -128,7 +128,7 @@ export function ProfileTabs({
             {workouts.map((workout) => (
               <Link
                 key={workout.id}
-                to={`/workouts/detail?id=${workout.id}`}
+                to={`/workouts/${workout.id}`}
                 className={cn(
                   "block rounded-lg border bg-card p-4",
                   "hover:bg-accent hover:border-accent-foreground/20 transition-colors"

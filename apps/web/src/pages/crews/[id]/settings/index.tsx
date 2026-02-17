@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
@@ -128,7 +129,7 @@ export default function CrewSettingsClient() {
         body: JSON.stringify(data),
       });
       await fetchCrew();
-      alert("크루 정보가 수정되었습니다.");
+      toast.success("크루 정보가 수정되었습니다.");
     } catch (err) {
       setIsSubmitting(false);
       throw err;
@@ -143,7 +144,7 @@ export default function CrewSettingsClient() {
       await api.fetch(`/crews/${crewId}`, { method: "DELETE" });
       navigate("/crews");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "삭제에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "삭제에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -157,7 +158,7 @@ export default function CrewSettingsClient() {
       });
       await fetchBans();
     } catch (err) {
-      alert(
+      toast.error(
         err instanceof Error ? err.message : "차단 해제에 실패했습니다."
       );
     } finally {

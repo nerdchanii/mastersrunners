@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useState } from "react";
 import { Crown, Shield, UserX, ChevronUp, ChevronDown } from "lucide-react";
 import { api } from "@/lib/api-client";
@@ -64,7 +65,7 @@ export default function CrewMemberList({
       setKickTarget(null);
       onUpdate();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "추방에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "추방에 실패했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +80,7 @@ export default function CrewMemberList({
       });
       onUpdate();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "승격에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "승격에 실패했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -94,7 +95,7 @@ export default function CrewMemberList({
       });
       onUpdate();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "강등에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "강등에 실패했습니다.");
     } finally {
       setIsLoading(false);
     }

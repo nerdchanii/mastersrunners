@@ -45,7 +45,7 @@ export default function FeedCard({ workout }: FeedCardProps) {
       </div>
 
       {/* Workout Hero Stats — Strava style */}
-      <Link to={`/workouts/detail?id=${workout.id}`}>
+      <Link to={`/workouts/${workout.id}`}>
         <div className="mx-4 rounded-xl bg-muted/50 p-4">
           <div className="grid grid-cols-3 gap-2">
             <StatItem
@@ -85,7 +85,7 @@ export default function FeedCard({ workout }: FeedCardProps) {
           initialCount={workout._count?.likes ?? 0}
         />
         <Link
-          to={`/workouts/detail?id=${workout.id}`}
+          to={`/workouts/${workout.id}`}
           className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-muted-foreground hover:bg-accent"
         >
           <MessageCircle className="size-5" />

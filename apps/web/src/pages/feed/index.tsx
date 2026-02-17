@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Rss, Dumbbell } from "lucide-react";
 import FeedCard from "@/components/feed/FeedCard";
 import PostFeedCard from "@/components/feed/PostFeedCard";
@@ -6,147 +6,46 @@ import { FeedSidebar } from "@/components/feed/FeedSidebar";
 import { InfiniteScroll } from "@/components/common/InfiniteScroll";
 import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingPage } from "@/components/common/LoadingPage";
-import { api } from "@/lib/api-client";
+import { usePostFeed } from "@/hooks/usePosts";
+import { useWorkoutFeed } from "@/hooks/useWorkouts";
 import { cn } from "@/lib/utils";
-
-interface PostFeedItem {
-  id: string;
-  content: string;
-  visibility: string;
-  hashtags: string[];
-  createdAt: string;
-  user: {
-    id: string;
-    name: string;
-    profileImage: string | null;
-  };
-  _count: {
-    likes: number;
-    comments: number;
-  };
-  isLiked?: boolean;
-  images?: Array<{
-    id: string;
-    url: string;
-    order: number;
-  }>;
-  workouts: Array<{
-    workout: {
-      id: string;
-      distance: number;
-      duration: number;
-      pace: number;
-      date: string;
-    };
-  }>;
-}
-
-interface WorkoutFeedItem {
-  id: string;
-  distance: number;
-  duration: number;
-  pace: number;
-  date: string;
-  visibility: string;
-  memo: string | null;
-  createdAt: string;
-  user: {
-    id: string;
-    name: string;
-    profileImage: string | null;
-  };
-  _count: {
-    likes: number;
-    comments: number;
-  };
-  isLiked?: boolean;
-}
-
-interface FeedResponse<T> {
-  items: T[];
-  nextCursor: string | null;
-  hasMore: boolean;
-}
 
 type FeedTab = "posts" | "workouts";
 
 export default function FeedPage() {
   const [activeTab, setActiveTab] = useState<FeedTab>("posts");
 
-  const [postItems, setPostItems] = useState<PostFeedItem[]>([]);
-  const [postCursor, setPostCursor] = useState<string | null>(null);
-  const [postHasMore, setPostHasMore] = useState(true);
-  const [postLoading, setPostLoading] = useState(false);
-  const [postInitial, setPostInitial] = useState(true);
+  const {
+    data: postPages,
+    fetchNextPage: fetchMorePosts,
+    hasNextPage: postHasMore,
+    isFetchingNextPage: postFetching,
+    isLoading: postInitial,
+  } = usePostFeed();
 
-  const [workoutItems, setWorkoutItems] = useState<WorkoutFeedItem[]>([]);
-  const [workoutCursor, setWorkoutCursor] = useState<string | null>(null);
-  const [workoutHasMore, setWorkoutHasMore] = useState(true);
-  const [workoutLoading, setWorkoutLoading] = useState(false);
-  const [workoutInitial, setWorkoutInitial] = useState(true);
+  const {
+    data: workoutPages,
+    fetchNextPage: fetchMoreWorkouts,
+    hasNextPage: workoutHasMore,
+    isFetchingNextPage: workoutFetching,
+    isLoading: workoutInitial,
+  } = useWorkoutFeed();
 
-  const fetchPosts = useCallback(
-    async (cursor?: string | null) => {
-      if (postLoading) return;
-      setPostLoading(true);
-      try {
-        let path = "/feed/posts?limit=10";
-        if (cursor) path += `&cursor=${encodeURIComponent(cursor)}`;
-        const data = await api.fetch<FeedResponse<PostFeedItem>>(path);
-        const items = data?.items ?? [];
-        setPostItems((prev) => (cursor ? [...prev, ...items] : items));
-        setPostCursor(data?.nextCursor ?? null);
-        setPostHasMore(data?.hasMore ?? false);
-      } catch {
-        // silent
-      } finally {
-        setPostLoading(false);
-        setPostInitial(false);
-      }
-    },
-    [postLoading]
-  );
-
-  const fetchWorkouts = useCallback(
-    async (cursor?: string | null) => {
-      if (workoutLoading) return;
-      setWorkoutLoading(true);
-      try {
-        let path = "/feed/workouts?limit=10&excludeLinkedToPost=true";
-        if (cursor) path += `&cursor=${encodeURIComponent(cursor)}`;
-        const data = await api.fetch<FeedResponse<WorkoutFeedItem>>(path);
-        const items = data?.items ?? [];
-        setWorkoutItems((prev) => (cursor ? [...prev, ...items] : items));
-        setWorkoutCursor(data?.nextCursor ?? null);
-        setWorkoutHasMore(data?.hasMore ?? false);
-      } catch {
-        // silent
-      } finally {
-        setWorkoutLoading(false);
-        setWorkoutInitial(false);
-      }
-    },
-    [workoutLoading]
-  );
-
-  useEffect(() => {
-    fetchPosts();
-    fetchWorkouts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const postItems = postPages?.pages.flatMap((p) => p?.items ?? []) ?? [];
+  const workoutItems = workoutPages?.pages.flatMap((p) => p?.items ?? []) ?? [];
 
   const isInitial = activeTab === "posts" ? postInitial : workoutInitial;
   const items = activeTab === "posts" ? postItems : workoutItems;
-  const loading = activeTab === "posts" ? postLoading : workoutLoading;
-  const hasMore = activeTab === "posts" ? postHasMore : workoutHasMore;
+  const loading = activeTab === "posts" ? postFetching : workoutFetching;
+  const hasMore = activeTab === "posts" ? (postHasMore ?? false) : (workoutHasMore ?? false);
 
   const handleLoadMore = useCallback(() => {
     if (activeTab === "posts") {
-      fetchPosts(postCursor);
+      fetchMorePosts();
     } else {
-      fetchWorkouts(workoutCursor);
+      fetchMoreWorkouts();
     }
-  }, [activeTab, postCursor, workoutCursor, fetchPosts, fetchWorkouts]);
+  }, [activeTab, fetchMorePosts, fetchMoreWorkouts]);
 
   return (
     <div className="flex gap-8">

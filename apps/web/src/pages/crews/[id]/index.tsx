@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Users, Lock, Settings, UserPlus, LogOut } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -92,7 +93,7 @@ export default function CrewDetailClient() {
       await api.fetch(`/crews/${crewId}/join`, { method: "POST" });
       await fetchCrew();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "가입에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "가입에 실패했습니다.");
     } finally {
       setIsJoining(false);
     }
@@ -105,7 +106,7 @@ export default function CrewDetailClient() {
       setShowLeaveDialog(false);
       navigate("/crews");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "탈퇴에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "탈퇴에 실패했습니다.");
     }
   };
 

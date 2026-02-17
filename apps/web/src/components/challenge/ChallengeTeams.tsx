@@ -1,7 +1,9 @@
+import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { Users, Plus, LogOut, UserPlus, Trophy } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,6 +40,7 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [leaveTeamId, setLeaveTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTeams();
@@ -74,7 +77,7 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
       setShowCreateForm(false);
       await fetchTeams();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "팀 생성에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "팀 생성에 실패했습니다.");
     } finally {
       setActionLoading(false);
     }
@@ -88,25 +91,26 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
       });
       await fetchTeams();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "팀 가입에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "팀 가입에 실패했습니다.");
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleLeaveTeam = async (teamId: string) => {
-    if (!confirm("팀을 나가시겠습니까?")) return;
-
+  const handleLeaveTeam = async () => {
+    if (!leaveTeamId) return;
     setActionLoading(true);
     try {
-      await api.fetch(`/challenges/${challengeId}/teams/${teamId}/leave`, {
+      await api.fetch(`/challenges/${challengeId}/teams/${leaveTeamId}/leave`, {
         method: "DELETE",
       });
       await fetchTeams();
+      toast.success("팀에서 나갔습니다.");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "팀 나가기에 실패했습니다.");
+      toast.error(err instanceof Error ? err.message : "팀 나가기에 실패했습니다.");
     } finally {
       setActionLoading(false);
+      setLeaveTeamId(null);
     }
   };
 
@@ -136,6 +140,16 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={!!leaveTeamId}
+        onOpenChange={(open) => !open && setLeaveTeamId(null)}
+        title="팀 나가기"
+        description="팀을 나가시겠습니까?"
+        confirmLabel="나가기"
+        variant="destructive"
+        onConfirm={handleLeaveTeam}
+        loading={actionLoading}
+      />
       <div className="flex items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold">팀</h3>
@@ -204,7 +218,7 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleLeaveTeam(myTeam.id)}
+                    onClick={() => setLeaveTeamId(myTeam.id)}
                     disabled={actionLoading}
                   >
                     <LogOut className="mr-2 size-4" />
