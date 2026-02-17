@@ -1,6 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Query } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
-import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { CrewsService } from "./crews.service.js";
 import { CreateCrewDto } from "./dto/create-crew.dto.js";
@@ -11,7 +10,6 @@ import { CreateCrewActivityDto } from "./dto/create-crew-activity.dto.js";
 import { UpdateCrewActivityDto } from "./dto/update-crew-activity.dto.js";
 
 @ApiTags("Crews")
-@SkipThrottle()
 @Controller("crews")
 export class CrewsController {
   constructor(private readonly crewsService: CrewsService) {}

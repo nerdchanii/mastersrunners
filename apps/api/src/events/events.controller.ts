@@ -1,13 +1,11 @@
 import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Req, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { EventsService } from "./events.service.js";
 import { CreateEventDto } from "./dto/create-event.dto.js";
 import { UpdateEventDto } from "./dto/update-event.dto.js";
 
 @ApiTags("Events")
-@SkipThrottle()
 @Controller("events")
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}

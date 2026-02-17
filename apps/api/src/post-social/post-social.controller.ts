@@ -1,12 +1,10 @@
 import { Controller, Post, Delete, Get, Param, Body, Req, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { PostSocialService } from "./post-social.service.js";
 import { CreatePostCommentDto } from "./dto/create-post-comment.dto.js";
 
 @ApiTags("Post Social")
-@SkipThrottle()
 @Controller("posts")
 export class PostSocialController {
   constructor(private readonly postSocialService: PostSocialService) {}

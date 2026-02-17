@@ -1,11 +1,9 @@
 import { Controller, Get, Query, Req } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
-import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { FeedService } from "./feed.service.js";
 
 @ApiTags("Feed")
-@SkipThrottle()
 @Controller("feed")
 export class FeedController {
   constructor(private readonly feedService: FeedService) {}

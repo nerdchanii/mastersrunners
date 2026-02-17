@@ -12,6 +12,7 @@ import {
   Sse,
   MessageEvent,
 } from "@nestjs/common";
+import { SkipThrottle } from "@nestjs/throttler";
 import { Observable } from "rxjs";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard.js";
 import { JwtSseGuard } from "../auth/guards/jwt-sse.guard.js";
@@ -90,6 +91,7 @@ export class ConversationsController {
 
   @Sse("sse")
   @UseGuards(JwtSseGuard)
+  @SkipThrottle()
   sse(@Req() req: { user: { userId: string } }): Observable<MessageEvent> {
     return this.sseService.addConnection(req.user.userId);
   }

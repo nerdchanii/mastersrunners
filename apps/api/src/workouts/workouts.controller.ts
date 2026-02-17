@@ -1,17 +1,19 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Req, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
-import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { WorkoutsService } from "./workouts.service.js";
 import { CreateWorkoutDto } from "./dto/create-workout.dto.js";
 import { UpdateWorkoutDto } from "./dto/update-workout.dto.js";
 import { Public } from "../common/decorators/public.decorator.js";
+import { FollowRepository } from "../follow/repositories/follow.repository.js";
 
 @ApiTags("Workouts")
-@SkipThrottle()
 @Controller("workouts")
 export class WorkoutsController {
-  constructor(private readonly workoutsService: WorkoutsService) {}
+  constructor(
+    private readonly workoutsService: WorkoutsService,
+    private readonly followRepo: FollowRepository,
+  ) {}
 
   @ApiOperation({ summary: '내 워크아웃 목록 조회' })
   @ApiResponse({ status: 200, description: '성공' })
@@ -38,9 +40,22 @@ export class WorkoutsController {
     if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
 
     const user = req.user as { userId: string } | undefined;
-    if (workout.visibility === "PRIVATE" && workout.userId !== user?.userId) {
+    const requesterId = user?.userId;
+
+    if (workout.visibility === "PRIVATE" && workout.userId !== requesterId) {
       throw new ForbiddenException("접근 권한이 없습니다.");
     }
+
+    if (workout.visibility === "FOLLOWERS" && workout.userId !== requesterId) {
+      if (!requesterId) {
+        throw new ForbiddenException("접근 권한이 없습니다.");
+      }
+      const follow = await this.followRepo.findFollow(requesterId, workout.userId);
+      if (!follow || follow.status !== "ACCEPTED") {
+        throw new ForbiddenException("접근 권한이 없습니다.");
+      }
+    }
+
     return workout;
   }
 

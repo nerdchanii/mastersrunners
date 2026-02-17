@@ -7,6 +7,7 @@ const mockDatabaseService = {
     post: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
     },
@@ -54,23 +55,24 @@ describe("PostRepository", () => {
   });
 
   describe("findById", () => {
-    it("should find post by id with all relations", async () => {
+    it("should find post by id with all relations (excluding soft-deleted)", async () => {
       const postId = "post-123";
       const mockPost = {
         id: postId,
         userId: "user-123",
         content: "테스트",
+        deletedAt: null,
         user: { id: "user-123", name: "홍길동", profileImage: null },
         images: [{ id: "img-1", imageUrl: "https://example.com/img.jpg", sortOrder: 0 }],
         workouts: [],
         _count: { likes: 5, comments: 2 },
       };
-      mockDatabaseService.prisma.post.findUnique.mockResolvedValue(mockPost);
+      mockDatabaseService.prisma.post.findFirst.mockResolvedValue(mockPost);
 
       const result = await repository.findById(postId);
 
-      expect(mockDatabaseService.prisma.post.findUnique).toHaveBeenCalledWith({
-        where: { id: postId },
+      expect(mockDatabaseService.prisma.post.findFirst).toHaveBeenCalledWith({
+        where: { id: postId, deletedAt: null },
         include: {
           user: {
             select: {
@@ -100,6 +102,19 @@ describe("PostRepository", () => {
         },
       });
       expect(result).toEqual(mockPost);
+    });
+
+    it("should return null for soft-deleted post", async () => {
+      const postId = "post-deleted";
+      mockDatabaseService.prisma.post.findFirst.mockResolvedValue(null);
+
+      const result = await repository.findById(postId);
+
+      expect(mockDatabaseService.prisma.post.findFirst).toHaveBeenCalledWith({
+        where: { id: postId, deletedAt: null },
+        include: expect.any(Object),
+      });
+      expect(result).toBeNull();
     });
   });
 

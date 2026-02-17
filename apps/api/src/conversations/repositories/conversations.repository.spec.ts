@@ -39,11 +39,12 @@ describe("ConversationsRepository", () => {
   });
 
   describe("findOrCreateDirect", () => {
-    it("should create new conversation with 2 participants", async () => {
+    it("should create new conversation with 2 participants when none exists", async () => {
       const userId1 = "user-1";
       const userId2 = "user-2";
 
-      mockDatabaseService.prisma.conversation.findFirst.mockResolvedValue(null);
+      // No candidates found
+      mockDatabaseService.prisma.conversation.findMany.mockResolvedValue([]);
       mockDatabaseService.prisma.conversation.create.mockResolvedValue({
         id: "conv-1",
         type: "DIRECT",
@@ -53,7 +54,17 @@ describe("ConversationsRepository", () => {
 
       const result = await repository.findOrCreateDirect(userId1, userId2);
 
-      expect(mockDatabaseService.prisma.conversation.findFirst).toHaveBeenCalled();
+      expect(mockDatabaseService.prisma.conversation.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            type: "DIRECT",
+            AND: [
+              { participants: { some: { userId: userId1 } } },
+              { participants: { some: { userId: userId2 } } },
+            ],
+          },
+        }),
+      );
       expect(mockDatabaseService.prisma.conversation.create).toHaveBeenCalledWith({
         data: {
           type: "DIRECT",
@@ -65,7 +76,7 @@ describe("ConversationsRepository", () => {
       expect(result.id).toBe("conv-1");
     });
 
-    it("should return existing conversation if already exists", async () => {
+    it("should return existing 1:1 conversation if one with exactly 2 participants exists", async () => {
       const userId1 = "user-1";
       const userId2 = "user-2";
       const existingConversation = {
@@ -73,17 +84,42 @@ describe("ConversationsRepository", () => {
         type: "DIRECT",
         createdAt: new Date(),
         updatedAt: new Date(),
+        participants: [{ userId: userId1 }, { userId: userId2 }],
       };
 
-      mockDatabaseService.prisma.conversation.findFirst.mockResolvedValue(
-        existingConversation,
-      );
+      mockDatabaseService.prisma.conversation.findMany.mockResolvedValue([existingConversation]);
 
       const result = await repository.findOrCreateDirect(userId1, userId2);
 
-      expect(mockDatabaseService.prisma.conversation.findFirst).toHaveBeenCalled();
+      expect(mockDatabaseService.prisma.conversation.findMany).toHaveBeenCalled();
       expect(mockDatabaseService.prisma.conversation.create).not.toHaveBeenCalled();
       expect(result).toEqual(existingConversation);
+    });
+
+    it("should not return a group conversation that happens to include both users", async () => {
+      const userId1 = "user-1";
+      const userId2 = "user-2";
+      // group conversation with 3 participants - should be filtered out
+      const groupConversation = {
+        id: "conv-group",
+        type: "DIRECT",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        participants: [{ userId: userId1 }, { userId: userId2 }, { userId: "user-3" }],
+      };
+
+      mockDatabaseService.prisma.conversation.findMany.mockResolvedValue([groupConversation]);
+      mockDatabaseService.prisma.conversation.create.mockResolvedValue({
+        id: "conv-new",
+        type: "DIRECT",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const result = await repository.findOrCreateDirect(userId1, userId2);
+
+      expect(mockDatabaseService.prisma.conversation.create).toHaveBeenCalled();
+      expect(result.id).toBe("conv-new");
     });
   });
 

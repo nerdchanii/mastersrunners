@@ -35,8 +35,8 @@ export class PostRepository {
   }
 
   async findById(id: string) {
-    return this.db.prisma.post.findUnique({
-      where: { id },
+    return this.db.prisma.post.findFirst({
+      where: { id, deletedAt: null },
       include: {
         user: {
           select: {

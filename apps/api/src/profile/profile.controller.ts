@@ -1,12 +1,10 @@
 import { Controller, Get, Patch, Param, Body, Req } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { ProfileService } from "./profile.service.js";
 import { UpdateProfileDto } from "./dto/update-profile.dto.js";
 
 @ApiTags("Profile")
-@SkipThrottle()
 @Controller("profile")
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}

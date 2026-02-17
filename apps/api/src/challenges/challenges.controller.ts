@@ -1,6 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Query } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
-import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { ChallengesService } from "./challenges.service.js";
 import { CreateChallengeDto } from "./dto/create-challenge.dto.js";
@@ -8,7 +7,6 @@ import { UpdateChallengeDto } from "./dto/update-challenge.dto.js";
 import { UpdateProgressDto } from "./dto/update-progress.dto.js";
 
 @ApiTags("Challenges")
-@SkipThrottle()
 @Controller("challenges")
 export class ChallengesController {
   constructor(private readonly challengesService: ChallengesService) {}

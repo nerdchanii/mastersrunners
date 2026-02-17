@@ -1,6 +1,5 @@
 import { Controller, Post, Delete, Body, Param, Req, BadRequestException } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { UploadsService } from "./uploads.service.js";
 
@@ -8,7 +7,6 @@ const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif
 const ALLOWED_FILE_TYPES = [...ALLOWED_IMAGE_TYPES, "application/octet-stream"]; // octet-stream for FIT/GPX
 
 @ApiTags("Uploads")
-@SkipThrottle()
 @Controller("uploads")
 export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}

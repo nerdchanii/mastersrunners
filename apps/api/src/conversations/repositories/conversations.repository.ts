@@ -7,19 +7,25 @@ export class ConversationsRepository {
   constructor(private readonly db: DatabaseService) {}
 
   async findOrCreateDirect(userId1: string, userId2: string) {
-    // Check if conversation already exists
-    const existing = await this.db.prisma.conversation.findFirst({
+    // Check if conversation already exists.
+    // Use some+some to filter candidates, then verify exactly 2 participants
+    // in application code (Prisma does not support _count in where clauses).
+    const candidates = await this.db.prisma.conversation.findMany({
       where: {
         type: "DIRECT",
+        AND: [
+          { participants: { some: { userId: userId1 } } },
+          { participants: { some: { userId: userId2 } } },
+        ],
+      },
+      include: {
         participants: {
-          every: {
-            userId: {
-              in: [userId1, userId2],
-            },
-          },
+          select: { userId: true },
         },
       },
     });
+
+    const existing = candidates.find((c) => c.participants.length === 2) ?? null;
 
     if (existing) {
       return existing;
