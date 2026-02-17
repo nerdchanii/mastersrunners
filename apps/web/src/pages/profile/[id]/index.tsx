@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api-client";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
-import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { LoadingPage } from "@/components/common/LoadingPage";
 
@@ -12,6 +11,7 @@ interface User {
   email: string;
   name: string;
   profileImage: string | null;
+  backgroundImage: string | null;
   bio: string | null;
 }
 
@@ -45,6 +45,19 @@ interface Crew {
   _count: {
     members: number;
   };
+}
+
+interface ProfileApiResponse {
+  user: User;
+  stats: {
+    totalWorkouts: number;
+    totalDistance: number;
+    totalDuration: number;
+    averagePace: number;
+  };
+  followersCount: number;
+  followingCount: number;
+  isFollowing?: boolean;
 }
 
 interface ProfileData {
@@ -93,12 +106,19 @@ export default function UserProfilePage() {
 
     const fetchProfile = async () => {
       try {
-        const [profile, stats] = await Promise.all([
-          api.fetch<ProfileData>(`/profile/${userId}`),
-          api.fetch<ProfileStats>(`/profile/${userId}/stats`),
-        ]);
-        setProfileData(profile);
-        setProfileStats(stats);
+        const data = await api.fetch<ProfileApiResponse>(`/profile/${userId}`);
+        setProfileData({
+          user: data.user,
+          isFollowing: data.isFollowing ?? false,
+          isPending: false, // TODO: API에서 pending 상태 반환 필요
+          isPrivate: false, // TODO: API에서 isPrivate 반환 필요
+        });
+        setProfileStats({
+          postCount: 0, // TODO: 포스트 카운트 API 추가 필요
+          followerCount: data.followersCount,
+          followingCount: data.followingCount,
+          workoutCount: data.stats.totalWorkouts,
+        });
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "프로필을 불러오는데 실패했습니다."
@@ -221,29 +241,20 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-      <div className="rounded-xl border bg-card p-6">
-        <ProfileHeader
-          user={profileData.user}
-          isOwnProfile={false}
-          isFollowing={profileData.isFollowing}
-          isPending={profileData.isPending}
-          isPrivate={profileData.isPrivate}
-          onFollowToggle={handleFollowToggle}
-          onMessageClick={handleMessageClick}
-          isFollowLoading={isFollowLoading}
-        />
-      </div>
-
-      <div className="rounded-xl border bg-card">
-        <ProfileStats
-          postCount={profileStats.postCount}
-          followerCount={profileStats.followerCount}
-          followingCount={profileStats.followingCount}
-          onFollowersClick={handleFollowersClick}
-          onFollowingClick={handleFollowingClick}
-        />
-      </div>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <ProfileHeader
+        user={profileData.user}
+        stats={profileStats}
+        isOwnProfile={false}
+        isFollowing={profileData.isFollowing}
+        isPending={profileData.isPending}
+        isPrivate={profileData.isPrivate}
+        onFollowToggle={handleFollowToggle}
+        onMessageClick={handleMessageClick}
+        onFollowersClick={handleFollowersClick}
+        onFollowingClick={handleFollowingClick}
+        isFollowLoading={isFollowLoading}
+      />
 
       <ProfileTabs
         posts={posts}

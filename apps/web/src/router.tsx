@@ -32,6 +32,7 @@ const EventNewPage = lazy(() => import("@/pages/events/new"));
 const EventDetailPage = lazy(() => import("@/pages/events/[id]"));
 const MessagesPage = lazy(() => import("@/pages/messages"));
 const MessageDetailPage = lazy(() => import("@/pages/messages/[id]"));
+const EditProfilePage = lazy(() => import("@/pages/settings/profile"));
 const NotFoundPage = lazy(() => import("@/pages/not-found"));
 
 function RootLayout() {
@@ -100,6 +101,7 @@ export const router = createBrowserRouter([
           { path: "/posts/:id/edit", element: <EditPostPage /> },
           { path: "/profile", element: <ProfilePage /> },
           { path: "/profile/:id", element: <UserProfilePage /> },
+          { path: "/settings/profile", element: <EditProfilePage /> },
           { path: "/crews", element: <CrewsPage /> },
           { path: "/crews/new", element: <CrewNewPage /> },
           { path: "/crews/:id", element: <CrewDetailPage /> },

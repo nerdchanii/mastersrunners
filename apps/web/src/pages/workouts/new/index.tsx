@@ -1,6 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, FileText, Activity, Clock, Route, Eye } from "lucide-react";
+import {
+  Upload,
+  FileText,
+  Activity,
+  Clock,
+  Route,
+  Eye,
+  Heart,
+  Flame,
+  Mountain,
+  MapPin,
+  Footprints,
+} from "lucide-react";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,9 +25,24 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 
 interface ParsedWorkoutData {
-  distance: number; // meters
-  duration: number; // seconds
-  startTime: string; // ISO string
+  distance: number;
+  duration: number;
+  date: string;
+  startedAt: string | null;
+  pace?: number;
+  avgHeartRate?: number | null;
+  maxHeartRate?: number | null;
+  calories?: number | null;
+  elevationGain?: number | null;
+  avgCadence?: number | null;
+  maxCadence?: number | null;
+  hasGps?: boolean;
+}
+
+interface ParseResult {
+  workout: ParsedWorkoutData | null;
+  workoutFile: unknown;
+  error?: string;
 }
 
 export default function NewWorkoutPage() {
@@ -38,6 +65,7 @@ export default function NewWorkoutPage() {
   const [parsedData, setParsedData] = useState<ParsedWorkoutData | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [workoutCreated, setWorkoutCreated] = useState(false);
 
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
@@ -84,6 +112,7 @@ export default function NewWorkoutPage() {
 
   const handleFileUpload = async (file: File) => {
     setError(null);
+    setWorkoutCreated(false);
     const ext = file.name.split(".").pop()?.toLowerCase();
     if (!ext || !["fit", "gpx"].includes(ext)) {
       setError("FIT 또는 GPX 파일만 업로드 가능합니다.");
@@ -94,12 +123,13 @@ export default function NewWorkoutPage() {
     setIsUploading(true);
 
     try {
-      // Step 1: Get presigned URL
+      // Step 1: Get presigned URL (FIT/GPX는 application/octet-stream으로 통일)
       const presignData = await api.fetch<{ uploadUrl: string; key: string }>("/uploads/presign", {
         method: "POST",
         body: JSON.stringify({
           filename: file.name,
-          contentType: file.type || "application/octet-stream",
+          contentType: "application/octet-stream",
+          folder: "workouts",
         }),
       });
 
@@ -108,7 +138,7 @@ export default function NewWorkoutPage() {
         method: "PUT",
         body: file,
         headers: {
-          "Content-Type": file.type || "application/octet-stream",
+          "Content-Type": "application/octet-stream",
         },
       });
 
@@ -119,24 +149,35 @@ export default function NewWorkoutPage() {
       setIsUploading(false);
       setIsParsing(true);
 
-      // Step 3: Parse the file
-      const parsed = await api.fetch<ParsedWorkoutData>("/uploads/parse", {
+      // Step 3: Parse the file and create workout
+      const fileType = ext.toUpperCase() as "FIT" | "GPX";
+      const result = await api.fetch<ParseResult>("/uploads/parse", {
         method: "POST",
-        body: JSON.stringify({ key: presignData.key }),
+        body: JSON.stringify({
+          fileKey: presignData.key,
+          fileType,
+          originalFileName: file.name,
+        }),
       });
 
-      setParsedData(parsed);
+      if (result.error || !result.workout) {
+        throw new Error(result.error || "파일 분석에 실패했습니다.");
+      }
+
+      const workout = result.workout;
+      setParsedData(workout);
+      setWorkoutCreated(true);
       setIsParsing(false);
 
-      // Auto-fill form fields
-      setDistance((parsed.distance / 1000).toFixed(2));
-      const h = Math.floor(parsed.duration / 3600);
-      const m = Math.floor((parsed.duration % 3600) / 60);
-      const s = parsed.duration % 60;
+      // Auto-fill form fields from parsed data
+      setDistance((workout.distance / 1000).toFixed(2));
+      const h = Math.floor(workout.duration / 3600);
+      const m = Math.floor((workout.duration % 3600) / 60);
+      const s = workout.duration % 60;
       setHours(h > 0 ? h.toString() : "");
       setMinutes(m > 0 ? m.toString() : "");
       setSeconds(s > 0 ? s.toString() : "");
-      setDate(new Date(parsed.startTime).toISOString().split("T")[0]);
+      setDate(new Date(workout.startedAt ?? workout.date).toISOString().split("T")[0]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "파일 처리 중 오류가 발생했습니다.");
       setIsUploading(false);
@@ -159,6 +200,13 @@ export default function NewWorkoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // If workout was already created via file parse, go to workouts list
+    if (workoutCreated) {
+      navigate("/workouts");
+      return;
+    }
+
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
@@ -269,28 +317,117 @@ export default function NewWorkoutPage() {
             {parsedData && (
               <Card>
                 <CardContent className="pt-6">
-                  <h3 className="mb-4 text-sm font-semibold">파싱된 데이터 미리보기</h3>
-                  <div className="grid gap-3 text-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold">분석 결과</h3>
                     <div className="flex items-center gap-2">
-                      <Route className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">거리:</span>
-                      <span className="font-medium">{formatDistance(parsedData.distance)} km</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">시간:</span>
-                      <span className="font-medium">{formatDuration(parsedData.duration)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Activity className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">페이스:</span>
-                      <span className="font-medium">
-                        {formatPace(parsedData.duration / (parsedData.distance / 1000))} /km
-                      </span>
+                      {parsedData.hasGps && (
+                        <Badge variant="secondary" className="gap-1">
+                          <MapPin className="size-3" />
+                          GPS
+                        </Badge>
+                      )}
+                      {workoutCreated && (
+                        <Badge variant="default" className="gap-1">
+                          저장됨
+                        </Badge>
+                      )}
                     </div>
                   </div>
+
+                  {/* Primary metrics */}
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="text-center rounded-lg bg-muted/50 p-3">
+                      <Route className="mx-auto size-4 text-muted-foreground mb-1" />
+                      <p className="text-xs text-muted-foreground">거리</p>
+                      <p className="text-sm font-bold tabular-nums">
+                        {formatDistance(parsedData.distance)} km
+                      </p>
+                    </div>
+                    <div className="text-center rounded-lg bg-muted/50 p-3">
+                      <Clock className="mx-auto size-4 text-muted-foreground mb-1" />
+                      <p className="text-xs text-muted-foreground">시간</p>
+                      <p className="text-sm font-bold tabular-nums">
+                        {formatDuration(parsedData.duration)}
+                      </p>
+                    </div>
+                    <div className="text-center rounded-lg bg-muted/50 p-3">
+                      <Activity className="mx-auto size-4 text-muted-foreground mb-1" />
+                      <p className="text-xs text-muted-foreground">페이스</p>
+                      <p className="text-sm font-bold tabular-nums">
+                        {parsedData.pace
+                          ? formatPace(parsedData.pace)
+                          : formatPace(parsedData.duration / (parsedData.distance / 1000))}
+                        /km
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Secondary metrics */}
+                  {(parsedData.avgHeartRate || parsedData.calories || parsedData.elevationGain || parsedData.avgCadence) && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {parsedData.avgHeartRate != null && (
+                        <div className="flex items-center gap-2 rounded-lg border p-2.5">
+                          <Heart className="size-4 text-red-500 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-[10px] text-muted-foreground leading-none">심박수</p>
+                            <p className="text-sm font-semibold tabular-nums">
+                              {Math.round(parsedData.avgHeartRate)}
+                              {parsedData.maxHeartRate != null && (
+                                <span className="text-xs font-normal text-muted-foreground">
+                                  /{Math.round(parsedData.maxHeartRate)}
+                                </span>
+                              )}
+                              <span className="text-xs font-normal text-muted-foreground ml-0.5">bpm</span>
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {parsedData.calories != null && parsedData.calories > 0 && (
+                        <div className="flex items-center gap-2 rounded-lg border p-2.5">
+                          <Flame className="size-4 text-orange-500 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-[10px] text-muted-foreground leading-none">칼로리</p>
+                            <p className="text-sm font-semibold tabular-nums">
+                              {Math.round(parsedData.calories)}
+                              <span className="text-xs font-normal text-muted-foreground ml-0.5">kcal</span>
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {parsedData.elevationGain != null && parsedData.elevationGain > 0 && (
+                        <div className="flex items-center gap-2 rounded-lg border p-2.5">
+                          <Mountain className="size-4 text-green-600 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-[10px] text-muted-foreground leading-none">고도 상승</p>
+                            <p className="text-sm font-semibold tabular-nums">
+                              {Math.round(parsedData.elevationGain)}
+                              <span className="text-xs font-normal text-muted-foreground ml-0.5">m</span>
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {parsedData.avgCadence != null && (
+                        <div className="flex items-center gap-2 rounded-lg border p-2.5">
+                          <Footprints className="size-4 text-blue-500 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-[10px] text-muted-foreground leading-none">케이던스</p>
+                            <p className="text-sm font-semibold tabular-nums">
+                              {Math.round(parsedData.avgCadence)}
+                              <span className="text-xs font-normal text-muted-foreground ml-0.5">spm</span>
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <p className="mt-4 text-xs text-muted-foreground">
-                    아래에서 값을 수정할 수 있습니다.
+                    {workoutCreated
+                      ? "워크아웃이 자동으로 저장되었습니다. 아래에서 메모와 공개 설정을 추가할 수 있습니다."
+                      : "아래에서 값을 수정할 수 있습니다."}
                   </p>
                 </CardContent>
               </Card>
@@ -316,6 +453,7 @@ export default function NewWorkoutPage() {
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
+                disabled={workoutCreated}
               />
             </div>
 
@@ -332,6 +470,7 @@ export default function NewWorkoutPage() {
                 min="0.01"
                 placeholder="5.0"
                 required
+                disabled={workoutCreated}
               />
             </div>
 
@@ -351,6 +490,7 @@ export default function NewWorkoutPage() {
                     onChange={(e) => setHours(e.target.value)}
                     min="0"
                     placeholder="0"
+                    disabled={workoutCreated}
                   />
                 </div>
                 <div className="space-y-2">
@@ -365,6 +505,7 @@ export default function NewWorkoutPage() {
                     min="0"
                     max="59"
                     placeholder="30"
+                    disabled={workoutCreated}
                   />
                 </div>
                 <div className="space-y-2">
@@ -379,6 +520,7 @@ export default function NewWorkoutPage() {
                     min="0"
                     max="59"
                     placeholder="0"
+                    disabled={workoutCreated}
                   />
                 </div>
               </div>
@@ -431,7 +573,7 @@ export default function NewWorkoutPage() {
             취소
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "저장 중..." : "저장"}
+            {isSubmitting ? "저장 중..." : workoutCreated ? "완료" : "저장"}
           </Button>
         </div>
       </form>

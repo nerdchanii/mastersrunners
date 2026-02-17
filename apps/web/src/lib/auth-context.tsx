@@ -13,6 +13,7 @@ interface User {
   email: string;
   name: string;
   profileImage: string | null;
+  backgroundImage: string | null;
   bio: string | null;
   createdAt: string;
 }

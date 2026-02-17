@@ -3,17 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api-client";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
-import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { LoadingPage } from "@/components/common/LoadingPage";
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  profileImage: string | null;
-  bio: string | null;
-}
 
 interface Post {
   id: string;
@@ -21,7 +12,11 @@ interface Post {
   createdAt: string;
   likesCount: number;
   commentsCount: number;
-  user: User;
+  user: {
+    id: string;
+    name: string;
+    profileImage: string | null;
+  };
 }
 
 interface Workout {
@@ -45,6 +40,27 @@ interface Crew {
   _count: {
     members: number;
   };
+}
+
+interface ProfileApiResponse {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    profileImage: string | null;
+    backgroundImage: string | null;
+    bio: string | null;
+    createdAt: string;
+  };
+  stats: {
+    totalWorkouts: number;
+    totalDistance: number;
+    totalDuration: number;
+    averagePace: number;
+  };
+  followersCount: number;
+  followingCount: number;
+  isFollowing?: boolean;
 }
 
 interface ProfileStats {
@@ -74,19 +90,23 @@ export default function ProfilePage() {
       return;
     }
 
-    const fetchProfileStats = async () => {
+    const fetchProfile = async () => {
       try {
-        if (!user?.id) return;
-        const stats = await api.fetch<ProfileStats>(`/profile/${user.id}/stats`);
-        setProfileStats(stats);
+        const data = await api.fetch<ProfileApiResponse>("/profile");
+        setProfileStats({
+          postCount: 0, // TODO: 포스트 카운트 API 추가 필요
+          followerCount: data.followersCount,
+          followingCount: data.followingCount,
+          workoutCount: data.stats.totalWorkouts,
+        });
       } catch (err) {
-        console.error("Failed to fetch profile stats:", err);
+        console.error("Failed to fetch profile:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProfileStats();
+    fetchProfile();
   }, [authLoading, isAuthenticated, user?.id, navigate]);
 
   useEffect(() => {
@@ -144,20 +164,14 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-      <div className="rounded-xl border bg-card p-6">
-        <ProfileHeader user={user} isOwnProfile={true} />
-      </div>
-
-      <div className="rounded-xl border bg-card">
-        <ProfileStats
-          postCount={profileStats.postCount}
-          followerCount={profileStats.followerCount}
-          followingCount={profileStats.followingCount}
-          onFollowersClick={handleFollowersClick}
-          onFollowingClick={handleFollowingClick}
-        />
-      </div>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <ProfileHeader
+        user={user}
+        stats={profileStats}
+        isOwnProfile={true}
+        onFollowersClick={handleFollowersClick}
+        onFollowingClick={handleFollowingClick}
+      />
 
       <ProfileTabs
         posts={posts}
