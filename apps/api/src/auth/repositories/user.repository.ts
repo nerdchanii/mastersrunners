@@ -88,6 +88,20 @@ export class UserRepository {
     });
   }
 
+  async softDelete(id: string) {
+    return this.db.prisma.user.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        name: "탈퇴한 사용자",
+        email: `deleted_${id}@deleted.local`,
+        profileImage: null,
+        backgroundImage: null,
+        bio: null,
+      },
+    });
+  }
+
   async createWithAccount(userData: CreateUserData, accountData: CreateAccountData) {
     return this.db.prisma.$transaction(async (tx: TransactionClient) => {
       const user = await tx.user.create({ data: userData });

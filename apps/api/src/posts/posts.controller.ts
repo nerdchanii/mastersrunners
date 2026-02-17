@@ -27,6 +27,24 @@ export class PostsController {
     return this.postsService.findByUser(userId, userId, cursor, parsedLimit);
   }
 
+  @Get("hashtags/popular")
+  getPopularHashtags(@Query("limit") limit?: string) {
+    const parsedLimit = limit ? parseInt(limit, 10) : undefined;
+    return this.postsService.getPopularHashtags(parsedLimit);
+  }
+
+  @Get("hashtag/:tag")
+  findByHashtag(
+    @Param("tag") tag: string,
+    @Req() req: Request,
+    @Query("cursor") cursor?: string,
+    @Query("limit") limit?: string,
+  ) {
+    const { userId } = req.user as { userId: string };
+    const parsedLimit = limit ? parseInt(limit, 10) : undefined;
+    return this.postsService.findByHashtag(tag, userId, cursor, parsedLimit);
+  }
+
   @Get(":id")
   async findOne(@Param("id") id: string, @Req() req: Request) {
     const { userId } = req.user as { userId: string };

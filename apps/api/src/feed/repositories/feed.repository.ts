@@ -140,6 +140,11 @@ export class FeedRepository {
             category: true,
           },
         },
+        route: {
+          select: {
+            encodedPolyline: true,
+          },
+        },
         _count: {
           select: {
             workoutLikes: true,

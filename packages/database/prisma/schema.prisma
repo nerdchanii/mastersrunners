@@ -80,6 +80,7 @@ model User {
   workoutSharingDefault String    @default("FOLLOWERS") // PRIVATE, FOLLOWERS, PUBLIC
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime? // soft delete (탈퇴)
 
   // Core
   workouts Workout[]

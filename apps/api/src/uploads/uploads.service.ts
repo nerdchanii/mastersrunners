@@ -4,6 +4,8 @@ import { FitParserService } from "./parsers/fit-parser.service.js";
 import { GpxParserService } from "./parsers/gpx-parser.service.js";
 import { DatabaseService } from "../database/database.service.js";
 import { STORAGE_ADAPTER, type StorageAdapter } from "./storage/storage-adapter.interface.js";
+import { encodePolyline } from "./utils/encoded-polyline.js";
+import { douglasPeucker as douglasPeuckerUtil } from "./utils/douglas-peucker.js";
 
 const DOWNSAMPLE_THRESHOLD = 1000;
 const DOWNSAMPLE_TARGET = 500;
@@ -187,10 +189,18 @@ export class UploadsService {
         const lats = trackToSave.map((p) => p.lat);
         const lons = trackToSave.map((p) => p.lon);
 
+        // Generate encoded polyline for map thumbnail display
+        // Further downsample to max 500 points for polyline using Douglas-Peucker
+        const polylinePoints = douglasPeuckerUtil(
+          trackToSave.map((p) => ({ lat: p.lat, lon: p.lon })),
+          10, // 10m epsilon
+        ).map((p) => ({ lat: p.lat, lng: p.lon }));
+        const encodedPolylineStr = encodePolyline(polylinePoints);
+
         await tx.workoutRoute.create({
           data: {
             workoutId: workout.id,
-            encodedPolyline: "",
+            encodedPolyline: encodedPolylineStr,
             routeData: JSON.stringify(trackToSave),
             boundNorth: Math.max(...lats),
             boundSouth: Math.min(...lats),

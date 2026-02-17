@@ -10,6 +10,7 @@ import { R2StorageAdapter } from "./storage/r2-storage.adapter.js";
 import { DiskStorageAdapter } from "./storage/disk-storage.adapter.js";
 import { DiskUploadController } from "./disk-upload.controller.js";
 import { DiskFilesController } from "./disk-files.controller.js";
+import { ImageOptimizationService } from "./image-optimization.service.js";
 
 function isDisk(): boolean {
   const type = process.env.STORAGE_TYPE;
@@ -33,7 +34,8 @@ const controllers = isDisk()
     FitParserService,
     GpxParserService,
     WorkoutFileRepository,
+    ImageOptimizationService,
   ],
-  exports: [UploadsService, FitParserService, GpxParserService, WorkoutFileRepository],
+  exports: [UploadsService, FitParserService, GpxParserService, WorkoutFileRepository, ImageOptimizationService],
 })
 export class UploadsModule {}

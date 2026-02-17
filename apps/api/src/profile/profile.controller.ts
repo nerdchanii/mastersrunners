@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Param, Body, Req, Query } from "@nestjs/common";
+import { Controller, Get, Patch, Delete, Param, Body, Req, Query, HttpCode, HttpStatus } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import { ProfileService } from "./profile.service.js";
@@ -19,6 +19,13 @@ export class ProfileController {
   updateProfile(@Body() dto: UpdateProfileDto, @Req() req: Request) {
     const { userId } = req.user as { userId: string };
     return this.profileService.updateProfile(userId, dto);
+  }
+
+  @Delete()
+  @HttpCode(HttpStatus.OK)
+  deleteAccount(@Req() req: Request) {
+    const { userId } = req.user as { userId: string };
+    return this.profileService.deleteAccount(userId);
   }
 
   @Get("search")

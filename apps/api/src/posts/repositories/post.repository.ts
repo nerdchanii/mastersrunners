@@ -205,6 +205,48 @@ export class PostRepository {
     });
   }
 
+  async findByHashtag(
+    tag: string,
+    options: { blockedUserIds?: string[]; cursor?: string; limit?: number } = {},
+  ) {
+    const { blockedUserIds = [], cursor, limit = 20 } = options;
+
+    return this.db.prisma.post.findMany({
+      where: {
+        hashtags: { has: tag },
+        deletedAt: null,
+        ...(blockedUserIds.length > 0 ? { userId: { notIn: blockedUserIds } } : {}),
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, profileImage: true },
+        },
+        images: { orderBy: { sortOrder: "asc" } },
+        workouts: {
+          include: { workout: { include: { workoutType: true } } },
+        },
+        _count: { select: { likes: true, comments: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      ...(cursor && { skip: 1, cursor: { id: cursor } }),
+    });
+  }
+
+  async getPopularHashtags(limit = 20): Promise<{ tag: string; count: number }[]> {
+    // PostgreSQL에서 배열을 unnest하여 집계
+    const result = await this.db.prisma.$queryRaw<{ tag: string; count: bigint }[]>`
+      SELECT unnested_tag as tag, COUNT(*) as count
+      FROM "Post", unnest(hashtags) as unnested_tag
+      WHERE "deletedAt" IS NULL
+        AND array_length(hashtags, 1) > 0
+      GROUP BY unnested_tag
+      ORDER BY count DESC
+      LIMIT ${limit}
+    `;
+    return result.map((r) => ({ tag: r.tag, count: Number(r.count) }));
+  }
+
   async createWithRelations(
     postData: CreatePostData,
     workoutIds?: string[],

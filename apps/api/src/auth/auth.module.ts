@@ -11,6 +11,7 @@ import { GoogleStrategy } from "./strategies/google.strategy.js";
 import { NaverStrategy } from "./strategies/naver.strategy.js";
 import { UserRepository } from "./repositories/user.repository.js";
 import { AccountRepository } from "./repositories/account.repository.js";
+import { DatabaseModule } from "../database/database.module.js";
 
 // Only register OAuth strategies when credentials are configured.
 // dotenv/config runs synchronously before module loading, so process.env is safe here.
@@ -21,6 +22,7 @@ if (process.env.NAVER_CLIENT_ID) oauthStrategies.push(NaverStrategy);
 
 @Module({
   imports: [
+    DatabaseModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

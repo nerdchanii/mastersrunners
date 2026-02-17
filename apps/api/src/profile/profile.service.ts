@@ -70,6 +70,25 @@ export class ProfileService {
     return this.userRepo.update(userId, dto);
   }
 
+  async deleteAccount(userId: string) {
+    // 팔로우 관계 삭제
+    await this.db.prisma.follow.deleteMany({
+      where: {
+        OR: [{ followerId: userId }, { followingId: userId }],
+      },
+    });
+
+    // 크루 멤버십 삭제
+    await this.db.prisma.crewMember.deleteMany({
+      where: { userId },
+    });
+
+    // User soft delete + 개인정보 익명화
+    await this.userRepo.softDelete(userId);
+
+    return { message: "계정이 삭제되었습니다." };
+  }
+
   async searchUsers(query: string, currentUserId: string) {
     if (!query || query.trim().length === 0) {
       return [];

@@ -11,12 +11,23 @@ export class PostsService {
     private readonly blockRepo: BlockRepository,
   ) {}
 
+  extractHashtags(content: string | null | undefined): string[] {
+    if (!content) return [];
+    const matches = content.match(/#[\w가-힣]+/g) || [];
+    const tags = matches.map((tag) => tag.slice(1));
+    return [...new Set(tags)];
+  }
+
   async create(userId: string, dto: CreatePostDto) {
+    const hashtags = dto.hashtags?.length
+      ? dto.hashtags
+      : this.extractHashtags(dto.content ?? null);
+
     const postData = {
       userId,
       content: dto.content || null,
       visibility: dto.visibility || "FOLLOWERS",
-      hashtags: dto.hashtags || [],
+      hashtags,
     };
 
     return this.postRepo.createWithRelations(
@@ -49,6 +60,15 @@ export class PostsService {
 
   async update(id: string, dto: UpdatePostDto) {
     return this.postRepo.update(id, dto);
+  }
+
+  async findByHashtag(tag: string, currentUserId: string, cursor?: string, limit?: number) {
+    const blockedUserIds = await this.blockRepo.getBlockedUserIds(currentUserId);
+    return this.postRepo.findByHashtag(tag, { blockedUserIds, cursor, limit });
+  }
+
+  async getPopularHashtags(limit = 20) {
+    return this.postRepo.getPopularHashtags(limit);
   }
 
   async softDelete(id: string, userId: string) {
