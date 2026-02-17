@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 import { PostCard } from "@/components/post/PostCard";
 import { CommentSection } from "@/components/post/CommentSection";
 
@@ -20,6 +21,16 @@ interface Workout {
   workoutType?: { name: string };
 }
 
+interface PostWorkoutRelation {
+  workout: Workout;
+}
+
+interface PostImage {
+  id: string;
+  imageUrl: string;
+  sortOrder: number;
+}
+
 interface Post {
   id: string;
   content: string;
@@ -27,10 +38,12 @@ interface Post {
   visibility: string;
   createdAt: string;
   user: User;
-  likesCount: number;
-  commentsCount: number;
-  isLiked: boolean;
-  workouts?: Workout[];
+  images?: PostImage[];
+  workouts?: PostWorkoutRelation[];
+  _count?: { likes: number; comments: number };
+  likesCount?: number;
+  commentsCount?: number;
+  isLiked?: boolean;
 }
 
 export default function PostDetailClient() {
@@ -82,21 +95,11 @@ export default function PostDetailClient() {
     }
   };
 
-  const formatDuration = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    if (hours > 0) return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-    return `${minutes}:${secs.toString().padStart(2, "0")}`;
-  };
+  // Flatten M:N PostWorkout relation to Workout[]
+  const flatWorkouts = post?.workouts?.map((pw) => pw.workout).filter(Boolean) ?? [];
 
-  const calculatePace = (distance: number, duration: number): string => {
-    if (distance === 0) return "-";
-    const paceInSeconds = duration / (distance / 1000);
-    const minutes = Math.floor(paceInSeconds / 60);
-    const seconds = Math.floor(paceInSeconds % 60);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
+  const likesCount = post?.likesCount ?? post?._count?.likes ?? 0;
+  const commentsCount = post?.commentsCount ?? post?._count?.comments ?? 0;
 
   if (!postId || postId === "_") {
     return (
@@ -172,18 +175,18 @@ export default function PostDetailClient() {
         user={post.user}
         content={post.content}
         hashtags={post.hashtags}
-        likesCount={post.likesCount}
-        commentsCount={post.commentsCount}
-        isLiked={post.isLiked}
+        likesCount={likesCount}
+        commentsCount={commentsCount}
+        isLiked={post.isLiked ?? false}
         createdAt={post.createdAt}
         onLikeToggle={handleLikeToggle}
       />
 
-      {post.workouts && post.workouts.length > 0 && (
+      {flatWorkouts.length > 0 && (
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">첨부된 훈련 기록</h2>
           <div className="space-y-3">
-            {post.workouts.map((workout) => (
+            {flatWorkouts.map((workout) => (
               <div key={workout.id} className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors">
                 <div className="flex items-center justify-between">
                   <div>
@@ -193,7 +196,7 @@ export default function PostDetailClient() {
                   <div className="grid grid-cols-3 gap-4 text-sm text-right">
                     <div>
                       <p className="text-gray-500 text-xs">거리</p>
-                      <p className="font-medium">{(workout.distance / 1000).toFixed(2)} km</p>
+                      <p className="font-medium">{formatDistance(workout.distance)} km</p>
                     </div>
                     <div>
                       <p className="text-gray-500 text-xs">시간</p>
@@ -201,7 +204,7 @@ export default function PostDetailClient() {
                     </div>
                     <div>
                       <p className="text-gray-500 text-xs">페이스</p>
-                      <p className="font-medium">{calculatePace(workout.distance, workout.duration)} /km</p>
+                      <p className="font-medium">{workout.distance > 0 ? formatPace(workout.duration / (workout.distance / 1000)) : "-"} /km</p>
                     </div>
                   </div>
                 </div>

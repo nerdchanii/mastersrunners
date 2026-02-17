@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 
 interface User {
   id: string;
@@ -24,6 +25,10 @@ interface PostImage {
   imageUrl: string;
 }
 
+interface PostWorkoutRelation {
+  workout: Workout;
+}
+
 interface Post {
   id: string;
   content: string;
@@ -31,7 +36,7 @@ interface Post {
   visibility: string;
   createdAt: string;
   user: User;
-  workouts?: Workout[];
+  workouts?: PostWorkoutRelation[];
   images?: PostImage[];
 }
 
@@ -62,21 +67,8 @@ export default function EditPostClient() {
 
   const hashtags = parseHashtags(hashtagsInput);
 
-  const formatDuration = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    if (hours > 0) return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-    return `${minutes}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const calculatePace = (distanceInKm: number, duration: number): string => {
-    if (distanceInKm === 0) return "-";
-    const paceInSeconds = duration / distanceInKm;
-    const minutes = Math.floor(paceInSeconds / 60);
-    const seconds = Math.floor(paceInSeconds % 60);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
+  // Flatten M:N PostWorkout relation
+  const flatWorkouts = post?.workouts?.map((pw) => pw.workout).filter(Boolean) ?? [];
 
   useEffect(() => {
     if (!postId || postId === "_") {
@@ -299,13 +291,13 @@ export default function EditPostClient() {
             </div>
 
             {/* Attached Workouts (Read-only) */}
-            {post.workouts && post.workouts.length > 0 && (
+            {flatWorkouts.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   첨부된 워크아웃
                 </label>
                 <div className="space-y-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  {post.workouts.map((workout) => (
+                  {flatWorkouts.map((workout) => (
                     <div
                       key={workout.id}
                       className="flex items-center justify-between p-3 bg-white rounded-md border border-gray-200"
@@ -320,9 +312,9 @@ export default function EditPostClient() {
                           </span>
                         </div>
                         <div className="flex gap-3 mt-1 text-xs text-gray-600">
-                          <span>{(workout.distance / 1000).toFixed(2)} km</span>
+                          <span>{formatDistance(workout.distance)} km</span>
                           <span>{formatDuration(workout.duration)}</span>
-                          <span>{calculatePace(workout.distance / 1000, workout.duration)} /km</span>
+                          <span>{workout.distance > 0 ? formatPace(workout.duration / (workout.distance / 1000)) : "-"} /km</span>
                         </div>
                       </div>
                     </div>
