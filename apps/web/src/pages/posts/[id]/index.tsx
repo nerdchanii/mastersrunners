@@ -69,7 +69,7 @@ export default function PostDetailPage() {
   }
 
   const isOwner = user?.id === post.user.id;
-  const flatWorkouts = post.workouts?.map((pw) => pw.workout).filter(Boolean) ?? [];
+  const flatWorkouts = post.workouts?.map((pw: { workout: { id: string; distance: number; duration: number; pace: number; date: string; workoutType?: { name: string } } }) => pw.workout).filter(Boolean) ?? [];
   const likesCount = post._count?.likes ?? 0;
   const commentsCount = post._count?.comments ?? 0;
 
@@ -131,7 +131,7 @@ export default function PostDetailPage() {
             <CardTitle className="text-base">첨부된 훈련 기록</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {flatWorkouts.map((workout) => (
+            {flatWorkouts.map((workout: { id: string; distance: number; duration: number; pace: number; date: string; workoutType?: { name: string } }) => (
               <div
                 key={workout.id}
                 className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"

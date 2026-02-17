@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Search, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/common/UserAvatar";
-import { useUserSearch } from "@/hooks/useUserSearch";
+import { useUserSearch, type SearchUser } from "@/hooks/useUserSearch";
 import { cn } from "@/lib/utils";
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -105,7 +105,7 @@ export default function SearchPage() {
               <p className="text-xs text-muted-foreground mb-3">
                 {users.length}명의 사용자
               </p>
-              {users.map((user) => (
+              {users.map((user: SearchUser) => (
                 <Link
                   key={user.id}
                   to={`/profile/${user.id}`}

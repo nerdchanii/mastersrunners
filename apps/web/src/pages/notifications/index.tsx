@@ -155,7 +155,7 @@ export default function NotificationsPage() {
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const notifications = data?.pages.flatMap((p) => p?.items ?? []) ?? [];
-  const hasUnread = notifications.some((n) => !n.isRead);
+  const hasUnread = notifications.some((n: Notification) => !n.isRead);
 
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -217,7 +217,7 @@ export default function NotificationsPage() {
           </div>
         ) : (
           <>
-            {notifications.map((notification) => (
+            {notifications.map((notification: Notification) => (
               <NotificationItem key={notification.id} notification={notification} />
             ))}
 

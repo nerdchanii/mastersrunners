@@ -79,7 +79,7 @@ function StepWorkout({
         </Card>
       ) : (
         <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-          {workouts.map((workout) => {
+          {workouts.map((workout: any) => {
             const selected = selectedIds.includes(workout.id);
             return (
               <button
