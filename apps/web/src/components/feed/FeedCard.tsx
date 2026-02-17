@@ -4,6 +4,7 @@ import { UserAvatar } from "@/components/common/UserAvatar";
 import { StatItem } from "@/components/common/StatItem";
 import { TimeAgo } from "@/components/common/TimeAgo";
 import { LikeButton } from "@/components/social/LikeButton";
+import { MiniRouteMap } from "@/components/workout/MiniRouteMap";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 
 interface FeedCardProps {
@@ -16,6 +17,7 @@ interface FeedCardProps {
     visibility: string;
     memo: string | null;
     createdAt: string;
+    encodedPolyline?: string | null;
     user: {
       id: string;
       name: string;
@@ -47,22 +49,33 @@ export default function FeedCard({ workout }: FeedCardProps) {
       {/* Workout Hero Stats — Strava style */}
       <Link to={`/workouts/${workout.id}`}>
         <div className="mx-4 rounded-xl bg-muted/50 p-4">
-          <div className="grid grid-cols-3 gap-2">
-            <StatItem
-              value={formatDistance(workout.distance)}
-              label="km"
-              size="lg"
-            />
-            <StatItem
-              value={formatDuration(workout.duration)}
-              label="시간"
-              size="lg"
-            />
-            <StatItem
-              value={formatPace(workout.pace)}
-              label="/km"
-              size="lg"
-            />
+          <div className="flex items-center gap-3">
+            <div className="grid grid-cols-3 gap-2 flex-1">
+              <StatItem
+                value={formatDistance(workout.distance)}
+                label="km"
+                size="lg"
+              />
+              <StatItem
+                value={formatDuration(workout.duration)}
+                label="시간"
+                size="lg"
+              />
+              <StatItem
+                value={formatPace(workout.pace)}
+                label="/km"
+                size="lg"
+              />
+            </div>
+            {workout.encodedPolyline && (
+              <MiniRouteMap
+                encodedPolyline={workout.encodedPolyline}
+                size={72}
+                strokeColor="hsl(var(--primary))"
+                strokeWidth={2}
+                className="shrink-0 opacity-80"
+              />
+            )}
           </div>
         </div>
       </Link>

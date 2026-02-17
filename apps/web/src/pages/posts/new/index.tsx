@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useWorkouts } from "@/hooks/useWorkouts";
 import { useCreatePost } from "@/hooks/usePosts";
 import { api } from "@/lib/api-client";
@@ -458,11 +458,16 @@ function StepPreview({
 // ─── 메인 컴포넌트 ───────────────────────────────────────────
 export default function NewPostPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const createPost = useCreatePost();
   const { data: workouts = [] } = useWorkouts();
 
+  const preselectedWorkoutId = searchParams.get("workoutId");
+
   const [step, setStep] = useState<Step>(0);
-  const [selectedWorkoutIds, setSelectedWorkoutIds] = useState<string[]>([]);
+  const [selectedWorkoutIds, setSelectedWorkoutIds] = useState<string[]>(
+    preselectedWorkoutId ? [preselectedWorkoutId] : []
+  );
   const [images, setImages] = useState<ImageUpload[]>([]);
   const [content, setContent] = useState("");
   const [hashtagsInput, setHashtagsInput] = useState("");

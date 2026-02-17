@@ -1,12 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, Loader2 } from "lucide-react";
+import { ArrowLeft, Camera, Loader2, Sun, Moon, Monitor, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { useTheme } from "@/lib/theme-context";
+import { useDeleteAccount } from "@/hooks/useAccount";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
   Avatar,
@@ -24,6 +34,12 @@ interface ProfileForm {
 export default function EditProfilePage() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading, isAuthenticated, refreshUser } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const deleteAccount = useDeleteAccount();
+
+  // 계정 삭제 다이얼로그 상태
+  const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0); // 0=closed, 1=경고, 2=최종확인
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const [form, setForm] = useState<ProfileForm>({
     name: "",
@@ -160,6 +176,19 @@ export default function EditProfilePage() {
       );
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteAccount.mutateAsync();
+      toast.success("계정이 삭제되었습니다.");
+      api.clearTokens();
+      window.location.href = "/login";
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "계정 삭제에 실패했습니다.");
+      setDeleteStep(0);
+      setDeleteConfirmText("");
     }
   };
 
@@ -300,6 +329,35 @@ export default function EditProfilePage() {
           </div>
         </div>
 
+        {/* 테마 설정 */}
+        <div className="rounded-xl border bg-card p-4 sm:p-6 space-y-3">
+          <div>
+            <h2 className="text-sm font-semibold">테마</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">앱 외관 테마를 선택하세요.</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { value: "light" as const, label: "라이트", Icon: Sun },
+              { value: "dark" as const, label: "다크", Icon: Moon },
+              { value: "system" as const, label: "시스템", Icon: Monitor },
+            ]).map(({ value, label, Icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setTheme(value)}
+                className={`flex flex-col items-center gap-2 rounded-lg border-2 py-3 text-sm font-medium transition-all ${
+                  theme === value
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-border text-muted-foreground hover:border-primary/30"
+                }`}
+              >
+                <Icon className="size-4" />
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Submit */}
         <div className="flex gap-3 justify-end">
           <Button
@@ -322,6 +380,111 @@ export default function EditProfilePage() {
           </Button>
         </div>
       </form>
+
+      {/* 계정 삭제 섹션 */}
+      <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 sm:p-6 space-y-3">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="size-5 text-destructive shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h2 className="text-sm font-semibold text-destructive">계정 삭제</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              계정을 삭제하면 모든 데이터(워크아웃, 포스트, 팔로우, 크루 등)가 영구적으로 삭제됩니다.
+              이 작업은 되돌릴 수 없습니다.
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          onClick={() => setDeleteStep(1)}
+        >
+          계정 삭제
+        </Button>
+      </div>
+
+      {/* 1단계: 경고 다이얼로그 */}
+      <Dialog open={deleteStep === 1} onOpenChange={(open) => !open && setDeleteStep(0)}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">정말 탈퇴하시겠습니까?</DialogTitle>
+            <DialogDescription className="space-y-2 pt-1">
+              <span className="block">계정을 삭제하면 다음 데이터가 <strong>영구적으로 삭제</strong>됩니다:</span>
+              <ul className="list-disc list-inside text-sm space-y-0.5 mt-2">
+                <li>모든 워크아웃 기록</li>
+                <li>모든 게시글 및 댓글</li>
+                <li>팔로우/팔로워 관계</li>
+                <li>크루 및 챌린지 참여 내역</li>
+                <li>메시지 및 알림</li>
+              </ul>
+              <span className="block mt-2 font-medium text-destructive">이 작업은 되돌릴 수 없습니다.</span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setDeleteStep(0)}>
+              취소
+            </Button>
+            <Button variant="destructive" onClick={() => setDeleteStep(2)}>
+              계속
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 2단계: 최종 확인 다이얼로그 */}
+      <Dialog
+        open={deleteStep === 2}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteStep(0);
+            setDeleteConfirmText("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">최종 확인</DialogTitle>
+            <DialogDescription>
+              계정 삭제를 확인하려면 아래 입력창에{" "}
+              <strong className="text-foreground">"탈퇴합니다"</strong>를 입력하세요.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="탈퇴합니다"
+              autoFocus
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteStep(0);
+                setDeleteConfirmText("");
+              }}
+              disabled={deleteAccount.isPending}
+            >
+              취소
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={deleteConfirmText !== "탈퇴합니다" || deleteAccount.isPending}
+            >
+              {deleteAccount.isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin mr-2" />
+                  삭제 중...
+                </>
+              ) : (
+                "계정 영구 삭제"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

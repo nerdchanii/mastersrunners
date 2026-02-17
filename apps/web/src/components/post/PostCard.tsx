@@ -1,5 +1,6 @@
 
 import { Heart, MessageCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useLikePost } from "@/hooks/usePosts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -70,7 +71,18 @@ export function PostCard({
         {hashtags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {hashtags.map((tag, index) => (
-              <Badge key={index} variant="secondary">#{tag}</Badge>
+              <Link
+                key={index}
+                to={`/search?hashtag=${encodeURIComponent(tag)}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Badge
+                  variant="secondary"
+                  className="hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+                >
+                  #{tag}
+                </Badge>
+              </Link>
             ))}
           </div>
         )}

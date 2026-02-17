@@ -6,6 +6,8 @@ import {
   Calendar,
   Activity as ActivityIcon,
   Footprints,
+  Share2,
+  ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
@@ -25,6 +27,7 @@ import { HeartRateChart } from "@/components/workout/HeartRateChart";
 import { LapsTable, type WorkoutLap } from "@/components/workout/LapsTable";
 import { WorkoutMetrics, type WorkoutMetricsData } from "@/components/workout/WorkoutMetrics";
 import { SourceInfo, type WorkoutFile } from "@/components/workout/SourceInfo";
+import { ShareCardGenerator } from "@/components/workout/ShareCardGenerator";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 
 interface WorkoutRoute {
@@ -62,6 +65,7 @@ export default function WorkoutDetailPage() {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [shareCardOpen, setShareCardOpen] = useState(false);
 
   const { data: workout, isLoading, error } = useWorkout(workoutId ?? "");
   const deleteWorkout = useDeleteWorkout();
@@ -146,6 +150,17 @@ export default function WorkoutDetailPage() {
   const laps = typedWorkout.workoutLaps ?? [];
   const sourceFile = typedWorkout.workoutFiles?.[0] ?? null;
 
+  const encodedPolyline = typedWorkout?.workoutRoutes?.[0]
+    ? (() => {
+        try {
+          const parsed = JSON.parse(typedWorkout!.workoutRoutes![0].routeData);
+          return parsed as string | null;
+        } catch {
+          return null;
+        }
+      })()
+    : null;
+
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <ConfirmDialog
@@ -159,18 +174,56 @@ export default function WorkoutDetailPage() {
         loading={deleteWorkout.isPending}
       />
 
+      {typedWorkout && (
+        <ShareCardGenerator
+          open={shareCardOpen}
+          onOpenChange={setShareCardOpen}
+          data={{
+            distance: typedWorkout.distance,
+            duration: typedWorkout.duration,
+            pace: typedWorkout.pace,
+            date: typedWorkout.date,
+            userName: typedWorkout.user.name,
+            encodedPolyline: typeof encodedPolyline === "string" ? encodedPolyline : undefined,
+          }}
+        />
+      )}
+
       {/* Navigation */}
       <div className="flex items-center justify-between">
         <Button onClick={() => navigate(-1)} variant="ghost" size="sm">
           <ArrowLeft className="size-4" />
           돌아가기
         </Button>
-        {isOwner && (
-          <Button onClick={() => setConfirmOpen(true)} variant="destructive" size="sm">
-            <Trash2 className="size-4" />
-            삭제
+        <div className="flex items-center gap-2">
+          {isOwner && (
+            <>
+              <Button onClick={() => navigate(`/workouts/${workoutId}/edit`)} variant="outline" size="sm">
+                수정
+              </Button>
+              <Button onClick={() => setConfirmOpen(true)} variant="destructive" size="sm">
+                <Trash2 className="size-4" />
+                삭제
+              </Button>
+            </>
+          )}
+          <Button
+            onClick={() => setShareCardOpen(true)}
+            variant="outline"
+            size="sm"
+          >
+            <ImageIcon className="size-4" />
+            카드 생성
           </Button>
-        )}
+          <Button
+            onClick={() => navigate(`/posts/new?workoutId=${workoutId}`)}
+            variant="outline"
+            size="sm"
+          >
+            <Share2 className="size-4" />
+            포스트로 공유
+          </Button>
+        </div>
       </div>
 
       {/* Basic Info */}

@@ -1,10 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { useTheme } from "@/lib/theme-context";
 import { api, API_BASE } from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Bell } from "lucide-react";
+import { MessageCircle, Bell, Sun, Moon, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { notificationKeys } from "@/hooks/useNotifications";
 
@@ -26,6 +27,7 @@ const navLinks = [
 
 export default function Header() {
   const { isAuthenticated, isLoading, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const { pathname } = useLocation();
   const queryClient = useQueryClient();
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
@@ -127,6 +129,26 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* 테마 토글 */}
+          <button
+            type="button"
+            onClick={() => {
+              const next = theme === "light" ? "dark" : theme === "dark" ? "system" : "light";
+              setTheme(next);
+            }}
+            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            aria-label="테마 전환"
+            title={theme === "light" ? "라이트 모드" : theme === "dark" ? "다크 모드" : "시스템"}
+          >
+            {theme === "dark" ? (
+              <Moon className="size-4" />
+            ) : theme === "light" ? (
+              <Sun className="size-4" />
+            ) : (
+              <Monitor className="size-4" />
+            )}
+          </button>
+
           {isLoading ? (
             <div className="h-8 w-16 animate-pulse rounded-lg bg-muted" />
           ) : isAuthenticated ? (

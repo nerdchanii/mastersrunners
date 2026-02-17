@@ -1,13 +1,16 @@
 import { Link } from "react-router-dom";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import ShareToggle from "./ShareToggle";
+import { MiniRouteMap } from "./MiniRouteMap";
 
 type Visibility = "PRIVATE" | "FOLLOWERS" | "PUBLIC";
 
-const VISIBILITY_BADGE: Record<Visibility, { label: string; className: string }> = {
-  PUBLIC: { label: "전체 공개", className: "bg-green-100 text-green-800" },
-  FOLLOWERS: { label: "팔로워 공개", className: "bg-blue-100 text-blue-800" },
-  PRIVATE: { label: "비공개", className: "bg-gray-100 text-gray-800" },
+const VISIBILITY_BADGE: Record<Visibility, { label: string; variant: "default" | "secondary" | "outline" }> = {
+  PUBLIC: { label: "전체 공개", variant: "default" },
+  FOLLOWERS: { label: "팔로워 공개", variant: "secondary" },
+  PRIVATE: { label: "비공개", variant: "outline" },
 };
 
 interface WorkoutCardProps {
@@ -20,6 +23,7 @@ interface WorkoutCardProps {
     memo: string | null;
     visibility: Visibility;
     userId?: string;
+    encodedPolyline?: string | null;
   };
   currentUserId?: string;
   showShareToggle?: boolean;
@@ -39,56 +43,66 @@ export default function WorkoutCard({
     weekday: "short",
   });
 
+  const vis = VISIBILITY_BADGE[workout.visibility];
+
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-      <div className="flex justify-between items-start p-6 pb-0">
-        <Link to={`/workouts/${workout.id}`} className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-gray-900">{dateString}</h3>
-        </Link>
-        <div className="ml-4 flex-shrink-0">
-          {isOwner && showShareToggle ? (
-            <ShareToggle
-              workoutId={workout.id}
-              initialVisibility={workout.visibility}
-            />
-          ) : (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${VISIBILITY_BADGE[workout.visibility].className}`}>
-              {VISIBILITY_BADGE[workout.visibility].label}
-            </span>
+    <Card className="hover:shadow-md transition-shadow">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex justify-between items-start mb-4">
+          <Link to={`/workouts/${workout.id}`} className="flex-1 min-w-0">
+            <h3 className="text-base font-semibold text-foreground">{dateString}</h3>
+          </Link>
+          <div className="ml-4 flex-shrink-0">
+            {isOwner && showShareToggle ? (
+              <ShareToggle workoutId={workout.id} initialVisibility={workout.visibility} />
+            ) : (
+              <Badge variant={vis.variant}>{vis.label}</Badge>
+            )}
+          </div>
+        </div>
+
+        <Link to={`/workouts/${workout.id}`} className="block">
+          <div className="flex items-start gap-3">
+            <div className="grid grid-cols-3 gap-4 flex-1">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">거리</p>
+                <p className="text-2xl font-bold tabular-nums">
+                  {formatDistance(workout.distance)}
+                  <span className="text-sm font-normal text-muted-foreground ml-1">km</span>
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">시간</p>
+                <p className="text-2xl font-bold tabular-nums">
+                  {formatDuration(workout.duration)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">페이스</p>
+                <p className="text-2xl font-bold tabular-nums">
+                  {formatPace(workout.pace)}
+                  <span className="text-sm font-normal text-muted-foreground ml-1">/km</span>
+                </p>
+              </div>
+            </div>
+            {workout.encodedPolyline && (
+              <MiniRouteMap
+                encodedPolyline={workout.encodedPolyline}
+                size={64}
+                strokeColor="hsl(var(--primary))"
+                strokeWidth={2}
+                className="shrink-0 opacity-75 mt-1"
+              />
+            )}
+          </div>
+
+          {workout.memo && (
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-sm text-muted-foreground">{workout.memo}</p>
+            </div>
           )}
-        </div>
-      </div>
-
-      <Link to={`/workouts/${workout.id}`} className="block p-6 pt-4">
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          <div>
-            <p className="text-sm text-gray-500 mb-1">거리</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {formatDistance(workout.distance)}
-              <span className="text-sm font-normal text-gray-500 ml-1">km</span>
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 mb-1">시간</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {formatDuration(workout.duration)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 mb-1">페이스</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {formatPace(workout.pace)}
-              <span className="text-sm font-normal text-gray-500 ml-1">/km</span>
-            </p>
-          </div>
-        </div>
-
-        {workout.memo && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-600">{workout.memo}</p>
-          </div>
-        )}
-      </Link>
-    </div>
+        </Link>
+      </CardContent>
+    </Card>
   );
 }
