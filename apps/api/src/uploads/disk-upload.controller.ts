@@ -1,4 +1,4 @@
-import { Controller, Put, Req, Inject } from "@nestjs/common";
+import { Controller, Put, Req, Inject, BadRequestException } from "@nestjs/common";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { Public } from "../common/decorators/public.decorator.js";
@@ -18,6 +18,9 @@ export class DiskUploadController {
   @Put("*key")
   async upload(@Req() req: Request) {
     const key = extractKey(req.url, ROUTE_PREFIX);
+    if (!req.body) {
+      throw new BadRequestException("No file data received. Check Content-Type header.");
+    }
     const buffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body);
     await this.storage.saveFile(key, buffer);
     return { success: true, key };

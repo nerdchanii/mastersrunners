@@ -58,3 +58,11 @@ next-env.d.ts
 
 # local file uploads (disk storage)
 /uploads/
+/apps/api/uploads/
+
+# test artifacts
+**/test-results/
+
+# activity file samples
+*.fit
+*.gpx
