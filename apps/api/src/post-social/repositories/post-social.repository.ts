@@ -146,4 +146,11 @@ export class PostSocialRepository {
       where: { id: commentId },
     });
   }
+
+  async findPostById(postId: string) {
+    return this.db.prisma.post.findFirst({
+      where: { id: postId, deletedAt: null },
+      select: { id: true, userId: true },
+    });
+  }
 }

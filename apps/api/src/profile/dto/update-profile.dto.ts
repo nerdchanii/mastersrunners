@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MinLength, MaxLength, IsUrl } from "class-validator";
+import { IsString, IsOptional, IsBoolean, IsIn, MinLength, MaxLength, IsUrl } from "class-validator";
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -21,4 +21,13 @@ export class UpdateProfileDto {
   @IsString()
   @IsUrl()
   backgroundImage?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isPrivate?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(["PRIVATE", "FOLLOWERS", "PUBLIC"])
+  workoutSharingDefault?: string;
 }

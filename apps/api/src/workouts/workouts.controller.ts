@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Req, ForbiddenException, NotFoundException } from "@nestjs/common";
+import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Query, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import type { Request } from "express";
 import { WorkoutsService } from "./workouts.service.js";
@@ -15,12 +15,19 @@ export class WorkoutsController {
     private readonly followRepo: FollowRepository,
   ) {}
 
-  @ApiOperation({ summary: '내 워크아웃 목록 조회' })
+  @ApiOperation({ summary: '내 워크아웃 목록 조회 (cursor 페이지네이션)' })
   @ApiResponse({ status: 200, description: '성공' })
   @Get()
-  findAll(@Req() req: Request) {
+  findAll(
+    @Req() req: Request,
+    @Query("cursor") cursor?: string,
+    @Query("limit") limit?: string,
+  ) {
     const { userId } = req.user as { userId: string };
-    return this.workoutsService.findAll(userId);
+    return this.workoutsService.findAll(userId, {
+      cursor,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 
   @ApiOperation({ summary: '워크아웃 생성' })

@@ -5,11 +5,13 @@ import { UserRepository } from "../auth/repositories/user.repository";
 import { WorkoutRepository } from "../workouts/repositories/workout.repository";
 import { BlockRepository } from "../block/repositories/block.repository";
 import { FollowRepository } from "../follow/repositories/follow.repository";
+import { DatabaseService } from "../database/database.service";
 
 const mockUserRepo = {
   findById: jest.fn(),
   findByIdBasicSelect: jest.fn(),
   update: jest.fn(),
+  searchByName: jest.fn(),
 };
 
 const mockWorkoutRepo = {
@@ -18,6 +20,7 @@ const mockWorkoutRepo = {
 
 const mockBlockRepository = {
   isBlocked: jest.fn(),
+  getBlockedUserIds: jest.fn(),
 };
 
 const mockFollowRepo = {
@@ -26,15 +29,25 @@ const mockFollowRepo = {
   findFollow: jest.fn(),
 };
 
+const mockDb = {
+  prisma: {
+    post: {
+      count: jest.fn(),
+    },
+  },
+};
+
 describe("ProfileService", () => {
   let service: ProfileService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
     mockBlockRepository.isBlocked.mockResolvedValue(false);
+    mockBlockRepository.getBlockedUserIds.mockResolvedValue([]);
     mockFollowRepo.countFollowers.mockResolvedValue(0);
     mockFollowRepo.countFollowing.mockResolvedValue(0);
     mockFollowRepo.findFollow.mockResolvedValue(null);
+    mockDb.prisma.post.count.mockResolvedValue(0);
 
     const module = await Test.createTestingModule({
       providers: [
@@ -43,6 +56,7 @@ describe("ProfileService", () => {
         { provide: WorkoutRepository, useValue: mockWorkoutRepo },
         { provide: BlockRepository, useValue: mockBlockRepository },
         { provide: FollowRepository, useValue: mockFollowRepo },
+        { provide: DatabaseService, useValue: mockDb },
       ],
     }).compile();
 
@@ -235,6 +249,65 @@ describe("ProfileService", () => {
 
       expect(mockUserRepo.update).toHaveBeenCalledWith(userId, dto);
       expect(result).toEqual(updatedUser);
+    });
+  });
+
+  describe("searchUsers", () => {
+    it("should return empty array for empty query", async () => {
+      const result = await service.searchUsers("", "user-1");
+      expect(result).toEqual([]);
+      expect(mockUserRepo.searchByName).not.toHaveBeenCalled();
+    });
+
+    it("should return empty array for whitespace-only query", async () => {
+      const result = await service.searchUsers("   ", "user-1");
+      expect(result).toEqual([]);
+    });
+
+    it("should search by name with blocked users filtered", async () => {
+      const currentUserId = "me";
+      const blockedIds = ["blocked-1"];
+      mockBlockRepository.getBlockedUserIds.mockResolvedValue(blockedIds);
+      const foundUsers = [
+        { id: "u1", name: "Runner Kim", profileImage: null, bio: null },
+        { id: "u2", name: "Runner Lee", profileImage: null, bio: null },
+      ];
+      mockUserRepo.searchByName.mockResolvedValue(foundUsers);
+      mockFollowRepo.findFollow.mockResolvedValue(null);
+
+      const result = await service.searchUsers("Runner", currentUserId);
+
+      expect(mockBlockRepository.getBlockedUserIds).toHaveBeenCalledWith(currentUserId);
+      expect(mockUserRepo.searchByName).toHaveBeenCalledWith("Runner", blockedIds);
+      expect(result).toHaveLength(2);
+      expect(result[0].isFollowing).toBe(false);
+      expect(result[0].isPending).toBe(false);
+    });
+
+    it("should include follow status in results", async () => {
+      const currentUserId = "me";
+      mockBlockRepository.getBlockedUserIds.mockResolvedValue([]);
+      const foundUsers = [{ id: "u1", name: "Test User", profileImage: null, bio: null }];
+      mockUserRepo.searchByName.mockResolvedValue(foundUsers);
+      mockFollowRepo.findFollow.mockResolvedValue({ status: "ACCEPTED" });
+
+      const result = await service.searchUsers("Test", currentUserId);
+
+      expect(result[0].isFollowing).toBe(true);
+      expect(result[0].isPending).toBe(false);
+    });
+
+    it("should reflect pending follow status", async () => {
+      const currentUserId = "me";
+      mockBlockRepository.getBlockedUserIds.mockResolvedValue([]);
+      const foundUsers = [{ id: "u1", name: "Test User", profileImage: null, bio: null }];
+      mockUserRepo.searchByName.mockResolvedValue(foundUsers);
+      mockFollowRepo.findFollow.mockResolvedValue({ status: "PENDING" });
+
+      const result = await service.searchUsers("Test", currentUserId);
+
+      expect(result[0].isFollowing).toBe(false);
+      expect(result[0].isPending).toBe(true);
     });
   });
 });

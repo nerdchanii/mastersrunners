@@ -1,12 +1,14 @@
-import { Injectable, ConflictException, ForbiddenException, NotFoundException } from "@nestjs/common";
+import { Injectable, ConflictException, ForbiddenException, NotFoundException, Optional } from "@nestjs/common";
 import { FollowRepository } from "./repositories/follow.repository.js";
 import { BlockRepository } from "../block/repositories/block.repository.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 
 @Injectable()
 export class FollowService {
   constructor(
     private readonly followRepo: FollowRepository,
     private readonly blockRepo: BlockRepository,
+    @Optional() private readonly notificationsService?: NotificationsService,
   ) {}
 
   async follow(followerId: string, followingId: string) {
@@ -27,7 +29,23 @@ export class FollowService {
     const isPrivate = await this.followRepo.findUserIsPrivate(followingId);
     const status = isPrivate ? "PENDING" : "ACCEPTED";
 
-    return this.followRepo.follow(followerId, followingId, status);
+    const result = await this.followRepo.follow(followerId, followingId, status);
+
+    // 알림 발행 (비차단)
+    if (this.notificationsService) {
+      const notifType = isPrivate ? "FOLLOW_REQUEST" : "FOLLOW";
+      const message = isPrivate ? "회원님에게 팔로우 요청을 보냈습니다." : "회원님을 팔로우합니다.";
+      this.notificationsService.createNotification({
+        userId: followingId,
+        actorId: followerId,
+        type: notifType,
+        referenceType: "FOLLOW",
+        referenceId: followerId,
+        message,
+      }).catch(() => {});
+    }
+
+    return result;
   }
 
   async unfollow(followerId: string, followingId: string) {

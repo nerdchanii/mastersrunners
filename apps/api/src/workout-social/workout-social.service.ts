@@ -1,6 +1,7 @@
 import { Injectable, ConflictException, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { WorkoutSocialRepository } from "./repositories/workout-social.repository.js";
 import { BlockRepository } from "../block/repositories/block.repository.js";
+import { WorkoutRepository } from "../workouts/repositories/workout.repository.js";
 import type { CreateWorkoutCommentDto } from "./dto/create-workout-comment.dto.js";
 
 @Injectable()
@@ -8,9 +9,18 @@ export class WorkoutSocialService {
   constructor(
     private readonly repo: WorkoutSocialRepository,
     private readonly blockRepo: BlockRepository,
+    private readonly workoutRepo: WorkoutRepository,
   ) {}
 
+  private async ensureWorkoutExists(workoutId: string): Promise<void> {
+    const workout = await this.workoutRepo.findByIdWithUser(workoutId);
+    if (!workout) {
+      throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
+    }
+  }
+
   async likeWorkout(userId: string, workoutId: string) {
+    await this.ensureWorkoutExists(workoutId);
     try {
       return await this.repo.likeWorkout(userId, workoutId);
     } catch (error: any) {
@@ -22,6 +32,7 @@ export class WorkoutSocialService {
   }
 
   async unlikeWorkout(userId: string, workoutId: string) {
+    await this.ensureWorkoutExists(workoutId);
     return this.repo.unlikeWorkout(userId, workoutId);
   }
 
@@ -34,6 +45,7 @@ export class WorkoutSocialService {
   }
 
   async addComment(userId: string, workoutId: string, dto: CreateWorkoutCommentDto) {
+    await this.ensureWorkoutExists(workoutId);
     return this.repo.addComment({
       userId,
       workoutId,

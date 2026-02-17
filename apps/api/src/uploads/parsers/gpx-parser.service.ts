@@ -63,11 +63,14 @@ export class GpxParserService {
       ? Math.max(...cadences)
       : undefined;
 
-    // Build gpsTrack array (only lat, lon, timestamp per interface)
+    // Build gpsTrack array with all available metrics
     const gpsTrack = enrichedPoints.map(p => ({
       lat: p.lat,
       lon: p.lon,
       timestamp: p.timestamp,
+      ...(p.elevation !== undefined && { elevation: p.elevation }),
+      ...(p.heartRate !== undefined && { heartRate: p.heartRate }),
+      ...(p.cadence !== undefined && { cadence: p.cadence }),
     }));
 
     return {

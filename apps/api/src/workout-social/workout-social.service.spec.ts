@@ -3,6 +3,7 @@ import { ConflictException, NotFoundException, ForbiddenException } from "@nestj
 import { WorkoutSocialService } from "./workout-social.service";
 import { WorkoutSocialRepository } from "./repositories/workout-social.repository";
 import { BlockRepository } from "../block/repositories/block.repository";
+import { WorkoutRepository } from "../workouts/repositories/workout.repository";
 import type { CreateWorkoutCommentDto } from "./dto/create-workout-comment.dto";
 
 const mockRepository = {
@@ -20,17 +21,23 @@ const mockBlockRepository = {
   getBlockedUserIds: jest.fn(),
 };
 
+const mockWorkoutRepository = {
+  findByIdWithUser: jest.fn(),
+};
+
 describe("WorkoutSocialService", () => {
   let service: WorkoutSocialService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
     mockBlockRepository.getBlockedUserIds.mockResolvedValue([]);
+    mockWorkoutRepository.findByIdWithUser.mockResolvedValue({ id: "workout-456", deletedAt: null });
     const module = await Test.createTestingModule({
       providers: [
         WorkoutSocialService,
         { provide: WorkoutSocialRepository, useValue: mockRepository },
         { provide: BlockRepository, useValue: mockBlockRepository },
+        { provide: WorkoutRepository, useValue: mockWorkoutRepository },
       ],
     }).compile();
     service = module.get(WorkoutSocialService);

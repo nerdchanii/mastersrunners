@@ -43,8 +43,8 @@ export class ChallengeRepository {
   }
 
   async findById(id: string) {
-    return this.db.prisma.challenge.findUnique({
-      where: { id },
+    return this.db.prisma.challenge.findFirst({
+      where: { id, deletedAt: null },
       include: {
         participants: { include: { user: true } },
         teams: true,
@@ -65,7 +65,7 @@ export class ChallengeRepository {
   }
 
   async findAll(options: FindAllOptions) {
-    const where: { isPublic?: boolean; crewId?: string } = {};
+    const where: { isPublic?: boolean; crewId?: string; deletedAt: null } = { deletedAt: null };
     if (options.isPublic !== undefined) where.isPublic = options.isPublic;
     if (options.crewId !== undefined) where.crewId = options.crewId;
 
@@ -96,7 +96,7 @@ export class ChallengeRepository {
     const limit = options?.limit || 20;
 
     const items = await this.db.prisma.challenge.findMany({
-      where: { participants: { some: { userId } } },
+      where: { participants: { some: { userId } }, deletedAt: null },
       take: limit + 1,
       ...(options?.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
       orderBy: { createdAt: "desc" },
@@ -125,6 +125,6 @@ export class ChallengeRepository {
   }
 
   async remove(id: string) {
-    return this.db.prisma.challenge.delete({ where: { id } });
+    return this.db.prisma.challenge.update({ where: { id }, data: { deletedAt: new Date() } });
   }
 }

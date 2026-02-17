@@ -5,6 +5,77 @@ import { GpxParserService } from "./parsers/gpx-parser.service.js";
 import { DatabaseService } from "../database/database.service.js";
 import { STORAGE_ADAPTER, type StorageAdapter } from "./storage/storage-adapter.interface.js";
 
+const DOWNSAMPLE_THRESHOLD = 1000;
+const DOWNSAMPLE_TARGET = 500;
+
+type GpsPoint = {
+  lat: number;
+  lon: number;
+  timestamp: Date;
+  elevation?: number;
+  heartRate?: number;
+  cadence?: number;
+};
+
+function perpendicularDistance(point: GpsPoint, lineStart: GpsPoint, lineEnd: GpsPoint): number {
+  const dx = lineEnd.lat - lineStart.lat;
+  const dy = lineEnd.lon - lineStart.lon;
+  const mag = Math.sqrt(dx * dx + dy * dy);
+  if (mag === 0) {
+    return Math.sqrt(
+      (point.lat - lineStart.lat) ** 2 + (point.lon - lineStart.lon) ** 2,
+    );
+  }
+  return Math.abs(dx * (lineStart.lon - point.lon) - dy * (lineStart.lat - point.lat)) / mag;
+}
+
+function douglasPeucker(points: GpsPoint[], epsilon: number): GpsPoint[] {
+  if (points.length <= 2) return points;
+
+  let maxDist = 0;
+  let maxIndex = 0;
+  const end = points.length - 1;
+
+  for (let i = 1; i < end; i++) {
+    const dist = perpendicularDistance(points[i], points[0], points[end]);
+    if (dist > maxDist) {
+      maxDist = dist;
+      maxIndex = i;
+    }
+  }
+
+  if (maxDist > epsilon) {
+    const left = douglasPeucker(points.slice(0, maxIndex + 1), epsilon);
+    const right = douglasPeucker(points.slice(maxIndex), epsilon);
+    return [...left.slice(0, -1), ...right];
+  }
+
+  return [points[0], points[end]];
+}
+
+function downsampleTrack(track: GpsPoint[], targetCount: number): GpsPoint[] {
+  if (track.length <= targetCount) return track;
+
+  // Use increasing epsilon until we reach target count
+  let epsilon = 0.00001;
+  let result = track;
+  for (let attempt = 0; attempt < 20 && result.length > targetCount; attempt++) {
+    result = douglasPeucker(track, epsilon);
+    epsilon *= 2;
+  }
+  // If still too many, take evenly spaced subset
+  if (result.length > targetCount) {
+    const step = result.length / targetCount;
+    const sampled: GpsPoint[] = [];
+    for (let i = 0; i < targetCount - 1; i++) {
+      sampled.push(result[Math.floor(i * step)]);
+    }
+    sampled.push(result[result.length - 1]);
+    return sampled;
+  }
+  return result;
+}
+
 export interface ParseAndCreateResult {
   workout: any | null;
   workoutFile: any;
@@ -107,19 +178,25 @@ export class UploadsService {
 
       // Create route if GPS data exists
       if (parsedData.gpsTrack && parsedData.gpsTrack.length > 0) {
-        const lats = parsedData.gpsTrack.map((p) => p.lat);
-        const lons = parsedData.gpsTrack.map((p) => p.lon);
+        // Downsample large tracks using Douglas-Peucker algorithm
+        const trackToSave =
+          parsedData.gpsTrack.length > DOWNSAMPLE_THRESHOLD
+            ? downsampleTrack(parsedData.gpsTrack, DOWNSAMPLE_TARGET)
+            : parsedData.gpsTrack;
+
+        const lats = trackToSave.map((p) => p.lat);
+        const lons = trackToSave.map((p) => p.lon);
 
         await tx.workoutRoute.create({
           data: {
             workoutId: workout.id,
             encodedPolyline: "",
-            routeData: JSON.stringify(parsedData.gpsTrack),
+            routeData: JSON.stringify(trackToSave),
             boundNorth: Math.max(...lats),
             boundSouth: Math.min(...lats),
             boundEast: Math.max(...lons),
             boundWest: Math.min(...lons),
-            totalPoints: parsedData.gpsTrack.length,
+            totalPoints: trackToSave.length,
           },
         });
       }

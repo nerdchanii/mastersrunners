@@ -51,6 +51,8 @@ export class UserRepository {
         profileImage: true,
         backgroundImage: true,
         bio: true,
+        isPrivate: true,
+        workoutSharingDefault: true,
         createdAt: true,
       },
     });
@@ -62,10 +64,27 @@ export class UserRepository {
     });
   }
 
-  async update(id: string, data: { name?: string; bio?: string; profileImage?: string; backgroundImage?: string }) {
+  async update(id: string, data: { name?: string; bio?: string; profileImage?: string; backgroundImage?: string; isPrivate?: boolean; workoutSharingDefault?: string }) {
     return this.db.prisma.user.update({
       where: { id },
       data,
+    });
+  }
+
+  async searchByName(query: string, excludeUserIds: string[] = [], limit = 20) {
+    return this.db.prisma.user.findMany({
+      where: {
+        name: { contains: query, mode: "insensitive" },
+        ...(excludeUserIds.length > 0 ? { id: { notIn: excludeUserIds } } : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        profileImage: true,
+        bio: true,
+      },
+      take: limit,
+      orderBy: { name: "asc" },
     });
   }
 

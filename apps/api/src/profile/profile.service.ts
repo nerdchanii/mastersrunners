@@ -3,6 +3,7 @@ import { UserRepository } from "../auth/repositories/user.repository.js";
 import { WorkoutRepository } from "../workouts/repositories/workout.repository.js";
 import { BlockRepository } from "../block/repositories/block.repository.js";
 import { FollowRepository } from "../follow/repositories/follow.repository.js";
+import { DatabaseService } from "../database/database.service.js";
 import type { UpdateProfileDto } from "./dto/update-profile.dto.js";
 
 @Injectable()
@@ -12,6 +13,7 @@ export class ProfileService {
     private readonly workoutRepo: WorkoutRepository,
     private readonly blockRepo: BlockRepository,
     private readonly followRepo: FollowRepository,
+    private readonly db: DatabaseService,
   ) {}
 
   async getProfile(userId: string, currentUserId?: string) {
@@ -28,30 +30,34 @@ export class ProfileService {
       throw new NotFoundException("사용자를 찾을 수 없습니다.");
     }
 
-    const stats = await this.workoutRepo.aggregateByUser(userId);
+    const [stats, followersCount, followingCount, postCount] = await Promise.all([
+      this.workoutRepo.aggregateByUser(userId),
+      this.followRepo.countFollowers(userId),
+      this.followRepo.countFollowing(userId),
+      this.db.prisma.post.count({ where: { userId, deletedAt: null } }),
+    ]);
 
     const totalWorkouts = stats._count;
     const totalDistance = stats._sum.distance ?? 0;
     const totalDuration = stats._sum.duration ?? 0;
     const averagePace = totalDistance > 0 ? totalDuration / (totalDistance / 1000) : 0;
 
-    const [followersCount, followingCount] = await Promise.all([
-      this.followRepo.countFollowers(userId),
-      this.followRepo.countFollowing(userId),
-    ]);
-
     let isFollowing: boolean | undefined;
+    let isPending: boolean | undefined;
     if (currentUserId && currentUserId !== userId) {
       const follow = await this.followRepo.findFollow(currentUserId, userId);
       isFollowing = follow?.status === "ACCEPTED";
+      isPending = follow?.status === "PENDING";
     }
 
     return {
       user,
-      stats: { totalWorkouts, totalDistance, totalDuration, averagePace },
+      stats: { totalWorkouts, totalDistance, totalDuration, averagePace, postCount },
       followersCount,
       followingCount,
       isFollowing,
+      isPending,
+      isPrivate: user.isPrivate,
     };
   }
 
@@ -62,5 +68,30 @@ export class ProfileService {
     }
 
     return this.userRepo.update(userId, dto);
+  }
+
+  async searchUsers(query: string, currentUserId: string) {
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
+    // Get blocked user IDs to filter from results
+    const blockedUserIds = await this.blockRepo.getBlockedUserIds(currentUserId);
+
+    const users = await this.userRepo.searchByName(query.trim(), blockedUserIds);
+
+    // Get follow status for each result
+    const usersWithFollowStatus = await Promise.all(
+      users.map(async (user) => {
+        const follow = await this.followRepo.findFollow(currentUserId, user.id);
+        return {
+          ...user,
+          isFollowing: follow?.status === "ACCEPTED",
+          isPending: follow?.status === "PENDING",
+        };
+      }),
+    );
+
+    return usersWithFollowStatus;
   }
 }

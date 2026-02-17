@@ -50,4 +50,11 @@ export class ShoeRepository {
       data: { totalDistance: { increment: distance } },
     });
   }
+
+  async removeDistance(id: string, distance: number) {
+    return this.db.prisma.shoe.update({
+      where: { id },
+      data: { totalDistance: { decrement: distance } },
+    });
+  }
 }

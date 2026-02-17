@@ -5,7 +5,7 @@ import { DatabaseService } from "../../database/database.service.js";
 const mockPrisma = {
   challenge: {
     create: jest.fn(),
-    findUnique: jest.fn(),
+    findFirst: jest.fn(),
     findMany: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
@@ -72,22 +72,23 @@ describe("ChallengeRepository", () => {
   });
 
   describe("findById", () => {
-    it("should find challenge by id with participants and teams", async () => {
+    it("should find non-deleted challenge by id with participants and teams", async () => {
       const challengeId = "challenge-123";
       const mockChallenge = {
         id: challengeId,
         title: "100km Challenge",
+        deletedAt: null,
         participants: [
           { id: "p1", userId: "user-1", user: { id: "user-1", name: "runner1" } },
         ],
         teams: [{ id: "team-1", name: "Team A" }],
       };
-      mockPrisma.challenge.findUnique.mockResolvedValue(mockChallenge);
+      mockPrisma.challenge.findFirst.mockResolvedValue(mockChallenge);
 
       const result = await repository.findById(challengeId);
 
-      expect(mockPrisma.challenge.findUnique).toHaveBeenCalledWith({
-        where: { id: challengeId },
+      expect(mockPrisma.challenge.findFirst).toHaveBeenCalledWith({
+        where: { id: challengeId, deletedAt: null },
         include: {
           participants: { include: { user: true } },
           teams: true,
@@ -108,8 +109,8 @@ describe("ChallengeRepository", () => {
       expect(result).toEqual(mockChallenge);
     });
 
-    it("should return null if challenge not found", async () => {
-      mockPrisma.challenge.findUnique.mockResolvedValue(null);
+    it("should return null if challenge not found or soft-deleted", async () => {
+      mockPrisma.challenge.findFirst.mockResolvedValue(null);
 
       const result = await repository.findById("non-existent");
 
@@ -118,7 +119,7 @@ describe("ChallengeRepository", () => {
   });
 
   describe("findAll", () => {
-    it("should find all public challenges with cursor pagination", async () => {
+    it("should find all public non-deleted challenges with cursor pagination", async () => {
       const options = { isPublic: true, cursor: "challenge-10", limit: 20 };
       const mockChallenges = [
         { id: "challenge-11", title: "Challenge 11", isPublic: true },
@@ -129,7 +130,7 @@ describe("ChallengeRepository", () => {
       const result = await repository.findAll(options);
 
       expect(mockPrisma.challenge.findMany).toHaveBeenCalledWith({
-        where: { isPublic: true },
+        where: { deletedAt: null, isPublic: true },
         cursor: { id: "challenge-10" },
         skip: 1,
         take: 21,
@@ -145,7 +146,7 @@ describe("ChallengeRepository", () => {
       expect(result).toMatchObject({ data: mockChallenges, nextCursor: null, hasMore: false });
     });
 
-    it("should find challenges by crewId", async () => {
+    it("should find challenges by crewId with deletedAt filter", async () => {
       const options = { crewId: "crew-123", limit: 10 };
       const mockChallenges = [{ id: "challenge-1", crewId: "crew-123" }];
       mockPrisma.challenge.findMany.mockResolvedValue(mockChallenges);
@@ -153,7 +154,7 @@ describe("ChallengeRepository", () => {
       const result = await repository.findAll(options);
 
       expect(mockPrisma.challenge.findMany).toHaveBeenCalledWith({
-        where: { crewId: "crew-123" },
+        where: { deletedAt: null, crewId: "crew-123" },
         take: 11,
         orderBy: { createdAt: "desc" },
         include: {
@@ -167,7 +168,7 @@ describe("ChallengeRepository", () => {
       expect(result).toMatchObject({ data: mockChallenges, nextCursor: null, hasMore: false });
     });
 
-    it("should find all challenges without filters", async () => {
+    it("should find all challenges without filters but with deletedAt null", async () => {
       const options = {};
       const mockChallenges = [
         { id: "challenge-1", title: "Challenge 1" },
@@ -178,7 +179,7 @@ describe("ChallengeRepository", () => {
       const result = await repository.findAll(options);
 
       expect(mockPrisma.challenge.findMany).toHaveBeenCalledWith({
-        where: {},
+        where: { deletedAt: null },
         orderBy: { createdAt: "desc" },
         take: 21,
         include: {
@@ -194,7 +195,7 @@ describe("ChallengeRepository", () => {
   });
 
   describe("findByUser", () => {
-    it("should find challenges user participates in", async () => {
+    it("should find non-deleted challenges user participates in", async () => {
       const userId = "user-123";
       const mockChallenges = [
         { id: "challenge-1", title: "Challenge 1" },
@@ -205,7 +206,7 @@ describe("ChallengeRepository", () => {
       const result = await repository.findByUser(userId);
 
       expect(mockPrisma.challenge.findMany).toHaveBeenCalledWith({
-        where: { participants: { some: { userId } } },
+        where: { participants: { some: { userId } }, deletedAt: null },
         take: 21,
         orderBy: { createdAt: "desc" },
         include: {
@@ -250,15 +251,18 @@ describe("ChallengeRepository", () => {
   });
 
   describe("remove", () => {
-    it("should hard delete challenge by id", async () => {
+    it("should soft delete challenge by setting deletedAt", async () => {
       const challengeId = "challenge-123";
-      const mockDeleted = { id: challengeId, title: "Deleted Challenge" };
-      mockPrisma.challenge.delete.mockResolvedValue(mockDeleted);
+      const mockSoftDeleted = { id: challengeId, title: "Deleted Challenge", deletedAt: new Date() };
+      mockPrisma.challenge.update.mockResolvedValue(mockSoftDeleted);
 
       const result = await repository.remove(challengeId);
 
-      expect(mockPrisma.challenge.delete).toHaveBeenCalledWith({ where: { id: challengeId } });
-      expect(result).toEqual(mockDeleted);
+      expect(mockPrisma.challenge.update).toHaveBeenCalledWith({
+        where: { id: challengeId },
+        data: { deletedAt: expect.any(Date) },
+      });
+      expect(result).toEqual(mockSoftDeleted);
     });
   });
 });

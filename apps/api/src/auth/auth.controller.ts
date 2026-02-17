@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Req, Res, UseGuards, NotFoundException } from "@nestjs/common";
+import { Controller, Get, Post, Body, Req, Res, UseGuards, NotFoundException, ForbiddenException } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
 import { ConfigService } from "@nestjs/config";
@@ -69,8 +69,9 @@ export class AuthController {
   @Public()
   @Post("dev-login")
   async devLogin() {
-    if (process.env.NODE_ENV === "production") {
-      throw new NotFoundException();
+    const env = process.env.NODE_ENV;
+    if (env !== "development" && env !== "test") {
+      throw new ForbiddenException("Dev login is only available in development/test environments.");
     }
 
     const profile: OAuthProfile = {

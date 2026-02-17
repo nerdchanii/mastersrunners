@@ -277,6 +277,23 @@ describe("GpxParserService", () => {
       expect(result.maxHeartRate).toBe(155);
       expect(result.avgCadence).toBeCloseTo(87.5, 1);
       expect(result.maxCadence).toBe(90);
+
+      // gpsTrack should include elevation, heartRate, cadence
+      expect(result.gpsTrack).toHaveLength(2);
+      expect(result.gpsTrack?.[0]).toMatchObject({
+        lat: 37.7749,
+        lon: -122.4194,
+        elevation: 100.0,
+        heartRate: 145,
+        cadence: 85,
+      });
+      expect(result.gpsTrack?.[1]).toMatchObject({
+        lat: 37.7750,
+        lon: -122.4195,
+        elevation: 105.5,
+        heartRate: 155,
+        cadence: 90,
+      });
     });
 
     it("should handle GPX without extensions gracefully", async () => {

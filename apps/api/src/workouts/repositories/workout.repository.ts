@@ -31,6 +31,11 @@ interface FindPublicFeedOptions {
   limit: number;
 }
 
+interface FindByUserOptions {
+  cursor?: string;
+  limit?: number;
+}
+
 @Injectable()
 export class WorkoutRepository {
   constructor(private readonly db: DatabaseService) {}
@@ -40,6 +45,20 @@ export class WorkoutRepository {
       where: { userId, deletedAt: null },
       orderBy: { date: "desc" },
     });
+  }
+
+  async findByUserWithCursor(userId: string, options: FindByUserOptions) {
+    const limit = options.limit || 20;
+    const items = await this.db.prisma.workout.findMany({
+      where: { userId, deletedAt: null },
+      orderBy: { date: "desc" },
+      take: limit + 1,
+      ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+    });
+    const hasMore = items.length > limit;
+    const data = hasMore ? items.slice(0, limit) : items;
+    const nextCursor = hasMore ? data[data.length - 1].id : null;
+    return { data, nextCursor, hasMore };
   }
 
   async findByIdWithUser(id: string) {

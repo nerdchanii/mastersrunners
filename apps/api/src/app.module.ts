@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
-import { APP_GUARD, Reflector } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD, Reflector } from "@nestjs/core";
+import { AllExceptionsFilter } from "./common/filters/http-exception.filter.js";
 import { ConfigModule } from "@nestjs/config";
 import {
   ThrottlerModule,
@@ -26,6 +27,7 @@ import { EventsModule } from "./events/events.module.js";
 import { UploadsModule } from "./uploads/uploads.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { ConversationsModule } from "./conversations/conversations.module.js";
+import { NotificationsModule } from "./notifications/notifications.module.js";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard.js";
 import { AppController } from "./app.controller.js";
 import { AppService } from "./app.service.js";
@@ -54,11 +56,16 @@ import { AppService } from "./app.service.js";
     ProfileModule,
     HealthModule,
     ConversationsModule,
+    NotificationsModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
+    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

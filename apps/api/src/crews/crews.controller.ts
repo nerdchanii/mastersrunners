@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Query } from "@nestjs/common";
+import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Query, BadRequestException } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import type { Request } from "express";
 import { CrewsService } from "./crews.service.js";
@@ -98,7 +98,7 @@ export class CrewsController {
     } else if (role === "MEMBER") {
       return this.crewsService.demoteToMember(id, userId, targetUserId);
     }
-    throw new Error("Invalid role. Only ADMIN or MEMBER allowed.");
+    throw new BadRequestException("Invalid role. Only ADMIN or MEMBER allowed.");
   }
 
   @Get(":id/bans")

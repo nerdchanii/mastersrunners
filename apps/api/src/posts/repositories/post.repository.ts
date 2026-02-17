@@ -199,6 +199,12 @@ export class PostRepository {
     });
   }
 
+  async countByUser(userId: string) {
+    return this.db.prisma.post.count({
+      where: { userId, deletedAt: null },
+    });
+  }
+
   async createWithRelations(
     postData: CreatePostData,
     workoutIds?: string[],

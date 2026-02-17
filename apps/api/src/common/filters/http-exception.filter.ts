@@ -8,6 +8,35 @@ import {
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 
+interface PrismaClientKnownRequestError extends Error {
+  code: string;
+  meta?: Record<string, unknown>;
+}
+
+function isPrismaError(e: unknown): e is PrismaClientKnownRequestError {
+  return (
+    e instanceof Error &&
+    "code" in e &&
+    typeof (e as PrismaClientKnownRequestError).code === "string" &&
+    (e as PrismaClientKnownRequestError).code.startsWith("P")
+  );
+}
+
+function getPrismaHttpStatus(code: string): { status: number; message: string } {
+  switch (code) {
+    case "P2002":
+      return { status: HttpStatus.CONFLICT, message: "Unique constraint violation" };
+    case "P2025":
+      return { status: HttpStatus.NOT_FOUND, message: "Record not found" };
+    case "P2003":
+      return { status: HttpStatus.BAD_REQUEST, message: "Foreign key constraint violation" };
+    case "P2014":
+      return { status: HttpStatus.BAD_REQUEST, message: "Relation violation" };
+    default:
+      return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: "Database error" };
+  }
+}
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
@@ -17,17 +46,28 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    let status: number;
+    let message: unknown;
 
-    const message =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : "Internal server error";
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      message = exception.getResponse();
+    } else if (isPrismaError(exception)) {
+      const prismaResult = getPrismaHttpStatus(exception.code);
+      status = prismaResult.status;
+      message = prismaResult.message;
+      if (status >= 500) {
+        this.logger.error(
+          `Prisma error ${exception.code} at ${request.method} ${request.url}`,
+          exception.stack,
+        );
+      }
+    } else {
+      status = HttpStatus.INTERNAL_SERVER_ERROR;
+      message = "Internal server error";
+    }
 
-    if (status >= 500) {
+    if (status >= 500 && !(isPrismaError(exception) && exception.code.startsWith("P2"))) {
       this.logger.error(
         `${request.method} ${request.url} ${status}`,
         exception instanceof Error ? exception.stack : String(exception),

@@ -2,9 +2,11 @@ import { Test } from "@nestjs/testing";
 import { WorkoutsService } from "./workouts.service";
 import { WorkoutRepository } from "./repositories/workout.repository";
 import { ChallengeAggregationService } from "../challenges/challenge-aggregation.service";
+import { ShoeRepository } from "../shoes/repositories/shoe.repository";
 
 const mockWorkoutRepo = {
   findAllByUser: jest.fn(),
+  findByUserWithCursor: jest.fn(),
   findByIdWithUser: jest.fn(),
   create: jest.fn(),
   update: jest.fn(),
@@ -13,6 +15,12 @@ const mockWorkoutRepo = {
 
 const mockChallengeAggregation = {
   onWorkoutCreated: jest.fn(),
+};
+
+const mockShoeRepo = {
+  addDistance: jest.fn(),
+  removeDistance: jest.fn(),
+  findById: jest.fn(),
 };
 
 describe("WorkoutsService", () => {
@@ -26,6 +34,7 @@ describe("WorkoutsService", () => {
         WorkoutsService,
         { provide: WorkoutRepository, useValue: mockWorkoutRepo },
         { provide: ChallengeAggregationService, useValue: mockChallengeAggregation },
+        { provide: ShoeRepository, useValue: mockShoeRepo },
       ],
     }).compile();
 
