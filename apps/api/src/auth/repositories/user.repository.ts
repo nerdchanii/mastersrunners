@@ -102,6 +102,17 @@ export class UserRepository {
     });
   }
 
+  async restoreDeletedUser(id: string, name: string, profileImage: string | null) {
+    return this.db.prisma.user.update({
+      where: { id },
+      data: {
+        deletedAt: null,
+        name: name || "복원된 사용자",
+        profileImage,
+      },
+    });
+  }
+
   async createWithAccount(userData: CreateUserData, accountData: CreateAccountData) {
     return this.db.prisma.$transaction(async (tx: TransactionClient) => {
       const user = await tx.user.create({ data: userData });

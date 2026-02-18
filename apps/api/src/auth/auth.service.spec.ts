@@ -83,7 +83,7 @@ describe("AuthService", () => {
       const result = await service.upsertOAuthUser(baseProfile);
 
       expect(mockAccountRepo.updateTokens).toHaveBeenCalledWith("a1", "oauth-access", "oauth-refresh");
-      expect(result).toEqual(existingUser);
+      expect(result).toEqual({ ...existingUser, deletedAt: null });
       expect(mockUserRepo.findByEmail).not.toHaveBeenCalled();
       expect(mockUserRepo.createWithAccount).not.toHaveBeenCalled();
     });

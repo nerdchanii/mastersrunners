@@ -34,7 +34,7 @@ export class NotificationsSseService {
     }
   }
 
-  sendToUser(userId: string, data: unknown): void {
+  sendToUser(userId: string, data: string | object): void {
     const subject = this.connections.get(userId);
     if (subject) {
       const event: MessageEvent = {

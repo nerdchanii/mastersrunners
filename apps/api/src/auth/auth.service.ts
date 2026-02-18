@@ -64,7 +64,11 @@ export class AuthService {
 
     if (existingAccount) {
       await this.accountRepo.updateTokens(existingAccount.id, accessToken, refreshToken);
-      return existingAccount.user;
+      // 탈퇴한 유저가 재로그인하면 deletedAt 초기화
+      if (existingAccount.user.deletedAt) {
+        await this.userRepo.restoreDeletedUser(existingAccount.user.id, name, profileImage);
+      }
+      return { ...existingAccount.user, deletedAt: null };
     }
 
     // 2. No existing account -- check if user with same email exists

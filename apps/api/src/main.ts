@@ -40,8 +40,8 @@ async function bootstrap() {
     .setVersion("1.0")
     .addBearerAuth()
     .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup("api-docs", app, document);
+  const document = SwaggerModule.createDocument(app as any, swaggerConfig);
+  SwaggerModule.setup("api-docs", app as any, document);
 
   const port = config.get<number>("API_PORT", 4000);
   await app.listen(port);
