@@ -62,7 +62,8 @@ model WorkoutType {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
 
-  workouts Workout[]
+  workouts   Workout[]
+  activities CrewActivity[]
 
   @@unique([category, name])
   @@index([category, isActive, sortOrder])
@@ -527,12 +528,23 @@ model CrewActivity {
   latitude     Float?
   longitude    Float?
   createdBy    String
+
+  // 활동 타입 & 상태
+  activityType  String    @default("OFFICIAL") // OFFICIAL, POP_UP
+  status        String    @default("SCHEDULED") // SCHEDULED, ACTIVE, COMPLETED, CANCELLED
+  completedAt   DateTime?
+
+  // 러닝 타입 (optional)
+  workoutTypeId String?
+  workoutType   WorkoutType? @relation(fields: [workoutTypeId], references: [id], onDelete: SetNull)
+
   createdAt    DateTime @default(now())
 
   attendances CrewAttendance[]
   qrCode      String?          @unique
 
   @@index([crewId, activityDate])
+  @@index([crewId, activityType, status])
 }
 
 model CrewAttendance {
@@ -541,10 +553,16 @@ model CrewAttendance {
   userId     String
   activity   CrewActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
   user       User         @relation(fields: [userId], references: [id])
-  method     String       @default("QR") // QR, MANUAL
-  checkedAt  DateTime     @default(now())
+
+  // 3단계 상태
+  status    String    @default("RSVP") // RSVP, CHECKED_IN, NO_SHOW, CANCELLED
+  method    String?                    // QR, MANUAL, ADMIN_MANUAL
+  rsvpAt    DateTime  @default(now())
+  checkedAt DateTime?
+  checkedBy String?                    // 대리 체크인 시 운영진/호스트 userId
 
   @@unique([activityId, userId])
+  @@index([activityId, status])
 }
 
 // ============================================================================

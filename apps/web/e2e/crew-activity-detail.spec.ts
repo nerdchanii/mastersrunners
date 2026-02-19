@@ -11,37 +11,78 @@ const mockActivity = {
   crewId: mockCrewId,
   title: "월요일 아침 러닝",
   description: "한강 공원에서 10K 러닝을 함께 합니다.",
-  activityDate: new Date(Date.now() + 86400000).toISOString(), // 내일 (예정)
+  activityDate: new Date(Date.now() + 86400000).toISOString(),
   location: "올림픽공원 입구",
   latitude: 37.5204,
   longitude: 127.1215,
   createdBy: mockUser.id,
   createdAt: "2026-02-15T09:00:00.000Z",
   qrCode: "abc123",
+  activityType: "OFFICIAL",
+  status: "SCHEDULED",
+  completedAt: null,
+  workoutTypeId: null,
   attendances: [
     {
       id: "att-1",
       userId: "user-2",
+      status: "CHECKED_IN",
       method: "QR",
+      rsvpAt: "2026-02-16T08:50:00.000Z",
       checkedAt: "2026-02-16T09:05:00.000Z",
+      checkedBy: null,
       user: { id: "user-2", name: "러닝맨", profileImage: null },
     },
     {
       id: "att-2",
       userId: "user-3",
-      method: "MANUAL",
-      checkedAt: "2026-02-16T09:10:00.000Z",
+      status: "RSVP",
+      method: null,
+      rsvpAt: "2026-02-16T08:55:00.000Z",
+      checkedAt: null,
+      checkedBy: null,
       user: { id: "user-3", name: "마라토너", profileImage: null },
     },
   ],
 };
 
-const mockPastActivity = {
+const mockCompletedActivity = {
   ...mockActivity,
-  id: "activity-past",
+  id: "activity-completed",
   title: "지난주 러닝",
-  activityDate: "2026-02-10T09:00:00.000Z", // 과거
-  attendances: [],
+  activityDate: "2026-02-10T09:00:00.000Z",
+  status: "COMPLETED",
+  completedAt: "2026-02-10T11:00:00.000Z",
+  attendances: [
+    {
+      id: "att-3",
+      userId: "user-2",
+      status: "CHECKED_IN",
+      method: "MANUAL",
+      rsvpAt: "2026-02-10T08:50:00.000Z",
+      checkedAt: "2026-02-10T09:05:00.000Z",
+      checkedBy: null,
+      user: { id: "user-2", name: "러닝맨", profileImage: null },
+    },
+    {
+      id: "att-4",
+      userId: "user-3",
+      status: "NO_SHOW",
+      method: null,
+      rsvpAt: "2026-02-10T08:55:00.000Z",
+      checkedAt: null,
+      checkedBy: null,
+      user: { id: "user-3", name: "마라토너", profileImage: null },
+    },
+  ],
+};
+
+const mockPopUpActivity = {
+  ...mockActivity,
+  id: "activity-popup",
+  title: "번개 러닝",
+  activityType: "POP_UP",
+  createdBy: "user-2",
 };
 
 const mockCrew = {
@@ -120,23 +161,24 @@ test.describe("크루 활동 상세 페이지", () => {
       await setupActivityRoutes(page);
     });
 
-    test("활동 기본 정보가 표시된다", async ({ page }) => {
+    test("활동 기본 정보와 타입/상태 뱃지가 표시된다", async ({ page }) => {
       await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}`);
 
       await expect(page.getByText("월요일 아침 러닝")).toBeVisible();
       await expect(page.getByText("올림픽공원 입구")).toBeVisible();
       await expect(page.getByText("한강 공원에서 10K 러닝을 함께 합니다.")).toBeVisible();
-      await expect(page.getByText("예정")).toBeVisible();
+      // 활동 타입 뱃지
+      await expect(page.getByText("공식", { exact: true })).toBeVisible();
+      // 상태 뱃지
+      await expect(page.getByText("예정", { exact: true })).toBeVisible();
     });
 
     test("Admin 드롭다운 메뉴가 표시된다", async ({ page }) => {
       await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}`);
 
-      // MoreHorizontal 버튼 확인
       const menuTrigger = page.locator("button").filter({ has: page.locator("svg.lucide-ellipsis") });
       await expect(menuTrigger).toBeVisible();
 
-      // 클릭하면 메뉴 표시
       await menuTrigger.click();
       await expect(page.getByText("수정")).toBeVisible();
       await expect(page.getByText("삭제")).toBeVisible();
@@ -145,24 +187,18 @@ test.describe("크루 활동 상세 페이지", () => {
     test("QR 코드가 표시된다", async ({ page }) => {
       await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}`);
 
-      // QR SVG 확인
       const qrCode = page.locator("#activity-qr-code");
       await expect(qrCode).toBeVisible();
-
-      // QR 코드 저장 버튼
       await expect(page.getByRole("button", { name: /QR 코드 저장/ })).toBeVisible();
     });
 
-    test("참석자 통계 바가 표시된다", async ({ page }) => {
+    test("참석자 통계 바가 상태별로 표시된다", async ({ page }) => {
       await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}`);
 
-      // 참석자 수
       await expect(page.getByText("참석자 (2명)")).toBeVisible();
-
-      // 통계 텍스트
       await expect(page.getByText(/전체.*2.*명/)).toBeVisible();
-      await expect(page.getByText(/QR.*1.*명/)).toBeVisible();
-      await expect(page.getByText(/수동.*1.*명/)).toBeVisible();
+      await expect(page.getByText(/체크인.*1.*명/)).toBeVisible();
+      await expect(page.getByText(/신청.*1.*명/)).toBeVisible();
     });
 
     test("위치가 있으면 지도가 표시된다", async ({ page }) => {
@@ -171,9 +207,22 @@ test.describe("크루 활동 상세 페이지", () => {
       const mapContainer = page.locator(".leaflet-container");
       await expect(mapContainer).toBeVisible();
     });
+
+    test("활동 관리 카드가 표시된다 (종료/취소)", async ({ page }) => {
+      await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}`);
+
+      await expect(page.getByRole("button", { name: "활동 종료" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "활동 취소" })).toBeVisible();
+    });
+
+    test("RSVP 참석자 옆에 대리 체크인 버튼이 있다", async ({ page }) => {
+      await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}`);
+
+      await expect(page.getByRole("button", { name: "대리 체크인" })).toBeVisible();
+    });
   });
 
-  test.describe("일반 멤버 (MEMBER)", () => {
+  test.describe("일반 멤버 (MEMBER) - RSVP 전", () => {
     test.beforeEach(async ({ page }) => {
       await setupAuth(page);
       await setupActivityRoutes(page, { crew: mockCrewMemberOnly });
@@ -183,38 +232,52 @@ test.describe("크루 활동 상세 페이지", () => {
       await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}`);
 
       await expect(page.getByText("월요일 아침 러닝")).toBeVisible();
-
-      // MoreHorizontal 버튼이 없어야 함
       const menuTrigger = page.locator("button").filter({ has: page.locator("svg.lucide-ellipsis") });
       await expect(menuTrigger).not.toBeVisible();
     });
 
-    test("QR 코드 대신 수동 체크인 버튼이 표시된다", async ({ page }) => {
+    test("참석 신청 버튼이 표시된다", async ({ page }) => {
       await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}`);
 
-      // QR 코드가 없어야 함
-      await expect(page.locator("#activity-qr-code")).not.toBeVisible();
-
-      // 수동 체크인 버튼
-      await expect(page.getByRole("button", { name: "수동 체크인" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "참석 신청" })).toBeVisible();
     });
   });
 
-  test.describe("과거 활동", () => {
+  test.describe("종료된 활동", () => {
     test.beforeEach(async ({ page }) => {
       await setupAuth(page);
       await setupActivityRoutes(page, {
-        activity: mockPastActivity,
+        activity: mockCompletedActivity,
         crew: mockCrewMemberOnly,
       });
     });
 
-    test("과거 활동은 체크인 버튼이 비활성화된다", async ({ page }) => {
-      await page.goto(`/crews/${mockCrewId}/activities/activity-past`);
+    test("종료된 활동은 체크인이 불가하다", async ({ page }) => {
+      await page.goto(`/crews/${mockCrewId}/activities/activity-completed`);
 
       await expect(page.getByText("종료", { exact: true })).toBeVisible();
       await expect(page.getByText("이 활동은 종료되었습니다.")).toBeVisible();
-      await expect(page.getByRole("button", { name: "수동 체크인" })).not.toBeVisible();
+      await expect(page.getByRole("button", { name: "참석 신청" })).not.toBeVisible();
+    });
+
+    test("불참 상태가 표시된다", async ({ page }) => {
+      await page.goto(`/crews/${mockCrewId}/activities/activity-completed`);
+
+      // NO_SHOW 뱃지 확인
+      await expect(page.getByText("불참", { exact: true }).first()).toBeVisible();
+    });
+  });
+
+  test.describe("번개 활동 (POP_UP)", () => {
+    test.beforeEach(async ({ page }) => {
+      await setupAuth(page);
+      await setupActivityRoutes(page, { activity: mockPopUpActivity });
+    });
+
+    test("번개 뱃지가 표시된다", async ({ page }) => {
+      await page.goto(`/crews/${mockCrewId}/activities/activity-popup`);
+
+      await expect(page.getByText("번개", { exact: true })).toBeVisible();
     });
   });
 

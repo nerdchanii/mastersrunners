@@ -18,7 +18,7 @@ async function bootstrap() {
 
   const frontendUrl = config.get<string>("FRONTEND_URL", "http://localhost:3000");
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       // Allow requests with no origin (e.g., mobile, curl, Playwright)
       if (!origin) return callback(null, true);
       // In development, allow any localhost port

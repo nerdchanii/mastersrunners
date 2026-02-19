@@ -4,8 +4,11 @@ import { api } from "@/lib/api-client";
 interface Attendee {
   id: string;
   userId: string;
-  method: string;
-  checkedAt: string;
+  status: string; // "RSVP" | "CHECKED_IN" | "NO_SHOW" | "CANCELLED"
+  method: string | null;
+  rsvpAt: string;
+  checkedAt: string | null;
+  checkedBy: string | null;
   user?: {
     id: string;
     name: string;
@@ -25,6 +28,10 @@ export interface ActivityDetail {
   createdBy: string;
   createdAt: string;
   qrCode: string;
+  activityType: string; // "OFFICIAL" | "POP_UP"
+  status: string; // "SCHEDULED" | "ACTIVE" | "COMPLETED" | "CANCELLED"
+  completedAt: string | null;
+  workoutTypeId: string | null;
   attendances: Attendee[];
 }
 
@@ -43,10 +50,26 @@ export function useCrewActivity(crewId: string, activityId: string) {
   });
 }
 
-export function useCrewActivities(crewId: string) {
+export interface ActivitiesResponse {
+  items: ActivityDetail[];
+  nextCursor: string | null;
+}
+
+export function useCrewActivities(
+  crewId: string,
+  opts?: { type?: string; status?: string },
+) {
   return useQuery({
-    queryKey: crewActivityKeys.list(crewId),
-    queryFn: () => api.fetch<ActivityDetail[]>(`/crews/${crewId}/activities`),
+    queryKey: [...crewActivityKeys.list(crewId), opts] as const,
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (opts?.type) params.set("type", opts.type);
+      if (opts?.status) params.set("status", opts.status);
+      const qs = params.toString();
+      return api.fetch<ActivitiesResponse>(
+        `/crews/${crewId}/activities${qs ? `?${qs}` : ""}`,
+      );
+    },
     enabled: !!crewId,
   });
 }
@@ -66,6 +89,7 @@ export function useUpdateActivity() {
         description?: string;
         location?: string;
         activityDate?: string;
+        activityType?: string;
       };
     }) =>
       api.fetch(`/crews/${crewId}/activities/${activityId}`, {
@@ -111,6 +135,64 @@ export function useCheckIn() {
       queryClient.invalidateQueries({
         queryKey: crewActivityKeys.detail(crewId, activityId),
       });
+    },
+  });
+}
+
+export function useRsvp() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ crewId, activityId }: { crewId: string; activityId: string }) =>
+      api.fetch(`/crews/${crewId}/activities/${activityId}/rsvp`, { method: "POST" }),
+    onSuccess: (_r, { crewId, activityId }) => {
+      queryClient.invalidateQueries({ queryKey: crewActivityKeys.detail(crewId, activityId) });
+    },
+  });
+}
+
+export function useCancelRsvp() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ crewId, activityId }: { crewId: string; activityId: string }) =>
+      api.fetch(`/crews/${crewId}/activities/${activityId}/rsvp`, { method: "DELETE" }),
+    onSuccess: (_r, { crewId, activityId }) => {
+      queryClient.invalidateQueries({ queryKey: crewActivityKeys.detail(crewId, activityId) });
+    },
+  });
+}
+
+export function useCompleteActivity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ crewId, activityId }: { crewId: string; activityId: string }) =>
+      api.fetch(`/crews/${crewId}/activities/${activityId}/complete`, { method: "POST" }),
+    onSuccess: (_r, { crewId }) => {
+      queryClient.invalidateQueries({ queryKey: crewActivityKeys.all(crewId) });
+    },
+  });
+}
+
+export function useCancelActivity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ crewId, activityId }: { crewId: string; activityId: string }) =>
+      api.fetch(`/crews/${crewId}/activities/${activityId}/cancel`, { method: "POST" }),
+    onSuccess: (_r, { crewId }) => {
+      queryClient.invalidateQueries({ queryKey: crewActivityKeys.all(crewId) });
+    },
+  });
+}
+
+export function useAdminCheckIn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ crewId, activityId, userId }: { crewId: string; activityId: string; userId: string }) =>
+      api.fetch(`/crews/${crewId}/activities/${activityId}/admin-check-in`, {
+        method: "POST",
+        body: JSON.stringify({ userId }),
+      }),
+    onSuccess: (_r, { crewId, activityId }) => {
+      queryClient.invalidateQueries({ queryKey: crewActivityKeys.detail(crewId, activityId) });
     },
   });
 }

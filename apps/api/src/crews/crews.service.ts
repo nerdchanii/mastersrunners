@@ -379,20 +379,26 @@ export class CrewsService {
       location?: string;
       latitude?: number;
       longitude?: number;
+      activityType?: string;
+      workoutTypeId?: string;
     }
   ) {
     const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
+    if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
 
     const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member || (member.role !== "OWNER" && member.role !== "ADMIN")) {
-      throw new ForbiddenException("크루 관리자만 활동을 생성할 수 있습니다.");
+    if (!member) throw new ForbiddenException("크루 멤버만 활동을 생성할 수 있습니다.");
+
+    const activityType = data.activityType || "OFFICIAL";
+
+    // OFFICIAL: only OWNER/ADMIN, POP_UP: any active member
+    if (activityType === "OFFICIAL") {
+      if (member.role !== "OWNER" && member.role !== "ADMIN") {
+        throw new ForbiddenException("공식 활동은 크루 관리자만 생성할 수 있습니다.");
+      }
     }
 
     const qrCode = randomUUID();
-
     return this.crewActivityRepo.create({
       crewId,
       title: data.title,
@@ -403,20 +409,20 @@ export class CrewsService {
       longitude: data.longitude,
       createdBy: userId,
       qrCode,
+      activityType,
+      workoutTypeId: data.workoutTypeId,
     });
   }
 
-  async getActivities(crewId: string, cursor?: string, limit: number = 20) {
+  async getActivities(crewId: string, opts?: { cursor?: string; limit?: number; type?: string; status?: string }) {
     const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
+    if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
 
-    const activities = await this.crewActivityRepo.findByCrewId(crewId, cursor, limit);
+    const limit = opts?.limit ?? 20;
+    const activities = await this.crewActivityRepo.findByCrewId(crewId, { ...opts, limit });
     const hasMore = activities.length > limit;
     const items = hasMore ? activities.slice(0, limit) : activities;
     const nextCursor = hasMore ? items[items.length - 1].id : null;
-
     return { items, nextCursor };
   }
 
@@ -468,32 +474,136 @@ export class CrewsService {
     return this.crewActivityRepo.remove(activityId);
   }
 
-  async checkIn(activityId: string, userId: string, method: string = "QR") {
+  async rsvp(activityId: string, crewId: string, userId: string) {
     const activity = await this.crewActivityRepo.findById(activityId);
-    if (!activity) {
-      throw new NotFoundException("활동을 찾을 수 없습니다.");
+    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
+    if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
+
+    if (activity.status !== "SCHEDULED" && activity.status !== "ACTIVE") {
+      throw new BadRequestException("참석 신청이 불가능한 활동입니다.");
     }
 
-    const member = await this.crewMemberRepo.findMember(activity.crewId, userId);
-    if (!member) {
-      throw new ForbiddenException("크루 멤버만 출석할 수 있습니다.");
-    }
+    const member = await this.crewMemberRepo.findMember(crewId, userId);
+    if (!member) throw new ForbiddenException("크루 멤버만 참석 신청할 수 있습니다.");
 
     const existing = await this.crewActivityRepo.findAttendance(activityId, userId);
     if (existing) {
-      throw new ConflictException("이미 출석 처리되었습니다.");
+      if (existing.status === "CANCELLED") {
+        // Re-RSVP after cancellation - update back to RSVP
+        return this.db.prisma.crewAttendance.update({
+          where: { activityId_userId: { activityId, userId } },
+          data: { status: "RSVP", rsvpAt: new Date(), method: null, checkedAt: null, checkedBy: null },
+        });
+      }
+      throw new ConflictException("이미 참석 신청되었습니다.");
+    }
+
+    return this.crewActivityRepo.rsvp(activityId, userId);
+  }
+
+  async cancelRsvp(activityId: string, crewId: string, userId: string) {
+    const activity = await this.crewActivityRepo.findById(activityId);
+    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
+    if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
+
+    const existing = await this.crewActivityRepo.findAttendance(activityId, userId);
+    if (!existing || existing.status !== "RSVP") {
+      throw new BadRequestException("취소할 참석 신청이 없습니다.");
+    }
+
+    return this.crewActivityRepo.cancelRsvp(activityId, userId);
+  }
+
+  async checkIn(activityId: string, userId: string, method: string = "MANUAL") {
+    const activity = await this.crewActivityRepo.findById(activityId);
+    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
+
+    if (activity.status !== "SCHEDULED" && activity.status !== "ACTIVE") {
+      throw new BadRequestException("체크인이 불가능한 활동입니다.");
+    }
+
+    const member = await this.crewMemberRepo.findMember(activity.crewId, userId);
+    if (!member) throw new ForbiddenException("크루 멤버만 체크인할 수 있습니다.");
+
+    const existing = await this.crewActivityRepo.findAttendance(activityId, userId);
+    if (!existing || existing.status !== "RSVP") {
+      throw new BadRequestException("먼저 참석 신청을 해주세요.");
     }
 
     return this.crewActivityRepo.checkIn(activityId, userId, method);
   }
 
-  async getAttendees(activityId: string) {
+  async adminCheckIn(activityId: string, crewId: string, adminUserId: string, targetUserId: string) {
     const activity = await this.crewActivityRepo.findById(activityId);
-    if (!activity) {
-      throw new NotFoundException("활동을 찾을 수 없습니다.");
+    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
+    if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
+
+    const adminMember = await this.crewMemberRepo.findMember(crewId, adminUserId);
+    if (!adminMember) throw new ForbiddenException("권한이 없습니다.");
+
+    const isAdmin = adminMember.role === "OWNER" || adminMember.role === "ADMIN";
+    const isHost = activity.createdBy === adminUserId;
+
+    if (!isAdmin && !(activity.activityType === "POP_UP" && isHost)) {
+      throw new ForbiddenException("대리 체크인 권한이 없습니다.");
     }
 
-    return this.crewActivityRepo.getAttendees(activityId);
+    const existing = await this.crewActivityRepo.findAttendance(activityId, targetUserId);
+    if (!existing || existing.status !== "RSVP") {
+      throw new BadRequestException("RSVP 상태인 참석자만 대리 체크인할 수 있습니다.");
+    }
+
+    return this.crewActivityRepo.adminCheckIn(activityId, targetUserId, adminUserId);
+  }
+
+  async completeActivity(activityId: string, crewId: string, userId: string) {
+    const activity = await this.crewActivityRepo.findById(activityId);
+    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
+    if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
+
+    if (activity.status === "COMPLETED" || activity.status === "CANCELLED") {
+      throw new BadRequestException("이미 종료되거나 취소된 활동입니다.");
+    }
+
+    const member = await this.crewMemberRepo.findMember(crewId, userId);
+    if (!member) throw new ForbiddenException("권한이 없습니다.");
+
+    const isAdmin = member.role === "OWNER" || member.role === "ADMIN";
+    const isHost = activity.createdBy === userId;
+
+    if (!isAdmin && !(activity.activityType === "POP_UP" && isHost)) {
+      throw new ForbiddenException("활동을 종료할 권한이 없습니다.");
+    }
+
+    return this.crewActivityRepo.completeActivity(activityId);
+  }
+
+  async cancelActivity(activityId: string, crewId: string, userId: string) {
+    const activity = await this.crewActivityRepo.findById(activityId);
+    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
+    if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
+
+    if (activity.status === "COMPLETED" || activity.status === "CANCELLED") {
+      throw new BadRequestException("이미 종료되거나 취소된 활동입니다.");
+    }
+
+    const member = await this.crewMemberRepo.findMember(crewId, userId);
+    if (!member) throw new ForbiddenException("권한이 없습니다.");
+
+    const isAdmin = member.role === "OWNER" || member.role === "ADMIN";
+    const isHost = activity.createdBy === userId;
+
+    if (!isAdmin && !(activity.activityType === "POP_UP" && isHost)) {
+      throw new ForbiddenException("활동을 취소할 권한이 없습니다.");
+    }
+
+    return this.crewActivityRepo.cancelActivity(activityId);
+  }
+
+  async getAttendees(activityId: string, statusFilter?: string) {
+    const activity = await this.crewActivityRepo.findById(activityId);
+    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
+    return this.crewActivityRepo.getAttendees(activityId, statusFilter);
   }
 
   // ============ Ban Methods ============

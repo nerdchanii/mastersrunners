@@ -1,30 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Calendar, MapPin, Users, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TimeAgo } from "@/components/common/TimeAgo";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CrewActivityForm from "./CrewActivityForm";
-
-interface Activity {
-  id: string;
-  crewId: string;
-  title: string;
-  description: string | null;
-  location: string | null;
-  activityDate: string;
-  createdAt: string;
-  attendances: Array<{ userId: string }>;
-}
-
-interface ActivitiesResponse {
-  items: Activity[];
-  nextCursor: string | null;
-}
+import { useCrewActivities } from "@/hooks/useCrewActivities";
+import type { ActivitiesResponse } from "@/hooks/useCrewActivities";
 
 interface CrewActivityListProps {
   crewId: string;
@@ -32,32 +18,33 @@ interface CrewActivityListProps {
   isMember: boolean;
 }
 
+type ActivityTypeFilter = "ALL" | "OFFICIAL" | "POP_UP";
+type StatusFilter = "ALL" | "SCHEDULED" | "ACTIVE" | "COMPLETED" | "CANCELLED";
+
 export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActivityListProps) {
   const navigate = useNavigate();
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<ActivityTypeFilter>("ALL");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
-  const fetchActivities = async () => {
-    setIsLoading(true);
-    try {
-      const data = await api.fetch<ActivitiesResponse>(`/crews/${crewId}/activities`);
-      setActivities(data.items ?? []);
-    } catch (err) {
-      console.error("Failed to load activities:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data, isLoading, refetch } = useCrewActivities(crewId);
 
-  useEffect(() => {
-    fetchActivities();
-  }, [crewId]);
+  const activities = (data as ActivitiesResponse | undefined)?.items ?? [];
 
   const handleActivityCreated = () => {
     setShowForm(false);
-    fetchActivities();
+    refetch();
   };
+
+  // 클라이언트 사이드 필터링
+  const filtered = activities.filter((a) => {
+    if (typeFilter !== "ALL" && a.activityType !== typeFilter) return false;
+    if (statusFilter !== "ALL" && a.status !== statusFilter) return false;
+    return true;
+  });
+
+  // POP_UP은 일반 멤버도 생성 가능
+  const canCreate = isAdmin || isMember;
 
   if (isLoading) {
     return (
@@ -88,7 +75,8 @@ export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActi
 
   return (
     <div className="space-y-4">
-      {isAdmin && (
+      {/* 헤더: 생성 버튼 */}
+      {canCreate && (
         <div className="flex justify-end">
           <Button onClick={() => setShowForm(true)}>
             <Plus className="size-4 mr-2" />
@@ -97,19 +85,44 @@ export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActi
         </div>
       )}
 
-      {activities.length === 0 ? (
+      {/* 타입 탭 필터 */}
+      <Tabs value={typeFilter} onValueChange={(v) => setTypeFilter(v as ActivityTypeFilter)}>
+        <TabsList>
+          <TabsTrigger value="ALL">전체</TabsTrigger>
+          <TabsTrigger value="OFFICIAL">공식 모임</TabsTrigger>
+          <TabsTrigger value="POP_UP">번개</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {/* 상태 필터 버튼 */}
+      <div className="flex flex-wrap gap-2">
+        {(["ALL", "SCHEDULED", "ACTIVE", "COMPLETED", "CANCELLED"] as StatusFilter[]).map((s) => (
+          <Button
+            key={s}
+            variant={statusFilter === s ? "default" : "outline"}
+            size="sm"
+            onClick={() => setStatusFilter(s)}
+          >
+            {s === "ALL" ? "전체" : s === "SCHEDULED" ? "예정" : s === "ACTIVE" ? "진행중" : s === "COMPLETED" ? "종료" : "취소됨"}
+          </Button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
         <EmptyState
           icon={Calendar}
           title="활동이 없습니다"
-          description={isAdmin ? "첫 번째 크루 활동을 만들어보세요!" : "아직 생성된 활동이 없습니다."}
-          actionLabel={isAdmin ? "활동 만들기" : undefined}
-          onAction={isAdmin ? () => setShowForm(true) : undefined}
+          description={canCreate ? "첫 번째 크루 활동을 만들어보세요!" : "아직 생성된 활동이 없습니다."}
+          actionLabel={canCreate ? "활동 만들기" : undefined}
+          onAction={canCreate ? () => setShowForm(true) : undefined}
         />
       ) : (
         <div className="grid gap-4">
-          {activities.map((activity) => {
+          {filtered.map((activity) => {
             const scheduledDate = new Date(activity.activityDate);
-            const isPast = scheduledDate < new Date();
+            const checkedInCount = activity.attendances.filter((a) => a.status === "CHECKED_IN").length;
+            const rsvpCount = activity.attendances.filter((a) => a.status === "RSVP").length;
+            const totalActive = checkedInCount + rsvpCount;
 
             return (
               <Card
@@ -136,9 +149,30 @@ export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActi
                         </div>
                       </CardDescription>
                     </div>
-                    <Badge variant={isPast ? "secondary" : "default"}>
-                      {isPast ? "종료" : "예정"}
-                    </Badge>
+                    <div className="flex gap-1.5 shrink-0">
+                      <Badge variant={activity.activityType === "OFFICIAL" ? "default" : "secondary"}>
+                        {activity.activityType === "OFFICIAL" ? "공식" : "번개"}
+                      </Badge>
+                      <Badge
+                        variant={
+                          activity.status === "SCHEDULED"
+                            ? "outline"
+                            : activity.status === "ACTIVE"
+                              ? "default"
+                              : activity.status === "COMPLETED"
+                                ? "secondary"
+                                : "destructive"
+                        }
+                      >
+                        {activity.status === "SCHEDULED"
+                          ? "예정"
+                          : activity.status === "ACTIVE"
+                            ? "진행중"
+                            : activity.status === "COMPLETED"
+                              ? "종료"
+                              : "취소됨"}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
 
@@ -159,7 +193,7 @@ export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActi
 
                     <div className="flex items-center gap-1.5 ml-auto">
                       <Users className="w-3.5 h-3.5" />
-                      <span>{activity.attendances.length}명 참석</span>
+                      <span>{totalActive}명 참석</span>
                     </div>
                   </div>
 

@@ -9,6 +9,7 @@ interface ActivityFormValues {
   description: string;
   location: string;
   activityDate: string;
+  activityType: string;
 }
 
 interface CrewActivityFormProps {
@@ -36,6 +37,7 @@ export default function CrewActivityForm({
     activityDate: initialValues?.activityDate
       ? new Date(initialValues.activityDate).toISOString().slice(0, 16)
       : "",
+    activityType: initialValues?.activityType ?? "OFFICIAL",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +68,7 @@ export default function CrewActivityForm({
             description: formData.description.trim() || undefined,
             location: formData.location.trim() || undefined,
             activityDate: new Date(formData.activityDate).toISOString(),
+            activityType: formData.activityType,
           }),
         });
       }
@@ -100,6 +103,28 @@ export default function CrewActivityForm({
           placeholder="예: 월요일 아침 러닝"
           maxLength={100}
         />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">활동 유형</label>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant={formData.activityType === "OFFICIAL" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFormData((prev) => ({ ...prev, activityType: "OFFICIAL" }))}
+          >
+            공식 모임
+          </Button>
+          <Button
+            type="button"
+            variant={formData.activityType === "POP_UP" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFormData((prev) => ({ ...prev, activityType: "POP_UP" }))}
+          >
+            번개
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-2">

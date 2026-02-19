@@ -27,6 +27,9 @@ import {
   Pencil,
   Trash2,
   Download,
+  UserPlus,
+  CircleX,
+  AlertTriangle,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
@@ -39,6 +42,11 @@ import {
   useCrewActivity,
   useDeleteActivity,
   useCheckIn,
+  useRsvp,
+  useCancelRsvp,
+  useCompleteActivity,
+  useCancelActivity,
+  useAdminCheckIn,
 } from "@/hooks/useCrewActivities";
 import { useCrew } from "@/hooks/useCrews";
 
@@ -55,6 +63,8 @@ export default function CrewActivityDetailPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const {
     data: activity,
@@ -65,6 +75,11 @@ export default function CrewActivityDetailPage() {
   const { data: crew } = useCrew(crewId!);
   const deleteActivity = useDeleteActivity();
   const checkIn = useCheckIn();
+  const rsvp = useRsvp();
+  const cancelRsvp = useCancelRsvp();
+  const completeActivity = useCompleteActivity();
+  const cancelActivityMut = useCancelActivity();
+  const adminCheckInMut = useAdminCheckIn();
 
   const currentMember = crew?.members?.find((m) => m.user.id === user?.id);
   const isAdmin =
@@ -145,15 +160,19 @@ export default function CrewActivityDetailPage() {
   }
 
   const scheduledDate = new Date(activity.activityDate);
-  const isPast = scheduledDate < new Date();
   const myAttendance = activity.attendances.find((a) => a.userId === user?.id);
-  const isCheckedIn = !!myAttendance;
+  const myStatus = myAttendance?.status;
+  const isActivityActive = activity.status === "SCHEDULED" || activity.status === "ACTIVE";
+  const isHost = activity.createdBy === user?.id;
+  const canManage = isAdmin || (activity.activityType === "POP_UP" && isHost);
 
-  const qrCount = activity.attendances.filter((a) => a.method === "QR").length;
-  const manualCount = activity.attendances.filter(
-    (a) => a.method === "MANUAL",
-  ).length;
-  const totalCount = activity.attendances.length;
+  // Stats
+  const rsvpCount = activity.attendances.filter((a) => a.status === "RSVP").length;
+  const checkedInCount = activity.attendances.filter((a) => a.status === "CHECKED_IN").length;
+  const noShowCount = activity.attendances.filter((a) => a.status === "NO_SHOW").length;
+  const activeAttendances = activity.attendances.filter((a) => a.status !== "CANCELLED");
+  const totalActive = activeAttendances.length;
+  const visibleAttendances = activity.attendances.filter((a) => a.status !== "CANCELLED");
 
   return (
     <div className="space-y-6">
@@ -227,9 +246,30 @@ export default function CrewActivityDetailPage() {
                 </div>
               )}
             </div>
-            <Badge variant={isPast ? "secondary" : "default"} className="shrink-0">
-              {isPast ? "종료" : "예정"}
-            </Badge>
+            <div className="flex gap-2">
+              <Badge variant={activity.activityType === "OFFICIAL" ? "default" : "secondary"}>
+                {activity.activityType === "OFFICIAL" ? "공식" : "번개"}
+              </Badge>
+              <Badge
+                variant={
+                  activity.status === "SCHEDULED"
+                    ? "outline"
+                    : activity.status === "ACTIVE"
+                      ? "default"
+                      : activity.status === "COMPLETED"
+                        ? "secondary"
+                        : "destructive"
+                }
+              >
+                {activity.status === "SCHEDULED"
+                  ? "예정"
+                  : activity.status === "ACTIVE"
+                    ? "진행중"
+                    : activity.status === "COMPLETED"
+                      ? "종료"
+                      : "취소됨"}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
 
@@ -272,18 +312,18 @@ export default function CrewActivityDetailPage() {
         </Card>
       )}
 
-      {/* 4. Check-in card */}
+      {/* 4. Check-in / RSVP card */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <QrCode className="size-5" />
-            체크인
+            <UserPlus className="size-5" />
+            참석
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {isAdmin ? (
-            /* Admin: QR 코드 표시 */
-            <div className="space-y-4">
+          {/* Admin QR code section */}
+          {canManage && isActivityActive && (
+            <div className="space-y-4 pb-4 border-b">
               <div className="flex justify-center">
                 <QRCodeSVG
                   id="activity-qr-code"
@@ -300,92 +340,210 @@ export default function CrewActivityDetailPage() {
                 </Button>
               </div>
             </div>
-          ) : (
-            /* 일반 멤버: 수동 체크인 버튼 */
-            <>
-              {isCheckedIn && (
-                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                  <CheckCircle className="size-5" />
-                  <span className="font-medium">체크인 완료</span>
-                  <span className="text-xs text-muted-foreground">
-                    (
-                    {new Date(myAttendance!.checkedAt).toLocaleTimeString(
-                      "ko-KR",
-                      { hour: "2-digit", minute: "2-digit" },
-                    )}
-                    )
-                  </span>
-                </div>
+          )}
+
+          {/* 활동 종료/취소 상태 */}
+          {!isActivityActive && (
+            <p className="text-sm text-muted-foreground">
+              {activity.status === "COMPLETED"
+                ? "이 활동은 종료되었습니다."
+                : "이 활동은 취소되었습니다."}
+            </p>
+          )}
+
+          {/* 참석 신청 (미신청 or 취소) */}
+          {isActivityActive && !myStatus && (
+            <Button
+              onClick={() =>
+                rsvp.mutate(
+                  { crewId: crewId!, activityId: activityId! },
+                  {
+                    onSuccess: () => toast.success("참석 신청 완료!"),
+                    onError: (e) =>
+                      toast.error(e instanceof Error ? e.message : "참석 신청에 실패했습니다."),
+                  },
+                )
+              }
+              disabled={rsvp.isPending}
+            >
+              {rsvp.isPending ? (
+                <>
+                  <Loader2 className="size-4 mr-2 animate-spin" />
+                  신청 중...
+                </>
+              ) : (
+                "참석 신청"
               )}
-              {isPast && !isCheckedIn && (
-                <p className="text-sm text-muted-foreground">
-                  이 활동은 종료되었습니다.
-                </p>
+            </Button>
+          )}
+
+          {isActivityActive && myStatus === "CANCELLED" && (
+            <Button
+              onClick={() =>
+                rsvp.mutate(
+                  { crewId: crewId!, activityId: activityId! },
+                  {
+                    onSuccess: () => toast.success("참석 신청 완료!"),
+                    onError: (e) =>
+                      toast.error(e instanceof Error ? e.message : "참석 신청에 실패했습니다."),
+                  },
+                )
+              }
+              disabled={rsvp.isPending}
+            >
+              {rsvp.isPending ? (
+                <>
+                  <Loader2 className="size-4 mr-2 animate-spin" />
+                  신청 중...
+                </>
+              ) : (
+                "다시 참석 신청"
               )}
-              {!isPast && !isCheckedIn && (
-                <Button onClick={handleCheckIn} disabled={checkIn.isPending}>
-                  {checkIn.isPending ? (
-                    <>
-                      <Loader2 className="size-4 mr-2 animate-spin" />
-                      체크인 중...
-                    </>
-                  ) : (
-                    "수동 체크인"
-                  )}
-                </Button>
+            </Button>
+          )}
+
+          {/* RSVP 상태: 체크인 + 참석 취소 */}
+          {isActivityActive && myStatus === "RSVP" && (
+            <div className="flex items-center gap-3">
+              <Button onClick={handleCheckIn} disabled={checkIn.isPending}>
+                {checkIn.isPending ? (
+                  <>
+                    <Loader2 className="size-4 mr-2 animate-spin" />
+                    체크인 중...
+                  </>
+                ) : (
+                  "수동 체크인"
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  cancelRsvp.mutate(
+                    { crewId: crewId!, activityId: activityId! },
+                    {
+                      onSuccess: () => toast.success("참석이 취소되었습니다."),
+                      onError: () => toast.error("참석 취소에 실패했습니다."),
+                    },
+                  )
+                }
+                disabled={cancelRsvp.isPending}
+              >
+                참석 취소
+              </Button>
+            </div>
+          )}
+
+          {/* 체크인 완료 */}
+          {myStatus === "CHECKED_IN" && (
+            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+              <CheckCircle className="size-5" />
+              <span className="font-medium">체크인 완료</span>
+              {myAttendance?.checkedAt && (
+                <span className="text-xs text-muted-foreground">
+                  (
+                  {new Date(myAttendance.checkedAt).toLocaleTimeString("ko-KR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                  )
+                </span>
               )}
-            </>
+            </div>
+          )}
+
+          {/* 불참 */}
+          {myStatus === "NO_SHOW" && (
+            <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+              <CircleX className="size-5" />
+              <span className="font-medium">불참</span>
+            </div>
           )}
         </CardContent>
       </Card>
 
-      {/* 5. Attendees card */}
+      {/* 5. Admin activity management */}
+      {canManage && isActivityActive && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <AlertTriangle className="size-5" />
+              활동 관리
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex gap-3">
+            <Button variant="outline" onClick={() => setShowCompleteDialog(true)}>
+              활동 종료
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowCancelDialog(true)}
+            >
+              활동 취소
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 6. Attendees card */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Users className="size-5" />
-            참석자 ({totalCount}명)
+            참석자 ({totalActive}명)
           </CardTitle>
         </CardHeader>
         <CardContent>
           {/* 통계 바 */}
-          {totalCount > 0 && (
+          {totalActive > 0 && (
             <div className="space-y-2 mb-4">
               <div className="flex items-center gap-4 text-sm">
                 <span className="text-muted-foreground">
-                  전체 <strong>{totalCount}</strong>명
-                </span>
-                <span className="text-blue-600">
-                  QR <strong>{qrCount}</strong>명
+                  전체 <strong>{totalActive}</strong>명
                 </span>
                 <span className="text-green-600">
-                  수동 <strong>{manualCount}</strong>명
+                  체크인 <strong>{checkedInCount}</strong>명
                 </span>
+                <span className="text-yellow-600">
+                  신청 <strong>{rsvpCount}</strong>명
+                </span>
+                {noShowCount > 0 && (
+                  <span className="text-red-600">
+                    불참 <strong>{noShowCount}</strong>명
+                  </span>
+                )}
               </div>
               <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
-                {qrCount > 0 && (
-                  <div
-                    className="bg-blue-500 transition-all"
-                    style={{ width: `${(qrCount / totalCount) * 100}%` }}
-                  />
-                )}
-                {manualCount > 0 && (
+                {checkedInCount > 0 && (
                   <div
                     className="bg-green-500 transition-all"
-                    style={{ width: `${(manualCount / totalCount) * 100}%` }}
+                    style={{ width: `${(checkedInCount / totalActive) * 100}%` }}
+                  />
+                )}
+                {rsvpCount > 0 && (
+                  <div
+                    className="bg-yellow-500 transition-all"
+                    style={{ width: `${(rsvpCount / totalActive) * 100}%` }}
+                  />
+                )}
+                {noShowCount > 0 && (
+                  <div
+                    className="bg-red-500 transition-all"
+                    style={{ width: `${(noShowCount / totalActive) * 100}%` }}
                   />
                 )}
               </div>
             </div>
           )}
 
-          {totalCount === 0 ? (
+          {visibleAttendances.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              아직 체크인한 멤버가 없습니다.
+              아직 참석 신청한 멤버가 없습니다.
             </p>
           ) : (
             <div className="max-h-[400px] overflow-y-auto space-y-3">
-              {activity.attendances.map((attendee) => (
+              {visibleAttendances.map((attendee) => (
                 <div
                   key={attendee.id}
                   className="flex items-center justify-between"
@@ -404,12 +562,55 @@ export default function CrewActivityDetailPage() {
                       <p className="font-medium text-sm">
                         {attendee.user?.name ?? "알 수 없는 사용자"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {attendee.method === "QR" ? "QR 체크인" : "수동 체크인"}
-                      </p>
+                      <Badge
+                        variant={
+                          attendee.status === "CHECKED_IN"
+                            ? "default"
+                            : attendee.status === "RSVP"
+                              ? "outline"
+                              : attendee.status === "NO_SHOW"
+                                ? "destructive"
+                                : "secondary"
+                        }
+                        className="text-xs"
+                      >
+                        {attendee.status === "CHECKED_IN"
+                          ? "체크인"
+                          : attendee.status === "RSVP"
+                            ? "신청"
+                            : attendee.status === "NO_SHOW"
+                              ? "불참"
+                              : "취소"}
+                      </Badge>
                     </div>
                   </div>
-                  <TimeAgo date={attendee.checkedAt} />
+                  <div className="flex items-center gap-2">
+                    {canManage && isActivityActive && attendee.status === "RSVP" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() =>
+                          adminCheckInMut.mutate(
+                            {
+                              crewId: crewId!,
+                              activityId: activityId!,
+                              userId: attendee.userId,
+                            },
+                            {
+                              onSuccess: () =>
+                                toast.success(`${attendee.user?.name}님을 체크인했습니다.`),
+                              onError: () => toast.error("대리 체크인에 실패했습니다."),
+                            },
+                          )
+                        }
+                        disabled={adminCheckInMut.isPending}
+                      >
+                        대리 체크인
+                      </Button>
+                    )}
+                    {attendee.checkedAt && <TimeAgo date={attendee.checkedAt} />}
+                  </div>
                 </div>
               ))}
             </div>
@@ -417,7 +618,7 @@ export default function CrewActivityDetailPage() {
         </CardContent>
       </Card>
 
-      {/* 6. Meta info (creator + creation time) */}
+      {/* 7. Meta info (creator + creation time) */}
       <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground pb-4">
         {creator && (
           <>
@@ -438,7 +639,7 @@ export default function CrewActivityDetailPage() {
         <span>생성됨</span>
       </div>
 
-      {/* 7. Delete confirm dialog */}
+      {/* Dialogs */}
       <ConfirmDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
@@ -448,6 +649,49 @@ export default function CrewActivityDetailPage() {
         variant="destructive"
         onConfirm={handleDelete}
         loading={deleteActivity.isPending}
+      />
+
+      <ConfirmDialog
+        open={showCompleteDialog}
+        onOpenChange={setShowCompleteDialog}
+        title="활동 종료"
+        description="활동을 종료하면 참석 신청만 하고 체크인하지 않은 멤버는 불참(NO_SHOW) 처리됩니다."
+        confirmLabel="종료"
+        onConfirm={() => {
+          completeActivity.mutate(
+            { crewId: crewId!, activityId: activityId! },
+            {
+              onSuccess: () => {
+                toast.success("활동이 종료되었습니다.");
+                setShowCompleteDialog(false);
+              },
+              onError: () => toast.error("활동 종료에 실패했습니다."),
+            },
+          );
+        }}
+        loading={completeActivity.isPending}
+      />
+
+      <ConfirmDialog
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        title="활동 취소"
+        description="활동을 취소하시겠습니까?"
+        confirmLabel="취소"
+        variant="destructive"
+        onConfirm={() => {
+          cancelActivityMut.mutate(
+            { crewId: crewId!, activityId: activityId! },
+            {
+              onSuccess: () => {
+                toast.success("활동이 취소되었습니다.");
+                setShowCancelDialog(false);
+              },
+              onError: () => toast.error("활동 취소에 실패했습니다."),
+            },
+          );
+        }}
+        loading={cancelActivityMut.isPending}
       />
     </div>
   );

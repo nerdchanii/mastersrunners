@@ -197,6 +197,8 @@ export class CrewsController {
       location: dto.location,
       latitude: dto.latitude,
       longitude: dto.longitude,
+      activityType: dto.activityType,
+      workoutTypeId: dto.workoutTypeId,
     });
   }
 
@@ -204,9 +206,16 @@ export class CrewsController {
   getActivities(
     @Param("id") id: string,
     @Query("cursor") cursor?: string,
-    @Query("limit") limit?: string
+    @Query("limit") limit?: string,
+    @Query("type") type?: string,
+    @Query("status") status?: string
   ) {
-    return this.crewsService.getActivities(id, cursor, limit ? parseInt(limit, 10) : undefined);
+    return this.crewsService.getActivities(id, {
+      cursor,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      type,
+      status,
+    });
   }
 
   @Get(":id/activities/:activityId")
@@ -252,8 +261,62 @@ export class CrewsController {
     return this.crewsService.checkIn(activityId, userId, method);
   }
 
+  @Post(":id/activities/:activityId/rsvp")
+  rsvp(
+    @Param("id") id: string,
+    @Param("activityId") activityId: string,
+    @Req() req: Request
+  ) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.rsvp(activityId, id, userId);
+  }
+
+  @Delete(":id/activities/:activityId/rsvp")
+  cancelRsvp(
+    @Param("id") id: string,
+    @Param("activityId") activityId: string,
+    @Req() req: Request
+  ) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.cancelRsvp(activityId, id, userId);
+  }
+
+  @Post(":id/activities/:activityId/complete")
+  completeActivity(
+    @Param("id") id: string,
+    @Param("activityId") activityId: string,
+    @Req() req: Request
+  ) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.completeActivity(activityId, id, userId);
+  }
+
+  @Post(":id/activities/:activityId/cancel")
+  cancelActivity(
+    @Param("id") id: string,
+    @Param("activityId") activityId: string,
+    @Req() req: Request
+  ) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.cancelActivity(activityId, id, userId);
+  }
+
+  @Post(":id/activities/:activityId/admin-check-in")
+  adminCheckIn(
+    @Param("id") id: string,
+    @Param("activityId") activityId: string,
+    @Req() req: Request,
+    @Body("userId") targetUserId: string
+  ) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.adminCheckIn(activityId, id, userId, targetUserId);
+  }
+
   @Get(":id/activities/:activityId/attendees")
-  getAttendees(@Param("activityId") activityId: string) {
-    return this.crewsService.getAttendees(activityId);
+  getAttendees(
+    @Param("activityId") activityId: string,
+    @Query("status") status?: string
+  ) {
+    return this.crewsService.getAttendees(activityId, status);
   }
 }
