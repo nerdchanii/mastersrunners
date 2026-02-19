@@ -323,6 +323,23 @@ export class CrewsController {
     return this.crewsService.adminCheckIn(activityId, id, userId, targetUserId);
   }
 
+  @Get(":id/members/:userId/attendance-stats")
+  getMemberAttendanceStats(
+    @Param("id") id: string,
+    @Param("userId") userId: string
+  ) {
+    return this.crewsService.getMemberAttendanceStats(id, userId);
+  }
+
+  @Get(":id/attendance-stats")
+  getCrewAttendanceStats(
+    @Param("id") id: string,
+    @Query("month") month?: string,
+    @Query("type") type?: string
+  ) {
+    return this.crewsService.getCrewAttendanceStats(id, { month, type });
+  }
+
   @Get(":id/activities/:activityId/attendees")
   getAttendees(
     @Param("activityId") activityId: string,

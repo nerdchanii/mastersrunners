@@ -631,6 +631,18 @@ export class CrewsService {
     return this.crewActivityRepo.getAttendees(activityId, statusFilter);
   }
 
+  async getMemberAttendanceStats(crewId: string, userId: string) {
+    const crew = await this.crewRepo.findById(crewId);
+    if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
+    return this.crewActivityRepo.getMemberAttendanceStats(crewId, userId);
+  }
+
+  async getCrewAttendanceStats(crewId: string, opts?: { month?: string; type?: string }) {
+    const crew = await this.crewRepo.findById(crewId);
+    if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
+    return this.crewActivityRepo.getCrewAttendanceStats(crewId, opts);
+  }
+
   // ============ Ban Methods ============
 
   async unbanMember(crewId: string, adminUserId: string, targetUserId: string) {

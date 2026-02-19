@@ -15,6 +15,7 @@ import CrewMemberList from "@/components/crew/CrewMemberList";
 import CrewActivityList from "@/components/crew/CrewActivityList";
 import CrewTagManager from "@/components/crew/CrewTagManager";
 import PendingMemberList from "@/components/crew/PendingMemberList";
+import CrewAttendanceStats from "@/components/crew/CrewAttendanceStats";
 
 interface CrewMember {
   id: string;
@@ -247,6 +248,7 @@ export default function CrewDetailClient() {
           <TabsTrigger value="members">멤버</TabsTrigger>
           <TabsTrigger value="activities">활동</TabsTrigger>
           <TabsTrigger value="tags">태그</TabsTrigger>
+          <TabsTrigger value="stats">통계</TabsTrigger>
           {isOwnerOrAdmin && <TabsTrigger value="pending">대기 멤버</TabsTrigger>}
         </TabsList>
 
@@ -281,6 +283,10 @@ export default function CrewDetailClient() {
             isAdmin={isOwnerOrAdmin}
             members={activeMembers}
           />
+        </TabsContent>
+
+        <TabsContent value="stats" className="mt-6">
+          <CrewAttendanceStats crewId={crewId} />
         </TabsContent>
 
         {isOwnerOrAdmin && (
