@@ -15,7 +15,7 @@ export default function CrewActivityForm({ crewId, onSuccess, onCancel }: CrewAc
     title: "",
     description: "",
     location: "",
-    scheduledAt: "",
+    activityDate: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +29,7 @@ export default function CrewActivityForm({ crewId, onSuccess, onCancel }: CrewAc
       return;
     }
 
-    if (!formData.scheduledAt) {
+    if (!formData.activityDate) {
       setError("일정을 선택해주세요.");
       return;
     }
@@ -42,7 +42,7 @@ export default function CrewActivityForm({ crewId, onSuccess, onCancel }: CrewAc
           title: formData.title.trim(),
           description: formData.description.trim() || undefined,
           location: formData.location.trim() || undefined,
-          scheduledAt: new Date(formData.scheduledAt).toISOString(),
+          activityDate: new Date(formData.activityDate).toISOString(),
         }),
       });
       onSuccess();
@@ -102,14 +102,14 @@ export default function CrewActivityForm({ crewId, onSuccess, onCancel }: CrewAc
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="scheduledAt" className="text-sm font-medium">
+        <label htmlFor="activityDate" className="text-sm font-medium">
           일정 <span className="text-destructive">*</span>
         </label>
         <Input
           type="datetime-local"
-          id="scheduledAt"
-          value={formData.scheduledAt}
-          onChange={(e) => setFormData((prev) => ({ ...prev, scheduledAt: e.target.value }))}
+          id="activityDate"
+          value={formData.activityDate}
+          onChange={(e) => setFormData((prev) => ({ ...prev, activityDate: e.target.value }))}
         />
       </div>
 
@@ -117,7 +117,7 @@ export default function CrewActivityForm({ crewId, onSuccess, onCancel }: CrewAc
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           취소
         </Button>
-        <Button type="submit" disabled={isSubmitting || !formData.title.trim() || !formData.scheduledAt}>
+        <Button type="submit" disabled={isSubmitting || !formData.title.trim() || !formData.activityDate}>
           {isSubmitting ? "생성 중..." : "생성하기"}
         </Button>
       </div>

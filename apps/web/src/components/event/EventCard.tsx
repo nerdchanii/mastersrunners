@@ -7,8 +7,7 @@ import { cn } from "@/lib/utils";
 interface EventCardProps {
   event: {
     id: string;
-    name?: string;
-    title?: string;
+    title: string;
     description?: string | null;
     date: string;
     location?: string | null;
@@ -59,7 +58,7 @@ export default function EventCard({ event }: EventCardProps) {
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2 mb-1">
                 <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 group-hover:text-primary transition-colors">
-                  {event.name ?? event.title}
+                  {event.title}
                 </h3>
               </div>
               <Badge variant={isPast ? "secondary" : "default"} className="text-xs">

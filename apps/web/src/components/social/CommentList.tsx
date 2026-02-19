@@ -51,16 +51,8 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
 
       const items = Array.isArray(data) ? data : (data?.data ?? []);
 
-      // Organize into parent-reply structure
-      const parents = items.filter((c) => !c.parentId);
-      const replies = items.filter((c) => c.parentId);
-
-      const organized = parents.map((parent) => ({
-        ...parent,
-        replies: replies.filter((r) => r.parentId === parent.id),
-      }));
-
-      setComments(organized);
+      // Backend already returns top-level comments with nested replies
+      setComments(items);
     } catch {
       // silent
     } finally {
@@ -79,10 +71,14 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
 
     setIsSubmitting(true);
     try {
-      const body: Record<string, string> = { content: newComment.trim() };
+      const body: Record<string, unknown> = { content: newComment.trim() };
       if (replyingTo) {
         body.parentId = replyingTo.id;
-        body.mentionedUserId = replyingTo.user.id;
+        if (entityType === "workout") {
+          body.mentionedUserIds = [replyingTo.user.id];
+        } else {
+          body.mentionedUserId = replyingTo.user.id;
+        }
       }
 
       await api.fetch(endpoint, {

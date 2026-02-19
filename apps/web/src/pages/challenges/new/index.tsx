@@ -11,46 +11,47 @@ import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/common/PageHeader";
 import { toast } from "sonner";
 
-type GoalType = "DISTANCE" | "COUNT" | "DURATION" | "PACE";
+type GoalType = "DISTANCE" | "FREQUENCY" | "STREAK" | "PACE";
 
-const goalTypeOptions: { value: GoalType; label: string; placeholder: string; unit: string }[] = [
-  { value: "DISTANCE", label: "거리 (km)", placeholder: "예: 100", unit: "km" },
-  { value: "COUNT", label: "횟수", placeholder: "예: 30", unit: "회" },
-  { value: "DURATION", label: "일수", placeholder: "예: 30", unit: "일" },
-  { value: "PACE", label: "페이스 (초/km)", placeholder: "예: 300", unit: "초/km" },
+const goalTypeOptions: { value: GoalType; label: string; placeholder: string; unit: string; targetUnit: string }[] = [
+  { value: "DISTANCE", label: "거리 (km)", placeholder: "예: 100", unit: "km", targetUnit: "KM" },
+  { value: "FREQUENCY", label: "횟수", placeholder: "예: 30", unit: "회", targetUnit: "COUNT" },
+  { value: "STREAK", label: "연속 일수", placeholder: "예: 30", unit: "일", targetUnit: "DAYS" },
+  { value: "PACE", label: "페이스 (초/km)", placeholder: "예: 300", unit: "초/km", targetUnit: "SEC_PER_KM" },
 ];
 
 export default function NewChallengePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [name, setName] = useState("");
+  const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [goalType, setGoalType] = useState<GoalType>("DISTANCE");
-  const [goalValue, setGoalValue] = useState("");
+  const [type, setType] = useState<GoalType>("DISTANCE");
+  const [targetValue, setTargetValue] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const currentGoalOption = goalTypeOptions.find((o) => o.value === goalType)!;
+  const currentGoalOption = goalTypeOptions.find((o) => o.value === type)!;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!name.trim()) { setError("챌린지 이름을 입력해주세요."); return; }
-    if (!goalValue || Number(goalValue) <= 0) { setError("목표 값을 올바르게 입력해주세요."); return; }
+    if (!title.trim()) { setError("챌린지 이름을 입력해주세요."); return; }
+    if (!targetValue || Number(targetValue) <= 0) { setError("목표 값을 올바르게 입력해주세요."); return; }
     if (!startDate || !endDate) { setError("시작일과 종료일을 선택해주세요."); return; }
     if (new Date(startDate) >= new Date(endDate)) { setError("종료일은 시작일 이후여야 합니다."); return; }
 
     setIsSubmitting(true);
     try {
       const body: Record<string, unknown> = {
-        name: name.trim(),
-        goalType,
-        goalValue: Number(goalValue),
+        title: title.trim(),
+        type,
+        targetValue: Number(targetValue),
+        targetUnit: currentGoalOption.targetUnit,
         startDate: new Date(startDate).toISOString(),
         endDate: new Date(endDate).toISOString(),
         isPublic,
@@ -87,11 +88,11 @@ export default function NewChallengePage() {
         <Card>
           <CardContent className="pt-6 space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="name">챌린지 이름 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="title">챌린지 이름 <span className="text-destructive">*</span></Label>
               <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 placeholder="예: 2월 100km 달리기"
               />
             </div>
@@ -108,11 +109,11 @@ export default function NewChallengePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="goalType">목표 유형 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="type">목표 유형 <span className="text-destructive">*</span></Label>
               <select
-                id="goalType"
-                value={goalType}
-                onChange={(e) => setGoalType(e.target.value as GoalType)}
+                id="type"
+                value={type}
+                onChange={(e) => setType(e.target.value as GoalType)}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               >
                 {goalTypeOptions.map((opt) => (
@@ -122,13 +123,13 @@ export default function NewChallengePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="goalValue">목표 값 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="targetValue">목표 값 <span className="text-destructive">*</span></Label>
               <div className="relative">
                 <Input
                   type="number"
-                  id="goalValue"
-                  value={goalValue}
-                  onChange={(e) => setGoalValue(e.target.value)}
+                  id="targetValue"
+                  value={targetValue}
+                  onChange={(e) => setTargetValue(e.target.value)}
                   min="1"
                   step="any"
                   placeholder={currentGoalOption.placeholder}
@@ -169,7 +170,7 @@ export default function NewChallengePage() {
           <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={isSubmitting}>
             취소
           </Button>
-          <Button type="submit" disabled={isSubmitting || !name.trim() || !goalValue || !startDate || !endDate}>
+          <Button type="submit" disabled={isSubmitting || !title.trim() || !targetValue || !startDate || !endDate}>
             {isSubmitting ? "생성 중..." : "챌린지 만들기"}
           </Button>
         </div>

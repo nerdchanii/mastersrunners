@@ -24,14 +24,15 @@ interface ChallengeUser {
 
 interface ChallengeDetail {
   id: string;
-  name: string;
+  title: string;
   description: string | null;
-  goalType: string;
-  goalValue: number;
+  type: string;
+  targetValue: number;
+  targetUnit: string;
   startDate: string;
   endDate: string;
   isPublic: boolean;
-  createdBy: string;
+  creatorId: string;
   creator?: ChallengeUser;
   _count?: { participants: number };
   isJoined?: boolean;
@@ -225,7 +226,7 @@ export default function ChallengeDetailPage() {
     );
   }
 
-  const isOwner = user?.id === challenge.createdBy;
+  const isOwner = user?.id === challenge.creatorId;
   const now = new Date();
   const startDate = new Date(challenge.startDate);
   const endDate = new Date(challenge.endDate);
@@ -272,7 +273,7 @@ export default function ChallengeDetailPage() {
       />
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2 min-w-0 flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">{challenge.name}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{challenge.title}</h1>
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant={badge.variant}>{badge.label}</Badge>
             {!challenge.isPublic && (
@@ -330,7 +331,7 @@ export default function ChallengeDetailPage() {
                     <span className="text-sm font-medium">목표</span>
                   </div>
                   <p className="text-sm">
-                    {goalTypeLabel(challenge.goalType)} {challenge.goalValue} {goalTypeDisplayUnit(challenge.goalType)}
+                    {goalTypeLabel(challenge.type)} {challenge.targetValue} {goalTypeDisplayUnit(challenge.type)}
                   </p>
                 </div>
 
@@ -386,8 +387,8 @@ export default function ChallengeDetailPage() {
               <CardContent className="space-y-4">
                 <ProgressBar
                   current={challenge.myProgress ?? 0}
-                  target={challenge.goalValue}
-                  unit={goalTypeUnit(challenge.goalType)}
+                  target={challenge.targetValue}
+                  unit={goalTypeUnit(challenge.type)}
                 />
 
                 {isActive && (
@@ -413,10 +414,10 @@ export default function ChallengeDetailPage() {
                             step="any"
                             placeholder="새 진행 값"
                           />
-                          {goalTypeDisplayUnit(challenge.goalType) && (
+                          {goalTypeDisplayUnit(challenge.type) && (
                             <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                               <span className="text-xs text-muted-foreground">
-                                {goalTypeDisplayUnit(challenge.goalType)}
+                                {goalTypeDisplayUnit(challenge.type)}
                               </span>
                             </div>
                           )}
@@ -456,8 +457,8 @@ export default function ChallengeDetailPage() {
             <CardContent>
               <LeaderboardTable
                 entries={leaderboard}
-                goalValue={challenge.goalValue}
-                goalType={challenge.goalType}
+                goalValue={challenge.targetValue}
+                goalType={challenge.type}
                 isLoading={leaderboardLoading}
               />
             </CardContent>

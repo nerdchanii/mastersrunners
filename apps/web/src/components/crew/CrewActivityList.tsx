@@ -16,11 +16,14 @@ interface Activity {
   title: string;
   description: string | null;
   location: string | null;
-  scheduledAt: string;
+  activityDate: string;
   createdAt: string;
-  _count: {
-    attendance: number;
-  };
+  attendances: Array<{ userId: string }>;
+}
+
+interface ActivitiesResponse {
+  items: Activity[];
+  nextCursor: string | null;
 }
 
 interface CrewActivityListProps {
@@ -38,8 +41,8 @@ export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActi
   const fetchActivities = async () => {
     setIsLoading(true);
     try {
-      const data = await api.fetch<Activity[]>(`/crews/${crewId}/activities`);
-      setActivities(Array.isArray(data) ? data : []);
+      const data = await api.fetch<ActivitiesResponse>(`/crews/${crewId}/activities`);
+      setActivities(data.items ?? []);
     } catch (err) {
       console.error("Failed to load activities:", err);
     } finally {
@@ -105,7 +108,7 @@ export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActi
       ) : (
         <div className="grid gap-4">
           {activities.map((activity) => {
-            const scheduledDate = new Date(activity.scheduledAt);
+            const scheduledDate = new Date(activity.activityDate);
             const isPast = scheduledDate < new Date();
 
             return (
@@ -156,7 +159,7 @@ export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActi
 
                     <div className="flex items-center gap-1.5 ml-auto">
                       <Users className="w-3.5 h-3.5" />
-                      <span>{activity._count.attendance}명 참석</span>
+                      <span>{activity.attendances.length}명 참석</span>
                     </div>
                   </div>
 

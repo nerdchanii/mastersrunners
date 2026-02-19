@@ -59,7 +59,7 @@ export default function OnboardingPage() {
         body: JSON.stringify({
           name: name.trim(),
           bio: bio.trim() || undefined,
-          isPublic: !isPrivate,
+          isPrivate: isPrivate,
         }),
       });
       await refreshUser();

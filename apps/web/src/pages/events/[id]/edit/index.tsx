@@ -18,9 +18,9 @@ export default function EditEventPage() {
   const queryClient = useQueryClient();
   const { data: event, isLoading } = useEvent(id ?? "");
 
-  const [name, setName] = useState("");
+  const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
+  const [eventDate, setEventDate] = useState("");
   const [location, setLocation] = useState("");
   const [maxParticipants, setMaxParticipants] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,10 +28,10 @@ export default function EditEventPage() {
 
   useEffect(() => {
     if (event) {
-      setName(event.name);
+      setTitle(event.title);
       setDescription(event.description ?? "");
       // datetime-local input format
-      setDate(new Date(event.date).toISOString().slice(0, 16));
+      setEventDate(new Date(event.date).toISOString().slice(0, 16));
       setLocation(event.location ?? "");
       setMaxParticipants(event.maxParticipants ? String(event.maxParticipants) : "");
     }
@@ -41,17 +41,17 @@ export default function EditEventPage() {
     e.preventDefault();
     setError(null);
 
-    if (!name.trim()) { setError("대회 이름을 입력해주세요."); return; }
-    if (!date) { setError("대회 날짜를 선택해주세요."); return; }
+    if (!title.trim()) { setError("대회 이름을 입력해주세요."); return; }
+    if (!eventDate) { setError("대회 날짜를 선택해주세요."); return; }
 
     setIsSubmitting(true);
     try {
       await api.fetch(`/events/${id}`, {
         method: "PATCH",
         body: JSON.stringify({
-          name: name.trim(),
+          title: title.trim(),
           description: description.trim() || undefined,
-          date: new Date(date).toISOString(),
+          eventDate: new Date(eventDate).toISOString(),
           location: location.trim() || undefined,
           maxParticipants: maxParticipants ? Number(maxParticipants) : undefined,
         }),
@@ -85,11 +85,11 @@ export default function EditEventPage() {
         <Card>
           <CardContent className="pt-6 space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="name">대회 이름 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="title">대회 이름 <span className="text-destructive">*</span></Label>
               <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 placeholder="예: 2026 서울마라톤"
               />
             </div>
@@ -106,12 +106,12 @@ export default function EditEventPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="date">대회 날짜 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="eventDate">대회 날짜 <span className="text-destructive">*</span></Label>
               <Input
                 type="datetime-local"
-                id="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+                id="eventDate"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
               />
             </div>
 
@@ -144,7 +144,7 @@ export default function EditEventPage() {
           <Button type="button" variant="outline" onClick={() => navigate(`/events/${id}`)} disabled={isSubmitting}>
             취소
           </Button>
-          <Button type="submit" disabled={isSubmitting || !name.trim() || !date}>
+          <Button type="submit" disabled={isSubmitting || !title.trim() || !eventDate}>
             {isSubmitting ? "저장 중..." : "저장"}
           </Button>
         </div>

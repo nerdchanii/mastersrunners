@@ -58,7 +58,7 @@ export default function CrewMemberList({
     if (!kickTarget) return;
     setIsLoading(true);
     try {
-      await api.fetch(`/crews/${crewId}/members/${kickTarget.userId}/kick`, {
+      await api.fetch(`/crews/${crewId}/members/${kickTarget.userId}`, {
         method: "DELETE",
         body: JSON.stringify({ reason }),
       });
@@ -74,7 +74,7 @@ export default function CrewMemberList({
   const handlePromote = async (userId: string) => {
     setIsLoading(true);
     try {
-      await api.fetch(`/crews/${crewId}/members/${userId}`, {
+      await api.fetch(`/crews/${crewId}/members/${userId}/role`, {
         method: "PATCH",
         body: JSON.stringify({ role: "ADMIN" }),
       });
@@ -89,7 +89,7 @@ export default function CrewMemberList({
   const handleDemote = async (userId: string) => {
     setIsLoading(true);
     try {
-      await api.fetch(`/crews/${crewId}/members/${userId}`, {
+      await api.fetch(`/crews/${crewId}/members/${userId}/role`, {
         method: "PATCH",
         body: JSON.stringify({ role: "MEMBER" }),
       });

@@ -24,7 +24,7 @@ export function useUserSearch(query: string) {
   return useQuery({
     queryKey: userSearchKeys.search(query),
     queryFn: () =>
-      api.fetch<SearchUser[]>(`/users/search?q=${encodeURIComponent(query)}&limit=20`),
+      api.fetch<SearchUser[]>(`/profile/search?q=${encodeURIComponent(query)}&limit=20`),
     enabled: query.trim().length >= 1,
     select: (data) => (Array.isArray(data) ? data : []),
     staleTime: 1000 * 30, // 30초

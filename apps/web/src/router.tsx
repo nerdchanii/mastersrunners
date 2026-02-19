@@ -30,6 +30,7 @@ const CrewsPage = lazy(() => import("@/pages/crews"));
 const CrewNewPage = lazy(() => import("@/pages/crews/new"));
 const CrewDetailPage = lazy(() => import("@/pages/crews/[id]"));
 const CrewSettingsPage = lazy(() => import("@/pages/crews/[id]/settings"));
+const CrewActivityDetailPage = lazy(() => import("@/pages/crews/[id]/activities/[activityId]"));
 const ChallengesPage = lazy(() => import("@/pages/challenges"));
 const ChallengeNewPage = lazy(() => import("@/pages/challenges/new"));
 const ChallengeDetailPage = lazy(() => import("@/pages/challenges/[id]"));
@@ -149,6 +150,7 @@ export const router = createBrowserRouter([
               { path: "/settings/profile", element: <EditProfilePage /> },
               { path: "/crews/new", element: <CrewNewPage /> },
               { path: "/crews/:id/settings", element: <CrewSettingsPage /> },
+              { path: "/crews/:id/activities/:activityId", element: <CrewActivityDetailPage /> },
               { path: "/challenges/new", element: <ChallengeNewPage /> },
               { path: "/events/new", element: <EventNewPage /> },
               { path: "/messages", element: <MessagesPage /> },

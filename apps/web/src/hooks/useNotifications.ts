@@ -22,8 +22,8 @@ export interface Notification {
     name: string;
     profileImage: string | null;
   } | null;
-  targetId: string | null;
-  targetType: "POST" | "WORKOUT" | "CREW" | "CONVERSATION" | null;
+  referenceId: string | null;
+  referenceType: string | null;
   message: string;
 }
 

@@ -3,14 +3,13 @@ import { api } from "@/lib/api-client";
 
 export interface Event {
   id: string;
-  name: string;
+  title: string;
   description: string | null;
   date: string;
   location: string | null;
   maxParticipants: number | null;
   _count?: { participants: number };
   // 확장 필드 (detail용)
-  title?: string;
   isPublic?: boolean;
   createdAt?: string;
   creator?: { id: string; name: string; profileImage: string | null };
@@ -84,7 +83,7 @@ export function useJoinEvent() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (eventId: string) =>
-      api.fetch(`/events/${eventId}/participants`, { method: "POST" }),
+      api.fetch(`/events/${eventId}/register`, { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: eventKeys.all });
     },
@@ -95,7 +94,7 @@ export function useLeaveEvent() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (eventId: string) =>
-      api.fetch(`/events/${eventId}/participants`, { method: "DELETE" }),
+      api.fetch(`/events/${eventId}/cancel`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: eventKeys.all });
     },

@@ -7,13 +7,10 @@ import ProgressBar from "./ProgressBar";
 interface ChallengeCardProps {
   challenge: {
     id: string;
-    name?: string;
-    title?: string;
+    title: string;
     description?: string | null;
-    goalType?: string;
-    type?: string;
-    goalValue?: number;
-    goal?: number;
+    type: string;
+    targetValue: number;
     startDate: string;
     endDate: string;
     isPublic: boolean;
@@ -71,7 +68,7 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
         <CardContent className="p-5 space-y-4">
           <div className="flex items-start justify-between gap-3">
             <h3 className="text-lg font-semibold line-clamp-1 flex-1">
-              {challenge.name ?? challenge.title}
+              {challenge.title}
             </h3>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {!challenge.isPublic && (
@@ -103,7 +100,7 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
                 <span>{participantCount}명</span>
               </div>
               <span className="text-xs font-medium text-primary">
-                {goalTypeLabel(challenge.goalType ?? challenge.type ?? "")} {challenge.goalValue ?? challenge.goal ?? 0}
+                {goalTypeLabel(challenge.type)} {challenge.targetValue}
               </span>
             </div>
           </div>
@@ -112,8 +109,8 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
             <div className="pt-2 border-t">
               <ProgressBar
                 current={challenge.myProgress ?? 0}
-                target={challenge.goalValue ?? challenge.goal ?? 0}
-                unit={goalTypeUnit(challenge.goalType ?? challenge.type ?? "")}
+                target={challenge.targetValue}
+                unit={goalTypeUnit(challenge.type)}
               />
             </div>
           )}

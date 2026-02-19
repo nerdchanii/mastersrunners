@@ -134,7 +134,7 @@ export function useLikePost() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ postId, isLiked }: { postId: string; isLiked: boolean }) =>
-      api.fetch(`/posts/${postId}/likes`, {
+      api.fetch(`/posts/${postId}/like`, {
         method: isLiked ? "DELETE" : "POST",
       }),
     onMutate: async ({ postId, isLiked }) => {

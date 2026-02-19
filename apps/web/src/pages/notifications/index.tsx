@@ -12,17 +12,17 @@ import {
 } from "@/hooks/useNotifications";
 
 function getNotificationLink(notification: Notification): string | null {
-  if (!notification.targetId || !notification.targetType) return null;
+  if (!notification.referenceId || !notification.referenceType) return null;
 
-  switch (notification.targetType) {
+  switch (notification.referenceType) {
     case "POST":
-      return `/posts/${notification.targetId}`;
+      return `/posts/${notification.referenceId}`;
     case "WORKOUT":
-      return `/workouts/${notification.targetId}`;
+      return `/workouts/${notification.referenceId}`;
     case "CREW":
-      return `/crews/${notification.targetId}`;
+      return `/crews/${notification.referenceId}`;
     case "CONVERSATION":
-      return `/messages/${notification.targetId}`;
+      return `/messages/${notification.referenceId}`;
     default:
       return null;
   }

@@ -71,7 +71,7 @@ export function useWorkoutFeed() {
   return useInfiniteQuery({
     queryKey: workoutKeys.feed(),
     queryFn: ({ pageParam }) => {
-      let path = "/feed/workouts?limit=10&excludeLinkedToPost=true";
+      let path = "/feed/workouts?limit=10&excludeLinked=true";
       if (pageParam) path += `&cursor=${encodeURIComponent(pageParam as string)}`;
       return api.fetch<FeedResponse<WorkoutFeedItem>>(path);
     },

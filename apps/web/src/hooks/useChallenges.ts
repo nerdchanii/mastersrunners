@@ -3,20 +3,17 @@ import { api } from "@/lib/api-client";
 
 export interface Challenge {
   id: string;
-  name: string;
+  title: string;
   description: string | null;
-  goalType: string;
-  goalValue: number;
+  type: string;
+  targetValue: number;
+  targetUnit: string;
   startDate: string;
   endDate: string;
   isPublic: boolean;
   _count?: { participants: number };
   myProgress?: number | null;
   // 확장 필드 (detail용)
-  title?: string;
-  type?: string;
-  goal?: number;
-  unit?: string;
   createdAt?: string;
   creator?: { id: string; name: string; profileImage: string | null };
   isParticipating?: boolean;
@@ -60,7 +57,7 @@ export function useInfiniteChallenges(joined = false) {
   return useInfiniteQuery({
     queryKey: joined ? challengeKeys.my() : challengeKeys.list(),
     queryFn: ({ pageParam }) => {
-      const base = joined ? "/challenges?joined=true&limit=12" : "/challenges?limit=12";
+      const base = joined ? "/challenges/my?limit=12" : "/challenges?limit=12";
       const path = pageParam ? `${base}&cursor=${encodeURIComponent(pageParam as string)}` : base;
       return api.fetch<ChallengeListResponse>(path);
     },

@@ -37,7 +37,7 @@ interface EventUser {
 
 interface EventDetail {
   id: string;
-  name: string;
+  title: string;
   description: string | null;
   date: string;
   location: string | null;
@@ -46,7 +46,7 @@ interface EventDetail {
   maxParticipants: number | null;
   registrationDeadline: string | null;
   externalUrl: string | null;
-  createdBy: string;
+  organizerId: string;
   creator?: EventUser;
   _count?: { participants: number };
   isRegistered?: boolean;
@@ -317,7 +317,7 @@ export default function EventDetailPage() {
     );
   }
 
-  const isOwner = user?.id === event.createdBy;
+  const isOwner = user?.id === event.organizerId;
   const eventDate = new Date(event.date);
   const isPast = eventDate < new Date();
   const participantCount = event._count?.participants ?? 0;
@@ -362,7 +362,7 @@ export default function EventDetailPage() {
         </div>
 
         <div className="flex-1 min-w-0">
-          <h1 className="text-3xl font-bold text-foreground mb-3">{event.name}</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-3">{event.title}</h1>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={isPast ? "secondary" : "default"}>
               {isPast ? "종료" : "예정"}

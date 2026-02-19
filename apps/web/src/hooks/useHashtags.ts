@@ -37,7 +37,7 @@ export function useHashtagPosts(tag: string) {
   return useInfiniteQuery({
     queryKey: hashtagKeys.posts(tag),
     queryFn: ({ pageParam }) => {
-      let path = `/posts/search/hashtag?tag=${encodeURIComponent(tag)}&limit=10`;
+      let path = `/posts/hashtag/${encodeURIComponent(tag)}?limit=10`;
       if (pageParam) path += `&cursor=${encodeURIComponent(pageParam as string)}`;
       return api.fetch<FeedResponse>(path);
     },

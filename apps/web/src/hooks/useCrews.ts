@@ -47,7 +47,7 @@ export function useCrews(params?: Record<string, string>) {
 export function useMyCrews() {
   return useQuery({
     queryKey: crewKeys.mine(),
-    queryFn: () => api.fetch<Crew[]>("/crews?myCrews=true"),
+    queryFn: () => api.fetch<Crew[]>("/crews/my"),
     select: (data) => (Array.isArray(data) ? data : []),
   });
 }
