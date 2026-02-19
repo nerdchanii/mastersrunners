@@ -196,3 +196,17 @@ export function useAdminCheckIn() {
     },
   });
 }
+
+export function useQrCheckIn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ crewId, activityId, qrCode }: { crewId: string; activityId: string; qrCode: string }) =>
+      api.fetch(`/crews/${crewId}/activities/${activityId}/qr-check-in`, {
+        method: "POST",
+        body: JSON.stringify({ qrCode }),
+      }),
+    onSuccess: (_r, { crewId, activityId }) => {
+      queryClient.invalidateQueries({ queryKey: crewActivityKeys.detail(crewId, activityId) });
+    },
+  });
+}

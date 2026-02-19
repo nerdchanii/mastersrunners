@@ -533,6 +533,31 @@ export class CrewsService {
     return this.crewActivityRepo.checkIn(activityId, userId, method);
   }
 
+  async qrCheckIn(activityId: string, crewId: string, userId: string, qrCode: string) {
+    const activity = await this.crewActivityRepo.findById(activityId);
+    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
+    if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
+
+    if (activity.status !== "SCHEDULED" && activity.status !== "ACTIVE") {
+      throw new BadRequestException("체크인이 불가능한 활동입니다.");
+    }
+
+    // Validate QR code
+    if (activity.qrCode !== qrCode) {
+      throw new BadRequestException("유효하지 않은 QR 코드입니다.");
+    }
+
+    const member = await this.crewMemberRepo.findMember(crewId, userId);
+    if (!member) throw new ForbiddenException("크루 멤버만 체크인할 수 있습니다.");
+
+    const existing = await this.crewActivityRepo.findAttendance(activityId, userId);
+    if (!existing || existing.status !== "RSVP") {
+      throw new BadRequestException("먼저 참석 신청을 해주세요.");
+    }
+
+    return this.crewActivityRepo.checkIn(activityId, userId, "QR");
+  }
+
   async adminCheckIn(activityId: string, crewId: string, adminUserId: string, targetUserId: string) {
     const activity = await this.crewActivityRepo.findById(activityId);
     if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");

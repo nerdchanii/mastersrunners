@@ -261,6 +261,17 @@ export class CrewsController {
     return this.crewsService.checkIn(activityId, userId, method);
   }
 
+  @Post(":id/activities/:activityId/qr-check-in")
+  qrCheckIn(
+    @Param("id") id: string,
+    @Param("activityId") activityId: string,
+    @Req() req: Request,
+    @Body("qrCode") qrCode: string
+  ) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.qrCheckIn(activityId, id, userId, qrCode);
+  }
+
   @Post(":id/activities/:activityId/rsvp")
   rsvp(
     @Param("id") id: string,
