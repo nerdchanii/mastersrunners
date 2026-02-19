@@ -30,6 +30,7 @@ import {
   UserPlus,
   CircleX,
   AlertTriangle,
+  MessageCircle,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
@@ -461,6 +462,22 @@ export default function CrewActivityDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Chat link */}
+      {(myStatus === "RSVP" || myStatus === "CHECKED_IN") && (
+        <Card>
+          <CardContent className="py-4">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => navigate(`/crews/${crewId}/activities/${activityId}/chat`)}
+            >
+              <MessageCircle className="size-4 mr-2" />
+              활동 채팅방
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 5. Admin activity management */}
       {canManage && isActivityActive && (

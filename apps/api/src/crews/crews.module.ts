@@ -7,9 +7,10 @@ import { CrewTagRepository } from "./repositories/crew-tag.repository.js";
 import { CrewActivityRepository } from "./repositories/crew-activity.repository.js";
 import { CrewBanRepository } from "./repositories/crew-ban.repository.js";
 import { DatabaseModule } from "../database/database.module.js";
+import { ConversationsModule } from "../conversations/conversations.module.js";
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, ConversationsModule],
   controllers: [CrewsController],
   providers: [CrewsService, CrewRepository, CrewMemberRepository, CrewTagRepository, CrewActivityRepository, CrewBanRepository],
   exports: [CrewRepository, CrewMemberRepository],

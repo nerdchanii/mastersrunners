@@ -464,6 +464,7 @@ model Crew {
   tags       CrewTag[]
   bans       CrewBan[]
   activities CrewActivity[]
+  chatConversationId String? @unique
 }
 
 model CrewMember {
@@ -542,6 +543,7 @@ model CrewActivity {
 
   attendances CrewAttendance[]
   qrCode      String?          @unique
+  chatConversationId String? @unique
 
   @@index([crewId, activityDate])
   @@index([crewId, activityType, status])
@@ -736,13 +738,19 @@ model Notification {
 // ============================================================================
 
 model Conversation {
-  id        String   @id @default(cuid())
-  type      String   @default("DIRECT") // DIRECT (1:1), GROUP (future)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  type       String   @default("DIRECT") // DIRECT, CREW, ACTIVITY
+  name       String?
+  crewId     String?
+  activityId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   participants ConversationParticipant[]
   messages     Message[]
+
+  @@index([crewId])
+  @@index([activityId])
 }
 
 model ConversationParticipant {

@@ -10,5 +10,6 @@ import { AuthModule } from "../auth/auth.module.js";
   imports: [BlockModule, AuthModule],
   controllers: [ConversationsController],
   providers: [ConversationsService, ConversationsRepository, ConversationsSseService],
+  exports: [ConversationsRepository],
 })
 export class ConversationsModule {}

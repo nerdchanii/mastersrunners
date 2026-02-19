@@ -185,6 +185,29 @@ export class CrewsController {
     return this.crewsService.removeTagFromMember(id, userId, memberId, tagId);
   }
 
+  // ============ Chat ============
+
+  @Get(":id/chat")
+  getCrewChat(
+    @Param("id") id: string,
+    @Req() req: Request,
+    @Query("cursor") cursor?: string
+  ) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.getCrewChat(id, userId, cursor);
+  }
+
+  @Get(":id/activities/:activityId/chat")
+  getActivityChat(
+    @Param("id") id: string,
+    @Param("activityId") activityId: string,
+    @Req() req: Request,
+    @Query("cursor") cursor?: string
+  ) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.getActivityChat(id, activityId, userId, cursor);
+  }
+
   // ============ Activities ============
 
   @Post(":id/activities")

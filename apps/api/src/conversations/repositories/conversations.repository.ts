@@ -212,4 +212,55 @@ export class ConversationsRepository {
       where: { id: messageId },
     });
   }
+
+  async createGroupConversation(type: "CREW" | "ACTIVITY", opts?: { name?: string; crewId?: string; activityId?: string }) {
+    return this.db.prisma.conversation.create({
+      data: {
+        type,
+        name: opts?.name,
+        crewId: opts?.crewId,
+        activityId: opts?.activityId,
+      },
+    });
+  }
+
+  async addParticipant(conversationId: string, userId: string) {
+    return this.db.prisma.conversationParticipant.upsert({
+      where: { conversationId_userId: { conversationId, userId } },
+      update: {},
+      create: { conversationId, userId },
+    });
+  }
+
+  async removeParticipant(conversationId: string, userId: string) {
+    return this.db.prisma.conversationParticipant.deleteMany({
+      where: { conversationId, userId },
+    });
+  }
+
+  async findByCrewId(crewId: string) {
+    return this.db.prisma.conversation.findFirst({
+      where: { type: "CREW", crewId },
+      include: {
+        participants: {
+          include: {
+            user: { select: { id: true, name: true, profileImage: true } },
+          },
+        },
+      },
+    });
+  }
+
+  async findByActivityId(activityId: string) {
+    return this.db.prisma.conversation.findFirst({
+      where: { type: "ACTIVITY", activityId },
+      include: {
+        participants: {
+          include: {
+            user: { select: { id: true, name: true, profileImage: true } },
+          },
+        },
+      },
+    });
+  }
 }

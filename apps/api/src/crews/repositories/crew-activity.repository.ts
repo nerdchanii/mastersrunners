@@ -138,6 +138,13 @@ export class CrewActivityRepository {
     });
   }
 
+  async updateChatConversationId(activityId: string, conversationId: string) {
+    return this.databaseService.prisma.crewActivity.update({
+      where: { id: activityId },
+      data: { chatConversationId: conversationId },
+    });
+  }
+
   async getAttendees(activityId: string, statusFilter?: string) {
     return this.databaseService.prisma.crewAttendance.findMany({
       where: {

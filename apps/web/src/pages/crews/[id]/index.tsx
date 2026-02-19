@@ -16,6 +16,8 @@ import CrewActivityList from "@/components/crew/CrewActivityList";
 import CrewTagManager from "@/components/crew/CrewTagManager";
 import PendingMemberList from "@/components/crew/PendingMemberList";
 import CrewAttendanceStats from "@/components/crew/CrewAttendanceStats";
+import GroupChat from "@/components/crew/GroupChat";
+import { useCrewChat } from "@/hooks/useGroupChat";
 
 interface CrewMember {
   id: string;
@@ -61,6 +63,7 @@ export default function CrewDetailClient() {
   const [isJoining, setIsJoining] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("members");
+  const { data: chatData, isLoading: chatLoading } = useCrewChat(crewId);
 
   const fetchCrew = useCallback(async () => {
     if (!crewId || crewId === "_") return;
@@ -249,6 +252,7 @@ export default function CrewDetailClient() {
           <TabsTrigger value="activities">활동</TabsTrigger>
           <TabsTrigger value="tags">태그</TabsTrigger>
           <TabsTrigger value="stats">통계</TabsTrigger>
+          {isMember && <TabsTrigger value="chat">채팅</TabsTrigger>}
           {isOwnerOrAdmin && <TabsTrigger value="pending">대기 멤버</TabsTrigger>}
         </TabsList>
 
@@ -288,6 +292,12 @@ export default function CrewDetailClient() {
         <TabsContent value="stats" className="mt-6">
           <CrewAttendanceStats crewId={crewId} />
         </TabsContent>
+
+        {isMember && (
+          <TabsContent value="chat" className="mt-6">
+            <GroupChat data={chatData} isLoading={chatLoading} crewId={crewId} />
+          </TabsContent>
+        )}
 
         {isOwnerOrAdmin && (
           <TabsContent value="pending" className="mt-6">

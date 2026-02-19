@@ -5,6 +5,7 @@ import { CrewTagRepository } from "./repositories/crew-tag.repository.js";
 import { CrewActivityRepository } from "./repositories/crew-activity.repository.js";
 import { CrewBanRepository } from "./repositories/crew-ban.repository.js";
 import { DatabaseService } from "../database/database.service.js";
+import { ConversationsRepository } from "../conversations/repositories/conversations.repository.js";
 import type { CreateCrewDto } from "./dto/create-crew.dto.js";
 import type { UpdateCrewDto } from "./dto/update-crew.dto.js";
 import { randomUUID } from "crypto";
@@ -17,7 +18,8 @@ export class CrewsService {
     private readonly crewTagRepo: CrewTagRepository,
     private readonly crewActivityRepo: CrewActivityRepository,
     private readonly crewBanRepo: CrewBanRepository,
-    private readonly db: DatabaseService
+    private readonly db: DatabaseService,
+    private readonly conversationsRepo: ConversationsRepository
   ) {}
 
   async create(userId: string, dto: CreateCrewDto) {
@@ -31,6 +33,11 @@ export class CrewsService {
     });
 
     await this.crewMemberRepo.addMember(crew.id, userId, "OWNER", "ACTIVE");
+
+    // Create crew-wide chat
+    const chat = await this.conversationsRepo.createGroupConversation("CREW", { crewId: crew.id });
+    await this.crewRepo.updateChatConversationId(crew.id, chat.id);
+    await this.conversationsRepo.addParticipant(chat.id, userId);
 
     return crew;
   }
@@ -100,7 +107,12 @@ export class CrewsService {
       }
       if (existingMember.status === "LEFT") {
         const status = crew.isPublic ? "ACTIVE" : "PENDING";
-        return this.crewMemberRepo.updateStatus(crewId, userId, status);
+        const result = await this.crewMemberRepo.updateStatus(crewId, userId, status);
+        // Add to crew chat if becoming ACTIVE
+        if (status === "ACTIVE" && crew.chatConversationId) {
+          await this.conversationsRepo.addParticipant(crew.chatConversationId, userId);
+        }
+        return result;
       }
       throw new BadRequestException("이미 가입한 크루입니다.");
     }
@@ -113,7 +125,12 @@ export class CrewsService {
     }
 
     const status = crew.isPublic ? "ACTIVE" : "PENDING";
-    return this.crewMemberRepo.addMember(crewId, userId, "MEMBER", status);
+    const member = await this.crewMemberRepo.addMember(crewId, userId, "MEMBER", status);
+    // Add to crew chat if becoming ACTIVE immediately (public crew)
+    if (status === "ACTIVE" && crew.chatConversationId) {
+      await this.conversationsRepo.addParticipant(crew.chatConversationId, userId);
+    }
+    return member;
   }
 
   async leave(crewId: string, userId: string) {
@@ -131,7 +148,14 @@ export class CrewsService {
       throw new ForbiddenException("크루 소유자는 탈퇴할 수 없습니다.");
     }
 
-    return this.crewMemberRepo.removeMember(crewId, userId);
+    await this.crewMemberRepo.removeMember(crewId, userId);
+
+    // Remove from crew chat
+    if (crew.chatConversationId) {
+      await this.conversationsRepo.removeParticipant(crew.chatConversationId, userId);
+    }
+
+    return { success: true };
   }
 
   async kickMember(crewId: string, adminUserId: string, targetUserId: string, reason?: string) {
@@ -225,7 +249,14 @@ export class CrewsService {
       }
     }
 
-    return this.crewMemberRepo.updateStatus(crewId, targetUserId, "ACTIVE");
+    const result = await this.crewMemberRepo.updateStatus(crewId, targetUserId, "ACTIVE");
+
+    // Add to crew chat
+    if (crew.chatConversationId) {
+      await this.conversationsRepo.addParticipant(crew.chatConversationId, targetUserId);
+    }
+
+    return result;
   }
 
   async rejectMember(crewId: string, adminUserId: string, targetUserId: string) {
@@ -399,7 +430,7 @@ export class CrewsService {
     }
 
     const qrCode = randomUUID();
-    return this.crewActivityRepo.create({
+    const activity = await this.crewActivityRepo.create({
       crewId,
       title: data.title,
       description: data.description,
@@ -412,6 +443,13 @@ export class CrewsService {
       activityType,
       workoutTypeId: data.workoutTypeId,
     });
+
+    // Create activity chat
+    const activityChat = await this.conversationsRepo.createGroupConversation("ACTIVITY", { activityId: activity.id, crewId });
+    await this.crewActivityRepo.updateChatConversationId(activity.id, activityChat.id);
+    await this.conversationsRepo.addParticipant(activityChat.id, userId);
+
+    return activity;
   }
 
   async getActivities(crewId: string, opts?: { cursor?: string; limit?: number; type?: string; status?: string }) {
@@ -490,15 +528,27 @@ export class CrewsService {
     if (existing) {
       if (existing.status === "CANCELLED") {
         // Re-RSVP after cancellation - update back to RSVP
-        return this.db.prisma.crewAttendance.update({
+        const result = await this.db.prisma.crewAttendance.update({
           where: { activityId_userId: { activityId, userId } },
           data: { status: "RSVP", rsvpAt: new Date(), method: null, checkedAt: null, checkedBy: null },
         });
+        // Re-add to activity chat
+        const activityForChat = await this.crewActivityRepo.findById(activityId);
+        if (activityForChat?.chatConversationId) {
+          await this.conversationsRepo.addParticipant(activityForChat.chatConversationId, userId);
+        }
+        return result;
       }
       throw new ConflictException("이미 참석 신청되었습니다.");
     }
 
-    return this.crewActivityRepo.rsvp(activityId, userId);
+    const rsvpResult = await this.crewActivityRepo.rsvp(activityId, userId);
+    // Add to activity chat
+    const activityForChat = await this.crewActivityRepo.findById(activityId);
+    if (activityForChat?.chatConversationId) {
+      await this.conversationsRepo.addParticipant(activityForChat.chatConversationId, userId);
+    }
+    return rsvpResult;
   }
 
   async cancelRsvp(activityId: string, crewId: string, userId: string) {
@@ -511,7 +561,13 @@ export class CrewsService {
       throw new BadRequestException("취소할 참석 신청이 없습니다.");
     }
 
-    return this.crewActivityRepo.cancelRsvp(activityId, userId);
+    const result = await this.crewActivityRepo.cancelRsvp(activityId, userId);
+    // Remove from activity chat
+    const activityForChat = await this.crewActivityRepo.findById(activityId);
+    if (activityForChat?.chatConversationId) {
+      await this.conversationsRepo.removeParticipant(activityForChat.chatConversationId, userId);
+    }
+    return result;
   }
 
   async checkIn(activityId: string, userId: string, method: string = "MANUAL") {
@@ -677,5 +733,61 @@ export class CrewsService {
     }
 
     return this.crewBanRepo.findByCrewId(crewId);
+  }
+
+  // ============ Chat Methods ============
+
+  async getCrewChat(crewId: string, userId: string, cursor?: string) {
+    const crew = await this.crewRepo.findById(crewId);
+    if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
+
+    const member = await this.crewMemberRepo.findMember(crewId, userId);
+    if (!member) throw new ForbiddenException("크루 멤버만 채팅에 참여할 수 있습니다.");
+
+    if (!crew.chatConversationId) {
+      return { conversation: null, messages: [], nextCursor: null };
+    }
+
+    const conversation = await this.conversationsRepo.findById(crew.chatConversationId);
+    const messages = await this.conversationsRepo.getMessages(crew.chatConversationId, cursor, 30);
+
+    const hasMore = messages.length > 30;
+    const items = hasMore ? messages.slice(0, 30) : messages;
+
+    // Mark as read
+    await this.conversationsRepo.updateLastRead(crew.chatConversationId, userId).catch(() => {});
+
+    return {
+      conversation,
+      messages: items,
+      nextCursor: hasMore ? items[items.length - 1].id : null,
+    };
+  }
+
+  async getActivityChat(crewId: string, activityId: string, userId: string, cursor?: string) {
+    const activity = await this.crewActivityRepo.findById(activityId);
+    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
+    if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
+
+    const member = await this.crewMemberRepo.findMember(crewId, userId);
+    if (!member) throw new ForbiddenException("크루 멤버만 채팅에 참여할 수 있습니다.");
+
+    if (!activity.chatConversationId) {
+      return { conversation: null, messages: [], nextCursor: null };
+    }
+
+    const conversation = await this.conversationsRepo.findById(activity.chatConversationId);
+    const messages = await this.conversationsRepo.getMessages(activity.chatConversationId, cursor, 30);
+
+    const hasMore = messages.length > 30;
+    const items = hasMore ? messages.slice(0, 30) : messages;
+
+    await this.conversationsRepo.updateLastRead(activity.chatConversationId, userId).catch(() => {});
+
+    return {
+      conversation,
+      messages: items,
+      nextCursor: hasMore ? items[items.length - 1].id : null,
+    };
   }
 }

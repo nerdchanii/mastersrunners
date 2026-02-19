@@ -33,6 +33,7 @@ const CrewSettingsPage = lazy(() => import("@/pages/crews/[id]/settings"));
 const CrewActivityDetailPage = lazy(() => import("@/pages/crews/[id]/activities/[activityId]"));
 const CrewActivityEditPage = lazy(() => import("@/pages/crews/[id]/activities/[activityId]/edit"));
 const QrCheckInPage = lazy(() => import("@/pages/crews/[id]/activities/[activityId]/qr-check-in"));
+const ActivityChatPage = lazy(() => import("@/pages/crews/[id]/activities/[activityId]/chat"));
 const ChallengesPage = lazy(() => import("@/pages/challenges"));
 const ChallengeNewPage = lazy(() => import("@/pages/challenges/new"));
 const ChallengeDetailPage = lazy(() => import("@/pages/challenges/[id]"));
@@ -152,6 +153,7 @@ export const router = createBrowserRouter([
               { path: "/settings/profile", element: <EditProfilePage /> },
               { path: "/crews/new", element: <CrewNewPage /> },
               { path: "/crews/:id/settings", element: <CrewSettingsPage /> },
+              { path: "/crews/:id/activities/:activityId/chat", element: <ActivityChatPage /> },
               { path: "/crews/:id/activities/:activityId/qr-check-in", element: <QrCheckInPage /> },
               { path: "/crews/:id/activities/:activityId/edit", element: <CrewActivityEditPage /> },
               { path: "/crews/:id/activities/:activityId", element: <CrewActivityDetailPage /> },

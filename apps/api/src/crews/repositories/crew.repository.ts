@@ -139,4 +139,11 @@ export class CrewRepository {
       data: { deletedAt: new Date() },
     });
   }
+
+  async updateChatConversationId(crewId: string, conversationId: string) {
+    return this.db.prisma.crew.update({
+      where: { id: crewId },
+      data: { chatConversationId: conversationId },
+    });
+  }
 }
