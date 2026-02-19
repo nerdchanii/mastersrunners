@@ -4,18 +4,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+interface ActivityFormValues {
+  title: string;
+  description: string;
+  location: string;
+  activityDate: string;
+}
+
 interface CrewActivityFormProps {
   crewId: string;
   onSuccess: () => void;
   onCancel: () => void;
+  initialValues?: Partial<ActivityFormValues>;
+  mode?: "create" | "edit";
+  isSubmitting?: boolean;
+  onSubmitData?: (data: ActivityFormValues) => Promise<void>;
 }
 
-export default function CrewActivityForm({ crewId, onSuccess, onCancel }: CrewActivityFormProps) {
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    location: "",
-    activityDate: "",
+export default function CrewActivityForm({
+  crewId,
+  onSuccess,
+  onCancel,
+  initialValues,
+  mode = "create",
+  onSubmitData,
+}: CrewActivityFormProps) {
+  const [formData, setFormData] = useState<ActivityFormValues>({
+    title: initialValues?.title ?? "",
+    description: initialValues?.description ?? "",
+    location: initialValues?.location ?? "",
+    activityDate: initialValues?.activityDate
+      ? new Date(initialValues.activityDate).toISOString().slice(0, 16)
+      : "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,22 +56,30 @@ export default function CrewActivityForm({ crewId, onSuccess, onCancel }: CrewAc
 
     setIsSubmitting(true);
     try {
-      await api.fetch(`/crews/${crewId}/activities`, {
-        method: "POST",
-        body: JSON.stringify({
-          title: formData.title.trim(),
-          description: formData.description.trim() || undefined,
-          location: formData.location.trim() || undefined,
-          activityDate: new Date(formData.activityDate).toISOString(),
-        }),
-      });
+      if (onSubmitData) {
+        await onSubmitData(formData);
+      } else {
+        await api.fetch(`/crews/${crewId}/activities`, {
+          method: "POST",
+          body: JSON.stringify({
+            title: formData.title.trim(),
+            description: formData.description.trim() || undefined,
+            location: formData.location.trim() || undefined,
+            activityDate: new Date(formData.activityDate).toISOString(),
+          }),
+        });
+      }
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "활동 생성에 실패했습니다.");
+      const action = mode === "edit" ? "수정" : "생성";
+      setError(err instanceof Error ? err.message : `활동 ${action}에 실패했습니다.`);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const submitLabel = mode === "edit" ? "수정하기" : "생성하기";
+  const loadingLabel = mode === "edit" ? "수정 중..." : "생성 중...";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -118,7 +146,7 @@ export default function CrewActivityForm({ crewId, onSuccess, onCancel }: CrewAc
           취소
         </Button>
         <Button type="submit" disabled={isSubmitting || !formData.title.trim() || !formData.activityDate}>
-          {isSubmitting ? "생성 중..." : "생성하기"}
+          {isSubmitting ? loadingLabel : submitLabel}
         </Button>
       </div>
     </form>

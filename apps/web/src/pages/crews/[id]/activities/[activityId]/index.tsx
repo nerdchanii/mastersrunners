@@ -1,15 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { TimeAgo } from "@/components/common/TimeAgo";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Calendar,
   MapPin,
@@ -18,83 +23,109 @@ import {
   QrCode,
   CheckCircle,
   Loader2,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Download,
 } from "lucide-react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import { QRCodeSVG } from "qrcode.react";
+import {
+  useCrewActivity,
+  useDeleteActivity,
+  useCheckIn,
+} from "@/hooks/useCrewActivities";
+import { useCrew } from "@/hooks/useCrews";
 
-interface Attendee {
-  id: string;
-  userId: string;
-  method: string;
-  checkedAt: string;
-  user?: {
-    id: string;
-    name: string;
-    profileImage: string | null;
-  };
-}
-
-interface ActivityDetail {
-  id: string;
-  crewId: string;
-  title: string;
-  description: string | null;
-  activityDate: string;
-  location: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  createdBy: string;
-  createdAt: string;
-  qrCode: string;
-  attendances: Attendee[];
-}
+// Vite Leaflet icon fix
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 export default function CrewActivityDetailPage() {
   const { id: crewId, activityId } = useParams<{ id: string; activityId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [activity, setActivity] = useState<ActivityDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCheckingIn, setIsCheckingIn] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const fetchActivity = async () => {
-    try {
-      const data = await api.fetch<ActivityDetail>(
-        `/crews/${crewId}/activities/${activityId}`,
-      );
-      setActivity(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "활동을 불러올 수 없습니다.");
-    } finally {
-      setIsLoading(false);
-    }
+  const {
+    data: activity,
+    isLoading: isActivityLoading,
+    error,
+  } = useCrewActivity(crewId!, activityId!);
+
+  const { data: crew } = useCrew(crewId!);
+  const deleteActivity = useDeleteActivity();
+  const checkIn = useCheckIn();
+
+  const currentMember = crew?.members?.find((m) => m.user.id === user?.id);
+  const isAdmin =
+    currentMember?.role === "OWNER" || currentMember?.role === "ADMIN";
+
+  const creator = activity
+    ? crew?.members?.find((m) => m.user.id === activity.createdBy)
+    : undefined;
+
+  const handleDelete = () => {
+    deleteActivity.mutate(
+      { crewId: crewId!, activityId: activityId! },
+      {
+        onSuccess: () => {
+          toast.success("활동이 삭제되었습니다.");
+          navigate(`/crews/${crewId}`);
+        },
+        onError: () => {
+          toast.error("활동 삭제에 실패했습니다.");
+        },
+      },
+    );
   };
 
-  useEffect(() => {
-    fetchActivity();
-  }, [crewId, activityId]);
-
-  const handleCheckIn = async () => {
-    setIsCheckingIn(true);
-    try {
-      await api.fetch(`/crews/${crewId}/activities/${activityId}/check-in`, {
-        method: "POST",
-        body: JSON.stringify({ method: "MANUAL" }),
-      });
-      toast.success("체크인 완료!");
-      fetchActivity();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "체크인에 실패했습니다.";
-      toast.error(msg);
-    } finally {
-      setIsCheckingIn(false);
-    }
+  const handleCheckIn = () => {
+    checkIn.mutate(
+      { crewId: crewId!, activityId: activityId!, method: "MANUAL" },
+      {
+        onSuccess: () => toast.success("체크인 완료!"),
+        onError: () => toast.error("체크인에 실패했습니다."),
+      },
+    );
   };
 
-  if (isLoading) {
+  const handleDownloadQR = () => {
+    const svg = document.getElementById("activity-qr-code");
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx?.drawImage(img, 0, 0);
+      const link = document.createElement("a");
+      link.download = `activity-${activityId}-qr.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    };
+    img.src =
+      "data:image/svg+xml;base64," +
+      btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  if (isActivityLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-64 rounded-lg" />
+        <Skeleton className="h-40 rounded-lg" />
       </div>
     );
   }
@@ -103,7 +134,9 @@ export default function CrewActivityDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <h2 className="text-xl font-semibold">오류</h2>
-        <p className="text-muted-foreground">{error ?? "활동을 찾을 수 없습니다."}</p>
+        <p className="text-muted-foreground">
+          {error instanceof Error ? error.message : "활동을 찾을 수 없습니다."}
+        </p>
         <Button variant="outline" onClick={() => navigate(`/crews/${crewId}`)}>
           크루로 돌아가기
         </Button>
@@ -113,29 +146,67 @@ export default function CrewActivityDetailPage() {
 
   const scheduledDate = new Date(activity.activityDate);
   const isPast = scheduledDate < new Date();
-  const isCheckedIn = activity.attendances.some((a) => a.userId === user?.id);
+  const myAttendance = activity.attendances.find((a) => a.userId === user?.id);
+  const isCheckedIn = !!myAttendance;
+
+  const qrCount = activity.attendances.filter((a) => a.method === "QR").length;
+  const manualCount = activity.attendances.filter(
+    (a) => a.method === "MANUAL",
+  ).length;
+  const totalCount = activity.attendances.length;
 
   return (
     <div className="space-y-6">
-      {/* Back button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => navigate(`/crews/${crewId}`)}
-        className="gap-1.5"
-      >
-        <ArrowLeft className="size-4" />
-        크루로 돌아가기
-      </Button>
+      {/* 1. Back button + Admin dropdown */}
+      <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(`/crews/${crewId}`)}
+          className="gap-1.5"
+        >
+          <ArrowLeft className="size-4" />
+          크루로 돌아가기
+        </Button>
 
-      {/* Activity info card */}
+        {isAdmin && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="rounded-full p-1.5 text-muted-foreground hover:bg-accent min-h-[44px] min-w-[44px] flex items-center justify-center">
+                <MoreHorizontal className="size-5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() =>
+                  navigate(
+                    `/crews/${crewId}/activities/${activityId}/edit`,
+                  )
+                }
+              >
+                <Pencil className="size-4 mr-2" />
+                수정
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="size-4 mr-2" />
+                삭제
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+
+      {/* 2. Activity info card */}
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-3">
             <div className="space-y-1.5">
-              <CardTitle className="text-2xl">{activity.title}</CardTitle>
+              <h1 className="text-2xl font-bold">{activity.title}</h1>
               <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="size-4" />
+                <Calendar className="size-4 shrink-0" />
                 <span>
                   {scheduledDate.toLocaleDateString("ko-KR", {
                     year: "numeric",
@@ -151,12 +222,12 @@ export default function CrewActivityDetailPage() {
               </div>
               {activity.location && (
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="size-4" />
+                  <MapPin className="size-4 shrink-0" />
                   <span>{activity.location}</span>
                 </div>
               )}
             </div>
-            <Badge variant={isPast ? "secondary" : "default"}>
+            <Badge variant={isPast ? "secondary" : "default"} className="shrink-0">
               {isPast ? "종료" : "예정"}
             </Badge>
           </div>
@@ -171,7 +242,37 @@ export default function CrewActivityDetailPage() {
         )}
       </Card>
 
-      {/* Check-in section */}
+      {/* 3. Map card (lat/lng 있을 때만) */}
+      {activity.latitude && activity.longitude && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <MapPin className="size-5" />
+              위치
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[200px] md:h-[250px] w-full overflow-hidden rounded-lg">
+              <MapContainer
+                center={[activity.latitude, activity.longitude]}
+                zoom={15}
+                scrollWheelZoom={false}
+                className="h-full w-full"
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Marker position={[activity.latitude, activity.longitude]}>
+                  <Popup>{activity.location ?? "활동 위치"}</Popup>
+                </Marker>
+              </MapContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 4. Check-in card */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
@@ -179,42 +280,116 @@ export default function CrewActivityDetailPage() {
             체크인
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          {isCheckedIn ? (
-            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-              <CheckCircle className="size-5" />
-              <span className="font-medium">체크인 완료</span>
+        <CardContent className="space-y-4">
+          {isAdmin ? (
+            /* Admin: QR 코드 표시 */
+            <div className="space-y-4">
+              <div className="flex justify-center">
+                <QRCodeSVG
+                  id="activity-qr-code"
+                  value={`${window.location.origin}/crews/${crewId}/activities/${activityId}/qr-check-in?code=${activity.qrCode}`}
+                  size={200}
+                  level="H"
+                  className="md:size-[200px] size-[160px]"
+                />
+              </div>
+              <div className="flex justify-center">
+                <Button variant="outline" size="sm" onClick={handleDownloadQR}>
+                  <Download className="size-4 mr-2" />
+                  QR 코드 저장
+                </Button>
+              </div>
             </div>
           ) : (
-            <Button onClick={handleCheckIn} disabled={isCheckingIn}>
-              {isCheckingIn ? (
-                <>
-                  <Loader2 className="size-4 mr-2 animate-spin" />
-                  체크인 중...
-                </>
-              ) : (
-                "수동 체크인"
+            /* 일반 멤버: 수동 체크인 버튼 */
+            <>
+              {isCheckedIn && (
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <CheckCircle className="size-5" />
+                  <span className="font-medium">체크인 완료</span>
+                  <span className="text-xs text-muted-foreground">
+                    (
+                    {new Date(myAttendance!.checkedAt).toLocaleTimeString(
+                      "ko-KR",
+                      { hour: "2-digit", minute: "2-digit" },
+                    )}
+                    )
+                  </span>
+                </div>
               )}
-            </Button>
+              {isPast && !isCheckedIn && (
+                <p className="text-sm text-muted-foreground">
+                  이 활동은 종료되었습니다.
+                </p>
+              )}
+              {!isPast && !isCheckedIn && (
+                <Button onClick={handleCheckIn} disabled={checkIn.isPending}>
+                  {checkIn.isPending ? (
+                    <>
+                      <Loader2 className="size-4 mr-2 animate-spin" />
+                      체크인 중...
+                    </>
+                  ) : (
+                    "수동 체크인"
+                  )}
+                </Button>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
 
-      {/* Attendees section */}
+      {/* 5. Attendees card */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Users className="size-5" />
-            참석자 ({activity.attendances.length}명)
+            참석자 ({totalCount}명)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {activity.attendances.length === 0 ? (
-            <p className="text-muted-foreground text-sm">아직 체크인한 멤버가 없습니다.</p>
+          {/* 통계 바 */}
+          {totalCount > 0 && (
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-muted-foreground">
+                  전체 <strong>{totalCount}</strong>명
+                </span>
+                <span className="text-blue-600">
+                  QR <strong>{qrCount}</strong>명
+                </span>
+                <span className="text-green-600">
+                  수동 <strong>{manualCount}</strong>명
+                </span>
+              </div>
+              <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
+                {qrCount > 0 && (
+                  <div
+                    className="bg-blue-500 transition-all"
+                    style={{ width: `${(qrCount / totalCount) * 100}%` }}
+                  />
+                )}
+                {manualCount > 0 && (
+                  <div
+                    className="bg-green-500 transition-all"
+                    style={{ width: `${(manualCount / totalCount) * 100}%` }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {totalCount === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              아직 체크인한 멤버가 없습니다.
+            </p>
           ) : (
-            <div className="space-y-3">
+            <div className="max-h-[400px] overflow-y-auto space-y-3">
               {activity.attendances.map((attendee) => (
-                <div key={attendee.id} className="flex items-center justify-between">
+                <div
+                  key={attendee.id}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex items-center gap-3">
                     <UserAvatar
                       user={{
@@ -242,10 +417,38 @@ export default function CrewActivityDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Meta info */}
-      <div className="text-sm text-muted-foreground text-center">
-        <TimeAgo date={activity.createdAt} /> 생성됨
+      {/* 6. Meta info (creator + creation time) */}
+      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground pb-4">
+        {creator && (
+          <>
+            <UserAvatar
+              user={{
+                id: creator.user.id,
+                name: creator.user.name,
+                profileImage: creator.user.profileImage,
+              }}
+              size="sm"
+              linkToProfile
+            />
+            <span>{creator.user.name}</span>
+            <span>·</span>
+          </>
+        )}
+        <TimeAgo date={activity.createdAt} />
+        <span>생성됨</span>
       </div>
+
+      {/* 7. Delete confirm dialog */}
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="활동 삭제"
+        description="정말 이 활동을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmLabel="삭제"
+        variant="destructive"
+        onConfirm={handleDelete}
+        loading={deleteActivity.isPending}
+      />
     </div>
   );
 }
