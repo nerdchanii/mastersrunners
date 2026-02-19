@@ -130,6 +130,11 @@ model User {
   // Crew Attendance
   crewAttendances CrewAttendance[]
 
+  // Crew Board
+  boardPosts     CrewBoardPost[]
+  boardComments  CrewBoardComment[]
+  boardPostLikes CrewBoardPostLike[]
+
   // DM
   conversationParticipants ConversationParticipant[]
   sentMessages             Message[]                 @relation("sender")
@@ -464,6 +469,7 @@ model Crew {
   tags       CrewTag[]
   bans       CrewBan[]
   activities CrewActivity[]
+  boards     CrewBoard[]
   chatConversationId String? @unique
 }
 
@@ -565,6 +571,78 @@ model CrewAttendance {
 
   @@unique([activityId, userId])
   @@index([activityId, status])
+}
+
+model CrewBoard {
+  id              String   @id @default(cuid())
+  crewId          String
+  crew            Crew     @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  name            String
+  type            String   @default("GENERAL") // ANNOUNCEMENT, GENERAL, FREE
+  writePermission String   @default("ALL_MEMBERS") // ALL_MEMBERS, ADMIN_ONLY
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  posts CrewBoardPost[]
+
+  @@index([crewId, sortOrder])
+}
+
+model CrewBoardPost {
+  id        String    @id @default(cuid())
+  boardId   String
+  board     CrewBoard @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id])
+  title     String
+  content   String
+  isPinned  Boolean   @default(false)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  images   CrewBoardPostImage[]
+  comments CrewBoardComment[]
+  likes    CrewBoardPostLike[]
+
+  @@index([boardId, isPinned, createdAt])
+}
+
+model CrewBoardPostImage {
+  id     String        @id @default(cuid())
+  postId String
+  post   CrewBoardPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  url    String
+  order  Int           @default(0)
+
+  @@index([postId, order])
+}
+
+model CrewBoardComment {
+  id        String             @id @default(cuid())
+  postId    String
+  post      CrewBoardPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User               @relation(fields: [authorId], references: [id])
+  content   String
+  parentId  String?
+  parent    CrewBoardComment?  @relation("BoardCommentReplies", fields: [parentId], references: [id])
+  replies   CrewBoardComment[] @relation("BoardCommentReplies")
+  deletedAt DateTime?
+  createdAt DateTime           @default(now())
+
+  @@index([postId, createdAt])
+}
+
+model CrewBoardPostLike {
+  id        String        @id @default(cuid())
+  postId    String
+  post      CrewBoardPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  createdAt DateTime      @default(now())
+
+  @@unique([postId, userId])
 }
 
 // ============================================================================

@@ -22,6 +22,7 @@ import { FollowModule } from "./follow/follow.module.js";
 import { WorkoutSocialModule } from "./workout-social/workout-social.module.js";
 import { PostSocialModule } from "./post-social/post-social.module.js";
 import { CrewsModule } from "./crews/crews.module.js";
+import { CrewBoardsModule } from "./crew-boards/crew-boards.module.js";
 import { ChallengesModule } from "./challenges/challenges.module.js";
 import { EventsModule } from "./events/events.module.js";
 import { UploadsModule } from "./uploads/uploads.module.js";
@@ -50,6 +51,7 @@ import { AppService } from "./app.service.js";
     WorkoutSocialModule,
     PostSocialModule,
     CrewsModule,
+    CrewBoardsModule,
     ChallengesModule,
     EventsModule,
     UploadsModule,

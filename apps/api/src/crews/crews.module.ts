@@ -8,9 +8,10 @@ import { CrewActivityRepository } from "./repositories/crew-activity.repository.
 import { CrewBanRepository } from "./repositories/crew-ban.repository.js";
 import { DatabaseModule } from "../database/database.module.js";
 import { ConversationsModule } from "../conversations/conversations.module.js";
+import { CrewBoardsModule } from "../crew-boards/crew-boards.module.js";
 
 @Module({
-  imports: [DatabaseModule, ConversationsModule],
+  imports: [DatabaseModule, ConversationsModule, CrewBoardsModule],
   controllers: [CrewsController],
   providers: [CrewsService, CrewRepository, CrewMemberRepository, CrewTagRepository, CrewActivityRepository, CrewBanRepository],
   exports: [CrewRepository, CrewMemberRepository],

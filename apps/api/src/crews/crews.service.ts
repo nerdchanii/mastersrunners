@@ -6,6 +6,7 @@ import { CrewActivityRepository } from "./repositories/crew-activity.repository.
 import { CrewBanRepository } from "./repositories/crew-ban.repository.js";
 import { DatabaseService } from "../database/database.service.js";
 import { ConversationsRepository } from "../conversations/repositories/conversations.repository.js";
+import { CrewBoardsService } from "../crew-boards/crew-boards.service.js";
 import type { CreateCrewDto } from "./dto/create-crew.dto.js";
 import type { UpdateCrewDto } from "./dto/update-crew.dto.js";
 import { randomUUID } from "crypto";
@@ -19,7 +20,8 @@ export class CrewsService {
     private readonly crewActivityRepo: CrewActivityRepository,
     private readonly crewBanRepo: CrewBanRepository,
     private readonly db: DatabaseService,
-    private readonly conversationsRepo: ConversationsRepository
+    private readonly conversationsRepo: ConversationsRepository,
+    private readonly crewBoardsService: CrewBoardsService,
   ) {}
 
   async create(userId: string, dto: CreateCrewDto) {
@@ -38,6 +40,9 @@ export class CrewsService {
     const chat = await this.conversationsRepo.createGroupConversation("CREW", { crewId: crew.id });
     await this.crewRepo.updateChatConversationId(crew.id, chat.id);
     await this.conversationsRepo.addParticipant(chat.id, userId);
+
+    // Create default announcement board
+    await this.crewBoardsService.createDefaultBoard(crew.id);
 
     return crew;
   }
