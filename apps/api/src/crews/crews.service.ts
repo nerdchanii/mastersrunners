@@ -32,6 +32,9 @@ export class CrewsService {
       creatorId: userId,
       isPublic: dto.isPublic ?? true,
       maxMembers: dto.maxMembers || null,
+      location: dto.location || null,
+      region: dto.region || null,
+      subRegion: dto.subRegion || null,
     });
 
     await this.crewMemberRepo.addMember(crew.id, userId, "OWNER", "ACTIVE");
@@ -704,6 +707,28 @@ export class CrewsService {
     return this.crewActivityRepo.getCrewAttendanceStats(crewId, opts);
   }
 
+  // ============ Explore / Recommend / Regions ============
+
+  async explore(options: { region?: string; subRegion?: string; sort?: string; cursor?: string }) {
+    return this.crewRepo.explore(options);
+  }
+
+  async recommend(userId: string) {
+    const user = await this.db.prisma.user.findUnique({
+      where: { id: userId },
+      select: { region: true, subRegion: true },
+    });
+    return this.crewRepo.recommend(user?.region, user?.subRegion);
+  }
+
+  async getRegions() {
+    return this.crewRepo.getRegions();
+  }
+
+  async getSubRegions(region: string) {
+    return this.crewRepo.getSubRegions(region);
+  }
+
   // ============ Ban Methods ============
 
   async unbanMember(crewId: string, adminUserId: string, targetUserId: string) {
@@ -767,6 +792,38 @@ export class CrewsService {
       messages: items,
       nextCursor: hasMore ? items[items.length - 1].id : null,
     };
+  }
+
+  // ============ Crew Profile & Posts ============
+
+  async createCrewPost(crewId: string, userId: string, data: { content: string; visibility?: string }) {
+    const crew = await this.crewRepo.findById(crewId);
+    if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
+
+    // Only OWNER can post as the crew
+    const member = crew.members.find((m) => m.userId === userId);
+    if (!member || member.role !== "OWNER") {
+      throw new ForbiddenException("크루장만 크루 게시물을 작성할 수 있습니다.");
+    }
+
+    return this.crewRepo.createCrewPost({
+      userId,
+      crewId,
+      content: data.content,
+      visibility: data.visibility,
+    });
+  }
+
+  async getCrewPosts(crewId: string, cursor?: string) {
+    const crew = await this.crewRepo.findById(crewId);
+    if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
+    return this.crewRepo.findCrewPosts(crewId, cursor);
+  }
+
+  async getCrewProfile(crewId: string) {
+    const result = await this.crewRepo.getCrewProfile(crewId);
+    if (!result) throw new NotFoundException("크루를 찾을 수 없습니다.");
+    return result;
   }
 
   async getActivityChat(crewId: string, activityId: string, userId: string, cursor?: string) {

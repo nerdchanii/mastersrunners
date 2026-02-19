@@ -17,6 +17,9 @@ export default function NewCrewPage() {
     description?: string;
     isPublic: boolean;
     maxMembers?: number;
+    location?: string;
+    region?: string;
+    subRegion?: string;
   }) => {
     setIsSubmitting(true);
     try {

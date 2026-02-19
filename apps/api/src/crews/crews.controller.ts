@@ -43,11 +43,66 @@ export class CrewsController {
     return this.crewsService.findMyCrews(userId);
   }
 
+  @Get("explore")
+  explore(
+    @Query("region") region?: string,
+    @Query("subRegion") subRegion?: string,
+    @Query("sort") sort?: string,
+    @Query("cursor") cursor?: string,
+  ) {
+    return this.crewsService.explore({ region, subRegion, sort, cursor });
+  }
+
+  @Get("recommend")
+  recommend(@Req() req: Request) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.recommend(userId);
+  }
+
+  @Get("regions")
+  getRegions() {
+    return this.crewsService.getRegions();
+  }
+
+  @Get("regions/:region")
+  getSubRegions(@Param("region") region: string) {
+    return this.crewsService.getSubRegions(region);
+  }
+
   @ApiOperation({ summary: '크루 상세 조회' })
   @ApiResponse({ status: 200, description: '성공' })
   @Get(":id")
   findOne(@Param("id") id: string) {
     return this.crewsService.findOne(id);
+  }
+
+  @ApiOperation({ summary: '크루 프로필 조회 (집계 정보)' })
+  @ApiResponse({ status: 200, description: '성공' })
+  @Get(":id/profile")
+  getCrewProfile(@Param("id") id: string) {
+    return this.crewsService.getCrewProfile(id);
+  }
+
+  @ApiOperation({ summary: '크루 게시물 목록 조회' })
+  @ApiResponse({ status: 200, description: '성공' })
+  @Get(":id/posts")
+  getCrewPosts(
+    @Param("id") id: string,
+    @Query("cursor") cursor?: string
+  ) {
+    return this.crewsService.getCrewPosts(id, cursor);
+  }
+
+  @ApiOperation({ summary: '크루 게시물 작성 (크루장 전용)' })
+  @ApiResponse({ status: 201, description: '생성 성공' })
+  @Post(":id/posts")
+  createCrewPost(
+    @Param("id") id: string,
+    @Req() req: Request,
+    @Body() body: { content: string; visibility?: string }
+  ) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.createCrewPost(id, userId, body);
   }
 
   @Patch(":id")

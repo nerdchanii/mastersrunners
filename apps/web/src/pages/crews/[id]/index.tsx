@@ -19,6 +19,7 @@ import CrewAttendanceStats from "@/components/crew/CrewAttendanceStats";
 import GroupChat from "@/components/crew/GroupChat";
 import { useCrewChat } from "@/hooks/useGroupChat";
 import CrewBoardList from "@/components/crew/CrewBoardList";
+import CrewPostList from "@/components/crew/CrewPostList";
 
 interface CrewMember {
   id: string;
@@ -254,6 +255,7 @@ export default function CrewDetailClient() {
           <TabsTrigger value="tags">태그</TabsTrigger>
           <TabsTrigger value="stats">통계</TabsTrigger>
           <TabsTrigger value="boards">게시판</TabsTrigger>
+          <TabsTrigger value="posts">게시물</TabsTrigger>
           {isMember && <TabsTrigger value="chat">채팅</TabsTrigger>}
           {isOwnerOrAdmin && <TabsTrigger value="pending">대기 멤버</TabsTrigger>}
         </TabsList>
@@ -297,6 +299,10 @@ export default function CrewDetailClient() {
 
         <TabsContent value="boards" className="mt-6">
           <CrewBoardList crewId={crewId} isMember={isMember} isAdmin={isOwnerOrAdmin} />
+        </TabsContent>
+
+        <TabsContent value="posts" className="mt-6">
+          <CrewPostList crewId={crewId} isOwner={currentUserRole === "OWNER"} />
         </TabsContent>
 
         {isMember && (

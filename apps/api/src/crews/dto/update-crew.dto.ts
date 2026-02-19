@@ -30,4 +30,19 @@ export class UpdateCrewDto {
   @IsInt()
   @Min(2)
   maxMembers?: number;
+
+  @ApiProperty({ description: '크루 활동 지역 (상세)', required: false })
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @ApiProperty({ description: '광역시/도', required: false })
+  @IsOptional()
+  @IsString()
+  region?: string;
+
+  @ApiProperty({ description: '시/군/구', required: false })
+  @IsOptional()
+  @IsString()
+  subRegion?: string;
 }

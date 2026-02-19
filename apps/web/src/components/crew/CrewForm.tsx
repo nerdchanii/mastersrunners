@@ -5,11 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+const KOREA_REGIONS = [
+  "서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시",
+  "대전광역시", "울산광역시", "세종특별자치시", "경기도", "강원특별자치도",
+  "충청북도", "충청남도", "전북특별자치도", "전라남도", "경상북도", "경상남도", "제주특별자치도"
+];
+
 interface CrewFormData {
   name: string;
   description: string;
   isPublic: boolean;
   maxMembers: string;
+  location: string;
+  region: string;
+  subRegion: string;
 }
 
 interface CrewFormProps {
@@ -18,12 +27,18 @@ interface CrewFormProps {
     description?: string | null;
     isPublic?: boolean;
     maxMembers?: number | null;
+    location?: string | null;
+    region?: string | null;
+    subRegion?: string | null;
   };
   onSubmit: (data: {
     name: string;
     description?: string;
     isPublic: boolean;
     maxMembers?: number;
+    location?: string;
+    region?: string;
+    subRegion?: string;
   }) => Promise<void>;
   onCancel: () => void;
   submitLabel: string;
@@ -42,6 +57,9 @@ export default function CrewForm({
     description: initialValues?.description || "",
     isPublic: initialValues?.isPublic ?? true,
     maxMembers: initialValues?.maxMembers?.toString() || "",
+    location: initialValues?.location || "",
+    region: initialValues?.region || "",
+    subRegion: initialValues?.subRegion || "",
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -66,6 +84,9 @@ export default function CrewForm({
         description: formData.description.trim() || undefined,
         isPublic: formData.isPublic,
         maxMembers: maxMembersNum,
+        location: formData.location.trim() || undefined,
+        region: formData.region || undefined,
+        subRegion: formData.subRegion.trim() || undefined,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
@@ -155,6 +176,46 @@ export default function CrewForm({
             />
             <p className="text-xs text-muted-foreground">비워두면 인원 제한이 없습니다.</p>
           </div>
+
+          {/* Location */}
+          <div className="space-y-2">
+            <Label htmlFor="crew-location">활동 지역 (선택)</Label>
+            <Input
+              id="crew-location"
+              value={formData.location}
+              onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+              placeholder="활동 지역 (예: 서울 한강)"
+            />
+          </div>
+
+          {/* Region */}
+          <div className="space-y-2">
+            <Label htmlFor="crew-region">지역 (선택)</Label>
+            <select
+              id="crew-region"
+              value={formData.region}
+              onChange={(e) => setFormData((prev) => ({ ...prev, region: e.target.value, subRegion: "" }))}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">지역 선택</option>
+              {KOREA_REGIONS.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sub-Region */}
+          {formData.region && (
+            <div className="space-y-2">
+              <Label htmlFor="crew-subregion">세부 지역 (선택)</Label>
+              <Input
+                id="crew-subregion"
+                value={formData.subRegion}
+                onChange={(e) => setFormData((prev) => ({ ...prev, subRegion: e.target.value }))}
+                placeholder="세부 지역 (예: 마포구)"
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

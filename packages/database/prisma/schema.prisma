@@ -79,6 +79,8 @@ model User {
   emailVerified         DateTime?
   isPrivate             Boolean   @default(false)
   workoutSharingDefault String    @default("FOLLOWERS") // PRIVATE, FOLLOWERS, PUBLIC
+  region                String?
+  subRegion             String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   deletedAt             DateTime? // soft delete (탈퇴)
@@ -345,6 +347,8 @@ model Post {
   content    String?
   visibility String    @default("FOLLOWERS") // PRIVATE, FOLLOWERS, PUBLIC
   hashtags   String[] // PostgreSQL array
+  crewId     String?
+  crew       Crew?     @relation(fields: [crewId], references: [id], onDelete: SetNull)
   deletedAt  DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
@@ -356,6 +360,7 @@ model Post {
 
   @@index([userId, deletedAt, createdAt])
   @@index([visibility, deletedAt, createdAt])
+  @@index([crewId, createdAt])
 }
 
 model PostImage {
@@ -452,17 +457,21 @@ model WorkoutComment {
 // ============================================================================
 
 model Crew {
-  id          String    @id @default(cuid())
-  name        String
-  description String?
-  imageUrl    String?
-  creatorId   String
-  creator     User      @relation(fields: [creatorId], references: [id])
-  isPublic    Boolean   @default(true)
-  maxMembers  Int?
-  deletedAt   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  imageUrl      String?
+  coverImageUrl String?
+  location      String?
+  region        String?
+  subRegion     String?
+  creatorId     String
+  creator       User      @relation(fields: [creatorId], references: [id])
+  isPublic      Boolean   @default(true)
+  maxMembers    Int?
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   members    CrewMember[]
   challenges Challenge[]
@@ -470,7 +479,10 @@ model Crew {
   bans       CrewBan[]
   activities CrewActivity[]
   boards     CrewBoard[]
+  posts      Post[]
   chatConversationId String? @unique
+
+  @@index([region, subRegion])
 }
 
 model CrewMember {

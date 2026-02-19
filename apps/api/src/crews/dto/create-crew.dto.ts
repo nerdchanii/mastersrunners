@@ -29,4 +29,19 @@ export class CreateCrewDto {
   @IsInt()
   @Min(2)
   maxMembers?: number;
+
+  @ApiProperty({ description: '크루 활동 지역 (상세)', example: '강남구', required: false })
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @ApiProperty({ description: '광역시/도', example: '서울특별시', required: false })
+  @IsOptional()
+  @IsString()
+  region?: string;
+
+  @ApiProperty({ description: '시/군/구', example: '강남구', required: false })
+  @IsOptional()
+  @IsString()
+  subRegion?: string;
 }
