@@ -50,6 +50,8 @@ export class WorkoutSocialService {
       userId,
       workoutId,
       content: dto.content,
+      ...(dto.parentId !== undefined && { parentId: dto.parentId }),
+      ...(dto.mentionedUserIds !== undefined && { mentionedUserIds: dto.mentionedUserIds }),
     });
   }
 

@@ -16,8 +16,18 @@ async function bootstrap() {
   app.use(express.urlencoded({ extended: true }));
   app.use(express.raw({ type: ["application/octet-stream", "image/*", "application/gpx+xml"], limit: "50mb" }));
 
+  const frontendUrl = config.get<string>("FRONTEND_URL", "http://localhost:3000");
   app.enableCors({
-    origin: config.get<string>("FRONTEND_URL", "http://localhost:3000"),
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g., mobile, curl, Playwright)
+      if (!origin) return callback(null, true);
+      // In development, allow any localhost port
+      if (process.env.NODE_ENV === "development" && /^http:\/\/localhost:\d+$/.test(origin)) {
+        return callback(null, true);
+      }
+      if (origin === frontendUrl) return callback(null, true);
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   });
 

@@ -70,7 +70,7 @@ describe("NotificationRepository", () => {
           orderBy: { createdAt: "desc" },
         }),
       );
-      expect(result.data).toEqual(mockItems);
+      expect(result.items).toEqual(mockItems);
       expect(result.hasMore).toBe(false);
     });
 

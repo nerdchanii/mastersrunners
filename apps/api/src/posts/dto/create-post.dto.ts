@@ -30,6 +30,6 @@ export class CreatePostDto {
   @ApiProperty({ description: '이미지 URL 목록', example: ['https://r2.example.com/image1.jpg'], required: false, isArray: true })
   @IsOptional()
   @IsArray()
-  @IsUrl({}, { each: true })
+  @IsUrl({ require_tld: false }, { each: true })
   imageUrls?: string[];
 }

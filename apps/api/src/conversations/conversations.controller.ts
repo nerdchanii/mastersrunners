@@ -43,7 +43,7 @@ export class ConversationsController {
     @Query("cursor") cursor?: string,
     @Query("limit") limit?: string,
   ) {
-    const parsedLimit = limit ? parseInt(limit, 10) : 20;
+    const parsedLimit = limit ? Math.min(Math.max(1, parseInt(limit, 10) || 20), 50) : 20;
     return this.conversationsService.getConversations(
       req.user.userId,
       cursor,
@@ -58,7 +58,7 @@ export class ConversationsController {
     @Query("cursor") cursor?: string,
     @Query("limit") limit?: string,
   ) {
-    const parsedLimit = limit ? parseInt(limit, 10) : 50;
+    const parsedLimit = limit ? Math.min(Math.max(1, parseInt(limit, 10) || 50), 100) : 50;
     return this.conversationsService.getConversation(
       id,
       req.user.userId,

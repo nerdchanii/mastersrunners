@@ -145,11 +145,11 @@ describe("ChallengesService", () => {
       expect(mockChallengeRepository.findById).toHaveBeenCalledWith(challengeId);
       expect(result).toMatchObject({
         id: challengeId,
-        name: "100km Challenge",
-        goalType: "DISTANCE",
-        goalValue: 100000,
+        title: "100km Challenge",
+        type: "DISTANCE",
+        targetValue: 100000,
         isPublic: true,
-        createdBy: "user-123",
+        creatorId: "user-123",
         isJoined: false,
         myProgress: null,
       });
@@ -186,7 +186,7 @@ describe("ChallengesService", () => {
       expect(mockChallengeRepository.findAll).toHaveBeenCalledWith(options);
       expect(result).toMatchObject({
         items: expect.arrayContaining([
-          expect.objectContaining({ id: "challenge-11", name: "Challenge 11", goalType: "DISTANCE" }),
+          expect.objectContaining({ id: "challenge-11", title: "Challenge 11", type: "DISTANCE" }),
         ]),
         nextCursor: null,
         hasMore: false,
@@ -225,7 +225,7 @@ describe("ChallengesService", () => {
         items: expect.arrayContaining([
           expect.objectContaining({
             id: "challenge-1",
-            name: "Challenge 1",
+            title: "Challenge 1",
             myProgress: 50000,
           }),
         ]),

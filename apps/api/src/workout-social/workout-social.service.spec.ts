@@ -131,6 +131,66 @@ describe("WorkoutSocialService", () => {
       });
       expect(result).toEqual(mockComment);
     });
+
+    it("should pass parentId when creating a reply comment", async () => {
+      const userId = "user-123";
+      const workoutId = "workout-456";
+      const dto: CreateWorkoutCommentDto = { content: "Reply!", parentId: "comment-parent-1" };
+      const mockComment = { id: "comment-2", userId, workoutId, content: dto.content, parentId: dto.parentId, createdAt: new Date() };
+      mockRepository.addComment.mockResolvedValue(mockComment);
+
+      const result = await service.addComment(userId, workoutId, dto);
+
+      expect(mockRepository.addComment).toHaveBeenCalledWith({
+        userId,
+        workoutId,
+        content: dto.content,
+        parentId: dto.parentId,
+      });
+      expect(result).toEqual(mockComment);
+    });
+
+    it("should pass mentionedUserIds when creating a comment with mentions", async () => {
+      const userId = "user-123";
+      const workoutId = "workout-456";
+      const dto: CreateWorkoutCommentDto = { content: "Hey @user-2!", mentionedUserIds: ["user-2", "user-3"] };
+      const mockComment = { id: "comment-3", userId, workoutId, content: dto.content, mentionedUserIds: dto.mentionedUserIds, createdAt: new Date() };
+      mockRepository.addComment.mockResolvedValue(mockComment);
+
+      const result = await service.addComment(userId, workoutId, dto);
+
+      expect(mockRepository.addComment).toHaveBeenCalledWith({
+        userId,
+        workoutId,
+        content: dto.content,
+        mentionedUserIds: dto.mentionedUserIds,
+      });
+      expect(result).toEqual(mockComment);
+    });
+
+    it("should omit parentId from repo call when not provided", async () => {
+      const userId = "user-123";
+      const workoutId = "workout-456";
+      const dto: CreateWorkoutCommentDto = { content: "Top-level comment" };
+      mockRepository.addComment.mockResolvedValue({ id: "comment-4" });
+
+      await service.addComment(userId, workoutId, dto);
+
+      const callArg = mockRepository.addComment.mock.calls[0][0];
+      expect(callArg.parentId).toBeUndefined();
+    });
+
+    it("should omit mentionedUserIds from repo call when not provided", async () => {
+      const userId = "user-123";
+      const workoutId = "workout-456";
+      const dto: CreateWorkoutCommentDto = { content: "No mentions" };
+      mockRepository.addComment.mockResolvedValue({ id: "comment-5" });
+
+      await service.addComment(userId, workoutId, dto);
+
+      const callArg = mockRepository.addComment.mock.calls[0][0];
+      expect(callArg.mentionedUserIds).toBeUndefined();
+    });
   });
 
   describe("deleteComment", () => {

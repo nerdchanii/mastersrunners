@@ -14,12 +14,12 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   profileImage?: string;
 
   @IsOptional()
   @IsString()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   backgroundImage?: string;
 
   @IsOptional()

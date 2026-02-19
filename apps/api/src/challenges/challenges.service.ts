@@ -50,17 +50,17 @@ export class ChallengesService {
       }
     }
 
-    // Map to frontend contract
     return {
       id: challenge.id,
-      name: challenge.title,
+      title: challenge.title,
       description: challenge.description,
-      goalType: challenge.type,
-      goalValue: challenge.targetValue,
+      type: challenge.type,
+      targetValue: challenge.targetValue,
+      targetUnit: challenge.targetUnit,
       startDate: challenge.startDate.toISOString(),
       endDate: challenge.endDate.toISOString(),
       isPublic: challenge.isPublic,
-      createdBy: challenge.creatorId,
+      creatorId: challenge.creatorId,
       creator: challenge.creator,
       _count: challenge._count,
       isJoined,
@@ -71,13 +71,13 @@ export class ChallengesService {
   async findAll(options: { isPublic?: boolean; crewId?: string; cursor?: string; limit?: number }) {
     const { data, nextCursor, hasMore } = await this.challengeRepo.findAll(options);
 
-    // Map to frontend contract
     const items = data.map((challenge) => ({
       id: challenge.id,
-      name: challenge.title,
+      title: challenge.title,
       description: challenge.description,
-      goalType: challenge.type,
-      goalValue: challenge.targetValue,
+      type: challenge.type,
+      targetValue: challenge.targetValue,
+      targetUnit: challenge.targetUnit,
       startDate: challenge.startDate.toISOString(),
       endDate: challenge.endDate.toISOString(),
       isPublic: challenge.isPublic,
@@ -90,13 +90,13 @@ export class ChallengesService {
   async findMyChallenges(userId: string, options?: { cursor?: string; limit?: number }) {
     const { data, nextCursor, hasMore } = await this.challengeRepo.findByUser(userId, options);
 
-    // Map to frontend contract
     const items = data.map((challenge) => ({
       id: challenge.id,
-      name: challenge.title,
+      title: challenge.title,
       description: challenge.description,
-      goalType: challenge.type,
-      goalValue: challenge.targetValue,
+      type: challenge.type,
+      targetValue: challenge.targetValue,
+      targetUnit: challenge.targetUnit,
       startDate: challenge.startDate.toISOString(),
       endDate: challenge.endDate.toISOString(),
       isPublic: challenge.isPublic,

@@ -187,6 +187,42 @@ describe("WorkoutSocialRepository", () => {
       });
       expect(result).toEqual(mockComment);
     });
+
+    it("should create a reply comment with parentId", async () => {
+      const commentData = {
+        userId: "user-123",
+        workoutId: "workout-456",
+        content: "Reply!",
+        parentId: "comment-parent-1",
+      };
+      const mockComment = { id: "comment-2", ...commentData, createdAt: new Date(), updatedAt: new Date() };
+      mockPrisma.workoutComment.create.mockResolvedValue(mockComment);
+
+      const result = await repository.addComment(commentData);
+
+      expect(mockPrisma.workoutComment.create).toHaveBeenCalledWith({
+        data: commentData,
+      });
+      expect(result).toEqual(mockComment);
+    });
+
+    it("should create a comment with mentionedUserIds", async () => {
+      const commentData = {
+        userId: "user-123",
+        workoutId: "workout-456",
+        content: "Hey @user-2!",
+        mentionedUserIds: ["user-2", "user-3"],
+      };
+      const mockComment = { id: "comment-3", ...commentData, createdAt: new Date(), updatedAt: new Date() };
+      mockPrisma.workoutComment.create.mockResolvedValue(mockComment);
+
+      const result = await repository.addComment(commentData);
+
+      expect(mockPrisma.workoutComment.create).toHaveBeenCalledWith({
+        data: commentData,
+      });
+      expect(result).toEqual(mockComment);
+    });
   });
 
   describe("deleteComment", () => {
@@ -206,7 +242,9 @@ describe("WorkoutSocialRepository", () => {
   });
 
   describe("getComments", () => {
-    it("should fetch comments without cursor", async () => {
+    const userSelect = { select: { id: true, name: true, profileImage: true } };
+
+    it("should fetch top-level comments with nested replies", async () => {
       const workoutId = "workout-456";
       const mockComments = [
         {
@@ -215,6 +253,7 @@ describe("WorkoutSocialRepository", () => {
           createdAt: new Date(),
           updatedAt: new Date(),
           user: { id: "user-1", name: "Alice", profileImage: null },
+          replies: [],
         },
       ];
       mockPrisma.workoutComment.findMany.mockResolvedValue(mockComments);
@@ -224,23 +263,19 @@ describe("WorkoutSocialRepository", () => {
       expect(mockPrisma.workoutComment.findMany).toHaveBeenCalledWith({
         where: {
           workoutId,
+          parentId: null,
           deletedAt: null,
         },
-        select: {
-          id: true,
-          content: true,
-          createdAt: true,
-          updatedAt: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              profileImage: true,
-            },
+        take: 20,
+        include: {
+          user: userSelect,
+          replies: {
+            where: { deletedAt: null },
+            orderBy: { createdAt: "asc" },
+            include: { user: userSelect },
           },
         },
         orderBy: { createdAt: "desc" },
-        take: 20,
       });
       expect(result).toEqual(mockComments);
     });
@@ -252,16 +287,14 @@ describe("WorkoutSocialRepository", () => {
 
       await repository.getComments(workoutId, cursor, 15);
 
-      expect(mockPrisma.workoutComment.findMany).toHaveBeenCalledWith({
-        where: {
-          workoutId,
-          deletedAt: null,
-          id: { lt: cursor },
-        },
-        select: expect.any(Object),
-        orderBy: { createdAt: "desc" },
-        take: 15,
-      });
+      expect(mockPrisma.workoutComment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { workoutId, parentId: null, deletedAt: null },
+          take: 15,
+          skip: 1,
+          cursor: { id: cursor },
+        }),
+      );
     });
 
     it("should exclude deleted comments", async () => {
@@ -272,7 +305,7 @@ describe("WorkoutSocialRepository", () => {
 
       expect(mockPrisma.workoutComment.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ deletedAt: null }),
+          where: expect.objectContaining({ deletedAt: null, parentId: null }),
         }),
       );
     });

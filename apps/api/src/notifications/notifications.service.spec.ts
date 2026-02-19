@@ -55,7 +55,7 @@ describe("NotificationsService", () => {
   describe("getNotifications", () => {
     it("should delegate to repo.findByUser", async () => {
       const userId = "user-1";
-      const mockResult = { data: [], nextCursor: null, hasMore: false };
+      const mockResult = { items: [], nextCursor: null, hasMore: false };
       mockRepo.findByUser.mockResolvedValue(mockResult);
 
       const result = await service.getNotifications(userId, { limit: 10 });

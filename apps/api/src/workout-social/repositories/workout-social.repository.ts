@@ -5,6 +5,8 @@ interface CreateCommentData {
   userId: string;
   workoutId: string;
   content: string;
+  parentId?: string;
+  mentionedUserIds?: string[];
 }
 
 @Injectable()
@@ -71,18 +73,17 @@ export class WorkoutSocialRepository {
   }
 
   async getComments(workoutId: string, cursor?: string, limit = 20, excludeUserIds: string[] = []) {
+    const userFilter = excludeUserIds.length > 0 ? { userId: { notIn: excludeUserIds } } : {};
     return this.db.prisma.workoutComment.findMany({
       where: {
         workoutId,
+        parentId: null,
         deletedAt: null,
-        ...(cursor ? { id: { lt: cursor } } : {}),
-        ...(excludeUserIds.length > 0 && { userId: { notIn: excludeUserIds } }),
+        ...userFilter,
       },
-      select: {
-        id: true,
-        content: true,
-        createdAt: true,
-        updatedAt: true,
+      take: limit,
+      ...(cursor && { skip: 1, cursor: { id: cursor } }),
+      include: {
         user: {
           select: {
             id: true,
@@ -90,9 +91,21 @@ export class WorkoutSocialRepository {
             profileImage: true,
           },
         },
+        replies: {
+          where: { deletedAt: null, ...userFilter },
+          orderBy: { createdAt: "asc" as const },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                profileImage: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
-      take: limit,
     });
   }
 

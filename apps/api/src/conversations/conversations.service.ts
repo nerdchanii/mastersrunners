@@ -84,6 +84,15 @@ export class ConversationsService {
       throw new ForbiddenException("이 대화에 참여할 권한이 없습니다.");
     }
 
+    // Check block relationship
+    const otherParticipant = conversation.participants.find((p) => p.userId !== userId);
+    if (otherParticipant) {
+      const blocked = await this.blockRepo.isBlocked(userId, otherParticipant.userId);
+      if (blocked) {
+        throw new ForbiddenException("차단 관계로 인해 대화를 볼 수 없습니다.");
+      }
+    }
+
     // Get messages
     const messages = await this.conversationsRepo.getMessages(
       conversationId,
@@ -154,7 +163,7 @@ export class ConversationsService {
   async deleteMessage(messageId: string, userId: string) {
     const message = await this.conversationsRepo.getMessageById(messageId);
 
-    if (!message) {
+    if (!message || message.deletedAt) {
       throw new NotFoundException("메시지를 찾을 수 없습니다.");
     }
 
@@ -162,6 +171,7 @@ export class ConversationsService {
       throw new ForbiddenException("본인의 메시지만 삭제할 수 있습니다.");
     }
 
-    return this.conversationsRepo.deleteMessage(messageId);
+    await this.conversationsRepo.deleteMessage(messageId);
+    return { id: messageId };
   }
 }

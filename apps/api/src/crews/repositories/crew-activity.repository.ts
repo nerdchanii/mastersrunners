@@ -60,7 +60,11 @@ export class CrewActivityRepository {
             userId: true,
             checkedAt: true,
             method: true,
+            user: {
+              select: { id: true, name: true, profileImage: true },
+            },
           },
+          orderBy: { checkedAt: 'asc' },
         },
       },
     });
@@ -104,6 +108,11 @@ export class CrewActivityRepository {
     return this.databaseService.prisma.crewAttendance.findMany({
       where: { activityId },
       orderBy: { checkedAt: 'asc' },
+      include: {
+        user: {
+          select: { id: true, name: true, profileImage: true },
+        },
+      },
     });
   }
 }

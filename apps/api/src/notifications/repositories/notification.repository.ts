@@ -59,7 +59,7 @@ export class NotificationRepository {
     const data = hasMore ? items.slice(0, limit) : items;
     const nextCursor = hasMore ? data[data.length - 1].id : null;
 
-    return { data, nextCursor, hasMore };
+    return { items: data, nextCursor, hasMore };
   }
 
   async markAsRead(id: string, userId: string) {

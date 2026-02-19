@@ -39,6 +39,23 @@ describe("ConversationsRepository", () => {
   });
 
   describe("findOrCreateDirect", () => {
+    it("should execute inside a transaction", async () => {
+      const userId1 = "user-1";
+      const userId2 = "user-2";
+
+      mockDatabaseService.prisma.conversation.findMany.mockResolvedValue([]);
+      mockDatabaseService.prisma.conversation.create.mockResolvedValue({
+        id: "conv-1",
+        type: "DIRECT",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await repository.findOrCreateDirect(userId1, userId2);
+
+      expect(mockDatabaseService.prisma.$transaction).toHaveBeenCalled();
+    });
+
     it("should create new conversation with 2 participants when none exists", async () => {
       const userId1 = "user-1";
       const userId2 = "user-2";
@@ -351,6 +368,15 @@ describe("ConversationsRepository", () => {
           conversationId,
           senderId,
           content,
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              name: true,
+              profileImage: true,
+            },
+          },
         },
       });
       expect(mockDatabaseService.prisma.conversation.update).toHaveBeenCalledWith({

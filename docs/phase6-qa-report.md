@@ -29,11 +29,10 @@
 - **파일**: `apps/api/src/main.ts:43-44`
 - **상태**: ✅ 수정 완료
 
-### 5. [HIGH] CORS 설정 불일치 — FRONTEND_URL 포트
-- **증상**: 프론트엔드(localhost:3001)에서 API(localhost:4000)로의 요청이 CORS 차단
-- **원인**: `.env`의 `FRONTEND_URL`이 `http://localhost:3000`으로 설정 (실제는 3001)
-- **파일**: `apps/api/.env`
-- **상태**: ✅ 수정 완료
+### 5. ~~[HIGH] CORS 설정 불일치 — FRONTEND_URL 포트~~
+- **증상**: Playwright 테스트 시 3001 포트에서 CORS 차단
+- **원인**: 사용자가 별도로 3000 포트에 프론트엔드를 실행 중이었음 (`.env` 설정은 정상)
+- **상태**: ❌ 잘못된 수정 → **원복 완료** (FRONTEND_URL=http://localhost:3000)
 
 ---
 
@@ -60,6 +59,6 @@
 | 2 | 2026-02-18 | 삭제 유저 재로그인 | `restoreDeletedUser()` 추가 |
 | 3 | 2026-02-18 | SSE data type | `unknown` → `string \| object` |
 | 4 | 2026-02-18 | Swagger type | `app as any` 캐스팅 |
-| 5 | 2026-02-18 | CORS FRONTEND_URL | 3000 → 3001 포트 수정 |
+| 5 | 2026-02-18 | ~~CORS FRONTEND_URL~~ | ❌ 잘못된 수정 → 원복 |
 | 6 | 2026-02-18 | Playwright login race | route intercept + addInitScript |
 | 7 | 2026-02-18 | Playwright locator | getByRole/getByText 네이티브 API 전환 |

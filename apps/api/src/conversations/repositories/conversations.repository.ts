@@ -7,38 +7,40 @@ export class ConversationsRepository {
   constructor(private readonly db: DatabaseService) {}
 
   async findOrCreateDirect(userId1: string, userId2: string) {
-    // Check if conversation already exists.
-    // Use some+some to filter candidates, then verify exactly 2 participants
-    // in application code (Prisma does not support _count in where clauses).
-    const candidates = await this.db.prisma.conversation.findMany({
-      where: {
-        type: "DIRECT",
-        AND: [
-          { participants: { some: { userId: userId1 } } },
-          { participants: { some: { userId: userId2 } } },
-        ],
-      },
-      include: {
-        participants: {
-          select: { userId: true },
+    return this.db.prisma.$transaction(async (tx: TransactionClient) => {
+      // Check if conversation already exists.
+      // Use some+some to filter candidates, then verify exactly 2 participants
+      // in application code (Prisma does not support _count in where clauses).
+      const candidates = await tx.conversation.findMany({
+        where: {
+          type: "DIRECT",
+          AND: [
+            { participants: { some: { userId: userId1 } } },
+            { participants: { some: { userId: userId2 } } },
+          ],
         },
-      },
-    });
-
-    const existing = candidates.find((c) => c.participants.length === 2) ?? null;
-
-    if (existing) {
-      return existing;
-    }
-
-    // Create new conversation with both participants
-    return this.db.prisma.conversation.create({
-      data: {
-        type: "DIRECT",
-        participants: {
-          create: [{ userId: userId1 }, { userId: userId2 }],
+        include: {
+          participants: {
+            select: { userId: true },
+          },
         },
-      },
+      });
+
+      const existing = candidates.find((c) => c.participants.length === 2) ?? null;
+
+      if (existing) {
+        return existing;
+      }
+
+      // Create new conversation with both participants
+      return tx.conversation.create({
+        data: {
+          type: "DIRECT",
+          participants: {
+            create: [{ userId: userId1 }, { userId: userId2 }],
+          },
+        },
+      });
     });
   }
 
@@ -136,6 +138,15 @@ export class ConversationsRepository {
           conversationId,
           senderId,
           content,
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              name: true,
+              profileImage: true,
+            },
+          },
         },
       });
 
