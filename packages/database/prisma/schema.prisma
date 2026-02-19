@@ -126,6 +126,9 @@ model User {
   notifications      Notification[] @relation("recipient")
   actedNotifications Notification[] @relation("actor")
 
+  // Crew Attendance
+  crewAttendances CrewAttendance[]
+
   // DM
   conversationParticipants ConversationParticipant[]
   sentMessages             Message[]                 @relation("sender")
@@ -420,17 +423,22 @@ model WorkoutLike {
 }
 
 model WorkoutComment {
-  id        String    @id @default(cuid())
-  userId    String
-  workoutId String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workout   Workout   @relation(fields: [workoutId], references: [id], onDelete: Cascade)
-  content   String
-  deletedAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id               String           @id @default(cuid())
+  userId           String
+  workoutId        String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workout          Workout          @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  content          String
+  parentId         String?
+  parent           WorkoutComment?  @relation("workoutCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies          WorkoutComment[] @relation("workoutCommentReplies")
+  mentionedUserIds String[]
+  deletedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   @@index([workoutId, deletedAt, createdAt])
+  @@index([parentId])
 }
 
 // ============================================================================
@@ -532,6 +540,7 @@ model CrewAttendance {
   activityId String
   userId     String
   activity   CrewActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id])
   method     String       @default("QR") // QR, MANUAL
   checkedAt  DateTime     @default(now())
 
