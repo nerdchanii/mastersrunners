@@ -7,6 +7,8 @@ import { CrewTagRepository } from "./repositories/crew-tag.repository.js";
 import { CrewActivityRepository } from "./repositories/crew-activity.repository.js";
 import { CrewBanRepository } from "./repositories/crew-ban.repository.js";
 import { DatabaseService } from "../database/database.service.js";
+import { ConversationsRepository } from "../conversations/repositories/conversations.repository.js";
+import { CrewBoardsService } from "../crew-boards/crew-boards.service.js";
 import type { CreateCrewDto } from "./dto/create-crew.dto.js";
 import type { UpdateCrewDto } from "./dto/update-crew.dto.js";
 
@@ -17,6 +19,7 @@ const mockCrewRepository = {
   findByUser: jest.fn(),
   update: jest.fn(),
   softDelete: jest.fn(),
+  updateChatConversationId: jest.fn(),
 };
 
 const mockCrewMemberRepository = {
@@ -49,6 +52,7 @@ const mockCrewActivityRepository = {
   checkIn: jest.fn(),
   findAttendance: jest.fn(),
   getAttendees: jest.fn(),
+  updateChatConversationId: jest.fn(),
 };
 
 const mockCrewBanRepository = {
@@ -70,7 +74,20 @@ const mockDatabaseService = {
     crewMemberTag: {
       findUnique: jest.fn(),
     },
+    user: {
+      findUnique: jest.fn(),
+    },
   },
+};
+
+const mockConversationsRepository = {
+  createGroupConversation: jest.fn(),
+  addParticipant: jest.fn(),
+  removeParticipant: jest.fn(),
+};
+
+const mockCrewBoardsService = {
+  createDefaultBoard: jest.fn(),
 };
 
 describe("CrewsService", () => {
@@ -87,6 +104,8 @@ describe("CrewsService", () => {
         { provide: CrewActivityRepository, useValue: mockCrewActivityRepository },
         { provide: CrewBanRepository, useValue: mockCrewBanRepository },
         { provide: DatabaseService, useValue: mockDatabaseService },
+        { provide: ConversationsRepository, useValue: mockConversationsRepository },
+        { provide: CrewBoardsService, useValue: mockCrewBoardsService },
       ],
     }).compile();
     service = module.get(CrewsService);
@@ -106,6 +125,7 @@ describe("CrewsService", () => {
 
       mockCrewRepository.create.mockResolvedValue(mockCrew);
       mockCrewMemberRepository.addMember.mockResolvedValue(mockMembership);
+      mockConversationsRepository.createGroupConversation.mockResolvedValue({ id: "chat-1" });
 
       const result = await service.create(userId, dto);
 
@@ -116,6 +136,9 @@ describe("CrewsService", () => {
         creatorId: userId,
         isPublic: dto.isPublic ?? true,
         maxMembers: dto.maxMembers || null,
+        location: null,
+        region: null,
+        subRegion: null,
       });
       expect(mockCrewMemberRepository.addMember).toHaveBeenCalledWith("crew-new", userId, "OWNER", "ACTIVE");
       expect(result).toEqual(mockCrew);
@@ -128,6 +151,7 @@ describe("CrewsService", () => {
 
       mockCrewRepository.create.mockResolvedValue(mockCrew);
       mockCrewMemberRepository.addMember.mockResolvedValue({});
+      mockConversationsRepository.createGroupConversation.mockResolvedValue({ id: "chat-1" });
 
       const result = await service.create(userId, dto);
 
@@ -138,6 +162,9 @@ describe("CrewsService", () => {
         creatorId: userId,
         isPublic: true,
         maxMembers: null,
+        location: null,
+        region: null,
+        subRegion: null,
       });
       expect(result).toEqual(mockCrew);
     });
@@ -425,16 +452,15 @@ describe("CrewsService", () => {
       const userId = "user-member";
       const mockCrew = { id: crewId };
       const mockMember = { role: "MEMBER" };
-      const mockRemoved = { crewId, userId };
 
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
-      mockCrewMemberRepository.removeMember.mockResolvedValue(mockRemoved);
+      mockCrewMemberRepository.removeMember.mockResolvedValue({});
 
       const result = await service.leave(crewId, userId);
 
       expect(mockCrewMemberRepository.removeMember).toHaveBeenCalledWith(crewId, userId);
-      expect(result).toEqual(mockRemoved);
+      expect(result).toEqual({ success: true });
     });
 
     it("should throw NotFoundException if crew not found", async () => {
@@ -1139,6 +1165,7 @@ describe("CrewsService", () => {
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
       mockCrewActivityRepository.create.mockResolvedValue(mockActivity);
+      mockConversationsRepository.createGroupConversation.mockResolvedValue({ id: "activity-chat-1" });
 
       const result = await service.createActivity(crewId, userId, activityData);
 
@@ -1179,9 +1206,9 @@ describe("CrewsService", () => {
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockCrewActivityRepository.findByCrewId.mockResolvedValue(mockActivities);
 
-      const result = await service.getActivities(crewId, undefined, 20);
+      const result = await service.getActivities(crewId, { cursor: undefined, limit: 20 });
 
-      expect(mockCrewActivityRepository.findByCrewId).toHaveBeenCalledWith(crewId, undefined, 20);
+      expect(mockCrewActivityRepository.findByCrewId).toHaveBeenCalledWith(crewId, { cursor: undefined, limit: 20 });
       expect(result).toEqual({ items: mockActivities, nextCursor: null });
     });
 
@@ -1197,8 +1224,9 @@ describe("CrewsService", () => {
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockCrewActivityRepository.findByCrewId.mockResolvedValue(mockActivities);
 
-      const result = await service.getActivities(crewId, undefined, 2);
+      const result = await service.getActivities(crewId, { cursor: undefined, limit: 2 });
 
+      expect(mockCrewActivityRepository.findByCrewId).toHaveBeenCalledWith(crewId, { cursor: undefined, limit: 2 });
       expect(result).toEqual({
         items: [mockActivities[0], mockActivities[1]],
         nextCursor: "activity-2",
@@ -1272,39 +1300,39 @@ describe("CrewsService", () => {
       const activityId = "activity-1";
       const userId = "user-member";
       const crewId = "crew-123";
-      const mockActivity = { id: activityId, crewId };
+      const mockActivity = { id: activityId, crewId, status: "SCHEDULED" };
       const mockMember = { crewId, userId, role: "MEMBER" };
-      const mockAttendance = { id: "attendance-1", activityId, userId, method: "QR" };
+      const mockRsvp = { id: "attendance-1", activityId, userId, status: "RSVP" };
+      const mockAttendance = { id: "attendance-1", activityId, userId, method: "MANUAL" };
 
       mockCrewActivityRepository.findById.mockResolvedValue(mockActivity);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
-      mockCrewActivityRepository.findAttendance.mockResolvedValue(null);
+      mockCrewActivityRepository.findAttendance.mockResolvedValue(mockRsvp);
       mockCrewActivityRepository.checkIn.mockResolvedValue(mockAttendance);
 
       const result = await service.checkIn(activityId, userId);
 
-      expect(mockCrewActivityRepository.checkIn).toHaveBeenCalledWith(activityId, userId, "QR");
+      expect(mockCrewActivityRepository.checkIn).toHaveBeenCalledWith(activityId, userId, "MANUAL");
       expect(result).toEqual(mockAttendance);
     });
 
-    it("should throw ConflictException if already checked in", async () => {
+    it("should throw BadRequestException if no RSVP exists", async () => {
       const activityId = "activity-1";
       const userId = "user-member";
-      const mockActivity = { id: activityId, crewId: "crew-123" };
+      const mockActivity = { id: activityId, crewId: "crew-123", status: "SCHEDULED" };
       const mockMember = { crewId: "crew-123", userId };
-      const existing = { id: "attendance-1", activityId, userId };
 
       mockCrewActivityRepository.findById.mockResolvedValue(mockActivity);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
-      mockCrewActivityRepository.findAttendance.mockResolvedValue(existing);
+      mockCrewActivityRepository.findAttendance.mockResolvedValue(null);
 
-      await expect(service.checkIn(activityId, userId)).rejects.toThrow(ConflictException);
+      await expect(service.checkIn(activityId, userId)).rejects.toThrow(BadRequestException);
     });
 
     it("should throw ForbiddenException if not a crew member", async () => {
       const activityId = "activity-1";
       const userId = "user-outsider";
-      const mockActivity = { id: activityId, crewId: "crew-123" };
+      const mockActivity = { id: activityId, crewId: "crew-123", status: "SCHEDULED" };
 
       mockCrewActivityRepository.findById.mockResolvedValue(mockActivity);
       mockCrewMemberRepository.findMember.mockResolvedValue(null);
@@ -1327,7 +1355,7 @@ describe("CrewsService", () => {
 
       const result = await service.getAttendees(activityId);
 
-      expect(mockCrewActivityRepository.getAttendees).toHaveBeenCalledWith(activityId);
+      expect(mockCrewActivityRepository.getAttendees).toHaveBeenCalledWith(activityId, undefined);
       expect(result).toEqual(mockAttendees);
     });
 

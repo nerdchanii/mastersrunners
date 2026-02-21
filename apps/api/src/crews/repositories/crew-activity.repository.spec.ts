@@ -16,6 +16,7 @@ describe('CrewActivityRepository', () => {
     },
     crewAttendance: {
       create: jest.fn(),
+      update: jest.fn(),
       findUnique: jest.fn(),
       findMany: jest.fn(),
     },
@@ -88,7 +89,7 @@ describe('CrewActivityRepository', () => {
 
       mockPrisma.crewActivity.findMany.mockResolvedValue(expected);
 
-      const result = await repository.findByCrewId(crewId, cursor, limit);
+      const result = await repository.findByCrewId(crewId, { cursor, limit });
 
       expect(result).toEqual(expected);
       expect(mockPrisma.crewActivity.findMany).toHaveBeenCalledWith({
@@ -101,8 +102,10 @@ describe('CrewActivityRepository', () => {
           attendances: {
             select: {
               userId: true,
+              status: true,
               checkedAt: true,
               method: true,
+              rsvpAt: true,
             },
           },
         },
@@ -124,7 +127,7 @@ describe('CrewActivityRepository', () => {
 
       mockPrisma.crewActivity.findMany.mockResolvedValue(expected);
 
-      const result = await repository.findByCrewId(crewId, undefined, limit);
+      const result = await repository.findByCrewId(crewId, { limit });
 
       expect(result).toEqual(expected);
       expect(mockPrisma.crewActivity.findMany).toHaveBeenCalledWith({
@@ -135,8 +138,10 @@ describe('CrewActivityRepository', () => {
           attendances: {
             select: {
               userId: true,
+              status: true,
               checkedAt: true,
               method: true,
+              rsvpAt: true,
             },
           },
         },
@@ -170,9 +175,14 @@ describe('CrewActivityRepository', () => {
             select: {
               id: true,
               userId: true,
-              checkedAt: true,
+              status: true,
               method: true,
+              rsvpAt: true,
+              checkedAt: true,
+              checkedBy: true,
+              user: { select: { id: true, name: true, profileImage: true } },
             },
+            orderBy: { rsvpAt: 'asc' },
           },
         },
       });
@@ -230,7 +240,7 @@ describe('CrewActivityRepository', () => {
   });
 
   describe('checkIn', () => {
-    it('should record attendance for an activity', async () => {
+    it('should update attendance to CHECKED_IN for an activity', async () => {
       const activityId = 'activity-1';
       const userId = 'user-1';
       const method = 'QR';
@@ -240,24 +250,22 @@ describe('CrewActivityRepository', () => {
         activityId,
         userId,
         method,
-        checkedAt: new Date(),
+        status: 'CHECKED_IN',
+        checkedAt: expect.any(Date),
       };
 
-      mockPrisma.crewAttendance.create.mockResolvedValue(expected);
+      mockPrisma.crewAttendance.update = jest.fn().mockResolvedValue(expected);
 
       const result = await repository.checkIn(activityId, userId, method);
 
       expect(result).toEqual(expected);
-      expect(mockPrisma.crewAttendance.create).toHaveBeenCalledWith({
-        data: {
-          activityId,
-          userId,
-          method,
-        },
+      expect(mockPrisma.crewAttendance.update).toHaveBeenCalledWith({
+        where: { activityId_userId: { activityId, userId } },
+        data: { status: 'CHECKED_IN', method, checkedAt: expect.any(Date) },
       });
     });
 
-    it('should use default method if not provided', async () => {
+    it('should use default method MANUAL if not provided', async () => {
       const activityId = 'activity-1';
       const userId = 'user-1';
 
@@ -265,21 +273,19 @@ describe('CrewActivityRepository', () => {
         id: 'attendance-2',
         activityId,
         userId,
-        method: 'QR',
-        checkedAt: new Date(),
+        method: 'MANUAL',
+        status: 'CHECKED_IN',
+        checkedAt: expect.any(Date),
       };
 
-      mockPrisma.crewAttendance.create.mockResolvedValue(expected);
+      mockPrisma.crewAttendance.update = jest.fn().mockResolvedValue(expected);
 
       const result = await repository.checkIn(activityId, userId);
 
       expect(result).toEqual(expected);
-      expect(mockPrisma.crewAttendance.create).toHaveBeenCalledWith({
-        data: {
-          activityId,
-          userId,
-          method: 'QR',
-        },
+      expect(mockPrisma.crewAttendance.update).toHaveBeenCalledWith({
+        where: { activityId_userId: { activityId, userId } },
+        data: { status: 'CHECKED_IN', method: 'MANUAL', checkedAt: expect.any(Date) },
       });
     });
   });
@@ -350,7 +356,8 @@ describe('CrewActivityRepository', () => {
       expect(result).toEqual(expected);
       expect(mockPrisma.crewAttendance.findMany).toHaveBeenCalledWith({
         where: { activityId },
-        orderBy: { checkedAt: 'asc' },
+        orderBy: { rsvpAt: 'asc' },
+        include: { user: { select: { id: true, name: true, profileImage: true } } },
       });
     });
   });

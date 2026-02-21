@@ -193,13 +193,18 @@ describe("CrewsController", () => {
   });
 
   describe("getActivities", () => {
-    it("should call service.getActivities with crewId, cursor, limit", async () => {
+    it("should call service.getActivities with crewId and opts object", async () => {
       const expected = { items: [{ id: "a1" }], nextCursor: null };
       mockCrewsService.getActivities.mockResolvedValue(expected);
 
       const result = await controller.getActivities("crew-1", "cursor-1", "10");
 
-      expect(mockCrewsService.getActivities).toHaveBeenCalledWith("crew-1", "cursor-1", 10);
+      expect(mockCrewsService.getActivities).toHaveBeenCalledWith("crew-1", {
+        cursor: "cursor-1",
+        limit: 10,
+        type: undefined,
+        status: undefined,
+      });
       expect(result).toEqual(expected);
     });
 
@@ -209,7 +214,12 @@ describe("CrewsController", () => {
 
       const result = await controller.getActivities("crew-1", undefined, undefined);
 
-      expect(mockCrewsService.getActivities).toHaveBeenCalledWith("crew-1", undefined, undefined);
+      expect(mockCrewsService.getActivities).toHaveBeenCalledWith("crew-1", {
+        cursor: undefined,
+        limit: undefined,
+        type: undefined,
+        status: undefined,
+      });
       expect(result).toEqual(expected);
     });
   });
@@ -274,13 +284,13 @@ describe("CrewsController", () => {
   });
 
   describe("getAttendees", () => {
-    it("should call service.getAttendees with activityId", async () => {
+    it("should call service.getAttendees with activityId and status", async () => {
       const expected = [{ id: "att-1", userId: "user-1" }];
       mockCrewsService.getAttendees.mockResolvedValue(expected);
 
       const result = await controller.getAttendees("activity-1");
 
-      expect(mockCrewsService.getAttendees).toHaveBeenCalledWith("activity-1");
+      expect(mockCrewsService.getAttendees).toHaveBeenCalledWith("activity-1", undefined);
       expect(result).toEqual(expected);
     });
   });
