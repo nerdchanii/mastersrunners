@@ -33,7 +33,15 @@ export class FeedService {
     });
 
     const hasMore = posts.length > limit;
-    const items = hasMore ? posts.slice(0, limit) : posts;
+    const rawItems = hasMore ? posts.slice(0, limit) : posts;
+    const items = rawItems.map((post) => {
+      const { likes, ...rest } = post;
+      const likeRows = likes ?? [];
+      return {
+        ...rest,
+        isLiked: likeRows.length > 0,
+      };
+    });
     const nextCursor = hasMore ? items[items.length - 1].id : null;
 
     return { items, nextCursor, hasMore };
@@ -60,13 +68,18 @@ export class FeedService {
     const nextCursor = hasMore ? rawItems[rawItems.length - 1].id : null;
 
     // Map _count fields to frontend contract
-    const items = rawItems.map((workout) => ({
-      ...workout,
-      _count: {
-        likes: workout._count.workoutLikes,
-        comments: workout._count.workoutComments,
-      },
-    }));
+    const items = rawItems.map((workout) => {
+      const { workoutLikes, ...rest } = workout;
+      const likeRows = workoutLikes ?? [];
+      return {
+        ...rest,
+        _count: {
+          likes: workout._count.workoutLikes,
+          comments: workout._count.workoutComments,
+        },
+        isLiked: likeRows.length > 0,
+      };
+    });
 
     return { items, nextCursor, hasMore };
   }

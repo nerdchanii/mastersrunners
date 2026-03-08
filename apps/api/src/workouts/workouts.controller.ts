@@ -20,6 +20,7 @@ export class WorkoutsController {
   @Get()
   findAll(
     @Req() req: Request,
+    @Query("userId") targetUserId?: string,
     @Query("cursor") cursor?: string,
     @Query("limit") limit?: string,
   ) {
@@ -27,7 +28,7 @@ export class WorkoutsController {
     return this.workoutsService.findAll(userId, {
       cursor,
       limit: limit ? parseInt(limit, 10) : undefined,
-    });
+    }, targetUserId);
   }
 
   @ApiOperation({ summary: '워크아웃 생성' })

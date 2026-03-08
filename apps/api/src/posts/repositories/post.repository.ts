@@ -34,8 +34,8 @@ export class PostRepository {
     return this.db.prisma.post.create({ data });
   }
 
-  async findById(id: string) {
-    return this.db.prisma.post.findFirst({
+  async findById(id: string, currentUserId?: string) {
+    const post = await this.db.prisma.post.findFirst({
       where: { id, deletedAt: null },
       include: {
         user: {
@@ -63,14 +63,34 @@ export class PostRepository {
             comments: true,
           },
         },
+        ...(currentUserId
+          ? {
+              likes: {
+                where: { userId: currentUserId },
+                select: { id: true },
+                take: 1,
+              },
+            }
+          : {}),
       },
     });
+
+    if (!post || !currentUserId) {
+      return post;
+    }
+
+    const { likes, ...rest } = post;
+    return {
+      ...rest,
+      isLiked: likes.length > 0,
+    };
   }
 
-  async findByUser(userId: string, options?: FindByUserOptions) {
+  async findByUser(userId: string, options?: FindByUserOptions & { currentUserId?: string }) {
     const { cursor, limit = 20 } = options || {};
+    const currentUserId = options?.currentUserId;
 
-    return this.db.prisma.post.findMany({
+    const posts = await this.db.prisma.post.findMany({
       where: {
         userId,
         deletedAt: null,
@@ -101,6 +121,15 @@ export class PostRepository {
             comments: true,
           },
         },
+        ...(currentUserId
+          ? {
+              likes: {
+                where: { userId: currentUserId },
+                select: { id: true },
+                take: 1,
+              },
+            }
+          : {}),
       },
       orderBy: { createdAt: "desc" },
       take: limit,
@@ -108,6 +137,18 @@ export class PostRepository {
         skip: 1,
         cursor: { id: cursor },
       }),
+    });
+
+    if (!currentUserId) {
+      return posts;
+    }
+
+    return posts.map((post) => {
+      const { likes, ...rest } = post;
+      return {
+        ...rest,
+        isLiked: likes.length > 0,
+      };
     });
   }
 
@@ -207,11 +248,11 @@ export class PostRepository {
 
   async findByHashtag(
     tag: string,
-    options: { blockedUserIds?: string[]; cursor?: string; limit?: number } = {},
+    options: { blockedUserIds?: string[]; cursor?: string; limit?: number; currentUserId?: string } = {},
   ) {
-    const { blockedUserIds = [], cursor, limit = 20 } = options;
+    const { blockedUserIds = [], cursor, limit = 20, currentUserId } = options;
 
-    return this.db.prisma.post.findMany({
+    const posts = await this.db.prisma.post.findMany({
       where: {
         hashtags: { has: tag },
         deletedAt: null,
@@ -226,10 +267,31 @@ export class PostRepository {
           include: { workout: { include: { workoutType: true } } },
         },
         _count: { select: { likes: true, comments: true } },
+        ...(currentUserId
+          ? {
+              likes: {
+                where: { userId: currentUserId },
+                select: { id: true },
+                take: 1,
+              },
+            }
+          : {}),
       },
       orderBy: { createdAt: "desc" },
       take: limit,
       ...(cursor && { skip: 1, cursor: { id: cursor } }),
+    });
+
+    if (!currentUserId) {
+      return posts;
+    }
+
+    return posts.map((post) => {
+      const { likes, ...rest } = post;
+      return {
+        ...rest,
+        isLiked: likes.length > 0,
+      };
     });
   }
 

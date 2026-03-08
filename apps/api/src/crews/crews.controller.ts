@@ -26,10 +26,20 @@ export class CrewsController {
   @ApiResponse({ status: 200, description: '성공' })
   @Get()
   findAll(
+    @Req() req: Request,
+    @Query("my") my?: string,
+    @Query("userId") userId?: string,
     @Query("isPublic") isPublic?: string,
     @Query("cursor") cursor?: string,
     @Query("limit") limit?: string
   ) {
+    const { userId: requesterId } = req.user as { userId: string };
+
+    if (my === "true" || userId) {
+      const targetUserId = my === "true" ? requesterId : userId;
+      return this.crewsService.findMyCrews(targetUserId);
+    }
+
     return this.crewsService.findAll({
       isPublic: isPublic === "true" ? true : isPublic === "false" ? false : undefined,
       cursor,

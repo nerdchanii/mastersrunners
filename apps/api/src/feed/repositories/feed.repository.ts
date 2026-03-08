@@ -90,6 +90,11 @@ export class FeedRepository {
             comments: true,
           },
         },
+        likes: {
+          where: { userId },
+          select: { id: true },
+          take: 1,
+        },
       },
       orderBy: { createdAt: "desc" },
       cursor: cursor ? { id: cursor } : undefined,
@@ -150,6 +155,11 @@ export class FeedRepository {
             workoutLikes: true,
             workoutComments: true,
           },
+        },
+        workoutLikes: {
+          where: { userId },
+          select: { id: true },
+          take: 1,
         },
       },
       orderBy: { createdAt: "desc" },

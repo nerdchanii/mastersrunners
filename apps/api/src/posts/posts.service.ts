@@ -38,7 +38,7 @@ export class PostsService {
   }
 
   async findById(id: string, currentUserId?: string) {
-    const post = await this.postRepo.findById(id);
+    const post = await this.postRepo.findById(id, currentUserId);
     if (post && currentUserId && post.userId !== currentUserId) {
       const blocked = await this.blockRepo.isBlocked(currentUserId, post.userId);
       if (blocked) {
@@ -55,7 +55,7 @@ export class PostsService {
         throw new ForbiddenException("차단된 사용자입니다.");
       }
     }
-    return this.postRepo.findByUser(userId, { cursor, limit });
+    return this.postRepo.findByUser(userId, { cursor, limit, currentUserId });
   }
 
   async update(id: string, dto: UpdatePostDto) {
@@ -64,7 +64,7 @@ export class PostsService {
 
   async findByHashtag(tag: string, currentUserId: string, cursor?: string, limit?: number) {
     const blockedUserIds = await this.blockRepo.getBlockedUserIds(currentUserId);
-    return this.postRepo.findByHashtag(tag, { blockedUserIds, cursor, limit });
+    return this.postRepo.findByHashtag(tag, { blockedUserIds, cursor, limit, currentUserId });
   }
 
   async getPopularHashtags(limit = 20) {

@@ -176,7 +176,7 @@ describe("PostsService", () => {
 
       const result = await service.findById(postId);
 
-      expect(mockPostRepository.findById).toHaveBeenCalledWith(postId);
+      expect(mockPostRepository.findById).toHaveBeenCalledWith(postId, undefined);
       expect(result).toEqual(mockPost);
     });
 
@@ -226,6 +226,7 @@ describe("PostsService", () => {
       expect(mockPostRepository.findByUser).toHaveBeenCalledWith(userId, {
         cursor: undefined,
         limit: undefined,
+        currentUserId: userId,
       });
       expect(result).toEqual(mockPosts);
     });
@@ -241,6 +242,7 @@ describe("PostsService", () => {
       expect(mockPostRepository.findByUser).toHaveBeenCalledWith(userId, {
         cursor,
         limit,
+        currentUserId: undefined,
       });
     });
 

@@ -13,7 +13,9 @@ export class WorkoutsService {
     private readonly shoeRepo: ShoeRepository,
   ) {}
 
-  async findAll(userId: string, options?: { cursor?: string; limit?: number }) {
+  async findAll(requesterUserId: string, options?: { cursor?: string; limit?: number }, targetUserId?: string) {
+    const userId = targetUserId ?? requesterUserId;
+
     if (options?.cursor !== undefined || options?.limit !== undefined) {
       return this.workoutRepo.findByUserWithCursor(userId, options ?? {});
     }

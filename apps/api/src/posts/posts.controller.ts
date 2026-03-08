@@ -19,12 +19,15 @@ export class PostsController {
   @Get()
   findAll(
     @Req() req: Request,
+    @Query("userId") targetUserId?: string,
     @Query("cursor") cursor?: string,
     @Query("limit") limit?: string,
   ) {
     const { userId } = req.user as { userId: string };
     const parsedLimit = limit ? parseInt(limit, 10) : undefined;
-    return this.postsService.findByUser(userId, userId, cursor, parsedLimit);
+    const viewerUserId = userId;
+    const resolvedUserId = targetUserId || viewerUserId;
+    return this.postsService.findByUser(resolvedUserId, viewerUserId, cursor, parsedLimit);
   }
 
   @Get("hashtags/popular")
