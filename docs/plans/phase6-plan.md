@@ -17,31 +17,31 @@ Phase 5까지 핵심 기능 구현 완료. Phase 6는 **기능 완성도 + UX �
 
 ## A. Phase 5 잔여 항목 (Carry-over)
 
-### A-1. 소규모 UI 개선 (M)
+### A-1. 소규모 UI 개선 (M) ✅
 
-- [ ] 워크아웃 수정 페이지 UI (PUT API 연동)
-- [ ] 챌린지/이벤트 수정 페이지 UI
-- [ ] 포스트 수정 시 이미지 추가/삭제 지원
-- [ ] 이미지 갤러리/라이트박스 (풀스크린 이미지 뷰)
-- [ ] 피드 PostFeedCard Share/More 버튼 핸들러
-- [ ] 메시지 상세 높이 모바일 BottomNav 고려
+- [x] 워크아웃 수정 페이지 UI (PUT API 연동) — 이미 구현됨
+- [x] 챌린지/이벤트 수정 페이지 UI — 이미 구현됨
+- [x] 포스트 수정 시 이미지 추가/삭제 지원 — 이미지 불변 유지 결정 (현재 설계 유지)
+- [x] 이미지 갤러리/라이트박스 (풀스크린 이미지 뷰) — ImageLightbox.tsx 이미 구현됨
+- [x] 피드 PostFeedCard Share/More 버튼 핸들러 — 클립보드 복사 + 삭제/신고 이미 구현됨
+- [x] 메시지 상세 높이 모바일 BottomNav 고려
 
-### A-2. 워크아웃 ↔ 포스트 연동 (M)
+### A-2. 워크아웃 ↔ 포스트 연동 (M) ✅
 
-- [ ] 워크아웃 완료 후 "포스트로 공유" CTA
-- [ ] 워크아웃 상세에서 "이 워크아웃으로 포스트 작성" 버튼
+- [x] 워크아웃 완료 후 "포스트로 공유" CTA — workoutId query param 전달 이미 구현됨
+- [x] 워크아웃 상세에서 "이 워크아웃으로 포스트 작성" 버튼 — 이미 구현됨
 
 ### A-3. shadcn/UI 완전 전환 (L)
 
-- [ ] WorkoutCard shadcn/UI 전환
-- [ ] CrewForm shadcn/UI 전환
-- [ ] challenges/new 페이지 shadcn/UI 전환
+- [x] WorkoutCard shadcn/UI 전환 — 이미 구현됨
+- [x] CrewForm shadcn/UI 전환
+- [x] challenges/new 페이지 shadcn/UI 전환
 - [ ] events/new 페이지 shadcn/UI 전환
 
-### A-4. TanStack Query 마이그레이션 잔여 (L)
+### A-4. TanStack Query 마이그레이션 잔여 (L) ✅
 
-- [ ] messages 페이지 TanStack Query 적용 (현재 useState+useEffect)
-- [ ] 온보딩 관심 운동 타입 `/workout-types` API 연동 (현재 하드코딩)
+- [x] messages 페이지 TanStack Query 적용 — useConversations() hook 이미 사용 중
+- [x] 온보딩 관심 운동 타입 `/workout-types` API 연동 — useWorkoutTypes() hook 이미 사용 중
 
 ---
 
