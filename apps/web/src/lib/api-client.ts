@@ -25,6 +25,13 @@ export class ApiError extends Error {
 }
 
 class ApiClient {
+  private redirectToLogin() {
+    if (typeof window === "undefined") return;
+    const { pathname } = window.location;
+    if (pathname === "/login" || pathname.startsWith("/auth")) return;
+    window.location.href = "/login";
+  }
+
   private getStorage(): Storage | null {
     try {
       if (typeof window === "undefined") return null;
@@ -54,6 +61,9 @@ class ApiClient {
     const s = this.getStorage();
     s?.removeItem("accessToken");
     s?.removeItem("refreshToken");
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("auth:logout"));
+    }
   }
 
   isAuthenticated(): boolean {
@@ -105,14 +115,14 @@ class ApiClient {
       } else {
         // Refresh failed → session expired
         this.clearTokens();
-        window.location.href = "/login";
+        this.redirectToLogin();
         throw new ApiError("세션이 만료되었습니다", 401);
       }
     }
 
     // Not logged in at all → redirect to login
     if (res.status === 401 && !token) {
-      window.location.href = "/login";
+      this.redirectToLogin();
       throw new ApiError("로그인이 필요합니다", 401);
     }
 

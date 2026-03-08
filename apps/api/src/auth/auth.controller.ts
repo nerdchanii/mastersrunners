@@ -19,6 +19,16 @@ export class AuthController {
   // ─── Kakao ──────────────────────────────────────────
 
   @Public()
+  @Get("providers")
+  getProviders() {
+    return {
+      kakao: !!process.env.KAKAO_CLIENT_ID,
+      google: !!process.env.GOOGLE_CLIENT_ID,
+      naver: !!process.env.NAVER_CLIENT_ID,
+    };
+  }
+
+  @Public()
   @Get("kakao")
   @UseGuards(AuthGuard("kakao"))
   kakaoLogin() {

@@ -60,6 +60,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser();
   }, [refreshUser]);
 
+  useEffect(() => {
+    const handleLogout = () => {
+      setUser(null);
+      setIsLoading(false);
+    };
+
+    window.addEventListener("auth:logout", handleLogout);
+    return () => {
+      window.removeEventListener("auth:logout", handleLogout);
+    };
+  }, []);
+
   const logout = useCallback(() => {
     api.clearTokens();
     setUser(null);

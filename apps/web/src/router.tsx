@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { createBrowserRouter, Navigate, Outlet, useNavigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { ThemeProvider } from "@/lib/theme-context";
 import Header from "@/components/layout/Header";
@@ -51,15 +51,13 @@ const NotFoundPage = lazy(() => import("@/pages/not-found"));
 /** 인증 가드 - 미인증 시 /login으로 리다이렉트 */
 function ProtectedRoute() {
   const { isLoading, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
 
   if (isLoading) {
     return <LoadingPage />;
   }
 
   if (!isAuthenticated) {
-    navigate("/login", { replace: true });
-    return null;
+    return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;

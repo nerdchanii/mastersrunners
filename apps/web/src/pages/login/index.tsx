@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
 import { api, API_BASE } from "@/lib/api-client";
@@ -17,6 +17,11 @@ function LoginContent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isAuthenticated, isLoading, refreshUser } = useAuth();
+  const [providers, setProviders] = useState<{
+    kakao: boolean;
+    google: boolean;
+    naver: boolean;
+  } | null>(null);
   const error = searchParams.get("error");
 
   useEffect(() => {
@@ -24,6 +29,23 @@ function LoginContent() {
       navigate("/", { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate]);
+
+  useEffect(() => {
+    const loadProviderConfig = async () => {
+      try {
+        const data = await api.fetch<{
+          kakao: boolean;
+          google: boolean;
+          naver: boolean;
+        }>("/auth/providers");
+        setProviders(data);
+      } catch {
+        setProviders(null);
+      }
+    };
+
+    loadProviderConfig();
+  }, []);
 
   const handleOAuth = (provider: string) => {
     window.location.href = `${API_BASE}/auth/${provider}`;
@@ -72,30 +94,42 @@ function LoginContent() {
             </div>
           )}
 
-          <Button
-            onClick={() => handleOAuth("kakao")}
-            className="w-full bg-[#FEE500] text-[#191919] hover:bg-[#FEE500]/90"
-            size="lg"
-          >
-            카카오로 시작하기
-          </Button>
+          {(!providers || providers.kakao) && (
+            <Button
+              onClick={() => handleOAuth("kakao")}
+              className="w-full bg-[#FEE500] text-[#191919] hover:bg-[#FEE500]/90"
+              size="lg"
+            >
+              카카오로 시작하기
+            </Button>
+          )}
 
-          <Button
-            onClick={() => handleOAuth("google")}
-            variant="outline"
-            className="w-full"
-            size="lg"
-          >
-            Google로 시작하기
-          </Button>
+          {(!providers || providers.google) && (
+            <Button
+              onClick={() => handleOAuth("google")}
+              variant="outline"
+              className="w-full"
+              size="lg"
+            >
+              Google로 시작하기
+            </Button>
+          )}
 
-          <Button
-            onClick={() => handleOAuth("naver")}
-            className="w-full bg-[#03C75A] text-white hover:bg-[#03C75A]/90"
-            size="lg"
-          >
-            네이버로 시작하기
-          </Button>
+          {(!providers || providers.naver) && (
+            <Button
+              onClick={() => handleOAuth("naver")}
+              className="w-full bg-[#03C75A] text-white hover:bg-[#03C75A]/90"
+              size="lg"
+            >
+              네이버로 시작하기
+            </Button>
+          )}
+
+          {providers && !providers.kakao && !providers.google && !providers.naver && (
+            <p className="text-center text-xs text-muted-foreground">
+              현재 사용 가능한 소셜 로그인이 없습니다.
+            </p>
+          )}
 
           {API_BASE.includes("localhost") && (
             <>
