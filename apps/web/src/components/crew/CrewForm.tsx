@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 const KOREA_REGIONS = [
@@ -138,28 +140,18 @@ export default function CrewForm({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div>
-                <Label>공개 설정</Label>
+                <Label htmlFor="crew-public">공개 설정</Label>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {formData.isPublic
                     ? "누구나 크루를 검색하고 바로 가입할 수 있습니다."
                     : "관리자 승인 후 가입할 수 있습니다."}
                 </p>
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={formData.isPublic}
-                onClick={() => setFormData((prev) => ({ ...prev, isPublic: !prev.isPublic }))}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                  formData.isPublic ? "bg-primary" : "bg-input"
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
-                    formData.isPublic ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
+              <Switch
+                id="crew-public"
+                checked={formData.isPublic}
+                onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isPublic: checked }))}
+              />
             </div>
           </div>
 
@@ -191,17 +183,19 @@ export default function CrewForm({
           {/* Region */}
           <div className="space-y-2">
             <Label htmlFor="crew-region">지역 (선택)</Label>
-            <select
-              id="crew-region"
+            <Select
               value={formData.region}
-              onChange={(e) => setFormData((prev) => ({ ...prev, region: e.target.value, subRegion: "" }))}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, region: value, subRegion: "" }))}
             >
-              <option value="">지역 선택</option>
-              {KOREA_REGIONS.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
+              <SelectTrigger id="crew-region">
+                <SelectValue placeholder="지역 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                {KOREA_REGIONS.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Sub-Region */}

@@ -5,8 +5,10 @@ import { api } from "@/lib/api-client";
 import { challengeKeys } from "@/hooks/useChallenges";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/common/PageHeader";
 import { toast } from "sonner";
@@ -110,16 +112,16 @@ export default function NewChallengePage() {
 
             <div className="space-y-2">
               <Label htmlFor="type">목표 유형 <span className="text-destructive">*</span></Label>
-              <select
-                id="type"
-                value={type}
-                onChange={(e) => setType(e.target.value as GoalType)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              >
-                {goalTypeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+              <Select value={type} onValueChange={(value) => setType(value as GoalType)}>
+                <SelectTrigger id="type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {goalTypeOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -153,12 +155,10 @@ export default function NewChallengePage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="isPublic"
                 checked={isPublic}
-                onChange={(e) => setIsPublic(e.target.checked)}
-                className="h-4 w-4 rounded border-input accent-primary"
+                onCheckedChange={(checked) => setIsPublic(checked === true)}
               />
               <Label htmlFor="isPublic" className="cursor-pointer">공개 챌린지</Label>
               <span className="text-xs text-muted-foreground">비공개로 설정하면 초대받은 사람만 참가할 수 있습니다.</span>
