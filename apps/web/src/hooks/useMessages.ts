@@ -60,6 +60,7 @@ export function useConversations() {
     getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
     staleTime: 30 * 1000,
     retry: 1,
+    refetchInterval: 10 * 1000,
   });
 }
 
@@ -76,6 +77,7 @@ export function useMessages(conversationId: string) {
     enabled: !!conversationId,
     staleTime: 10 * 1000,
     retry: 1,
+    refetchInterval: 10 * 1000,
   });
 }
 

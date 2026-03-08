@@ -15,8 +15,12 @@ interface Post {
   id: string;
   content: string;
   createdAt: string;
-  likesCount: number;
-  commentsCount: number;
+  likesCount?: number;
+  commentsCount?: number;
+  _count?: {
+    likes: number;
+    comments: number;
+  };
   user: User;
 }
 
@@ -103,7 +107,7 @@ export function ProfileTabs({
                 </div>
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <p className="text-xs text-white">
-                    {post.likesCount} 좋아요 · {post.commentsCount} 댓글
+                    {(post._count?.likes ?? post.likesCount ?? 0)} 좋아요 · {(post._count?.comments ?? post.commentsCount ?? 0)} 댓글
                   </p>
                 </div>
               </Link>

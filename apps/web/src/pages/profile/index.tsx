@@ -10,8 +10,12 @@ interface Post {
   id: string;
   content: string;
   createdAt: string;
-  likesCount: number;
-  commentsCount: number;
+  likesCount?: number;
+  commentsCount?: number;
+  _count?: {
+    likes: number;
+    comments: number;
+  };
   user: {
     id: string;
     name: string;
@@ -51,8 +55,10 @@ interface ProfileApiResponse {
     backgroundImage: string | null;
     bio: string | null;
     createdAt: string;
+    isPrivate: boolean;
   };
   stats: {
+    postCount: number;
     totalWorkouts: number;
     totalDistance: number;
     totalDuration: number;
@@ -74,6 +80,7 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const { isLoading: authLoading, isAuthenticated, user } = useAuth();
 
+  const [profileUser, setProfileUser] = useState<ProfileApiResponse["user"] | null>(null);
   const [profileStats, setProfileStats] = useState<ProfileStats | null>(null);
   const [activeTab, setActiveTab] = useState("posts");
   const [posts, setPosts] = useState<Post[]>([]);
@@ -94,8 +101,9 @@ export default function ProfilePage() {
       try {
         const data = await api.fetch<ProfileApiResponse>("/profile");
         if (!data) return;
+        setProfileUser(data.user);
         setProfileStats({
-          postCount: 0, // TODO: 포스트 카운트 API 추가 필요
+          postCount: data.stats.postCount ?? 0,
           followerCount: data.followersCount,
           followingCount: data.followingCount,
           workoutCount: data.stats.totalWorkouts,
@@ -117,14 +125,14 @@ export default function ProfilePage() {
       setIsTabDataLoading(true);
       try {
         if (activeTab === "posts") {
-          const data = await api.fetch<Post[]>(`/posts?userId=${user.id}&limit=12`);
-          setPosts(Array.isArray(data) ? data : []);
+          const data = await api.fetch<Post[] | { data: Post[] }>(`/posts?userId=${user.id}&limit=12`);
+          setPosts(Array.isArray(data) ? data : data?.data ?? []);
         } else if (activeTab === "workouts") {
-          const data = await api.fetch<Workout[]>(`/workouts?userId=${user.id}&limit=20`);
-          setWorkouts(Array.isArray(data) ? data : []);
+          const data = await api.fetch<Workout[] | { data: Workout[] }>(`/workouts?userId=${user.id}`);
+          setWorkouts(Array.isArray(data) ? data : data?.data ?? []);
         } else if (activeTab === "crews") {
-          const data = await api.fetch<{ data: Crew[] }>("/crews?my=true");
-          setCrews(data?.data ?? []);
+          const data = await api.fetch<Crew[] | { data: Crew[] }>("/crews/my");
+          setCrews(Array.isArray(data) ? data : data?.data ?? []);
         }
       } catch (err) {
         console.error("Failed to fetch tab data:", err);
@@ -167,7 +175,7 @@ export default function ProfilePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <ProfileHeader
-        user={user}
+        user={profileUser || user}
         stats={profileStats}
         isOwnProfile={true}
         onFollowersClick={handleFollowersClick}

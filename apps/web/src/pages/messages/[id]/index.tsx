@@ -53,6 +53,8 @@ export default function MessageDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [content, setContent] = useState("");
 
+  const normalizeMessages = (items: Message[]) => [...items].reverse();
+
   const fetchConversation = async (cursor?: string | null) => {
     try {
       if (cursor) {
@@ -65,13 +67,14 @@ export default function MessageDetailPage() {
       if (cursor) path += `&cursor=${encodeURIComponent(cursor)}`;
       const data = await api.fetch<ConversationDetailResponse>(path);
       if (!data) return;
+      const normalizedMessages = normalizeMessages(data.messages ?? []);
 
       setConversation(data.conversation);
       if (cursor) {
         // Prepend older messages
-        setMessages((prev) => [...(data.messages ?? []), ...prev]);
+        setMessages((prev) => [...normalizedMessages, ...prev]);
       } else {
-        setMessages(data.messages ?? []);
+        setMessages(normalizedMessages);
       }
       setNextCursor(data.nextCursor ?? null);
     } catch (err) {
@@ -128,7 +131,6 @@ export default function MessageDetailPage() {
 
     eventSource.onerror = (err) => {
       console.error("SSE error:", err);
-      eventSource.close();
     };
 
     return () => {
@@ -213,7 +215,7 @@ export default function MessageDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col h-[calc(100vh-4rem)]">
+      <div className="flex flex-col h-[calc(100vh-7.5rem)] md:h-[calc(100vh-4rem)]">
         <div className="border-b bg-background p-4">
           <div className="flex items-center gap-3">
             <Skeleton className="h-10 w-10 rounded-full" />
@@ -236,7 +238,7 @@ export default function MessageDetailPage() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-7.5rem)] md:h-[calc(100vh-4rem)] p-4">
         <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 max-w-md">
           <p className="text-destructive">{error}</p>
           <button
@@ -254,7 +256,7 @@ export default function MessageDetailPage() {
 
   if (!conversation || !otherUser) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-7.5rem)] md:h-[calc(100vh-4rem)] p-4">
         <p className="text-muted-foreground">대화를 찾을 수 없습니다</p>
         <Button onClick={() => navigate("/messages")} className="mt-4">
           메시지 목록으로
@@ -264,7 +266,7 @@ export default function MessageDetailPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-4xl mx-auto">
+    <div className="flex flex-col h-[calc(100vh-7.5rem)] md:h-[calc(100vh-7.5rem)] md:h-[calc(100vh-4rem)] max-w-4xl mx-auto">
       {/* Header */}
       <div className="border-b bg-background/95 backdrop-blur-sm p-4">
         <div className="flex items-center gap-3">

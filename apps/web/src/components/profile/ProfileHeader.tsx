@@ -32,6 +32,7 @@ interface ProfileHeaderProps {
   onFollowersClick?: () => void;
   onFollowingClick?: () => void;
   isFollowLoading?: boolean;
+  isMessageLoading?: boolean;
 }
 
 export function ProfileHeader({
@@ -46,6 +47,7 @@ export function ProfileHeader({
   onFollowersClick,
   onFollowingClick,
   isFollowLoading,
+  isMessageLoading,
 }: ProfileHeaderProps) {
   const getFollowButtonText = () => {
     if (isPending) return "요청됨";
@@ -127,8 +129,13 @@ export function ProfileHeader({
                 >
                   {isFollowLoading ? "처리 중..." : getFollowButtonText()}
                 </Button>
-                {isFollowing && onMessageClick && (
-                  <Button variant="outline" size="sm" onClick={onMessageClick}>
+                {onMessageClick && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onMessageClick}
+                    disabled={isMessageLoading}
+                  >
                     <MessageCircle className="size-4" />
                   </Button>
                 )}

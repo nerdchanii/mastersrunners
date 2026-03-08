@@ -19,8 +19,12 @@ interface Post {
   id: string;
   content: string;
   createdAt: string;
-  likesCount: number;
-  commentsCount: number;
+  likesCount?: number;
+  commentsCount?: number;
+  _count?: {
+    likes: number;
+    comments: number;
+  };
   user: User;
 }
 
@@ -50,6 +54,7 @@ interface Crew {
 interface ProfileApiResponse {
   user: User;
   stats: {
+    postCount: number;
     totalWorkouts: number;
     totalDistance: number;
     totalDuration: number;
@@ -58,6 +63,8 @@ interface ProfileApiResponse {
   followersCount: number;
   followingCount: number;
   isFollowing?: boolean;
+  isPending?: boolean;
+  isPrivate?: boolean;
 }
 
 interface ProfileData {
@@ -89,6 +96,7 @@ export default function UserProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isTabDataLoading, setIsTabDataLoading] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [isMessageLoading, setIsMessageLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -111,11 +119,11 @@ export default function UserProfilePage() {
         setProfileData({
           user: data.user,
           isFollowing: data.isFollowing ?? false,
-          isPending: false, // TODO: API에서 pending 상태 반환 필요
-          isPrivate: false, // TODO: API에서 isPrivate 반환 필요
+          isPending: data.isPending ?? false,
+          isPrivate: data.isPrivate ?? true,
         });
         setProfileStats({
-          postCount: 0, // TODO: 포스트 카운트 API 추가 필요
+          postCount: data.stats.postCount ?? 0,
           followerCount: data.followersCount,
           followingCount: data.followingCount,
           workoutCount: data.stats.totalWorkouts,
@@ -139,14 +147,14 @@ export default function UserProfilePage() {
       setIsTabDataLoading(true);
       try {
         if (activeTab === "posts") {
-          const data = await api.fetch<Post[]>(`/posts?userId=${userId}&limit=12`);
-          setPosts(Array.isArray(data) ? data : []);
+          const data = await api.fetch<Post[] | { data: Post[] }>(`/posts?userId=${userId}&limit=12`);
+          setPosts(Array.isArray(data) ? data : data?.data ?? []);
         } else if (activeTab === "workouts") {
-          const data = await api.fetch<Workout[]>(`/workouts?userId=${userId}&limit=20`);
-          setWorkouts(Array.isArray(data) ? data : []);
+          const data = await api.fetch<Workout[] | { data: Workout[] }>(`/workouts?userId=${userId}`);
+          setWorkouts(Array.isArray(data) ? data : data?.data ?? []);
         } else if (activeTab === "crews") {
-          const data = await api.fetch<{ data: Crew[] }>(`/crews?userId=${userId}`);
-          setCrews(data?.data ?? []);
+          const data = await api.fetch<Crew[] | { data: Crew[] }>(`/crews?userId=${userId}`);
+          setCrews(Array.isArray(data) ? data : data?.data ?? []);
         }
       } catch (err) {
         console.error("Failed to fetch tab data:", err);
@@ -198,8 +206,23 @@ export default function UserProfilePage() {
     }
   };
 
-  const handleMessageClick = () => {
-    navigate(`/messages/${userId}`);
+  const handleMessageClick = async () => {
+    if (isMessageLoading) return;
+    setIsMessageLoading(true);
+    try {
+      const conversation = await api.fetch<{ id: string }>("/conversations", {
+        method: "POST",
+        body: JSON.stringify({ participantId: userId }),
+      });
+      if (!conversation?.id) {
+        throw new Error("대화를 시작할 수 없습니다.");
+      }
+      navigate(`/messages/${conversation.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "메시지를 시작하지 못했습니다.");
+    } finally {
+      setIsMessageLoading(false);
+    }
   };
 
   const handleFollowersClick = () => {
@@ -255,6 +278,7 @@ export default function UserProfilePage() {
         onFollowersClick={handleFollowersClick}
         onFollowingClick={handleFollowingClick}
         isFollowLoading={isFollowLoading}
+        isMessageLoading={isMessageLoading}
       />
 
       <ProfileTabs
