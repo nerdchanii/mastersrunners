@@ -15,7 +15,12 @@ import { ImageOptimizationService } from "./image-optimization.service.js";
 function isDisk(): boolean {
   const type = process.env.STORAGE_TYPE;
   if (type) return type === "disk";
-  return process.env.NODE_ENV !== "production";
+  const hasR2Config = Boolean(
+    process.env.R2_ACCESS_KEY_ID &&
+    process.env.R2_SECRET_ACCESS_KEY &&
+    process.env.R2_ENDPOINT
+  );
+  return process.env.NODE_ENV !== "production" || !hasR2Config;
 }
 
 const controllers = isDisk()

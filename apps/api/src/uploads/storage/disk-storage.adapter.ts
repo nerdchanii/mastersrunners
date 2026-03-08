@@ -11,7 +11,13 @@ export class DiskStorageAdapter implements StorageAdapter {
   constructor() {
     this.storageDir = process.env.DISK_STORAGE_DIR || join(process.cwd(), "uploads");
     const port = process.env.API_PORT || "4000";
-    this.baseUrl = `http://localhost:${port}/api/v1`;
+    const publicUrl = (
+      process.env.DISK_PUBLIC_URL ||
+      process.env.API_PUBLIC_URL ||
+      process.env.API_BASE_URL ||
+      `${process.env.API_SCHEME || "http"}://${process.env.API_HOST || "localhost"}:${port}`
+    ).replace(/\/$/, "");
+    this.baseUrl = `${publicUrl}/api/v1`;
   }
 
   async getUploadUrl(key: string, _contentType: string, _expiresIn?: number): Promise<UploadUrlResult> {

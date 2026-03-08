@@ -10,8 +10,8 @@ export class R2StorageAdapter implements StorageAdapter {
   private readonly publicUrl: string;
 
   constructor() {
-    this.bucket = process.env.R2_BUCKET || "masters-runners";
-    this.publicUrl = process.env.R2_PUBLIC_URL || "";
+    this.bucket = process.env.R2_BUCKET || process.env.R2_BUCKET_NAME || "masters-runners";
+    this.publicUrl = (process.env.R2_PUBLIC_URL || process.env.R2_PUBLIC_BASE_URL || "").replace(/\/$/, "");
     this.s3 = new S3Client({
       region: "auto",
       endpoint: process.env.R2_ENDPOINT || "",
@@ -32,7 +32,7 @@ export class R2StorageAdapter implements StorageAdapter {
     return {
       uploadUrl,
       key,
-      publicUrl: `${this.publicUrl}/${key}`,
+      publicUrl: this.getPublicUrl(key),
     };
   }
 
@@ -45,6 +45,7 @@ export class R2StorageAdapter implements StorageAdapter {
   }
 
   getPublicUrl(key: string): string {
+    if (!this.publicUrl) return key;
     return `${this.publicUrl}/${key}`;
   }
 

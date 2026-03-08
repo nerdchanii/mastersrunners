@@ -2,6 +2,8 @@ import { Module } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD, Reflector } from "@nestjs/core";
 import { AllExceptionsFilter } from "./common/filters/http-exception.filter.js";
 import { ConfigModule } from "@nestjs/config";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   ThrottlerModule,
   ThrottlerGuard,
@@ -33,11 +35,21 @@ import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard.js";
 import { AppController } from "./app.controller.js";
 import { AppService } from "./app.service.js";
 
+const envCandidates = [
+  resolve(process.cwd(), ".env"),
+  resolve(process.cwd(), ".env.local"),
+  resolve(process.cwd(), "../../.env"),
+  resolve(process.cwd(), "../../../.env"),
+  "/app/.env",
+];
+
+const envFilePath = envCandidates.filter((path) => existsSync(path));
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: "../../.env",
+      ...(envFilePath.length ? { envFilePath } : {}),
     }),
     DatabaseModule,
     AuthModule,
