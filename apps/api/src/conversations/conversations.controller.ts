@@ -20,6 +20,7 @@ import { ConversationsService } from "./conversations.service.js";
 import { ConversationsSseService } from "./conversations-sse.service.js";
 import { CreateConversationDto } from "./dto/create-conversation.dto.js";
 import { SendMessageDto } from "./dto/send-message.dto.js";
+import { Public } from "../common/decorators/public.decorator.js";
 
 @Controller("conversations")
 @UseGuards(JwtAuthGuard)
@@ -49,6 +50,14 @@ export class ConversationsController {
       cursor,
       parsedLimit,
     );
+  }
+
+  @Sse("sse")
+  @Public()
+  @UseGuards(JwtSseGuard)
+  @SkipThrottle()
+  sse(@Req() req: { user: { userId: string } }): Observable<MessageEvent> {
+    return this.sseService.addConnection(req.user.userId);
   }
 
   @Get(":id")
@@ -87,12 +96,5 @@ export class ConversationsController {
     @Param("id") id: string,
   ) {
     return this.conversationsService.deleteMessage(id, req.user.userId);
-  }
-
-  @Sse("sse")
-  @UseGuards(JwtSseGuard)
-  @SkipThrottle()
-  sse(@Req() req: { user: { userId: string } }): Observable<MessageEvent> {
-    return this.sseService.addConnection(req.user.userId);
   }
 }

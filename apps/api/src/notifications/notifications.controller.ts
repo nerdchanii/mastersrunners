@@ -14,6 +14,7 @@ import { Observable } from "rxjs";
 import { NotificationsService } from "./notifications.service.js";
 import { NotificationsSseService } from "./notifications-sse.service.js";
 import { JwtSseGuard } from "../auth/guards/jwt-sse.guard.js";
+import { Public } from "../common/decorators/public.decorator.js";
 
 @Controller("notifications")
 export class NotificationsController {
@@ -55,6 +56,7 @@ export class NotificationsController {
   }
 
   @Sse("sse")
+  @Public()
   @UseGuards(JwtSseGuard)
   @SkipThrottle()
   sse(@Req() req: { user: { userId: string } }): Observable<MessageEvent> {
