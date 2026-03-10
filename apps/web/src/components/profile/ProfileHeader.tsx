@@ -137,6 +137,8 @@ export function ProfileHeader({
                     disabled={isMessageLoading}
                   >
                     <MessageCircle className="size-4" />
+                    <span className="hidden sm:inline">메시지</span>
+                    <span className="sr-only sm:hidden">메시지</span>
                   </Button>
                 )}
                 <Button variant="ghost" size="icon-sm">

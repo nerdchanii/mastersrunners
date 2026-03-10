@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import { useState } from "react";
-import { Crown, Shield, UserX, ChevronUp, ChevronDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Crown, Shield, UserX, ChevronUp, ChevronDown, MessageCircle } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,8 +44,10 @@ export default function CrewMemberList({
   currentUserRole,
   onUpdate,
 }: CrewMemberListProps) {
+  const navigate = useNavigate();
   const [kickTarget, setKickTarget] = useState<Member | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [messagingUserId, setMessagingUserId] = useState<string | null>(null);
 
   const sortedMembers = [...members].sort((a, b) => {
     const order = { OWNER: 0, ADMIN: 1, MEMBER: 2 };
@@ -101,6 +104,27 @@ export default function CrewMemberList({
     }
   };
 
+  const handleStartDirectMessage = async (targetUserId: string) => {
+    if (messagingUserId) return;
+    setMessagingUserId(targetUserId);
+    try {
+      const conversation = await api.fetch<{ id: string }>("/conversations", {
+        method: "POST",
+        body: JSON.stringify({ participantId: targetUserId }),
+      });
+
+      if (!conversation?.id) {
+        throw new Error("대화를 시작할 수 없습니다.");
+      }
+
+      navigate(`/messages/${conversation.id}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "DM 시작에 실패했습니다.");
+    } finally {
+      setMessagingUserId(null);
+    }
+  };
+
   if (members.length === 0) {
     return <EmptyState title="멤버가 없습니다" />;
   }
@@ -110,9 +134,11 @@ export default function CrewMemberList({
       <div className="space-y-2">
         {sortedMembers.map((member) => {
           const isSelf = member.userId === currentUserId;
+          const canMessageThis = !isSelf;
           const canKickThis = canManage && !isSelf && member.role !== "OWNER";
           const canPromoteThis = isOwner && !isSelf && member.role === "MEMBER";
           const canDemoteThis = isOwner && !isSelf && member.role === "ADMIN";
+          const isMessagingThis = messagingUserId === member.userId;
 
           return (
             <div
@@ -143,8 +169,21 @@ export default function CrewMemberList({
               </div>
 
               {/* Actions */}
-              {(canKickThis || canPromoteThis || canDemoteThis) && (
+              {(canMessageThis || canKickThis || canPromoteThis || canDemoteThis) && (
                 <div className="flex items-center gap-1.5">
+                  {canMessageThis && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-2 text-xs"
+                      onClick={() => handleStartDirectMessage(member.userId)}
+                      disabled={isLoading || isMessagingThis}
+                      title={`${member.user.name}님께 DM 보내기`}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 mr-1" />
+                      {isMessagingThis ? "이동 중..." : "DM"}
+                    </Button>
+                  )}
                   {canPromoteThis && (
                     <Button
                       size="sm"
