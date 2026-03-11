@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { Dialog } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 interface ImageLightboxProps {
@@ -9,7 +8,12 @@ interface ImageLightboxProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function ImageLightbox({ images, initialIndex = 0, open, onOpenChange }: ImageLightboxProps) {
+export function ImageLightbox({
+  images,
+  initialIndex = 0,
+  open,
+  onOpenChange,
+}: ImageLightboxProps) {
   const [current, setCurrent] = useState(initialIndex);
 
   useEffect(() => {
@@ -62,7 +66,10 @@ export function ImageLightbox({ images, initialIndex = 0, open, onOpenChange }: 
       {images.length > 1 && (
         <button
           className="absolute left-2 sm:left-4 text-white/80 hover:text-white transition-colors rounded-full p-2 hover:bg-white/10"
-          onClick={(e) => { e.stopPropagation(); goPrev(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            goPrev();
+          }}
           aria-label="이전 이미지"
         >
           <ChevronLeft className="size-8" />
@@ -85,7 +92,10 @@ export function ImageLightbox({ images, initialIndex = 0, open, onOpenChange }: 
       {images.length > 1 && (
         <button
           className="absolute right-2 sm:right-4 text-white/80 hover:text-white transition-colors rounded-full p-2 hover:bg-white/10"
-          onClick={(e) => { e.stopPropagation(); goNext(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            goNext();
+          }}
           aria-label="다음 이미지"
         >
           <ChevronRight className="size-8" />
@@ -98,7 +108,10 @@ export function ImageLightbox({ images, initialIndex = 0, open, onOpenChange }: 
           {images.map((_, i) => (
             <button
               key={i}
-              onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrent(i);
+              }}
               className={`size-2 rounded-full transition-colors ${i === current ? "bg-white" : "bg-white/40"}`}
               aria-label={`이미지 ${i + 1}`}
             />

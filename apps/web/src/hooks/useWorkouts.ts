@@ -29,7 +29,7 @@ interface CreateWorkoutDto {
   shoeId?: string;
 }
 
-interface UpdateWorkoutDto extends Partial<CreateWorkoutDto> {}
+type UpdateWorkoutDto = Partial<CreateWorkoutDto>;
 
 interface WorkoutFeedItem extends Workout {
   createdAt: string;
@@ -72,7 +72,8 @@ export function useWorkoutFeed() {
     queryKey: workoutKeys.feed(),
     queryFn: ({ pageParam }) => {
       let path = "/feed/workouts?limit=10&excludeLinked=true";
-      if (pageParam) path += `&cursor=${encodeURIComponent(pageParam as string)}`;
+      if (pageParam)
+        path += `&cursor=${encodeURIComponent(pageParam as string)}`;
       return api.fetch<FeedResponse<WorkoutFeedItem>>(path);
     },
     initialPageParam: null as string | null,

@@ -1,11 +1,17 @@
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import EventResultsTable from "@/components/event/EventResultsTable";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -162,7 +168,9 @@ export default function EventDetailPage() {
         // No result yet
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "대회 정보를 불러올 수 없습니다.");
+      setError(
+        err instanceof Error ? err.message : "대회 정보를 불러올 수 없습니다.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -186,7 +194,9 @@ export default function EventDetailPage() {
       await api.fetch(`/events/${eventId}/register`, { method: "POST" });
       await fetchEvent();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "참가 등록에 실패했습니다.");
+      toast.error(
+        err instanceof Error ? err.message : "참가 등록에 실패했습니다.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -200,7 +210,9 @@ export default function EventDetailPage() {
       setMyResult(null);
       setShowCancelDialog(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "참가 취소에 실패했습니다.");
+      toast.error(
+        err instanceof Error ? err.message : "참가 취소에 실패했습니다.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -235,7 +247,9 @@ export default function EventDetailPage() {
       await fetchEvent();
       if (activeTab === "results") await fetchResults();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "결과 등록에 실패했습니다.");
+      toast.error(
+        err instanceof Error ? err.message : "결과 등록에 실패했습니다.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -254,7 +268,9 @@ export default function EventDetailPage() {
       setWorkoutId("");
       await fetchEvent();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "워크아웃 연결에 실패했습니다.");
+      toast.error(
+        err instanceof Error ? err.message : "워크아웃 연결에 실패했습니다.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -266,7 +282,11 @@ export default function EventDetailPage() {
       await api.fetch(`/events/${eventId}/link-workout`, { method: "DELETE" });
       await fetchEvent();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "워크아웃 연결 해제에 실패했습니다.");
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "워크아웃 연결 해제에 실패했습니다.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -277,7 +297,11 @@ export default function EventDetailPage() {
     return (
       <div className="max-w-3xl mx-auto text-center py-12">
         <p className="text-muted-foreground">대회 ID가 필요합니다.</p>
-        <Button variant="link" onClick={() => navigate("/events")} className="mt-4">
+        <Button
+          variant="link"
+          onClick={() => navigate("/events")}
+          className="mt-4"
+        >
           대회 목록으로 돌아가기
         </Button>
       </div>
@@ -305,7 +329,9 @@ export default function EventDetailPage() {
         <Card className="border-destructive/50">
           <CardHeader>
             <CardTitle className="text-destructive">오류</CardTitle>
-            <CardDescription>{error || "대회를 찾을 수 없습니다."}</CardDescription>
+            <CardDescription>
+              {error || "대회를 찾을 수 없습니다."}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Button variant="outline" onClick={() => navigate(-1)}>
@@ -321,7 +347,8 @@ export default function EventDetailPage() {
   const eventDate = new Date(event.date);
   const isPast = eventDate < new Date();
   const participantCount = event._count?.participants ?? 0;
-  const isFull = event.maxParticipants != null && participantCount >= event.maxParticipants;
+  const isFull =
+    event.maxParticipants != null && participantCount >= event.maxParticipants;
 
   const month = eventDate.toLocaleDateString("ko-KR", { month: "short" });
   const day = eventDate.getDate();
@@ -340,13 +367,13 @@ export default function EventDetailPage() {
         <div
           className={cn(
             "flex flex-col items-center justify-center w-24 h-24 rounded-xl flex-shrink-0 shadow-sm",
-            isPast ? "bg-muted" : "bg-primary/10 border-2 border-primary/20"
+            isPast ? "bg-muted" : "bg-primary/10 border-2 border-primary/20",
           )}
         >
           <span
             className={cn(
               "text-sm font-medium uppercase tracking-wide",
-              isPast ? "text-muted-foreground" : "text-primary"
+              isPast ? "text-muted-foreground" : "text-primary",
             )}
           >
             {month}
@@ -354,7 +381,7 @@ export default function EventDetailPage() {
           <span
             className={cn(
               "text-3xl font-bold leading-none mt-1",
-              isPast ? "text-foreground" : "text-primary"
+              isPast ? "text-foreground" : "text-primary",
             )}
           >
             {day}
@@ -362,13 +389,17 @@ export default function EventDetailPage() {
         </div>
 
         <div className="flex-1 min-w-0">
-          <h1 className="text-3xl font-bold text-foreground mb-3">{event.title}</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-3">
+            {event.title}
+          </h1>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={isPast ? "secondary" : "default"}>
               {isPast ? "종료" : "예정"}
             </Badge>
             {event.eventType && (
-              <Badge variant="outline">{EVENT_TYPE_LABELS[event.eventType] || event.eventType}</Badge>
+              <Badge variant="outline">
+                {EVENT_TYPE_LABELS[event.eventType] || event.eventType}
+              </Badge>
             )}
             {event.isRegistered && (
               <Badge variant="default" className="bg-green-600">
@@ -379,7 +410,11 @@ export default function EventDetailPage() {
         </div>
 
         {isOwner && (
-          <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setShowDeleteDialog(true)}
+          >
             <Trash2 className="h-4 w-4 mr-2" />
             삭제
           </Button>
@@ -392,21 +427,29 @@ export default function EventDetailPage() {
           onClick={() => setActiveTab("info")}
           className={cn(
             "px-4 py-2.5 font-medium text-sm transition-all relative",
-            activeTab === "info" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            activeTab === "info"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           대회 정보
-          {activeTab === "info" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
+          {activeTab === "info" && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+          )}
         </button>
         <button
           onClick={() => setActiveTab("results")}
           className={cn(
             "px-4 py-2.5 font-medium text-sm transition-all relative",
-            activeTab === "results" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            activeTab === "results"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           결과
-          {activeTab === "results" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
+          {activeTab === "results" && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+          )}
         </button>
       </div>
 
@@ -431,7 +474,9 @@ export default function EventDetailPage() {
                 <div className="flex items-start gap-3">
                   <Calendar className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">날짜</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      날짜
+                    </p>
                     <p className="text-foreground font-medium">
                       {eventDate.toLocaleDateString("ko-KR", {
                         year: "numeric",
@@ -447,8 +492,12 @@ export default function EventDetailPage() {
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">장소</p>
-                      <p className="text-foreground font-medium">{event.location}</p>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        장소
+                      </p>
+                      <p className="text-foreground font-medium">
+                        {event.location}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -456,10 +505,14 @@ export default function EventDetailPage() {
                 <div className="flex items-start gap-3">
                   <Users className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">참가자</p>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      참가자
+                    </p>
                     <p className="text-foreground font-medium">
                       {participantCount}명
-                      {event.maxParticipants ? ` / ${event.maxParticipants}명` : ""}
+                      {event.maxParticipants
+                        ? ` / ${event.maxParticipants}명`
+                        : ""}
                     </p>
                   </div>
                 </div>
@@ -468,8 +521,12 @@ export default function EventDetailPage() {
                   <div className="flex items-start gap-3">
                     <Trophy className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">거리</p>
-                      <p className="text-foreground font-medium">{(event.distance / 1000).toFixed(1)} km</p>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        거리
+                      </p>
+                      <p className="text-foreground font-medium">
+                        {(event.distance / 1000).toFixed(1)} km
+                      </p>
                     </div>
                   </div>
                 )}
@@ -478,9 +535,13 @@ export default function EventDetailPage() {
                   <div className="flex items-start gap-3">
                     <Clock className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">등록 마감</p>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        등록 마감
+                      </p>
                       <p className="text-foreground font-medium">
-                        {new Date(event.registrationDeadline).toLocaleDateString("ko-KR")}
+                        {new Date(
+                          event.registrationDeadline,
+                        ).toLocaleDateString("ko-KR")}
                       </p>
                     </div>
                   </div>
@@ -499,8 +560,12 @@ export default function EventDetailPage() {
                       className="mt-0.5"
                     />
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">등록자</p>
-                      <p className="text-foreground font-medium">{event.creator.name}</p>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        등록자
+                      </p>
+                      <p className="text-foreground font-medium">
+                        {event.creator.name}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -510,7 +575,11 @@ export default function EventDetailPage() {
                 <>
                   <Separator />
                   <Button variant="outline" asChild>
-                    <a href={event.externalUrl} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={event.externalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <ExternalLink className="h-4 w-4 mr-2" />
                       대회 홈페이지 바로가기
                     </a>
@@ -524,7 +593,11 @@ export default function EventDetailPage() {
           {!isOwner && (
             <div className="flex gap-3">
               {event.isRegistered ? (
-                <Button variant="destructive" onClick={() => setShowCancelDialog(true)} disabled={actionLoading}>
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowCancelDialog(true)}
+                  disabled={actionLoading}
+                >
                   {actionLoading ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
@@ -533,7 +606,10 @@ export default function EventDetailPage() {
                   참가 취소
                 </Button>
               ) : (
-                <Button onClick={handleRegister} disabled={actionLoading || isPast || isFull}>
+                <Button
+                  onClick={handleRegister}
+                  disabled={actionLoading || isPast || isFull}
+                >
                   {actionLoading ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
@@ -556,23 +632,45 @@ export default function EventDetailPage() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-1">순위</p>
-                        <p className="text-2xl font-bold text-foreground">{myResult.resultRank ?? "-"}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-1">배번</p>
-                        <p className="text-2xl font-bold text-foreground">{myResult.bibNumber || "-"}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-1">기록</p>
-                        <p className="text-2xl font-bold text-foreground font-mono">
-                          {myResult.resultTime != null ? formatTime(myResult.resultTime) : "-"}
+                        <p className="text-sm font-medium text-muted-foreground mb-1">
+                          순위
+                        </p>
+                        <p className="text-2xl font-bold text-foreground">
+                          {myResult.resultRank ?? "-"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-1">상태</p>
-                        <Badge variant={myResult.status === "COMPLETED" ? "default" : "secondary"}>
-                          {myResult.status === "COMPLETED" ? "완주" : myResult.status}
+                        <p className="text-sm font-medium text-muted-foreground mb-1">
+                          배번
+                        </p>
+                        <p className="text-2xl font-bold text-foreground">
+                          {myResult.bibNumber || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">
+                          기록
+                        </p>
+                        <p className="text-2xl font-bold text-foreground font-mono">
+                          {myResult.resultTime != null
+                            ? formatTime(myResult.resultTime)
+                            : "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">
+                          상태
+                        </p>
+                        <Badge
+                          variant={
+                            myResult.status === "COMPLETED"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
+                          {myResult.status === "COMPLETED"
+                            ? "완주"
+                            : myResult.status}
                         </Badge>
                       </div>
                     </div>
@@ -583,7 +681,10 @@ export default function EventDetailPage() {
                     <div>
                       {myResult.workoutId ? (
                         <div className="flex items-center gap-3">
-                          <Badge variant="outline" className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="flex items-center gap-2"
+                          >
                             <LinkIcon className="h-3 w-3" />
                             워크아웃 연결됨
                           </Badge>
@@ -598,7 +699,11 @@ export default function EventDetailPage() {
                           </Button>
                         </div>
                       ) : (
-                        <Button variant="outline" size="sm" onClick={() => setShowWorkoutLink(!showWorkoutLink)}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowWorkoutLink(!showWorkoutLink)}
+                        >
                           <LinkIcon className="h-4 w-4 mr-2" />
                           워크아웃 연결
                         </Button>
@@ -613,7 +718,10 @@ export default function EventDetailPage() {
                           onChange={(e) => setWorkoutId(e.target.value)}
                           placeholder="워크아웃 ID"
                         />
-                        <Button type="submit" disabled={actionLoading || !workoutId.trim()}>
+                        <Button
+                          type="submit"
+                          disabled={actionLoading || !workoutId.trim()}
+                        >
                           연결
                         </Button>
                       </form>
@@ -622,14 +730,19 @@ export default function EventDetailPage() {
                 ) : (
                   <div>
                     {!showResultForm ? (
-                      <Button variant="outline" onClick={() => setShowResultForm(true)}>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowResultForm(true)}
+                      >
                         결과 등록하기
                       </Button>
                     ) : (
                       <form onSubmit={handleSubmitResult} className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="resultTime">기록 (HH:MM:SS 또는 MM:SS)</Label>
+                            <Label htmlFor="resultTime">
+                              기록 (HH:MM:SS 또는 MM:SS)
+                            </Label>
                             <Input
                               id="resultTime"
                               type="text"
@@ -676,10 +789,16 @@ export default function EventDetailPage() {
                         </div>
                         <div className="flex gap-2">
                           <Button type="submit" disabled={actionLoading}>
-                            {actionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                            {actionLoading && (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            )}
                             결과 등록
                           </Button>
-                          <Button type="button" variant="outline" onClick={() => setShowResultForm(false)}>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setShowResultForm(false)}
+                          >
                             취소
                           </Button>
                         </div>

@@ -1,4 +1,12 @@
-import { IsNumber, IsString, IsBoolean, IsOptional, IsDateString, Min, Max, MaxLength } from "class-validator";
+import {
+  IsNumber,
+  IsString,
+  IsOptional,
+  IsDateString,
+  Min,
+  Max,
+  MaxLength,
+} from "class-validator";
 
 export class UpdateWorkoutDto {
   @IsOptional()

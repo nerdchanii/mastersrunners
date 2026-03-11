@@ -153,7 +153,12 @@ export class CrewRepository {
     });
   }
 
-  async createCrewPost(data: { userId: string; crewId: string; content: string; visibility?: string }) {
+  async createCrewPost(data: {
+    userId: string;
+    crewId: string;
+    content: string;
+    visibility?: string;
+  }) {
     return this.db.prisma.post.create({
       data: {
         userId: data.userId,
@@ -193,7 +198,13 @@ export class CrewRepository {
       where: { id: crewId, deletedAt: null },
       include: {
         creator: { select: { id: true, name: true, profileImage: true } },
-        _count: { select: { members: { where: { status: "ACTIVE" } }, activities: true, boards: true } },
+        _count: {
+          select: {
+            members: { where: { status: "ACTIVE" } },
+            activities: true,
+            boards: true,
+          },
+        },
       },
     });
 
@@ -219,9 +230,20 @@ export class CrewRepository {
     return { crew, recentPosts, upcomingActivities };
   }
 
-  async explore(options: { region?: string; subRegion?: string; sort?: string; cursor?: string; limit?: number }) {
+  async explore(options: {
+    region?: string;
+    subRegion?: string;
+    sort?: string;
+    cursor?: string;
+    limit?: number;
+  }) {
     const { region, subRegion, sort = "created", cursor, limit = 20 } = options;
-    const where: { isPublic: boolean; deletedAt: null; region?: string; subRegion?: string } = { isPublic: true, deletedAt: null };
+    const where: {
+      isPublic: boolean;
+      deletedAt: null;
+      region?: string;
+      subRegion?: string;
+    } = { isPublic: true, deletedAt: null };
     if (region) where.region = region;
     if (subRegion) where.subRegion = subRegion;
 
@@ -235,7 +257,12 @@ export class CrewRepository {
       ...(cursor && { skip: 1, cursor: { id: cursor } }),
       orderBy,
       include: {
-        _count: { select: { members: { where: { status: "ACTIVE" } }, activities: true } },
+        _count: {
+          select: {
+            members: { where: { status: "ACTIVE" } },
+            activities: true,
+          },
+        },
         creator: { select: { id: true, name: true, profileImage: true } },
       },
     });
@@ -247,7 +274,12 @@ export class CrewRepository {
   }
 
   async recommend(userRegion?: string | null, userSubRegion?: string | null) {
-    const where: { isPublic: boolean; deletedAt: null; region?: string } = { isPublic: true, deletedAt: null };
+    // Keep the subregion parameter explicit in the repository contract until recommendation ranking uses it.
+    void userSubRegion;
+    const where: { isPublic: boolean; deletedAt: null; region?: string } = {
+      isPublic: true,
+      deletedAt: null,
+    };
     if (userRegion) where.region = userRegion;
 
     const crews = await this.db.prisma.crew.findMany({
@@ -255,7 +287,12 @@ export class CrewRepository {
       take: 10,
       orderBy: { createdAt: "desc" },
       include: {
-        _count: { select: { members: { where: { status: "ACTIVE" } }, activities: true } },
+        _count: {
+          select: {
+            members: { where: { status: "ACTIVE" } },
+            activities: true,
+          },
+        },
         creator: { select: { id: true, name: true, profileImage: true } },
       },
     });
@@ -269,16 +306,24 @@ export class CrewRepository {
       _count: { id: true },
       orderBy: { _count: { id: "desc" } },
     });
-    return result.map(r => ({ region: r.region!, crewCount: r._count.id }));
+    return result.map((r) => ({ region: r.region!, crewCount: r._count.id }));
   }
 
   async getSubRegions(region: string) {
     const result = await this.db.prisma.crew.groupBy({
       by: ["subRegion"],
-      where: { isPublic: true, deletedAt: null, region, subRegion: { not: null } },
+      where: {
+        isPublic: true,
+        deletedAt: null,
+        region,
+        subRegion: { not: null },
+      },
       _count: { id: true },
       orderBy: { _count: { id: "desc" } },
     });
-    return result.map(r => ({ subRegion: r.subRegion!, crewCount: r._count.id }));
+    return result.map((r) => ({
+      subRegion: r.subRegion!,
+      crewCount: r._count.id,
+    }));
   }
 }

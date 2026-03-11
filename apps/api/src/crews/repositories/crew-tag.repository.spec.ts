@@ -1,10 +1,9 @@
-import { Test } from '@nestjs/testing';
-import { CrewTagRepository } from './crew-tag.repository.js';
-import { DatabaseService } from '../../database/database.service.js';
+import { Test } from "@nestjs/testing";
+import { CrewTagRepository } from "./crew-tag.repository.js";
+import { DatabaseService } from "../../database/database.service.js";
 
-describe('CrewTagRepository', () => {
+describe("CrewTagRepository", () => {
   let repository: CrewTagRepository;
-  let databaseService: DatabaseService;
 
   const mockPrisma = {
     crewTag: {
@@ -32,21 +31,20 @@ describe('CrewTagRepository', () => {
     }).compile();
 
     repository = module.get<CrewTagRepository>(CrewTagRepository);
-    databaseService = module.get<DatabaseService>(DatabaseService);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('create', () => {
-    it('should create a crew tag', async () => {
-      const crewId = 'crew-1';
-      const name = 'Active Members';
-      const color = '#FF5733';
+  describe("create", () => {
+    it("should create a crew tag", async () => {
+      const crewId = "crew-1";
+      const name = "Active Members";
+      const color = "#FF5733";
 
       const expected = {
-        id: 'tag-1',
+        id: "tag-1",
         crewId,
         name,
         color,
@@ -66,15 +64,15 @@ describe('CrewTagRepository', () => {
       });
     });
 
-    it('should use default color if not provided', async () => {
-      const crewId = 'crew-1';
-      const name = 'New Runners';
+    it("should use default color if not provided", async () => {
+      const crewId = "crew-1";
+      const name = "New Runners";
 
       const expected = {
-        id: 'tag-2',
+        id: "tag-2",
         crewId,
         name,
-        color: '#3B82F6',
+        color: "#3B82F6",
       };
 
       mockPrisma.crewTag.create.mockResolvedValue(expected);
@@ -86,18 +84,18 @@ describe('CrewTagRepository', () => {
         data: {
           crewId,
           name,
-          color: '#3B82F6',
+          color: "#3B82F6",
         },
       });
     });
   });
 
-  describe('findByCrewId', () => {
-    it('should find all tags for a crew', async () => {
-      const crewId = 'crew-1';
+  describe("findByCrewId", () => {
+    it("should find all tags for a crew", async () => {
+      const crewId = "crew-1";
       const expected = [
-        { id: 'tag-1', crewId, name: 'Active', color: '#FF5733' },
-        { id: 'tag-2', crewId, name: 'New', color: '#3B82F6' },
+        { id: "tag-1", crewId, name: "Active", color: "#FF5733" },
+        { id: "tag-2", crewId, name: "New", color: "#3B82F6" },
       ];
 
       mockPrisma.crewTag.findMany.mockResolvedValue(expected);
@@ -107,19 +105,19 @@ describe('CrewTagRepository', () => {
       expect(result).toEqual(expected);
       expect(mockPrisma.crewTag.findMany).toHaveBeenCalledWith({
         where: { crewId },
-        orderBy: { name: 'asc' },
+        orderBy: { name: "asc" },
       });
     });
   });
 
-  describe('update', () => {
-    it('should update a crew tag', async () => {
-      const id = 'tag-1';
-      const data = { name: 'Veterans', color: '#00FF00' };
+  describe("update", () => {
+    it("should update a crew tag", async () => {
+      const id = "tag-1";
+      const data = { name: "Veterans", color: "#00FF00" };
 
       const expected = {
         id,
-        crewId: 'crew-1',
+        crewId: "crew-1",
         ...data,
       };
 
@@ -135,14 +133,14 @@ describe('CrewTagRepository', () => {
     });
   });
 
-  describe('remove', () => {
-    it('should delete a crew tag', async () => {
-      const id = 'tag-1';
+  describe("remove", () => {
+    it("should delete a crew tag", async () => {
+      const id = "tag-1";
       const expected = {
         id,
-        crewId: 'crew-1',
-        name: 'Old Tag',
-        color: '#FF0000',
+        crewId: "crew-1",
+        name: "Old Tag",
+        color: "#FF0000",
       };
 
       mockPrisma.crewTag.delete.mockResolvedValue(expected);
@@ -156,10 +154,10 @@ describe('CrewTagRepository', () => {
     });
   });
 
-  describe('assignToMember', () => {
-    it('should assign a tag to a crew member', async () => {
-      const crewMemberId = 'member-1';
-      const crewTagId = 'tag-1';
+  describe("assignToMember", () => {
+    it("should assign a tag to a crew member", async () => {
+      const crewMemberId = "member-1";
+      const crewTagId = "tag-1";
 
       const expected = {
         crewMemberId,
@@ -180,10 +178,10 @@ describe('CrewTagRepository', () => {
     });
   });
 
-  describe('removeFromMember', () => {
-    it('should remove a tag from a crew member', async () => {
-      const crewMemberId = 'member-1';
-      const crewTagId = 'tag-1';
+  describe("removeFromMember", () => {
+    it("should remove a tag from a crew member", async () => {
+      const crewMemberId = "member-1";
+      const crewTagId = "tag-1";
 
       const expected = {
         crewMemberId,
@@ -206,28 +204,28 @@ describe('CrewTagRepository', () => {
     });
   });
 
-  describe('findMembersByTag', () => {
-    it('should find all members with a specific tag', async () => {
-      const crewTagId = 'tag-1';
+  describe("findMembersByTag", () => {
+    it("should find all members with a specific tag", async () => {
+      const crewTagId = "tag-1";
       const expected = [
         {
-          crewMemberId: 'member-1',
+          crewMemberId: "member-1",
           crewTagId,
           crewMember: {
-            id: 'member-1',
-            userId: 'user-1',
-            crewId: 'crew-1',
-            role: 'MEMBER',
+            id: "member-1",
+            userId: "user-1",
+            crewId: "crew-1",
+            role: "MEMBER",
           },
         },
         {
-          crewMemberId: 'member-2',
+          crewMemberId: "member-2",
           crewTagId,
           crewMember: {
-            id: 'member-2',
-            userId: 'user-2',
-            crewId: 'crew-1',
-            role: 'MEMBER',
+            id: "member-2",
+            userId: "user-2",
+            crewId: "crew-1",
+            role: "MEMBER",
           },
         },
       ];

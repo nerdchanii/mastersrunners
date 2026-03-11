@@ -34,6 +34,7 @@ yarn-error.log*
 # prisma
 **/dev.db
 **/dev.db-journal
+packages/database/generated/
 **/generated/prisma
 
 # vercel
@@ -54,7 +55,9 @@ next-env.d.ts
 
 # oh-my-claudecode
 .omc/
+.husky/_/
 .playwright-report
+**/playwright-report/
 
 # local file uploads (disk storage)
 /uploads/

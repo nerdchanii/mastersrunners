@@ -1,0 +1,67 @@
+# Rollback Runbook
+
+Use this runbook when a deployment completed but the new release is unhealthy or functionally broken.
+
+## Signals That Trigger Rollback
+
+- `scripts/verify-deployment.sh` fails after deployment
+- health endpoint is down
+- critical auth, database, or upload flows fail immediately after release
+- runtime config is correct but the new revision still regresses behavior
+
+## Preferred Rollback Path
+
+Prefer `git revert` for code rollback so the failure remains visible in repository history.
+
+## Cloud Run Rollback
+
+### 1. List recent revisions
+
+```bash
+gcloud run revisions list \
+  --service masters-runners-api \
+  --region asia-northeast3
+```
+
+### 2. Shift traffic to the last known good revision
+
+```bash
+gcloud run services update-traffic masters-runners-api \
+  --region asia-northeast3 \
+  --to-revisions <REVISION_NAME>=100
+```
+
+### 3. Verify service health
+
+```bash
+pnpm deploy:verify -- https://<service-url>
+```
+
+## Repository Rollback
+
+When the problem is in the code, create a revert commit instead of rewriting history.
+
+```bash
+git revert <bad_commit_sha>
+git push origin main
+```
+
+This lets the existing deploy workflow redeploy the reverted state.
+
+## Local Docker Rollback
+
+If local production-like verification introduced a broken stack:
+
+```bash
+docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+For image-specific local rollback, rerun the stack with the last known good image or commit.
+
+## After Rollback
+
+- Confirm `GET /health` succeeds
+- Confirm logs are stable
+- Record the rollback reason in the related task or initiative document
+- Create a follow-up task before attempting the same change again

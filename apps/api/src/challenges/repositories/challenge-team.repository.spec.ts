@@ -4,7 +4,6 @@ import { DatabaseService } from "../../database/database.service.js";
 
 describe("ChallengeTeamRepository", () => {
   let repository: ChallengeTeamRepository;
-  let db: DatabaseService;
 
   const mockDb = {
     prisma: {
@@ -29,7 +28,6 @@ describe("ChallengeTeamRepository", () => {
     }).compile();
 
     repository = module.get(ChallengeTeamRepository);
-    db = module.get(DatabaseService);
   });
 
   afterEach(() => {
@@ -40,7 +38,12 @@ describe("ChallengeTeamRepository", () => {
     it("should call prisma.challengeTeam.create with correct data", async () => {
       const challengeId = "challenge-1";
       const name = "Team Alpha";
-      const mockTeam = { id: "team-1", challengeId, name, createdAt: new Date() };
+      const mockTeam = {
+        id: "team-1",
+        challengeId,
+        name,
+        createdAt: new Date(),
+      };
 
       mockDb.prisma.challengeTeam.create.mockResolvedValue(mockTeam);
 
@@ -100,7 +103,12 @@ describe("ChallengeTeamRepository", () => {
     it("should return all teams for a challenge", async () => {
       const challengeId = "challenge-1";
       const mockTeams = [
-        { id: "team-1", challengeId, name: "Team Alpha", createdAt: new Date() },
+        {
+          id: "team-1",
+          challengeId,
+          name: "Team Alpha",
+          createdAt: new Date(),
+        },
         { id: "team-2", challengeId, name: "Team Beta", createdAt: new Date() },
       ];
 
@@ -131,7 +139,12 @@ describe("ChallengeTeamRepository", () => {
   describe("remove", () => {
     it("should delete a team", async () => {
       const teamId = "team-1";
-      const mockTeam = { id: teamId, challengeId: "challenge-1", name: "Team Alpha", createdAt: new Date() };
+      const mockTeam = {
+        id: teamId,
+        challengeId: "challenge-1",
+        name: "Team Alpha",
+        createdAt: new Date(),
+      };
 
       mockDb.prisma.challengeTeam.delete.mockResolvedValue(mockTeam);
 
@@ -165,7 +178,9 @@ describe("ChallengeTeamRepository", () => {
         { id: "team-2", name: "Team Beta" },
       ];
 
-      mockDb.prisma.challengeParticipant.groupBy.mockResolvedValue(mockAggregated);
+      mockDb.prisma.challengeParticipant.groupBy.mockResolvedValue(
+        mockAggregated,
+      );
       mockDb.prisma.challengeTeam.findMany.mockResolvedValue(mockTeams);
 
       const result = await repository.getTeamLeaderboard(challengeId);

@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Req, Res, UseGuards, NotFoundException, ForbiddenException } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Req,
+  Res,
+  UseGuards,
+  ForbiddenException,
+} from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { AuthGuard } from "@nestjs/passport";
 import { ConfigService } from "@nestjs/config";
@@ -81,7 +90,9 @@ export class AuthController {
   async devLogin() {
     const env = process.env.NODE_ENV;
     if (env !== "development" && env !== "test") {
-      throw new ForbiddenException("Dev login is only available in development/test environments.");
+      throw new ForbiddenException(
+        "Dev login is only available in development/test environments.",
+      );
     }
 
     const profile: OAuthProfile = {
@@ -119,7 +130,10 @@ export class AuthController {
   private async handleOAuthCallback(profile: OAuthProfile, res: Response) {
     const user = await this.authService.upsertOAuthUser(profile);
     const tokens = this.authService.generateTokens(user);
-    const frontendUrl = this.config.get<string>("FRONTEND_URL", "http://localhost:3000");
+    const frontendUrl = this.config.get<string>(
+      "FRONTEND_URL",
+      "http://localhost:3000",
+    );
 
     const redirectUrl =
       `${frontendUrl}/auth/callback` +

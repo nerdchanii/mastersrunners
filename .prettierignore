@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+**/.next
+**/out
+**/coverage
+**/playwright-report
+**/test-results
+packages/database/generated
+.husky/_

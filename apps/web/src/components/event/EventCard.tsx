@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users } from "lucide-react";
+import { MapPin, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EventCardProps {
@@ -34,13 +34,13 @@ export default function EventCard({ event }: EventCardProps) {
             <div
               className={cn(
                 "flex flex-col items-center justify-center w-16 h-16 rounded-lg flex-shrink-0",
-                isPast ? "bg-gray-100" : "bg-primary/10"
+                isPast ? "bg-gray-100" : "bg-primary/10",
               )}
             >
               <span
                 className={cn(
                   "text-xs font-medium uppercase",
-                  isPast ? "text-gray-600" : "text-primary"
+                  isPast ? "text-gray-600" : "text-primary",
                 )}
               >
                 {month}
@@ -48,7 +48,7 @@ export default function EventCard({ event }: EventCardProps) {
               <span
                 className={cn(
                   "text-2xl font-bold leading-none",
-                  isPast ? "text-gray-700" : "text-primary"
+                  isPast ? "text-gray-700" : "text-primary",
                 )}
               >
                 {day}
@@ -61,7 +61,10 @@ export default function EventCard({ event }: EventCardProps) {
                   {event.title}
                 </h3>
               </div>
-              <Badge variant={isPast ? "secondary" : "default"} className="text-xs">
+              <Badge
+                variant={isPast ? "secondary" : "default"}
+                className="text-xs"
+              >
                 {isPast ? "종료" : "예정"}
               </Badge>
             </div>

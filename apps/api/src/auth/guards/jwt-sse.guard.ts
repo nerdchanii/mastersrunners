@@ -31,7 +31,7 @@ export class JwtSseGuard implements CanActivate {
       request.user = { userId: payload.sub, email: payload.email };
 
       return true;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException("Invalid token");
     }
   }

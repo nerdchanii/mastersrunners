@@ -1,51 +1,111 @@
 # 마스터스러너스 (mastersrunners)
 
-한국 러너들을 위한 최고의 훈련 기록 & 커뮤니티 플랫폼
+한국 러너들을 위한 훈련 기록, 커뮤니티, 크루 운영 도구를 만드는 모노레포입니다.
 
----
+## 현재 상태
 
-## 소개
+이 저장소는 초기 준비 단계 설명을 넘어 실제 제품 기능과 하네스 구조를 함께 담는 모노레포입니다. 현재 코드베이스에는 다음 기능 축이 구현되어 있습니다.
 
-**마스터스러너스(mastersrunners)**는 한국의 러너들이 더 활발하게 훈련하고, 자신의 훈련을 쉽고 재미있게 기록·공유할 수 있도록 돕는 러닝 커뮤니티 앱입니다. 멀리 떨어져 있어도, 같은 러너로서 서로의 성장과 도전을 응원할 수 있습니다.
+- 워크아웃 기록과 업로드
+- 피드, 게시물, 댓글, 좋아요
+- 프로필, 팔로우, 차단
+- 크루, 크루 게시판, 활동, 출석, QR 체크인
+- 챌린지, 이벤트
+- 메시지/대화, 알림
+- 파일 업로드와 스토리지 연동
 
----
+최신 큰 기능 이정표는 `docs/plans/phase7-plan.md`에 정리된 크루 시스템 고도화입니다.
 
-## 주요 기능 (Phase별)
+## 기술 스택
 
-### Phase 1 - (현재 Phase 1 개발 중)
-- **훈련 기록 (러닝 전용)**  
-  러닝(running) 기록만을 쉽고 빠르게 저장할 수 있습니다.  
-  *(현재는 러닝만 지원하며, 다른 운동 기록 기능은 추후 계획되어 있지 않습니다.)*
-- **훈련 공유**  
-  자신의 러닝 기록을 커뮤니티에 공유하고, 다른 러너들의 훈련도 한눈에 볼 수 있습니다.
+- Web: Vite + React 19 + React Router v7
+- API: NestJS 11
+- Database: Prisma + PostgreSQL
+- Shared packages: `packages/database`, `packages/types`
+- Storage: Cloudflare R2 중심, 로컬 디스크 fallback 지원
+- Test tooling: Jest, Playwright
 
-### Phase 2
-- **커뮤니티 소통**  
-  댓글, 좋아요, 피드백 등 다양한 방식으로 러너들과 소통할 수 있습니다.
-- **통계 및 분석**  
-  나의 러닝 데이터를 시각적으로 확인하고, 성장 과정을 추적할 수 있습니다.
+## 저장소 구조
 
----
+```text
+apps/
+  web/        # Vite SPA
+  api/        # NestJS API
+packages/
+  database/   # Prisma schema and database package
+  types/      # Shared TypeScript types
+design/       # Technical design, architecture, ADR, initiatives
+docs/         # Domain docs, runbooks, reports, guides
+tasks/        # Initiative-scoped execution queue
+scripts/      # Executable helper scripts
+```
 
-## 기대 효과
+## 빠른 시작
 
-- **사용자**
-  - 러너 커뮤니티 강화
-  - 정보 접근성 향상
-  - 러너들의 활발한 정보공유
+### 1. 의존성 설치
 
----
+```bash
+pnpm install
+```
 
-## 시작하기
+### 2. 개발 서버 실행
 
-> 현재 서비스 준비 중입니다.  
-> 곧 더 자세한 안내와 함께 찾아뵙겠습니다!
+```bash
+pnpm dev
+```
 
----
+### 3. 빌드
 
-## 문의 및 피드백
+```bash
+pnpm build
+```
+
+### 4. 테스트
+
+```bash
+pnpm --filter @masters/api test
+pnpm --filter @masters/api test:e2e
+```
+
+### 5. 배포 검증
+
+```bash
+pnpm deploy:verify -- http://localhost:4000
+```
+
+## 하네스 진입점
+
+이 저장소는 에이전트 친화적인 하네스로 정리 중입니다. 문서를 읽을 때는 아래 순서를 권장합니다.
+
+1. [AGENTS.md](./AGENTS.md)
+2. [tasks/](./tasks)
+3. [design/](./design)
+4. [docs/domain/](./docs/domain)
+5. [docs/runbooks/](./docs/runbooks)
+
+역할은 다음처럼 나뉩니다.
+
+- `design/`: 프론트엔드, 백엔드, 아키텍처, ADR, initiative
+- `docs/`: 도메인 규칙, 운영 가이드, 보고서, 일반 가이드
+- `tasks/`: 실제 실행 상태
+- `.github/workflows/`, `scripts/`: 실행 가능한 자동화
+
+## 주요 문서
+
+- [AGENTS.md](./AGENTS.md): 표준 에이전트 진입점
+- [design/README.md](./design/README.md): 설계 문서 경계
+- [docs/README.md](./docs/README.md): 문서 구조 설명
+- [docs/domain/README.md](./docs/domain/README.md): 도메인 문서 인덱스
+- [docs/runbooks/deployment.md](./docs/runbooks/deployment.md): 배포 runbook
+- [design/initiatives/I-0001-harness-foundation.md](./design/initiatives/I-0001-harness-foundation.md): 하네스 기반 작업
+- [design/initiatives/I-0002-harness-verification.md](./design/initiatives/I-0002-harness-verification.md): 검증 하네스 작업
+
+## 주의사항
+
+- 프론트엔드는 현재 SPA이며, 저장소에 남아 있는 `.next` 산출물은 source of truth가 아닙니다.
+- 워크아웃 canonical unit은 `meters`, `seconds`, `seconds per kilometer`입니다.
+- 공개 health endpoint는 `GET /health`입니다.
+
+## 문의
 
 - 이메일: runnerchanii@gmail.com
-- 인스타그램: 
-
-마스터스러너스와 함께 더 멀리, 더 즐겁게 달려보세요! 🏃‍♂️🏃‍♀️

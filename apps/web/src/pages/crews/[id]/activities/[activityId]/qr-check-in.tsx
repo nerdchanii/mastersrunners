@@ -4,26 +4,33 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, ArrowLeft, Loader2, QrCode, AlertTriangle } from "lucide-react";
+import {
+  CheckCircle,
+  ArrowLeft,
+  Loader2,
+  QrCode,
+  AlertTriangle,
+} from "lucide-react";
 import { QrScanner } from "@/components/crew/QrScanner";
 import { useQrCheckIn, useCrewActivity } from "@/hooks/useCrewActivities";
-import { useCrew } from "@/hooks/useCrews";
 
 export default function QrCheckInPage() {
-  const { id: crewId, activityId } = useParams<{ id: string; activityId: string }>();
+  const { id: crewId, activityId } = useParams<{
+    id: string;
+    activityId: string;
+  }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const qrCheckIn = useQrCheckIn();
   const { data: activity } = useCrewActivity(crewId ?? "", activityId ?? "");
-  const { data: crew } = useCrew(crewId ?? "");
 
   const [checkInSuccess, setCheckInSuccess] = useState(false);
 
-  // Check if user is a member
-  const isMember = crew?.members?.some((m) => m.user.id === user?.id);
-  const myAttendance = activity?.attendances?.find((a) => a.userId === user?.id);
+  const myAttendance = activity?.attendances?.find(
+    (a) => a.userId === user?.id,
+  );
   const isAlreadyCheckedIn = myAttendance?.status === "CHECKED_IN";
 
   // Auto-submit if qrCode is in URL params
@@ -40,7 +47,9 @@ export default function QrCheckInPage() {
           toast.success("QR 체크인 완료!");
         },
         onError: (err) => {
-          toast.error(err instanceof Error ? err.message : "체크인에 실패했습니다.");
+          toast.error(
+            err instanceof Error ? err.message : "체크인에 실패했습니다.",
+          );
         },
       },
     );
@@ -132,7 +141,10 @@ export default function QrCheckInPage() {
                     ? qrCheckIn.error.message
                     : "체크인에 실패했습니다."}
                 </p>
-                <Button variant="outline" onClick={() => handleQrCheckIn(urlQrCode)}>
+                <Button
+                  variant="outline"
+                  onClick={() => handleQrCheckIn(urlQrCode)}
+                >
                   다시 시도
                 </Button>
               </>
@@ -171,7 +183,9 @@ export default function QrCheckInPage() {
           </p>
           <Button
             variant="link"
-            onClick={() => navigate(`/crews/${crewId}/activities/${activityId}`)}
+            onClick={() =>
+              navigate(`/crews/${crewId}/activities/${activityId}`)
+            }
           >
             수동 체크인으로 이동
           </Button>

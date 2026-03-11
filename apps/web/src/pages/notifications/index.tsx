@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Bell, BellOff, Check, CheckCheck } from "lucide-react";
+import { BellOff, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { cn } from "@/lib/utils";
@@ -81,7 +81,7 @@ function NotificationItem({ notification }: { notification: Notification }) {
     <div
       className={cn(
         "flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/50",
-        !notification.isRead && "bg-primary/5"
+        !notification.isRead && "bg-primary/5",
       )}
     >
       {/* Actor Avatar or type icon */}
@@ -104,7 +104,9 @@ function NotificationItem({ notification }: { notification: Notification }) {
         <p
           className={cn(
             "text-sm",
-            !notification.isRead ? "font-medium text-foreground" : "text-muted-foreground"
+            !notification.isRead
+              ? "font-medium text-foreground"
+              : "text-muted-foreground",
           )}
         >
           {notification.message}
@@ -164,13 +166,15 @@ export default function NotificationsPage() {
         fetchNextPage();
       }
     },
-    [hasNextPage, isFetchingNextPage, fetchNextPage]
+    [hasNextPage, isFetchingNextPage, fetchNextPage],
   );
 
   useEffect(() => {
     const el = loadMoreRef.current;
     if (!el) return;
-    const observer = new IntersectionObserver(handleObserver, { threshold: 0.1 });
+    const observer = new IntersectionObserver(handleObserver, {
+      threshold: 0.1,
+    });
     observer.observe(el);
     return () => observer.disconnect();
   }, [handleObserver]);
@@ -181,7 +185,9 @@ export default function NotificationsPage() {
       <div className="mb-4 flex items-center justify-between px-4">
         <div>
           <h1 className="text-xl font-bold">알림</h1>
-          <p className="text-sm text-muted-foreground">최신 활동을 확인하세요.</p>
+          <p className="text-sm text-muted-foreground">
+            최신 활동을 확인하세요.
+          </p>
         </div>
         {hasUnread && (
           <Button
@@ -218,7 +224,10 @@ export default function NotificationsPage() {
         ) : (
           <>
             {notifications.map((notification: Notification) => (
-              <NotificationItem key={notification.id} notification={notification} />
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+              />
             ))}
 
             {/* Load more trigger */}

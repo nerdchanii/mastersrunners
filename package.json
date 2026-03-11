@@ -6,6 +6,12 @@
     "dev": "pnpm --parallel -r run dev",
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
+    "format": "prettier . --write",
+    "format:check": "prettier --check --ignore-unknown AGENTS.md README.md DEPLOYMENT.md design docs/README.md docs/guides docs/runbooks docs/reports/README.md docs/plans/README.md tasks scripts .github package.json",
+    "precommit": "bash scripts/pre-commit.sh",
+    "prepare": "husky",
+    "ci:local": "bash scripts/ci-local.sh",
+    "deploy:verify": "bash scripts/verify-deployment.sh",
     "db:migrate": "pnpm --filter @masters/database db:migrate",
     "db:push": "pnpm --filter @masters/database db:push",
     "db:studio": "pnpm --filter @masters/database db:studio",
@@ -13,8 +19,15 @@
     "clean": "pnpm -r run clean"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.58.2",
-    "typescript": "^5"
+    "eslint": "^9.39.2",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^17.4.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.8.1",
+    "typescript": "^5",
+    "typescript-eslint": "^8.57.0"
   },
   "packageManager": "pnpm@10.28.2"
 }
