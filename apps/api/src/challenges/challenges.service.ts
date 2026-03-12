@@ -49,7 +49,9 @@ export class ChallengesService {
     let myProgress: number | null = null;
 
     if (userId) {
-      const participant = challenge.participants.find((p) => p.userId === userId);
+      const participant = challenge.participants.find(
+        (p: (typeof challenge.participants)[number]) => p.userId === userId,
+      );
       if (participant) {
         isJoined = true;
         myProgress = participant.currentValue;
@@ -77,7 +79,7 @@ export class ChallengesService {
   async findAll(options: { isPublic?: boolean; crewId?: string; cursor?: string; limit?: number }) {
     const { data, nextCursor, hasMore } = await this.challengeRepo.findAll(options);
 
-    const items = data.map((challenge) => ({
+    const items = data.map((challenge: (typeof data)[number]) => ({
       id: challenge.id,
       title: challenge.title,
       description: challenge.description,
@@ -96,7 +98,7 @@ export class ChallengesService {
   async findMyChallenges(userId: string, options?: { cursor?: string; limit?: number }) {
     const { data, nextCursor, hasMore } = await this.challengeRepo.findByUser(userId, options);
 
-    const items = data.map((challenge) => ({
+    const items = data.map((challenge: (typeof data)[number]) => ({
       id: challenge.id,
       title: challenge.title,
       description: challenge.description,
@@ -178,7 +180,7 @@ export class ChallengesService {
     const participants = await this.participantRepo.findLeaderboard(challengeId, limit);
 
     // Map to frontend contract: add rank and map currentValue to progress
-    return participants.map((p, index) => ({
+    return participants.map((p: (typeof participants)[number], index: number) => ({
       rank: index + 1,
       progress: p.currentValue,
       user: p.user,

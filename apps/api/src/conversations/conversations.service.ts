@@ -43,7 +43,7 @@ export class ConversationsService {
 
     // Get unread count for each conversation
     const conversationsWithUnread = await Promise.all(
-      items.map(async (conv) => {
+      items.map(async (conv: (typeof items)[number]) => {
         const unreadCount = await this.conversationsRepo.getUnreadCount(conv.id, userId);
         return {
           ...conv,
@@ -77,7 +77,9 @@ export class ConversationsService {
     }
 
     // Check block relationship
-    const otherParticipant = conversation.participants.find((p) => p.userId !== userId);
+    const otherParticipant = conversation.participants.find(
+      (p: (typeof conversation.participants)[number]) => p.userId !== userId,
+    );
     if (otherParticipant) {
       const blocked = await this.blockRepo.isBlocked(userId, otherParticipant.userId);
       if (blocked) {
@@ -113,7 +115,9 @@ export class ConversationsService {
     }
 
     // Check block (find the other participant)
-    const otherParticipant = conversation.participants.find((p) => p.userId !== userId);
+    const otherParticipant = conversation.participants.find(
+      (p: (typeof conversation.participants)[number]) => p.userId !== userId,
+    );
     if (otherParticipant) {
       const blocked = await this.blockRepo.isBlocked(userId, otherParticipant.userId);
       if (blocked) {

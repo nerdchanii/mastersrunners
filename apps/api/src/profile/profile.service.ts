@@ -103,7 +103,7 @@ export class ProfileService {
 
     // Get follow status for each result
     const usersWithFollowStatus = await Promise.all(
-      users.map(async (user) => {
+      users.map(async (user: (typeof users)[number]) => {
         const follow = await this.followRepo.findFollow(currentUserId, user.id);
         return {
           ...user,

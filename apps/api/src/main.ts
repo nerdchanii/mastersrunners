@@ -7,12 +7,17 @@ import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import express from "express";
 
-import { AllExceptionsFilter } from "./common/filters/http-exception.filter.js";
+import { StructuredLoggerService } from "./common/logging/structured-logger.service.js";
+import { MonitoringService } from "./common/monitoring/monitoring.service.js";
 import { AppModule } from "./app.module.js";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  const app = await NestFactory.create(AppModule, { bodyParser: false, bufferLogs: true });
   const config = app.get(ConfigService);
+  const logger = app.get(StructuredLoggerService);
+  const monitoring = app.get(MonitoringService);
+
+  app.useLogger(logger);
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
@@ -49,7 +54,6 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new AllExceptionsFilter());
   app.setGlobalPrefix("api/v1", {
     exclude: ["health"],
   });
@@ -65,6 +69,10 @@ async function bootstrap() {
 
   const port = config.get<number>("API_PORT", 4000);
   await app.listen(port);
-  console.log(`API server running on http://localhost:${port}/api/v1`);
+  logger.logEvent("log", "api_bootstrap_complete", "Bootstrap", {
+    port,
+    apiBaseUrl: `http://localhost:${port}/api/v1`,
+    monitoringEnabled: monitoring.isEnabled(),
+  });
 }
 bootstrap();

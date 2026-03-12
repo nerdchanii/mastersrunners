@@ -307,7 +307,10 @@ export class CrewRepository {
       _count: { id: true },
       orderBy: { _count: { id: "desc" } },
     });
-    return result.map((r) => ({ region: r.region!, crewCount: r._count.id }));
+    return result.map((r: (typeof result)[number]) => ({
+      region: r.region!,
+      crewCount: r._count.id,
+    }));
   }
 
   async getSubRegions(region: string) {
@@ -322,7 +325,7 @@ export class CrewRepository {
       _count: { id: true },
       orderBy: { _count: { id: "desc" } },
     });
-    return result.map((r) => ({
+    return result.map((r: (typeof result)[number]) => ({
       subRegion: r.subRegion!,
       crewCount: r._count.id,
     }));

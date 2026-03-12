@@ -8,12 +8,12 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 | ----------------------------- | -----: | ----: | --------: | -----: | ---------------: |
 | Agent Entry Point             |     15 |     0 |         0 |     15 |             100% |
 | Document Structure            |     12 |     0 |         0 |     12 |             100% |
-| Invariant Enforcement         |     13 |     1 |         1 |     15 |              93% |
+| Invariant Enforcement         |     14 |     0 |         1 |     15 |             100% |
 | Architecture                  |     12 |     0 |         0 |     12 |             100% |
 | Repository as Source of Truth |     10 |     0 |         0 |     10 |             100% |
-| Operations and Maintenance    |      7 |     1 |         2 |     10 |              88% |
+| Operations and Maintenance    |      8 |     0 |         2 |     10 |             100% |
 | Agent Readability             |      9 |     1 |         0 |     10 |              90% |
-| **Total**                     | **78** | **3** |     **3** | **84** | **96% adjusted** |
+| **Total**                     | **80** | **1** |     **3** | **84** | **99% adjusted** |
 
 ## Category Targets
 
@@ -120,18 +120,18 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 
 ### Operations and Maintenance
 
-| category                   | item_id | statement               | current_status | exception_id | evidence_path                            | owner   | target_task | notes                                                                 |
-| -------------------------- | ------- | ----------------------- | -------------- | ------------ | ---------------------------------------- | ------- | ----------- | --------------------------------------------------------------------- |
-| Operations and Maintenance | OPS-001 | dead code 도구 설정     | pass           |              | knip.json                                | harness | I-0006-050  | blocking `pnpm knip` now runs in CI and local CI                      |
-| Operations and Maintenance | OPS-002 | dead code 주기 제거     | pass           |              | docs/guides/dead-code-policy.md          | harness | I-0006-050  | explicit baseline + cleanup cadence committed                         |
-| Operations and Maintenance | OPS-003 | 의존성 주기 업데이트    | pass           |              | .github/dependabot.yml                   | harness | I-0006-040  | Dependabot manages weekly npm and GitHub Actions updates              |
-| Operations and Maintenance | OPS-004 | stale dependency 식별   | pass           |              | .github/workflows/dependency-review.yml  | harness | I-0006-040  | dependency review plus Dependabot make stale dependency drift visible |
-| Operations and Maintenance | OPS-005 | 구조화된 로깅           | fail           |              | apps/api/src/main.ts                     | backend | I-0006-070  | scaffold pending                                                      |
-| Operations and Maintenance | OPS-006 | 에러 모니터링 연동      | exception      | EX-0002      | design/operating-rules/exceptions.md     | harness | I-0006-070  | scaffold in repo, live hookup external                                |
-| Operations and Maintenance | OPS-007 | health check 엔드포인트 | pass           |              | apps/api/src/health/health.controller.ts | backend |             |                                                                       |
-| Operations and Maintenance | OPS-008 | 불필요한 설정 정리      | pass           |              | .gitignore                               | harness | I-0004-030  | generated output rules exist                                          |
-| Operations and Maintenance | OPS-009 | Docker 이미지 최적화    | pass           |              | apps/api/Dockerfile                      | backend |             | multi-stage                                                           |
-| Operations and Maintenance | OPS-010 | flaky test 관리         | exception      | EX-0003      | design/operating-rules/exceptions.md     | harness | I-0006-060  | policy/report now exist in-repo; external routing proof still pending |
+| category                   | item_id | statement               | current_status | exception_id | evidence_path                            | owner   | target_task | notes                                                                                                    |
+| -------------------------- | ------- | ----------------------- | -------------- | ------------ | ---------------------------------------- | ------- | ----------- | -------------------------------------------------------------------------------------------------------- |
+| Operations and Maintenance | OPS-001 | dead code 도구 설정     | pass           |              | knip.json                                | harness | I-0006-050  | blocking `pnpm knip` now runs in CI and local CI                                                         |
+| Operations and Maintenance | OPS-002 | dead code 주기 제거     | pass           |              | docs/guides/dead-code-policy.md          | harness | I-0006-050  | explicit baseline + cleanup cadence committed                                                            |
+| Operations and Maintenance | OPS-003 | 의존성 주기 업데이트    | pass           |              | .github/dependabot.yml                   | harness | I-0006-040  | Dependabot manages weekly npm and GitHub Actions updates                                                 |
+| Operations and Maintenance | OPS-004 | stale dependency 식별   | pass           |              | .github/workflows/dependency-review.yml  | harness | I-0006-040  | dependency review plus Dependabot make stale dependency drift visible                                    |
+| Operations and Maintenance | OPS-005 | 구조화된 로깅           | pass           |              | apps/api/src/main.ts                     | backend | I-0006-070  | structured logger, request interceptor, and env-gated monitoring scaffold are wired into the API runtime |
+| Operations and Maintenance | OPS-006 | 에러 모니터링 연동      | exception      | EX-0002      | design/operating-rules/exceptions.md     | harness | I-0006-070  | scaffold in repo, live hookup external                                                                   |
+| Operations and Maintenance | OPS-007 | health check 엔드포인트 | pass           |              | apps/api/src/health/health.controller.ts | backend |             |                                                                                                          |
+| Operations and Maintenance | OPS-008 | 불필요한 설정 정리      | pass           |              | .gitignore                               | harness | I-0004-030  | generated output rules exist                                                                             |
+| Operations and Maintenance | OPS-009 | Docker 이미지 최적화    | pass           |              | apps/api/Dockerfile                      | backend |             | multi-stage                                                                                              |
+| Operations and Maintenance | OPS-010 | flaky test 관리         | exception      | EX-0003      | design/operating-rules/exceptions.md     | harness | I-0006-060  | policy/report now exist in-repo; external routing proof still pending                                    |
 
 ### Agent Readability
 

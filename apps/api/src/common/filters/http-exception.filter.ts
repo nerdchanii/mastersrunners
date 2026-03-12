@@ -1,12 +1,8 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-  HttpStatus,
-  Logger,
-} from "@nestjs/common";
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from "@nestjs/common";
 import type { Request, Response } from "express";
+
+import { StructuredLoggerService } from "../logging/structured-logger.service.js";
+import { MonitoringService } from "../monitoring/monitoring.service.js";
 
 interface PrismaClientKnownRequestError extends Error {
   code: string;
@@ -39,7 +35,10 @@ function getPrismaHttpStatus(code: string): { status: number; message: string } 
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  private readonly logger = new Logger(AllExceptionsFilter.name);
+  constructor(
+    private readonly logger: StructuredLoggerService,
+    private readonly monitoring: MonitoringService,
+  ) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -57,10 +56,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = prismaResult.status;
       message = prismaResult.message;
       if (status >= 500) {
-        this.logger.error(
-          `Prisma error ${exception.code} at ${request.method} ${request.url}`,
-          exception.stack,
-        );
+        this.logger.errorWithFields("prisma_request_error", AllExceptionsFilter.name, {
+          code: exception.code,
+          method: request.method,
+          path: request.url,
+          statusCode: status,
+          error: exception,
+        });
       }
     } else {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -68,10 +70,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     if (status >= 500 && !(isPrismaError(exception) && exception.code.startsWith("P2"))) {
-      this.logger.error(
-        `${request.method} ${request.url} ${status}`,
-        exception instanceof Error ? exception.stack : String(exception),
-      );
+      this.logger.errorWithFields("http_request_error", AllExceptionsFilter.name, {
+        method: request.method,
+        path: request.url,
+        statusCode: status,
+        error: exception,
+      });
+      this.monitoring.captureException(exception, {
+        method: request.method,
+        path: request.url,
+        statusCode: status,
+      });
     }
 
     response.status(status).json({

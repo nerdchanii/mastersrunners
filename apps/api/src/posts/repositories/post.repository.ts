@@ -144,7 +144,7 @@ export class PostRepository {
       return posts;
     }
 
-    return posts.map((post) => {
+    return posts.map((post: (typeof posts)[number]) => {
       const { likes, ...rest } = post;
       return {
         ...rest,
@@ -292,7 +292,7 @@ export class PostRepository {
       return posts;
     }
 
-    return posts.map((post) => {
+    return posts.map((post: (typeof posts)[number]) => {
       const { likes, ...rest } = post;
       return {
         ...rest,
@@ -312,7 +312,7 @@ export class PostRepository {
       ORDER BY count DESC
       LIMIT ${limit}
     `;
-    return result.map((r) => ({ tag: r.tag, count: Number(r.count) }));
+    return result.map((r: (typeof result)[number]) => ({ tag: r.tag, count: Number(r.count) }));
   }
 
   async createWithRelations(postData: CreatePostData, workoutIds?: string[], imageUrls?: string[]) {

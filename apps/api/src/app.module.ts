@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { APP_FILTER, APP_GUARD, Reflector } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, Reflector } from "@nestjs/core";
 import {
   getOptionsToken,
   ThrottlerGuard,
@@ -17,6 +17,9 @@ import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard.js";
 import { BlockModule } from "./block/block.module.js";
 import { ChallengesModule } from "./challenges/challenges.module.js";
 import { AllExceptionsFilter } from "./common/filters/http-exception.filter.js";
+import { RequestLoggingInterceptor } from "./common/logging/request-logging.interceptor.js";
+import { StructuredLoggerService } from "./common/logging/structured-logger.service.js";
+import { MonitoringService } from "./common/monitoring/monitoring.service.js";
 import { ConversationsModule } from "./conversations/conversations.module.js";
 import { CrewBoardsModule } from "./crew-boards/crew-boards.module.js";
 import { CrewsModule } from "./crews/crews.module.js";
@@ -78,6 +81,8 @@ const envFilePath = envCandidates.filter((path) => existsSync(path));
   controllers: [AppController],
   providers: [
     AppService,
+    StructuredLoggerService,
+    MonitoringService,
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
@@ -94,6 +99,10 @@ const envFilePath = envCandidates.filter((path) => existsSync(path));
         reflector: Reflector,
       ) => new ThrottlerGuard(options, storage, reflector),
       inject: [getOptionsToken(), ThrottlerStorage, Reflector],
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RequestLoggingInterceptor,
     },
   ],
 })

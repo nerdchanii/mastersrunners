@@ -266,10 +266,16 @@ export class CrewActivityRepository {
     let totalAttendances = 0;
     let totalCheckedIn = 0;
 
-    const activityStats = activities.map((act) => {
-      const checkedIn = act.attendances.filter((a) => a.status === "CHECKED_IN").length;
-      const noShow = act.attendances.filter((a) => a.status === "NO_SHOW").length;
-      const total = act.attendances.filter((a) => a.status !== "CANCELLED").length;
+    const activityStats = activities.map((act: (typeof activities)[number]) => {
+      const checkedIn = act.attendances.filter(
+        (a: (typeof act.attendances)[number]) => a.status === "CHECKED_IN",
+      ).length;
+      const noShow = act.attendances.filter(
+        (a: (typeof act.attendances)[number]) => a.status === "NO_SHOW",
+      ).length;
+      const total = act.attendances.filter(
+        (a: (typeof act.attendances)[number]) => a.status !== "CANCELLED",
+      ).length;
       totalAttendances += total;
       totalCheckedIn += checkedIn;
       return {
@@ -308,7 +314,7 @@ export class CrewActivityRepository {
           })
         : [];
 
-    const userMap = new Map(users.map((u) => [u.id, u]));
+    const userMap = new Map(users.map((u: (typeof users)[number]) => [u.id, u]));
     const memberStats = [...memberMap.entries()]
       .map(([userId, stats]) => ({
         userId,

@@ -27,7 +27,8 @@ export class ConversationsRepository {
         },
       });
 
-      const existing = candidates.find((c) => c.participants.length === 2) ?? null;
+      const existing =
+        candidates.find((c: (typeof candidates)[number]) => c.participants.length === 2) ?? null;
 
       if (existing) {
         return existing;

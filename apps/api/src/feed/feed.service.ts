@@ -32,7 +32,7 @@ export class FeedService {
 
     const hasMore = posts.length > limit;
     const rawItems = hasMore ? posts.slice(0, limit) : posts;
-    const items = rawItems.map((post) => {
+    const items = rawItems.map((post: (typeof rawItems)[number]) => {
       const { likes, ...rest } = post;
       const likeRows = likes ?? [];
       return {
@@ -66,7 +66,7 @@ export class FeedService {
     const nextCursor = hasMore ? rawItems[rawItems.length - 1].id : null;
 
     // Map _count fields to frontend contract
-    const items = rawItems.map((workout) => {
+    const items = rawItems.map((workout: (typeof rawItems)[number]) => {
       const { workoutLikes, ...rest } = workout;
       const likeRows = workoutLikes ?? [];
       return {

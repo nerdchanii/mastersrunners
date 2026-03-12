@@ -64,7 +64,9 @@ export class CrewReadService {
     data: { content: string; visibility?: string },
   ) {
     const crew = await this.getCrewOrThrow(crewId);
-    const member = crew.members.find((candidate) => candidate.userId === userId);
+    const member = crew.members.find(
+      (candidate: (typeof crew.members)[number]) => candidate.userId === userId,
+    );
     if (!member || member.role !== "OWNER") {
       throw new ForbiddenException("크루장만 크루 게시물을 작성할 수 있습니다.");
     }

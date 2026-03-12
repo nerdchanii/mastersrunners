@@ -47,9 +47,12 @@ export class CrewsController {
   ) {
     const { userId: requesterId } = req.user as { userId: string };
 
-    if (my === "true" || userId) {
-      const targetUserId = my === "true" ? requesterId : userId;
-      return this.crewsService.findMyCrews(targetUserId);
+    if (my === "true") {
+      return this.crewsService.findMyCrews(requesterId);
+    }
+
+    if (userId) {
+      return this.crewsService.findMyCrews(userId);
     }
 
     return this.crewsService.findAll({
