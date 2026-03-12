@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { EventRepository } from "./event.repository.js";
+
 import { DatabaseService } from "../../database/database.service.js";
+
+import { EventRepository } from "./event.repository.js";
 
 const mockPrisma = {
   event: {
@@ -18,10 +20,7 @@ describe("EventRepository", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
-      providers: [
-        EventRepository,
-        { provide: DatabaseService, useValue: { prisma: mockPrisma } },
-      ],
+      providers: [EventRepository, { provide: DatabaseService, useValue: { prisma: mockPrisma } }],
     }).compile();
     repository = module.get(EventRepository);
   });
@@ -35,12 +34,17 @@ describe("EventRepository", () => {
         date: new Date("2026-10-15"),
         location: "Seoul Olympic Park",
         latitude: 37.5219,
-        longitude: 127.1230,
+        longitude: 127.123,
         imageUrl: "https://example.com/event.jpg",
         maxParticipants: 1000,
         organizerId: "user-123",
       };
-      const mockCreated = { id: "event-new", ...createData, createdAt: new Date(), updatedAt: new Date() };
+      const mockCreated = {
+        id: "event-new",
+        ...createData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
       mockPrisma.event.create.mockResolvedValue(mockCreated);
 
       const result = await repository.create(createData);
@@ -56,7 +60,12 @@ describe("EventRepository", () => {
         date: new Date("2026-05-01"),
         organizerId: "user-123",
       };
-      const mockCreated = { id: "event-new", ...createData, createdAt: new Date(), updatedAt: new Date() };
+      const mockCreated = {
+        id: "event-new",
+        ...createData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
       mockPrisma.event.create.mockResolvedValue(mockCreated);
 
       const result = await repository.create(createData);
@@ -73,7 +82,12 @@ describe("EventRepository", () => {
         id: eventId,
         title: "Marathon Seoul 2026",
         participants: [
-          { id: "r1", userId: "user-1", user: { id: "user-1", name: "runner1" }, status: "REGISTERED" },
+          {
+            id: "r1",
+            userId: "user-1",
+            user: { id: "user-1", name: "runner1" },
+            status: "REGISTERED",
+          },
         ],
       };
       mockPrisma.event.findUnique.mockResolvedValue(mockEvent);

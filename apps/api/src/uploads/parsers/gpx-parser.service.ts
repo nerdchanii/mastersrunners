@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+
 import type { ParsedWorkoutData } from "./fit-parser.service.js";
 
 @Injectable()
@@ -18,8 +19,10 @@ export class GpxParserService {
     let totalDistance = 0;
     for (let i = 1; i < enrichedPoints.length; i++) {
       totalDistance += this.haversineDistance(
-        enrichedPoints[i - 1].lat, enrichedPoints[i - 1].lon,
-        enrichedPoints[i].lat, enrichedPoints[i].lon
+        enrichedPoints[i - 1].lat,
+        enrichedPoints[i - 1].lon,
+        enrichedPoints[i].lat,
+        enrichedPoints[i].lon,
       );
     }
 
@@ -28,7 +31,7 @@ export class GpxParserService {
     // Calculate elevation gain (sum of positive elevation changes)
     let elevationGain: number | undefined;
     const elevations = enrichedPoints
-      .map(p => p.elevation)
+      .map((p) => p.elevation)
       .filter((e): e is number => e !== undefined);
     if (elevations.length >= 2) {
       let gain = 0;
@@ -43,28 +46,26 @@ export class GpxParserService {
 
     // Calculate heart rate stats
     const heartRates = enrichedPoints
-      .map(p => p.heartRate)
+      .map((p) => p.heartRate)
       .filter((hr): hr is number => hr !== undefined);
-    const avgHeartRate = heartRates.length > 0
-      ? heartRates.reduce((sum, hr) => sum + hr, 0) / heartRates.length
-      : undefined;
-    const maxHeartRate = heartRates.length > 0
-      ? Math.max(...heartRates)
-      : undefined;
+    const avgHeartRate =
+      heartRates.length > 0
+        ? heartRates.reduce((sum, hr) => sum + hr, 0) / heartRates.length
+        : undefined;
+    const maxHeartRate = heartRates.length > 0 ? Math.max(...heartRates) : undefined;
 
     // Calculate cadence stats
     const cadences = enrichedPoints
-      .map(p => p.cadence)
+      .map((p) => p.cadence)
       .filter((cad): cad is number => cad !== undefined);
-    const avgCadence = cadences.length > 0
-      ? cadences.reduce((sum, cad) => sum + cad, 0) / cadences.length
-      : undefined;
-    const maxCadence = cadences.length > 0
-      ? Math.max(...cadences)
-      : undefined;
+    const avgCadence =
+      cadences.length > 0
+        ? cadences.reduce((sum, cad) => sum + cad, 0) / cadences.length
+        : undefined;
+    const maxCadence = cadences.length > 0 ? Math.max(...cadences) : undefined;
 
     // Build gpsTrack array with all available metrics
-    const gpsTrack = enrichedPoints.map(p => ({
+    const gpsTrack = enrichedPoints.map((p) => ({
       lat: p.lat,
       lon: p.lon,
       timestamp: p.timestamp,
@@ -105,7 +106,8 @@ export class GpxParserService {
       cadence?: number;
     }> = [];
 
-    const trkptRegex = /<trkpt\s+(?:lat="([^"]+)"\s+lon="([^"]+)"|lon="([^"]+)"\s+lat="([^"]+)")[^>]*>([\s\S]*?)<\/trkpt>/g;
+    const trkptRegex =
+      /<trkpt\s+(?:lat="([^"]+)"\s+lon="([^"]+)"|lon="([^"]+)"\s+lat="([^"]+)")[^>]*>([\s\S]*?)<\/trkpt>/g;
     let match;
     while ((match = trkptRegex.exec(xml)) !== null) {
       // Handle both attribute orders: lat-lon or lon-lat
@@ -127,7 +129,10 @@ export class GpxParserService {
       const heartRate = hrMatch ? parseInt(hrMatch[1], 10) : undefined;
 
       // Extract optional cadence (multiple namespace patterns)
-      const cadMatch = /<(?:gpxtpx:)?(?:ns3:)?(?:cad|RunCadence)>([^<]+)<\/(?:gpxtpx:)?(?:ns3:)?(?:cad|RunCadence)>/.exec(content);
+      const cadMatch =
+        /<(?:gpxtpx:)?(?:ns3:)?(?:cad|RunCadence)>([^<]+)<\/(?:gpxtpx:)?(?:ns3:)?(?:cad|RunCadence)>/.exec(
+          content,
+        );
       const cadence = cadMatch ? parseInt(cadMatch[1], 10) : undefined;
 
       points.push({
@@ -146,9 +151,12 @@ export class GpxParserService {
     const R = 6371000; // Earth's radius in meters
     const dLat = this.toRad(lat2 - lat1);
     const dLon = this.toRad(lon2 - lon1);
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(this.toRad(lat1)) * Math.cos(this.toRad(lat2)) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.toRad(lat1)) *
+        Math.cos(this.toRad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }

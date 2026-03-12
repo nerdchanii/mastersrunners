@@ -1,5 +1,6 @@
-import { Injectable } from "@nestjs/common";
 import type { TransactionClient } from "@masters/database";
+import { Injectable } from "@nestjs/common";
+
 import { DatabaseService } from "../../database/database.service.js";
 
 interface CreatePostData {
@@ -248,7 +249,12 @@ export class PostRepository {
 
   async findByHashtag(
     tag: string,
-    options: { blockedUserIds?: string[]; cursor?: string; limit?: number; currentUserId?: string } = {},
+    options: {
+      blockedUserIds?: string[];
+      cursor?: string;
+      limit?: number;
+      currentUserId?: string;
+    } = {},
   ) {
     const { blockedUserIds = [], cursor, limit = 20, currentUserId } = options;
 
@@ -309,11 +315,7 @@ export class PostRepository {
     return result.map((r) => ({ tag: r.tag, count: Number(r.count) }));
   }
 
-  async createWithRelations(
-    postData: CreatePostData,
-    workoutIds?: string[],
-    imageUrls?: string[],
-  ) {
+  async createWithRelations(postData: CreatePostData, workoutIds?: string[], imageUrls?: string[]) {
     return this.db.prisma.$transaction(async (tx: TransactionClient) => {
       const post = await tx.post.create({ data: postData });
 

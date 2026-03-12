@@ -1,15 +1,23 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, ConflictException } from "@nestjs/common";
-import { CrewRepository } from "./repositories/crew.repository.js";
-import { CrewMemberRepository } from "./repositories/crew-member.repository.js";
-import { CrewTagRepository } from "./repositories/crew-tag.repository.js";
-import { CrewActivityRepository } from "./repositories/crew-activity.repository.js";
-import { CrewBanRepository } from "./repositories/crew-ban.repository.js";
-import { DatabaseService } from "../database/database.service.js";
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { randomUUID } from "crypto";
+
 import { ConversationsRepository } from "../conversations/repositories/conversations.repository.js";
 import { CrewBoardsService } from "../crew-boards/crew-boards.service.js";
+import { DatabaseService } from "../database/database.service.js";
+
 import type { CreateCrewDto } from "./dto/create-crew.dto.js";
 import type { UpdateCrewDto } from "./dto/update-crew.dto.js";
-import { randomUUID } from "crypto";
+import { CrewRepository } from "./repositories/crew.repository.js";
+import { CrewActivityRepository } from "./repositories/crew-activity.repository.js";
+import { CrewBanRepository } from "./repositories/crew-ban.repository.js";
+import { CrewMemberRepository } from "./repositories/crew-member.repository.js";
+import { CrewTagRepository } from "./repositories/crew-tag.repository.js";
 
 @Injectable()
 export class CrewsService {
@@ -329,7 +337,12 @@ export class CrewsService {
     return this.crewTagRepo.findByCrewId(crewId);
   }
 
-  async updateTag(tagId: string, crewId: string, userId: string, data: { name?: string; color?: string }) {
+  async updateTag(
+    tagId: string,
+    crewId: string,
+    userId: string,
+    data: { name?: string; color?: string },
+  ) {
     const crew = await this.crewRepo.findById(crewId);
     if (!crew) {
       throw new NotFoundException("크루를 찾을 수 없습니다.");
@@ -420,7 +433,7 @@ export class CrewsService {
       longitude?: number;
       activityType?: string;
       workoutTypeId?: string;
-    }
+    },
   ) {
     const crew = await this.crewRepo.findById(crewId);
     if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
@@ -453,14 +466,20 @@ export class CrewsService {
     });
 
     // Create activity chat
-    const activityChat = await this.conversationsRepo.createGroupConversation("ACTIVITY", { activityId: activity.id, crewId });
+    const activityChat = await this.conversationsRepo.createGroupConversation("ACTIVITY", {
+      activityId: activity.id,
+      crewId,
+    });
     await this.crewActivityRepo.updateChatConversationId(activity.id, activityChat.id);
     await this.conversationsRepo.addParticipant(activityChat.id, userId);
 
     return activity;
   }
 
-  async getActivities(crewId: string, opts?: { cursor?: string; limit?: number; type?: string; status?: string }) {
+  async getActivities(
+    crewId: string,
+    opts?: { cursor?: string; limit?: number; type?: string; status?: string },
+  ) {
     const crew = await this.crewRepo.findById(crewId);
     if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
 
@@ -491,7 +510,7 @@ export class CrewsService {
       location?: string;
       latitude?: number;
       longitude?: number;
-    }
+    },
   ) {
     const crew = await this.crewRepo.findById(crewId);
     if (!crew) {
@@ -538,7 +557,13 @@ export class CrewsService {
         // Re-RSVP after cancellation - update back to RSVP
         const result = await this.db.prisma.crewAttendance.update({
           where: { activityId_userId: { activityId, userId } },
-          data: { status: "RSVP", rsvpAt: new Date(), method: null, checkedAt: null, checkedBy: null },
+          data: {
+            status: "RSVP",
+            rsvpAt: new Date(),
+            method: null,
+            checkedAt: null,
+            checkedBy: null,
+          },
         });
         // Re-add to activity chat
         const activityForChat = await this.crewActivityRepo.findById(activityId);
@@ -622,7 +647,12 @@ export class CrewsService {
     return this.crewActivityRepo.checkIn(activityId, userId, "QR");
   }
 
-  async adminCheckIn(activityId: string, crewId: string, adminUserId: string, targetUserId: string) {
+  async adminCheckIn(
+    activityId: string,
+    crewId: string,
+    adminUserId: string,
+    targetUserId: string,
+  ) {
     const activity = await this.crewActivityRepo.findById(activityId);
     if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
     if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
@@ -796,7 +826,11 @@ export class CrewsService {
 
   // ============ Crew Profile & Posts ============
 
-  async createCrewPost(crewId: string, userId: string, data: { content: string; visibility?: string }) {
+  async createCrewPost(
+    crewId: string,
+    userId: string,
+    data: { content: string; visibility?: string },
+  ) {
     const crew = await this.crewRepo.findById(crewId);
     if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
 
@@ -839,12 +873,18 @@ export class CrewsService {
     }
 
     const conversation = await this.conversationsRepo.findById(activity.chatConversationId);
-    const messages = await this.conversationsRepo.getMessages(activity.chatConversationId, cursor, 30);
+    const messages = await this.conversationsRepo.getMessages(
+      activity.chatConversationId,
+      cursor,
+      30,
+    );
 
     const hasMore = messages.length > 30;
     const items = hasMore ? messages.slice(0, 30) : messages;
 
-    await this.conversationsRepo.updateLastRead(activity.chatConversationId, userId).catch(() => {});
+    await this.conversationsRepo
+      .updateLastRead(activity.chatConversationId, userId)
+      .catch(() => {});
 
     return {
       conversation,

@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { CrewActivityRepository } from "./crew-activity.repository.js";
+
 import { DatabaseService } from "../../database/database.service.js";
+
+import { CrewActivityRepository } from "./crew-activity.repository.js";
 
 describe("CrewActivityRepository", () => {
   let repository: CrewActivityRepository;

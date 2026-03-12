@@ -1,7 +1,9 @@
-import { Injectable, ConflictException } from "@nestjs/common";
 import type { TransactionClient } from "@masters/database";
-import { BlockRepository } from "./repositories/block.repository.js";
+import { ConflictException, Injectable } from "@nestjs/common";
+
 import { DatabaseService } from "../database/database.service.js";
+
+import { BlockRepository } from "./repositories/block.repository.js";
 
 @Injectable()
 export class BlockService {

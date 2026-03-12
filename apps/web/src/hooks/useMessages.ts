@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { api } from "@/lib/api-client";
 
 interface ConversationParticipant {
@@ -98,15 +99,15 @@ export function useSendMessage(conversationId: string) {
 
 export function useMarkAsRead(conversationId: string) {
   return useMutation({
-    mutationFn: () =>
-      api.fetch(`/conversations/${conversationId}/read`, { method: "PATCH" }),
+    mutationFn: () => api.fetch(`/conversations/${conversationId}/read`, { method: "PATCH" }),
   });
 }
 
 export function useWorkoutTypes() {
   return useQuery({
     queryKey: ["workoutTypes"],
-    queryFn: () => api.fetch<Array<{ id: string; name: string; category: string }>>("/workout-types"),
+    queryFn: () =>
+      api.fetch<Array<{ id: string; name: string; category: string }>>("/workout-types"),
     select: (data) => (Array.isArray(data) ? data : []),
     staleTime: 5 * 60 * 1000, // 5분 캐시
     retry: 1,

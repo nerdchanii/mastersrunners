@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+
 import { DatabaseService } from "../../database/database.service.js";
 
 interface TeamLeaderboardEntry {
@@ -90,12 +91,18 @@ export class ChallengeTeamRepository {
 
     // Combine and sort
     return aggregated
-      .map((a: { challengeTeamId: string | null; _sum: { currentValue: number | null }; _count: { userId: number } }) => ({
-        teamId: a.challengeTeamId!,
-        teamName: teamMap.get(a.challengeTeamId!) || "Unknown Team",
-        totalValue: a._sum.currentValue || 0,
-        memberCount: a._count.userId,
-      }))
+      .map(
+        (a: {
+          challengeTeamId: string | null;
+          _sum: { currentValue: number | null };
+          _count: { userId: number };
+        }) => ({
+          teamId: a.challengeTeamId!,
+          teamName: teamMap.get(a.challengeTeamId!) || "Unknown Team",
+          totalValue: a._sum.currentValue || 0,
+          memberCount: a._count.userId,
+        }),
+      )
       .sort((a: TeamLeaderboardEntry, b: TeamLeaderboardEntry) => b.totalValue - a.totalValue);
   }
 }

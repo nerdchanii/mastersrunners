@@ -1,9 +1,15 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+
+import type { CreateChallengeDto } from "./dto/create-challenge.dto.js";
+import type { UpdateChallengeDto } from "./dto/update-challenge.dto.js";
 import { ChallengeRepository } from "./repositories/challenge.repository.js";
 import { ChallengeParticipantRepository } from "./repositories/challenge-participant.repository.js";
 import { ChallengeTeamRepository } from "./repositories/challenge-team.repository.js";
-import type { CreateChallengeDto } from "./dto/create-challenge.dto.js";
-import type { UpdateChallengeDto } from "./dto/update-challenge.dto.js";
 
 @Injectable()
 export class ChallengesService {
@@ -110,7 +116,8 @@ export class ChallengesService {
   async update(id: string, userId: string, dto: UpdateChallengeDto) {
     const challenge = await this.challengeRepo.findById(id);
     if (!challenge) throw new NotFoundException("챌린지를 찾을 수 없습니다.");
-    if (challenge.creatorId !== userId) throw new ForbiddenException("챌린지 생성자만 수정할 수 있습니다.");
+    if (challenge.creatorId !== userId)
+      throw new ForbiddenException("챌린지 생성자만 수정할 수 있습니다.");
 
     const { startDate, endDate, ...rest } = dto;
     const updateData: Record<string, unknown> = { ...rest };
@@ -124,7 +131,8 @@ export class ChallengesService {
   async remove(id: string, userId: string) {
     const challenge = await this.challengeRepo.findById(id);
     if (!challenge) throw new NotFoundException("챌린지를 찾을 수 없습니다.");
-    if (challenge.creatorId !== userId) throw new ForbiddenException("챌린지 생성자만 삭제할 수 있습니다.");
+    if (challenge.creatorId !== userId)
+      throw new ForbiddenException("챌린지 생성자만 삭제할 수 있습니다.");
 
     return this.challengeRepo.remove(id);
   }
@@ -223,12 +231,15 @@ export class ChallengesService {
 
     const challenge = await this.challengeRepo.findById(team.challengeId);
     if (!challenge) throw new NotFoundException("챌린지를 찾을 수 없습니다.");
-    if (challenge.creatorId !== userId) throw new ForbiddenException("챌린지 생성자만 팀을 삭제할 수 있습니다.");
+    if (challenge.creatorId !== userId)
+      throw new ForbiddenException("챌린지 생성자만 팀을 삭제할 수 있습니다.");
 
     return this.teamRepo.remove(teamId);
   }
 
-  async getTeamLeaderboard(challengeId: string): Promise<{ teamId: string; teamName: string; totalValue: number; memberCount: number }[]> {
+  async getTeamLeaderboard(
+    challengeId: string,
+  ): Promise<{ teamId: string; teamName: string; totalValue: number; memberCount: number }[]> {
     const challenge = await this.challengeRepo.findById(challengeId);
     if (!challenge) throw new NotFoundException("챌린지를 찾을 수 없습니다.");
 

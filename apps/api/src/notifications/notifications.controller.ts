@@ -1,20 +1,22 @@
 import {
   Controller,
   Get,
-  Patch,
+  MessageEvent,
   Param,
+  Patch,
   Query,
   Req,
-  UseGuards,
   Sse,
-  MessageEvent,
+  UseGuards,
 } from "@nestjs/common";
 import { SkipThrottle } from "@nestjs/throttler";
 import { Observable } from "rxjs";
-import { NotificationsService } from "./notifications.service.js";
-import { NotificationsSseService } from "./notifications-sse.service.js";
+
 import { JwtSseGuard } from "../auth/guards/jwt-sse.guard.js";
 import { Public } from "../common/decorators/public.decorator.js";
+
+import { NotificationsService } from "./notifications.service.js";
+import { NotificationsSseService } from "./notifications-sse.service.js";
 
 @Controller("notifications")
 export class NotificationsController {
@@ -43,10 +45,7 @@ export class NotificationsController {
   }
 
   @Patch(":id/read")
-  markAsRead(
-    @Param("id") id: string,
-    @Req() req: { user: { userId: string } },
-  ) {
+  markAsRead(@Param("id") id: string, @Req() req: { user: { userId: string } }) {
     return this.notificationsService.markAsRead(id, req.user.userId);
   }
 

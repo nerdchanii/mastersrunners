@@ -1,10 +1,12 @@
-import { Test } from "@nestjs/testing";
 import { ForbiddenException } from "@nestjs/common";
-import { PostsService } from "./posts.service";
-import { PostRepository } from "./repositories/post.repository";
+import { Test } from "@nestjs/testing";
+
 import { BlockRepository } from "../block/repositories/block.repository";
+
 import type { CreatePostDto } from "./dto/create-post.dto";
 import type { UpdatePostDto } from "./dto/update-post.dto";
+import { PostRepository } from "./repositories/post.repository";
+import { PostsService } from "./posts.service";
 
 const mockPostRepository = {
   createWithRelations: jest.fn(),
@@ -251,7 +253,9 @@ describe("PostsService", () => {
       const currentUserId = "me";
       mockBlockRepository.isBlocked.mockResolvedValue(true);
 
-      await expect(service.findByUser(targetUserId, currentUserId)).rejects.toThrow(ForbiddenException);
+      await expect(service.findByUser(targetUserId, currentUserId)).rejects.toThrow(
+        ForbiddenException,
+      );
       expect(mockBlockRepository.isBlocked).toHaveBeenCalledWith(currentUserId, targetUserId);
     });
 

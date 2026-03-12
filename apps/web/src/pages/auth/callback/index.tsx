@@ -1,7 +1,8 @@
+import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+
 import { api } from "@/lib/api-client";
-import { Loader2 } from "lucide-react";
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();

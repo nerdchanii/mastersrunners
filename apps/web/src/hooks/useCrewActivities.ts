@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { api } from "@/lib/api-client";
 
 interface Attendee {
@@ -55,10 +56,7 @@ export interface ActivitiesResponse {
   nextCursor: string | null;
 }
 
-export function useCrewActivities(
-  crewId: string,
-  opts?: { type?: string; status?: string },
-) {
+export function useCrewActivities(crewId: string, opts?: { type?: string; status?: string }) {
   return useQuery({
     queryKey: [...crewActivityKeys.list(crewId), opts] as const,
     queryFn: () => {
@@ -66,9 +64,7 @@ export function useCrewActivities(
       if (opts?.type) params.set("type", opts.type);
       if (opts?.status) params.set("status", opts.status);
       const qs = params.toString();
-      return api.fetch<ActivitiesResponse>(
-        `/crews/${crewId}/activities${qs ? `?${qs}` : ""}`,
-      );
+      return api.fetch<ActivitiesResponse>(`/crews/${crewId}/activities${qs ? `?${qs}` : ""}`);
     },
     enabled: !!crewId,
   });
@@ -186,7 +182,15 @@ export function useCancelActivity() {
 export function useAdminCheckIn() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ crewId, activityId, userId }: { crewId: string; activityId: string; userId: string }) =>
+    mutationFn: ({
+      crewId,
+      activityId,
+      userId,
+    }: {
+      crewId: string;
+      activityId: string;
+      userId: string;
+    }) =>
       api.fetch(`/crews/${crewId}/activities/${activityId}/admin-check-in`, {
         method: "POST",
         body: JSON.stringify({ userId }),
@@ -200,7 +204,15 @@ export function useAdminCheckIn() {
 export function useQrCheckIn() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ crewId, activityId, qrCode }: { crewId: string; activityId: string; qrCode: string }) =>
+    mutationFn: ({
+      crewId,
+      activityId,
+      qrCode,
+    }: {
+      crewId: string;
+      activityId: string;
+      qrCode: string;
+    }) =>
       api.fetch(`/crews/${crewId}/activities/${activityId}/qr-check-in`, {
         method: "POST",
         body: JSON.stringify({ qrCode }),

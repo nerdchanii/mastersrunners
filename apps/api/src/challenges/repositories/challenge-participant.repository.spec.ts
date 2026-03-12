@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { ChallengeParticipantRepository } from "./challenge-participant.repository.js";
+
 import { DatabaseService } from "../../database/database.service.js";
+
+import { ChallengeParticipantRepository } from "./challenge-participant.repository.js";
 
 const mockPrisma = {
   challengeParticipant: {

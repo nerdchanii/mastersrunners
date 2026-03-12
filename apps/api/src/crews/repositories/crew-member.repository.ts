@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+
 import { DatabaseService } from "../../database/database.service.js";
 
 @Injectable()
@@ -9,7 +10,7 @@ export class CrewMemberRepository {
     crewId: string,
     userId: string,
     role: string = "MEMBER",
-    status: string = "ACTIVE"
+    status: string = "ACTIVE",
   ) {
     return this.db.prisma.crewMember.create({
       data: { crewId, userId, role, status },

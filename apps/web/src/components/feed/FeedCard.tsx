@@ -1,8 +1,9 @@
+import { MessageCircle, MoreHorizontal, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { MessageCircle, Share2, MoreHorizontal } from "lucide-react";
-import { UserAvatar } from "@/components/common/UserAvatar";
+
 import { StatItem } from "@/components/common/StatItem";
 import { TimeAgo } from "@/components/common/TimeAgo";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { LikeButton } from "@/components/social/LikeButton";
 import { MiniRouteMap } from "@/components/workout/MiniRouteMap";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
@@ -36,11 +37,7 @@ export default function FeedCard({ workout }: FeedCardProps) {
     <article className="border-b bg-card">
       {/* User Header */}
       <div className="flex items-center justify-between px-4 py-3">
-        <UserAvatar
-          user={workout.user}
-          showName
-          subtitle={<TimeAgo date={workout.createdAt} />}
-        />
+        <UserAvatar user={workout.user} showName subtitle={<TimeAgo date={workout.createdAt} />} />
         <button className="rounded-full p-1.5 text-muted-foreground hover:bg-accent">
           <MoreHorizontal className="size-5" />
         </button>
@@ -51,21 +48,9 @@ export default function FeedCard({ workout }: FeedCardProps) {
         <div className="mx-4 rounded-xl bg-muted/50 p-4">
           <div className="flex items-center gap-3">
             <div className="grid grid-cols-3 gap-2 flex-1">
-              <StatItem
-                value={formatDistance(workout.distance)}
-                label="km"
-                size="lg"
-              />
-              <StatItem
-                value={formatDuration(workout.duration)}
-                label="시간"
-                size="lg"
-              />
-              <StatItem
-                value={formatPace(workout.pace)}
-                label="/km"
-                size="lg"
-              />
+              <StatItem value={formatDistance(workout.distance)} label="km" size="lg" />
+              <StatItem value={formatDuration(workout.duration)} label="시간" size="lg" />
+              <StatItem value={formatPace(workout.pace)} label="/km" size="lg" />
             </div>
             {workout.encodedPolyline && (
               <MiniRouteMap
@@ -103,9 +88,7 @@ export default function FeedCard({ workout }: FeedCardProps) {
         >
           <MessageCircle className="size-5" />
           {(workout._count?.comments ?? 0) > 0 && (
-            <span className="text-sm font-medium tabular-nums">
-              {workout._count.comments}
-            </span>
+            <span className="text-sm font-medium tabular-nums">{workout._count.comments}</span>
           )}
         </Link>
         <button className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent ml-auto">

@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { api } from "@/lib/api-client";
 
 interface ChatUser {
@@ -56,8 +57,7 @@ export function useCrewChat(crewId: string) {
 export function useActivityChat(crewId: string, activityId: string) {
   return useQuery({
     queryKey: groupChatKeys.activity(crewId, activityId),
-    queryFn: () =>
-      api.fetch<ChatResponse>(`/crews/${crewId}/activities/${activityId}/chat`),
+    queryFn: () => api.fetch<ChatResponse>(`/crews/${crewId}/activities/${activityId}/chat`),
     enabled: !!crewId && !!activityId,
     refetchInterval: 10000,
   });

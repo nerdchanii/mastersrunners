@@ -1,13 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Flame,
-  Mountain,
-  Heart,
-  HeartPulse,
-  Footprints,
-  Activity,
-} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { Activity, Flame, Footprints, Heart, HeartPulse, Mountain } from "lucide-react";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface MetricDef {
   key: string;
@@ -100,12 +94,8 @@ export function WorkoutMetrics({ data, className }: WorkoutMetricsProps) {
                 className="flex flex-col items-center gap-1 rounded-lg border bg-muted/30 p-3 text-center"
               >
                 <Icon className={`size-5 ${metric.iconColor}`} />
-                <span className="text-lg font-bold tabular-nums">
-                  {metric.format(value)}
-                </span>
-                <span className="text-[11px] text-muted-foreground">
-                  {metric.label}
-                </span>
+                <span className="text-lg font-bold tabular-nums">{metric.format(value)}</span>
+                <span className="text-[11px] text-muted-foreground">{metric.label}</span>
               </div>
             );
           })}

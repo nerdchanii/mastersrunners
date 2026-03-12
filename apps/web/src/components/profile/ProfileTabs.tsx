@@ -1,9 +1,10 @@
-import { Grid3x3, Activity, Users } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Activity, Grid3x3, Users } from "lucide-react";
+import { Link } from "react-router-dom";
+
 import { EmptyState } from "@/components/common/EmptyState";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Link } from "react-router-dom";
 
 interface User {
   id: string;
@@ -83,9 +84,7 @@ export function ProfileTabs({
 
       <TabsContent value="posts" className="mt-6">
         {isLoading ? (
-          <div className="text-center py-8 text-muted-foreground">
-            로딩 중...
-          </div>
+          <div className="text-center py-8 text-muted-foreground">로딩 중...</div>
         ) : posts.length === 0 ? (
           <EmptyState
             icon={Grid3x3}
@@ -107,7 +106,8 @@ export function ProfileTabs({
                 </div>
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <p className="text-xs text-white">
-                    {(post._count?.likes ?? post.likesCount ?? 0)} 좋아요 · {(post._count?.comments ?? post.commentsCount ?? 0)} 댓글
+                    {post._count?.likes ?? post.likesCount ?? 0} 좋아요 ·{" "}
+                    {post._count?.comments ?? post.commentsCount ?? 0} 댓글
                   </p>
                 </div>
               </Link>
@@ -118,9 +118,7 @@ export function ProfileTabs({
 
       <TabsContent value="workouts" className="mt-6">
         {isLoading ? (
-          <div className="text-center py-8 text-muted-foreground">
-            로딩 중...
-          </div>
+          <div className="text-center py-8 text-muted-foreground">로딩 중...</div>
         ) : workouts.length === 0 ? (
           <EmptyState
             icon={Activity}
@@ -135,7 +133,7 @@ export function ProfileTabs({
                 to={`/workouts/${workout.id}`}
                 className={cn(
                   "block rounded-lg border bg-card p-4",
-                  "hover:bg-accent hover:border-accent-foreground/20 transition-colors"
+                  "hover:bg-accent hover:border-accent-foreground/20 transition-colors",
                 )}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -167,9 +165,7 @@ export function ProfileTabs({
                       </div>
                       <div>
                         <p className="text-muted-foreground text-xs">페이스</p>
-                        <p className="font-semibold tabular-nums">
-                          {formatPace(workout.pace)}/km
-                        </p>
+                        <p className="font-semibold tabular-nums">{formatPace(workout.pace)}/km</p>
                       </div>
                     </div>
 
@@ -188,9 +184,7 @@ export function ProfileTabs({
 
       <TabsContent value="crews" className="mt-6">
         {isLoading ? (
-          <div className="text-center py-8 text-muted-foreground">
-            로딩 중...
-          </div>
+          <div className="text-center py-8 text-muted-foreground">로딩 중...</div>
         ) : crews.length === 0 ? (
           <EmptyState
             icon={Users}
@@ -205,7 +199,7 @@ export function ProfileTabs({
                 to={`/crews/${crew.id}`}
                 className={cn(
                   "block rounded-lg border bg-card p-4",
-                  "hover:bg-accent hover:border-accent-foreground/20 transition-colors"
+                  "hover:bg-accent hover:border-accent-foreground/20 transition-colors",
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -221,9 +215,7 @@ export function ProfileTabs({
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground truncate">
-                      {crew.name}
-                    </h3>
+                    <h3 className="font-semibold text-foreground truncate">{crew.name}</h3>
                     {crew.description && (
                       <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
                         {crew.description}

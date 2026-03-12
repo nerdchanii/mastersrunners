@@ -1,29 +1,21 @@
+import { Calendar, Edit, LogOut, Target, Trash2, User, UserPlus, Users } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import {
-  Calendar,
-  Users,
-  Target,
-  User,
-  Trash2,
-  LogOut,
-  UserPlus,
-  Edit,
-} from "lucide-react";
-import { api } from "@/lib/api-client";
-import { useAuth } from "@/lib/auth-context";
+
+import ChallengeTeams from "@/components/challenge/ChallengeTeams";
+import LeaderboardTable from "@/components/challenge/LeaderboardTable";
+import ProgressBar from "@/components/challenge/ProgressBar";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import ProgressBar from "@/components/challenge/ProgressBar";
-import LeaderboardTable from "@/components/challenge/LeaderboardTable";
-import ChallengeTeams from "@/components/challenge/ChallengeTeams";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 
 interface ChallengeUser {
   id: string;
@@ -122,16 +114,10 @@ export default function ChallengeDetailPage() {
   const fetchChallenge = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await api.fetch<ChallengeDetail>(
-        `/challenges/${challengeId}`,
-      );
+      const data = await api.fetch<ChallengeDetail>(`/challenges/${challengeId}`);
       setChallenge(data);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "챌린지 정보를 불러올 수 없습니다.",
-      );
+      setError(err instanceof Error ? err.message : "챌린지 정보를 불러올 수 없습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -181,9 +167,7 @@ export default function ChallengeDetailPage() {
       await fetchChallenge();
       toast.success("챌린지에서 나갔습니다.");
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "챌린지 나가기에 실패했습니다.",
-      );
+      toast.error(err instanceof Error ? err.message : "챌린지 나가기에 실패했습니다.");
     } finally {
       setActionLoading(false);
       setConfirmLeaveOpen(false);
@@ -215,9 +199,7 @@ export default function ChallengeDetailPage() {
       await fetchChallenge();
       if (activeTab === "leaderboard") await fetchLeaderboard();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "진행도 업데이트에 실패했습니다.",
-      );
+      toast.error(err instanceof Error ? err.message : "진행도 업데이트에 실패했습니다.");
     } finally {
       setActionLoading(false);
     }
@@ -227,11 +209,7 @@ export default function ChallengeDetailPage() {
     return (
       <div className="container max-w-3xl py-12 text-center">
         <p className="text-muted-foreground">챌린지 ID가 필요합니다.</p>
-        <Button
-          variant="link"
-          onClick={() => navigate("/challenges")}
-          className="mt-4"
-        >
+        <Button variant="link" onClick={() => navigate("/challenges")} className="mt-4">
           챌린지 목록으로 돌아가기
         </Button>
       </div>
@@ -255,17 +233,9 @@ export default function ChallengeDetailPage() {
       <div className="container max-w-3xl py-6">
         <Card className="border-destructive/50 bg-destructive/10">
           <CardContent className="p-6">
-            <h2 className="text-lg font-semibold text-destructive mb-2">
-              오류
-            </h2>
-            <p className="text-destructive/90">
-              {error || "챌린지를 찾을 수 없습니다."}
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => navigate(-1)}
-              className="mt-4"
-            >
+            <h2 className="text-lg font-semibold text-destructive mb-2">오류</h2>
+            <p className="text-destructive/90">{error || "챌린지를 찾을 수 없습니다."}</p>
+            <Button variant="outline" onClick={() => navigate(-1)} className="mt-4">
               돌아가기
             </Button>
           </CardContent>
@@ -321,9 +291,7 @@ export default function ChallengeDetailPage() {
       />
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2 min-w-0 flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">
-            {challenge.title}
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">{challenge.title}</h1>
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant={badge.variant}>{badge.label}</Badge>
             {!challenge.isPublic && (
@@ -332,30 +300,20 @@ export default function ChallengeDetailPage() {
               </Badge>
             )}
             {challenge.isJoined && (
-              <Badge
-                variant="outline"
-                className="bg-primary/10 text-primary border-primary/20"
-              >
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                 참가중
               </Badge>
             )}
           </div>
         </div>
         {isOwner && (
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setConfirmDeleteOpen(true)}
-          >
+          <Button variant="destructive" size="sm" onClick={() => setConfirmDeleteOpen(true)}>
             <Trash2 className="size-4" />
           </Button>
         )}
       </div>
 
-      <Tabs
-        value={activeTab}
-        onValueChange={(value) => setActiveTab(value as DetailTab)}
-      >
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DetailTab)}>
         <TabsList variant="line">
           <TabsTrigger value="info">정보</TabsTrigger>
           <TabsTrigger value="leaderboard">리더보드</TabsTrigger>
@@ -367,12 +325,8 @@ export default function ChallengeDetailPage() {
             <CardContent className="pt-6 space-y-6">
               {challenge.description && (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                    설명
-                  </h3>
-                  <p className="text-foreground whitespace-pre-wrap">
-                    {challenge.description}
-                  </p>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">설명</h3>
+                  <p className="text-foreground whitespace-pre-wrap">{challenge.description}</p>
                 </div>
               )}
 
@@ -385,8 +339,7 @@ export default function ChallengeDetailPage() {
                     <span className="text-sm font-medium">기간</span>
                   </div>
                   <p className="text-sm">
-                    {formatDate(challenge.startDate)} ~{" "}
-                    {formatDate(challenge.endDate)}
+                    {formatDate(challenge.startDate)} ~ {formatDate(challenge.endDate)}
                   </p>
                 </div>
 
@@ -434,10 +387,7 @@ export default function ChallengeDetailPage() {
                   나가기
                 </Button>
               ) : (
-                <Button
-                  onClick={handleJoin}
-                  disabled={actionLoading || (!isActive && !isUpcoming)}
-                >
+                <Button onClick={handleJoin} disabled={actionLoading || (!isActive && !isUpcoming)}>
                   <UserPlus className="mr-2 size-4" />
                   {actionLoading ? "처리중..." : "참가하기"}
                 </Button>
@@ -470,10 +420,7 @@ export default function ChallengeDetailPage() {
                         진행도 업데이트
                       </Button>
                     ) : (
-                      <form
-                        onSubmit={handleUpdateProgress}
-                        className="flex gap-2"
-                      >
+                      <form onSubmit={handleUpdateProgress} className="flex gap-2">
                         <div className="relative flex-1">
                           <Input
                             type="number"
@@ -491,11 +438,7 @@ export default function ChallengeDetailPage() {
                             </div>
                           )}
                         </div>
-                        <Button
-                          type="submit"
-                          disabled={actionLoading || !progressValue}
-                          size="sm"
-                        >
+                        <Button type="submit" disabled={actionLoading || !progressValue} size="sm">
                           {actionLoading ? "..." : "업데이트"}
                         </Button>
                         <Button
@@ -535,10 +478,7 @@ export default function ChallengeDetailPage() {
         </TabsContent>
 
         <TabsContent value="teams">
-          <ChallengeTeams
-            challengeId={challengeId}
-            isJoined={challenge.isJoined ?? false}
-          />
+          <ChallengeTeams challengeId={challengeId} isJoined={challenge.isJoined ?? false} />
         </TabsContent>
       </Tabs>
 

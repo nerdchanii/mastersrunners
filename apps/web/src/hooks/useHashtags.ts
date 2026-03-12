@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+
 import { api } from "@/lib/api-client";
 
 interface Post {
@@ -42,8 +43,7 @@ export function useHashtagPosts(tag: string) {
       return api.fetch<FeedResponse>(path);
     },
     initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) =>
-      lastPage?.hasMore ? lastPage.nextCursor : undefined,
+    getNextPageParam: (lastPage) => (lastPage?.hasMore ? lastPage.nextCursor : undefined),
     enabled: !!tag.trim(),
     staleTime: 60 * 1000,
     retry: 1,

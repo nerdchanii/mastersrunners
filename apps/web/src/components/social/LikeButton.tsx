@@ -1,5 +1,6 @@
-import { useState } from "react";
 import { Heart } from "lucide-react";
+import { useState } from "react";
+
 import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
@@ -42,9 +43,7 @@ export function LikeButton({
 
     try {
       const endpoint =
-        entityType === "workout"
-          ? `/workouts/${entityId}/like`
-          : `/posts/${entityId}/like`;
+        entityType === "workout" ? `/workouts/${entityId}/like` : `/posts/${entityId}/like`;
 
       if (!liked) {
         await api.fetch(endpoint, { method: "POST" });
@@ -65,17 +64,15 @@ export function LikeButton({
       disabled={isLoading}
       className={cn(
         "flex items-center gap-1.5 transition-colors disabled:opacity-50",
-        compact ? "p-1" : "rounded-lg px-2 py-1.5 hover:bg-accent"
+        compact ? "p-1" : "rounded-lg px-2 py-1.5 hover:bg-accent",
       )}
     >
       <Heart
         className={cn(
           "transition-all duration-200",
           compact ? "size-5" : "size-5",
-          liked
-            ? "fill-red-500 text-red-500"
-            : "text-muted-foreground",
-          animating && "scale-125"
+          liked ? "fill-red-500 text-red-500" : "text-muted-foreground",
+          animating && "scale-125",
         )}
       />
       {count > 0 && (
@@ -83,7 +80,7 @@ export function LikeButton({
           className={cn(
             "font-medium tabular-nums",
             compact ? "text-xs" : "text-sm",
-            liked ? "text-red-500" : "text-muted-foreground"
+            liked ? "text-red-500" : "text-muted-foreground",
           )}
         >
           {count}

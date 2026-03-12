@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { NotificationRepository } from "./notification.repository.js";
+
 import { DatabaseService } from "../../database/database.service.js";
+
+import { NotificationRepository } from "./notification.repository.js";
 
 const mockPrisma = {
   notification: {

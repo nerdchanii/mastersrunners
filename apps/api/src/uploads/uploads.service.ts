@@ -1,11 +1,13 @@
-import { Injectable, Inject, BadRequestException } from "@nestjs/common";
 import type { TransactionClient } from "@masters/database";
+import { BadRequestException, Inject, Injectable } from "@nestjs/common";
+
+import { DatabaseService } from "../database/database.service.js";
+
 import { FitParserService } from "./parsers/fit-parser.service.js";
 import { GpxParserService } from "./parsers/gpx-parser.service.js";
-import { DatabaseService } from "../database/database.service.js";
 import { STORAGE_ADAPTER, type StorageAdapter } from "./storage/storage-adapter.interface.js";
-import { encodePolyline } from "./utils/encoded-polyline.js";
 import { douglasPeucker as douglasPeuckerUtil } from "./utils/douglas-peucker.js";
+import { encodePolyline } from "./utils/encoded-polyline.js";
 
 const DOWNSAMPLE_THRESHOLD = 1000;
 const DOWNSAMPLE_TARGET = 500;
@@ -24,9 +26,7 @@ function perpendicularDistance(point: GpsPoint, lineStart: GpsPoint, lineEnd: Gp
   const dy = lineEnd.lon - lineStart.lon;
   const mag = Math.sqrt(dx * dx + dy * dy);
   if (mag === 0) {
-    return Math.sqrt(
-      (point.lat - lineStart.lat) ** 2 + (point.lon - lineStart.lon) ** 2,
-    );
+    return Math.sqrt((point.lat - lineStart.lat) ** 2 + (point.lon - lineStart.lon) ** 2);
   }
   return Math.abs(dx * (lineStart.lon - point.lon) - dy * (lineStart.lat - point.lat)) / mag;
 }
@@ -120,7 +120,9 @@ export class UploadsService {
     input: { fileKey: string; fileType: "FIT" | "GPX"; originalFileName: string },
   ): Promise<ParseAndCreateResult> {
     if (input.fileType !== "FIT" && input.fileType !== "GPX") {
-      throw new BadRequestException(`Unsupported file type: ${input.fileType}. Only FIT and GPX are supported.`);
+      throw new BadRequestException(
+        `Unsupported file type: ${input.fileType}. Only FIT and GPX are supported.`,
+      );
     }
 
     // 1. Download file from storage

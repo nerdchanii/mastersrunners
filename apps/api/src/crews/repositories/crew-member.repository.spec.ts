@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { CrewMemberRepository } from "./crew-member.repository.js";
+
 import { DatabaseService } from "../../database/database.service.js";
+
+import { CrewMemberRepository } from "./crew-member.repository.js";
 
 const mockPrisma = {
   crewMember: {

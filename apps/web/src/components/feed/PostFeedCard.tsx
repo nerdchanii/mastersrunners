@@ -1,12 +1,13 @@
+import { Flag, MessageCircle, MoreHorizontal, Share2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { MessageCircle, Share2, MoreHorizontal, Flag, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { UserAvatar } from "@/components/common/UserAvatar";
+
+import { ImageLightbox } from "@/components/common/ImageLightbox";
 import { StatItem } from "@/components/common/StatItem";
 import { TimeAgo } from "@/components/common/TimeAgo";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { LikeButton } from "@/components/social/LikeButton";
-import { ImageLightbox } from "@/components/common/ImageLightbox";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -14,8 +15,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 import { useAuth } from "@/lib/auth-context";
+import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 
 interface PostFeedCardProps {
   post: {
@@ -92,11 +93,7 @@ export default function PostFeedCard({ post, onDelete }: PostFeedCardProps) {
 
       {/* User Header */}
       <div className="flex items-center justify-between px-4 py-3">
-        <UserAvatar
-          user={post.user}
-          showName
-          subtitle={<TimeAgo date={post.createdAt} />}
-        />
+        <UserAvatar user={post.user} showName subtitle={<TimeAgo date={post.createdAt} />} />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="rounded-full p-1.5 text-muted-foreground hover:bg-accent">
@@ -156,11 +153,7 @@ export default function PostFeedCard({ post, onDelete }: PostFeedCardProps) {
       {images.length > 0 && (
         <div className="mt-3">
           {images.length === 1 ? (
-            <button
-              type="button"
-              className="w-full text-left"
-              onClick={() => handleImageClick(0)}
-            >
+            <button type="button" className="w-full text-left" onClick={() => handleImageClick(0)}>
               <img
                 src={images[0].url}
                 alt="게시글 이미지"
@@ -169,7 +162,9 @@ export default function PostFeedCard({ post, onDelete }: PostFeedCardProps) {
               />
             </button>
           ) : (
-            <div className={`grid gap-0.5 ${images.length === 2 ? "grid-cols-2" : "grid-cols-2 grid-rows-2"}`}>
+            <div
+              className={`grid gap-0.5 ${images.length === 2 ? "grid-cols-2" : "grid-cols-2 grid-rows-2"}`}
+            >
               {images.slice(0, 4).map((image, idx) => (
                 <button
                   key={image.id}
@@ -185,9 +180,7 @@ export default function PostFeedCard({ post, onDelete }: PostFeedCardProps) {
                   />
                   {idx === 3 && images.length > 4 && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <span className="text-white text-xl font-bold">
-                        +{images.length - 4}
-                      </span>
+                      <span className="text-white text-xl font-bold">+{images.length - 4}</span>
                     </div>
                   )}
                 </button>
@@ -226,9 +219,7 @@ export default function PostFeedCard({ post, onDelete }: PostFeedCardProps) {
         >
           <MessageCircle className="size-5" />
           {(post._count?.comments ?? 0) > 0 && (
-            <span className="text-sm font-medium tabular-nums">
-              {post._count.comments}
-            </span>
+            <span className="text-sm font-medium tabular-nums">{post._count.comments}</span>
           )}
         </Link>
         <button

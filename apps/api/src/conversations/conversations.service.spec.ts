@@ -1,8 +1,10 @@
-import { Test } from "@nestjs/testing";
 import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
-import { ConversationsService } from "./conversations.service";
-import { ConversationsRepository } from "./repositories/conversations.repository";
+import { Test } from "@nestjs/testing";
+
 import { BlockRepository } from "../block/repositories/block.repository";
+
+import { ConversationsRepository } from "./repositories/conversations.repository";
+import { ConversationsService } from "./conversations.service";
 import { ConversationsSseService } from "./conversations-sse.service";
 
 const mockConversationsRepository = {
@@ -77,9 +79,7 @@ describe("ConversationsService", () => {
       };
 
       mockBlockRepository.isBlocked.mockResolvedValue(false);
-      mockConversationsRepository.findOrCreateDirect.mockResolvedValue(
-        existingConversation,
-      );
+      mockConversationsRepository.findOrCreateDirect.mockResolvedValue(existingConversation);
 
       const result = await service.startConversation(userId, participantId);
 
@@ -151,11 +151,7 @@ describe("ConversationsService", () => {
 
       const result = await service.getConversations(userId, undefined, 20);
 
-      expect(mockConversationsRepository.findByUserId).toHaveBeenCalledWith(
-        userId,
-        undefined,
-        20,
-      );
+      expect(mockConversationsRepository.findByUserId).toHaveBeenCalledWith(userId, undefined, 20);
       expect(result.data).toHaveLength(2);
       expect(result.data[0].unreadCount).toBe(2);
       expect(result.nextCursor).toBeNull();
@@ -248,12 +244,12 @@ describe("ConversationsService", () => {
 
       mockConversationsRepository.findById.mockResolvedValue(null);
 
-      await expect(
-        service.getConversation(conversationId, userId),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        service.getConversation(conversationId, userId),
-      ).rejects.toThrow("대화를 찾을 수 없습니다.");
+      await expect(service.getConversation(conversationId, userId)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.getConversation(conversationId, userId)).rejects.toThrow(
+        "대화를 찾을 수 없습니다.",
+      );
     });
 
     it("should throw ForbiddenException if not participant", async () => {
@@ -271,12 +267,12 @@ describe("ConversationsService", () => {
       mockConversationsRepository.findById.mockResolvedValue(conversation);
       mockConversationsRepository.isParticipant.mockResolvedValue(false);
 
-      await expect(
-        service.getConversation(conversationId, userId),
-      ).rejects.toThrow(ForbiddenException);
-      await expect(
-        service.getConversation(conversationId, userId),
-      ).rejects.toThrow("이 대화에 참여할 권한이 없습니다.");
+      await expect(service.getConversation(conversationId, userId)).rejects.toThrow(
+        ForbiddenException,
+      );
+      await expect(service.getConversation(conversationId, userId)).rejects.toThrow(
+        "이 대화에 참여할 권한이 없습니다.",
+      );
     });
 
     it("should throw ForbiddenException if other participant is blocked", async () => {
@@ -296,12 +292,12 @@ describe("ConversationsService", () => {
       mockConversationsRepository.isParticipant.mockResolvedValue(true);
       mockBlockRepository.isBlocked.mockResolvedValue(true);
 
-      await expect(
-        service.getConversation(conversationId, userId),
-      ).rejects.toThrow(ForbiddenException);
-      await expect(
-        service.getConversation(conversationId, userId),
-      ).rejects.toThrow("차단 관계로 인해 대화를 볼 수 없습니다.");
+      await expect(service.getConversation(conversationId, userId)).rejects.toThrow(
+        ForbiddenException,
+      );
+      await expect(service.getConversation(conversationId, userId)).rejects.toThrow(
+        "차단 관계로 인해 대화를 볼 수 없습니다.",
+      );
     });
   });
 
@@ -313,10 +309,7 @@ describe("ConversationsService", () => {
       const otherUserId = "user-2";
       const conversation = {
         id: conversationId,
-        participants: [
-          { userId: "user-1" },
-          { userId: otherUserId },
-        ],
+        participants: [{ userId: "user-1" }, { userId: otherUserId }],
       };
       const createdMessage = {
         id: "msg-1",
@@ -354,12 +347,12 @@ describe("ConversationsService", () => {
 
       mockConversationsRepository.isParticipant.mockResolvedValue(false);
 
-      await expect(
-        service.sendMessage(conversationId, userId, content),
-      ).rejects.toThrow(ForbiddenException);
-      await expect(
-        service.sendMessage(conversationId, userId, content),
-      ).rejects.toThrow("이 대화에 참여할 권한이 없습니다.");
+      await expect(service.sendMessage(conversationId, userId, content)).rejects.toThrow(
+        ForbiddenException,
+      );
+      await expect(service.sendMessage(conversationId, userId, content)).rejects.toThrow(
+        "이 대화에 참여할 권한이 없습니다.",
+      );
     });
 
     it("should throw if blocked", async () => {
@@ -369,22 +362,19 @@ describe("ConversationsService", () => {
       const otherUserId = "user-2";
       const conversation = {
         id: conversationId,
-        participants: [
-          { userId: "user-1" },
-          { userId: otherUserId },
-        ],
+        participants: [{ userId: "user-1" }, { userId: otherUserId }],
       };
 
       mockConversationsRepository.isParticipant.mockResolvedValue(true);
       mockConversationsRepository.findById.mockResolvedValue(conversation);
       mockBlockRepository.isBlocked.mockResolvedValue(true);
 
-      await expect(
-        service.sendMessage(conversationId, userId, content),
-      ).rejects.toThrow(ForbiddenException);
-      await expect(
-        service.sendMessage(conversationId, userId, content),
-      ).rejects.toThrow("차단된 사용자에게 메시지를 보낼 수 없습니다.");
+      await expect(service.sendMessage(conversationId, userId, content)).rejects.toThrow(
+        ForbiddenException,
+      );
+      await expect(service.sendMessage(conversationId, userId, content)).rejects.toThrow(
+        "차단된 사용자에게 메시지를 보낼 수 없습니다.",
+      );
     });
 
     it("should send SSE event to recipient when message is created", async () => {
@@ -394,10 +384,7 @@ describe("ConversationsService", () => {
       const content = "Hello";
       const conversation = {
         id: conversationId,
-        participants: [
-          { userId: "user-1" },
-          { userId: recipientId },
-        ],
+        participants: [{ userId: "user-1" }, { userId: recipientId }],
       };
       const createdMessage = {
         id: "msg-1",
@@ -450,9 +437,7 @@ describe("ConversationsService", () => {
 
       mockConversationsRepository.isParticipant.mockResolvedValue(false);
 
-      await expect(service.markAsRead(conversationId, userId)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(service.markAsRead(conversationId, userId)).rejects.toThrow(ForbiddenException);
       await expect(service.markAsRead(conversationId, userId)).rejects.toThrow(
         "이 대화에 참여할 권한이 없습니다.",
       );
@@ -486,9 +471,7 @@ describe("ConversationsService", () => {
 
       mockConversationsRepository.getMessageById.mockResolvedValue(null);
 
-      await expect(service.deleteMessage(messageId, userId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.deleteMessage(messageId, userId)).rejects.toThrow(NotFoundException);
       await expect(service.deleteMessage(messageId, userId)).rejects.toThrow(
         "메시지를 찾을 수 없습니다.",
       );
@@ -506,9 +489,7 @@ describe("ConversationsService", () => {
 
       mockConversationsRepository.getMessageById.mockResolvedValue(message);
 
-      await expect(service.deleteMessage(messageId, userId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.deleteMessage(messageId, userId)).rejects.toThrow(NotFoundException);
       await expect(service.deleteMessage(messageId, userId)).rejects.toThrow(
         "메시지를 찾을 수 없습니다.",
       );
@@ -526,9 +507,7 @@ describe("ConversationsService", () => {
 
       mockConversationsRepository.getMessageById.mockResolvedValue(message);
 
-      await expect(service.deleteMessage(messageId, userId)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(service.deleteMessage(messageId, userId)).rejects.toThrow(ForbiddenException);
       await expect(service.deleteMessage(messageId, userId)).rejects.toThrow(
         "본인의 메시지만 삭제할 수 있습니다.",
       );

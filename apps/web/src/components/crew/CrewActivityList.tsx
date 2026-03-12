@@ -1,16 +1,18 @@
+import { Calendar, MapPin, Plus, Users } from "lucide-react";
 import { useState } from "react";
-import { Calendar, MapPin, Users, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import { EmptyState } from "@/components/common/EmptyState";
 import { TimeAgo } from "@/components/common/TimeAgo";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import CrewActivityForm from "./CrewActivityForm";
-import { useCrewActivities } from "@/hooks/useCrewActivities";
 import type { ActivitiesResponse } from "@/hooks/useCrewActivities";
+import { useCrewActivities } from "@/hooks/useCrewActivities";
+
+import CrewActivityForm from "./CrewActivityForm";
 
 interface CrewActivityListProps {
   crewId: string;
@@ -103,7 +105,15 @@ export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActi
             size="sm"
             onClick={() => setStatusFilter(s)}
           >
-            {s === "ALL" ? "전체" : s === "SCHEDULED" ? "예정" : s === "ACTIVE" ? "진행중" : s === "COMPLETED" ? "종료" : "취소됨"}
+            {s === "ALL"
+              ? "전체"
+              : s === "SCHEDULED"
+                ? "예정"
+                : s === "ACTIVE"
+                  ? "진행중"
+                  : s === "COMPLETED"
+                    ? "종료"
+                    : "취소됨"}
           </Button>
         ))}
       </div>
@@ -112,7 +122,9 @@ export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActi
         <EmptyState
           icon={Calendar}
           title="활동이 없습니다"
-          description={canCreate ? "첫 번째 크루 활동을 만들어보세요!" : "아직 생성된 활동이 없습니다."}
+          description={
+            canCreate ? "첫 번째 크루 활동을 만들어보세요!" : "아직 생성된 활동이 없습니다."
+          }
           actionLabel={canCreate ? "활동 만들기" : undefined}
           onAction={canCreate ? () => setShowForm(true) : undefined}
         />
@@ -120,7 +132,9 @@ export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActi
         <div className="grid gap-4">
           {filtered.map((activity) => {
             const scheduledDate = new Date(activity.activityDate);
-            const checkedInCount = activity.attendances.filter((a) => a.status === "CHECKED_IN").length;
+            const checkedInCount = activity.attendances.filter(
+              (a) => a.status === "CHECKED_IN",
+            ).length;
             const rsvpCount = activity.attendances.filter((a) => a.status === "RSVP").length;
             const totalActive = checkedInCount + rsvpCount;
 
@@ -150,7 +164,9 @@ export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActi
                       </CardDescription>
                     </div>
                     <div className="flex gap-1.5 shrink-0">
-                      <Badge variant={activity.activityType === "OFFICIAL" ? "default" : "secondary"}>
+                      <Badge
+                        variant={activity.activityType === "OFFICIAL" ? "default" : "secondary"}
+                      >
                         {activity.activityType === "OFFICIAL" ? "공식" : "번개"}
                       </Badge>
                       <Badge

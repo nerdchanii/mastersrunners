@@ -1,7 +1,8 @@
+import { Lock, Users } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Users, Lock } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface CrewCardProps {
   crew: {
@@ -42,22 +43,16 @@ export default function CrewCard({ crew }: CrewCardProps) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-lg truncate">{crew.name}</CardTitle>
-                {!crew.isPublic && (
-                  <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                )}
+                {!crew.isPublic && <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
               </div>
-              <CardDescription className="text-xs">
-                {crew.creator.name}
-              </CardDescription>
+              <CardDescription className="text-xs">{crew.creator.name}</CardDescription>
             </div>
           </div>
         </CardHeader>
 
         <CardContent className="flex-1 flex flex-col justify-between">
           {crew.description ? (
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-              {crew.description}
-            </p>
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{crew.description}</p>
           ) : (
             <div className="flex-1" />
           )}

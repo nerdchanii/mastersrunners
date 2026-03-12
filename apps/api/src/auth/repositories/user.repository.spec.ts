@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { UserRepository } from "./user.repository";
+
 import { DatabaseService } from "../../database/database.service";
+
+import { UserRepository } from "./user.repository";
 
 const mockTx = {
   user: { create: jest.fn() },
@@ -21,10 +23,7 @@ describe("UserRepository", () => {
     jest.clearAllMocks();
 
     const module = await Test.createTestingModule({
-      providers: [
-        UserRepository,
-        { provide: DatabaseService, useValue: { prisma: mockPrisma } },
-      ],
+      providers: [UserRepository, { provide: DatabaseService, useValue: { prisma: mockPrisma } }],
     }).compile();
 
     repository = module.get(UserRepository);

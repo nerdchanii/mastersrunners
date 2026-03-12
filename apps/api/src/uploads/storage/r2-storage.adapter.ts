@@ -1,7 +1,17 @@
-import { Injectable } from "@nestjs/common";
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import type { StorageAdapter, UploadUrlResult, DownloadResult } from "./storage-adapter.interface.js";
+import { Injectable } from "@nestjs/common";
+
+import type {
+  DownloadResult,
+  StorageAdapter,
+  UploadUrlResult,
+} from "./storage-adapter.interface.js";
 
 @Injectable()
 export class R2StorageAdapter implements StorageAdapter {
@@ -11,7 +21,10 @@ export class R2StorageAdapter implements StorageAdapter {
 
   constructor() {
     this.bucket = process.env.R2_BUCKET || process.env.R2_BUCKET_NAME || "masters-runners";
-    this.publicUrl = (process.env.R2_PUBLIC_URL || process.env.R2_PUBLIC_BASE_URL || "").replace(/\/$/, "");
+    this.publicUrl = (process.env.R2_PUBLIC_URL || process.env.R2_PUBLIC_BASE_URL || "").replace(
+      /\/$/,
+      "",
+    );
     this.s3 = new S3Client({
       region: "auto",
       endpoint: process.env.R2_ENDPOINT || "",

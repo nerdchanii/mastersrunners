@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { AccountRepository } from "./account.repository";
+
 import { DatabaseService } from "../../database/database.service";
+
+import { AccountRepository } from "./account.repository";
 
 const mockPrisma = {
   account: {

@@ -1,6 +1,7 @@
-import { useNavigate } from "react-router-dom";
-import { EmptyState } from "@/components/common/EmptyState";
 import { FileQuestion } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+import { EmptyState } from "@/components/common/EmptyState";
 
 export default function NotFoundPage() {
   const navigate = useNavigate();

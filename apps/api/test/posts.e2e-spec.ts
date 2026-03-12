@@ -1,7 +1,8 @@
 import type { INestApplication } from "@nestjs/common";
 import request from "supertest";
-import { createTestApp, closeTestApp, cleanDatabase } from "./setup";
-import { createTestUser, authRequest } from "./helpers/auth.helper";
+
+import { authRequest, createTestUser } from "./helpers/auth.helper";
+import { cleanDatabase, closeTestApp, createTestApp } from "./setup";
 
 describe("Posts (E2E)", () => {
   let app: INestApplication;
@@ -40,9 +41,7 @@ describe("Posts (E2E)", () => {
     });
 
     it("GET /api/v1/posts - should list own posts", async () => {
-      const res = await authRequest(app, userA.accessToken)
-        .get("/api/v1/posts")
-        .expect(200);
+      const res = await authRequest(app, userA.accessToken).get("/api/v1/posts").expect(200);
 
       // Posts endpoint may return paginated or array
       const posts = Array.isArray(res.body) ? res.body : res.body.items || res.body;
@@ -68,14 +67,10 @@ describe("Posts (E2E)", () => {
     });
 
     it("DELETE /api/v1/posts/:id - should soft delete post", async () => {
-      await authRequest(app, userA.accessToken)
-        .delete(`/api/v1/posts/${postId}`)
-        .expect(200);
+      await authRequest(app, userA.accessToken).delete(`/api/v1/posts/${postId}`).expect(200);
 
       // After soft delete, post should not be found
-      await authRequest(app, userA.accessToken)
-        .get(`/api/v1/posts/${postId}`)
-        .expect(404);
+      await authRequest(app, userA.accessToken).get(`/api/v1/posts/${postId}`).expect(404);
     });
   });
 
@@ -84,15 +79,13 @@ describe("Posts (E2E)", () => {
 
     beforeAll(async () => {
       // Create a workout first
-      const res = await authRequest(app, userA.accessToken)
-        .post("/api/v1/workouts")
-        .send({
-          distance: 10000,
-          duration: 3600,
-          date: "2025-06-15T09:00:00.000Z",
-          title: "Long run",
-          visibility: "PUBLIC",
-        });
+      const res = await authRequest(app, userA.accessToken).post("/api/v1/workouts").send({
+        distance: 10000,
+        duration: 3600,
+        date: "2025-06-15T09:00:00.000Z",
+        title: "Long run",
+        visibility: "PUBLIC",
+      });
       workoutId = res.body.id;
     });
 
@@ -117,12 +110,10 @@ describe("Posts (E2E)", () => {
     let postId: string;
 
     beforeAll(async () => {
-      const res = await authRequest(app, userA.accessToken)
-        .post("/api/v1/posts")
-        .send({
-          content: "Protected post",
-          visibility: "PUBLIC",
-        });
+      const res = await authRequest(app, userA.accessToken).post("/api/v1/posts").send({
+        content: "Protected post",
+        visibility: "PUBLIC",
+      });
       postId = res.body.id;
     });
 
@@ -143,8 +134,7 @@ describe("Posts (E2E)", () => {
     it("should reject delete by non-owner", async () => {
       // PostsService.softDelete throws plain Error (not HttpException) for non-owner,
       // which results in 500 via AllExceptionsFilter. This is a known quirk.
-      const res = await authRequest(app, userB.accessToken)
-        .delete(`/api/v1/posts/${postId}`);
+      const res = await authRequest(app, userB.accessToken).delete(`/api/v1/posts/${postId}`);
       // Expect either 403 (if fixed) or 500 (current behavior)
       expect([403, 500]).toContain(res.status);
     });

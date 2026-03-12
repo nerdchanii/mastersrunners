@@ -1,8 +1,9 @@
-import { Controller, Post, Get, Delete, Param, Body, Req, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query, Req } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
-import { WorkoutSocialService } from "./workout-social.service.js";
+
 import { CreateWorkoutCommentDto } from "./dto/create-workout-comment.dto.js";
+import { WorkoutSocialService } from "./workout-social.service.js";
 
 @ApiTags("Workout Social")
 @Controller("workouts")
@@ -51,10 +52,7 @@ export class WorkoutSocialController {
   }
 
   @Delete(":workoutId/comments/:commentId")
-  async deleteComment(
-    @Param("commentId") commentId: string,
-    @Req() req: Request,
-  ) {
+  async deleteComment(@Param("commentId") commentId: string, @Req() req: Request) {
     const { userId } = req.user as { userId: string };
     return this.service.deleteComment(commentId, userId);
   }

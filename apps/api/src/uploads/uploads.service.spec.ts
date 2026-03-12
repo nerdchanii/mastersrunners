@@ -1,10 +1,12 @@
-import { Test } from "@nestjs/testing";
 import { BadRequestException } from "@nestjs/common";
-import { UploadsService } from "./uploads.service.js";
+import { Test } from "@nestjs/testing";
+
+import { DatabaseService } from "../database/database.service.js";
+
 import { FitParserService } from "./parsers/fit-parser.service.js";
 import { GpxParserService } from "./parsers/gpx-parser.service.js";
-import { DatabaseService } from "../database/database.service.js";
 import { STORAGE_ADAPTER } from "./storage/storage-adapter.interface.js";
+import { UploadsService } from "./uploads.service.js";
 
 const mockStorageAdapter = {
   getUploadUrl: jest.fn(),
@@ -126,8 +128,13 @@ describe("UploadsService", () => {
 
     it("should parse FIT file and create workout with route", async () => {
       const mockBuffer = Buffer.from("fake-fit-data");
-      mockStorageAdapter.downloadFile.mockResolvedValue({ buffer: mockBuffer, size: mockBuffer.length });
-      mockStorageAdapter.getPublicUrl.mockReturnValue("https://cdn.example.com/files/user-1/12345-run.fit");
+      mockStorageAdapter.downloadFile.mockResolvedValue({
+        buffer: mockBuffer,
+        size: mockBuffer.length,
+      });
+      mockStorageAdapter.getPublicUrl.mockReturnValue(
+        "https://cdn.example.com/files/user-1/12345-run.fit",
+      );
 
       mockFitParser.parse.mockResolvedValue(mockParsedData);
 
@@ -152,10 +159,20 @@ describe("UploadsService", () => {
     });
 
     it("should parse GPX file and create workout", async () => {
-      const gpxInput = { ...baseInput, fileKey: "files/user-1/run.gpx", fileType: "GPX" as const, originalFileName: "run.gpx" };
+      const gpxInput = {
+        ...baseInput,
+        fileKey: "files/user-1/run.gpx",
+        fileType: "GPX" as const,
+        originalFileName: "run.gpx",
+      };
 
-      mockStorageAdapter.downloadFile.mockResolvedValue({ buffer: Buffer.from("<gpx>...</gpx>"), size: 100 });
-      mockStorageAdapter.getPublicUrl.mockReturnValue("https://cdn.example.com/files/user-1/run.gpx");
+      mockStorageAdapter.downloadFile.mockResolvedValue({
+        buffer: Buffer.from("<gpx>...</gpx>"),
+        size: 100,
+      });
+      mockStorageAdapter.getPublicUrl.mockReturnValue(
+        "https://cdn.example.com/files/user-1/run.gpx",
+      );
 
       mockGpxParser.parse.mockResolvedValue(mockParsedData);
 
@@ -179,7 +196,9 @@ describe("UploadsService", () => {
       const noGpsData = { ...mockParsedData, gpsTrack: undefined };
 
       mockStorageAdapter.downloadFile.mockResolvedValue({ buffer: Buffer.from("data"), size: 4 });
-      mockStorageAdapter.getPublicUrl.mockReturnValue("https://cdn.example.com/files/user-1/12345-run.fit");
+      mockStorageAdapter.getPublicUrl.mockReturnValue(
+        "https://cdn.example.com/files/user-1/12345-run.fit",
+      );
 
       mockFitParser.parse.mockResolvedValue(noGpsData);
 

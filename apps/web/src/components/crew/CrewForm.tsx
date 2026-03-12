@@ -1,16 +1,37 @@
 import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 const KOREA_REGIONS = [
-  "서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시",
-  "대전광역시", "울산광역시", "세종특별자치시", "경기도", "강원특별자치도",
-  "충청북도", "충청남도", "전북특별자치도", "전라남도", "경상북도", "경상남도", "제주특별자치도"
+  "서울특별시",
+  "부산광역시",
+  "대구광역시",
+  "인천광역시",
+  "광주광역시",
+  "대전광역시",
+  "울산광역시",
+  "세종특별자치시",
+  "경기도",
+  "강원특별자치도",
+  "충청북도",
+  "충청남도",
+  "전북특별자치도",
+  "전라남도",
+  "경상북도",
+  "경상남도",
+  "제주특별자치도",
 ];
 
 interface CrewFormData {
@@ -69,10 +90,22 @@ export default function CrewForm({
     e.preventDefault();
     setError(null);
 
-    if (!formData.name.trim()) { setError("크루 이름을 입력해주세요."); return; }
-    if (formData.name.trim().length < 2) { setError("크루 이름은 2자 이상이어야 합니다."); return; }
-    if (formData.name.trim().length > 50) { setError("크루 이름은 50자 이하여야 합니다."); return; }
-    if (formData.description.length > 500) { setError("설명은 500자 이하여야 합니다."); return; }
+    if (!formData.name.trim()) {
+      setError("크루 이름을 입력해주세요.");
+      return;
+    }
+    if (formData.name.trim().length < 2) {
+      setError("크루 이름은 2자 이상이어야 합니다.");
+      return;
+    }
+    if (formData.name.trim().length > 50) {
+      setError("크루 이름은 50자 이하여야 합니다.");
+      return;
+    }
+    if (formData.description.length > 500) {
+      setError("설명은 500자 이하여야 합니다.");
+      return;
+    }
 
     const maxMembersNum = formData.maxMembers ? parseInt(formData.maxMembers, 10) : undefined;
     if (maxMembersNum !== undefined && (isNaN(maxMembersNum) || maxMembersNum < 2)) {
@@ -133,7 +166,9 @@ export default function CrewForm({
               placeholder="크루에 대한 설명을 입력하세요"
               maxLength={500}
             />
-            <p className="text-xs text-muted-foreground text-right">{formData.description.length} / 500</p>
+            <p className="text-xs text-muted-foreground text-right">
+              {formData.description.length} / 500
+            </p>
           </div>
 
           {/* Public Toggle */}
@@ -150,7 +185,9 @@ export default function CrewForm({
               <Switch
                 id="crew-public"
                 checked={formData.isPublic}
-                onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isPublic: checked }))}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({ ...prev, isPublic: checked }))
+                }
               />
             </div>
           </div>
@@ -185,14 +222,18 @@ export default function CrewForm({
             <Label htmlFor="crew-region">지역 (선택)</Label>
             <Select
               value={formData.region}
-              onValueChange={(value) => setFormData((prev) => ({ ...prev, region: value, subRegion: "" }))}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, region: value, subRegion: "" }))
+              }
             >
               <SelectTrigger id="crew-region">
                 <SelectValue placeholder="지역 선택" />
               </SelectTrigger>
               <SelectContent>
                 {KOREA_REGIONS.map((r) => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>

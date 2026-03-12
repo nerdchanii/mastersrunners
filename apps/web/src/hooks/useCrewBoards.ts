@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { api } from "@/lib/api-client";
 
 interface BoardAuthor {
@@ -45,7 +46,8 @@ export interface Board {
 
 export const boardKeys = {
   boards: (crewId: string) => ["crews", crewId, "boards"] as const,
-  posts: (crewId: string, boardId: string) => ["crews", crewId, "boards", boardId, "posts"] as const,
+  posts: (crewId: string, boardId: string) =>
+    ["crews", crewId, "boards", boardId, "posts"] as const,
   post: (crewId: string, boardId: string, postId: string) =>
     ["crews", crewId, "boards", boardId, "posts", postId] as const,
 };
@@ -72,8 +74,7 @@ export function useBoardPosts(crewId: string, boardId: string) {
 export function useBoardPost(crewId: string, boardId: string, postId: string) {
   return useQuery({
     queryKey: boardKeys.post(crewId, boardId, postId),
-    queryFn: () =>
-      api.fetch<BoardPost>(`/crews/${crewId}/boards/${boardId}/posts/${postId}`),
+    queryFn: () => api.fetch<BoardPost>(`/crews/${crewId}/boards/${boardId}/posts/${postId}`),
     enabled: !!crewId && !!boardId && !!postId,
   });
 }
@@ -81,35 +82,76 @@ export function useBoardPost(crewId: string, boardId: string, postId: string) {
 export function useCreateBoard() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ crewId, data }: { crewId: string; data: { name: string; type?: string; writePermission?: string } }) =>
-      api.fetch(`/crews/${crewId}/boards`, { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: (_r, { crewId }) => { qc.invalidateQueries({ queryKey: boardKeys.boards(crewId) }); },
+    mutationFn: ({
+      crewId,
+      data,
+    }: {
+      crewId: string;
+      data: { name: string; type?: string; writePermission?: string };
+    }) => api.fetch(`/crews/${crewId}/boards`, { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: (_r, { crewId }) => {
+      qc.invalidateQueries({ queryKey: boardKeys.boards(crewId) });
+    },
   });
 }
 
 export function useCreatePost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ crewId, boardId, data }: { crewId: string; boardId: string; data: { title: string; content: string } }) =>
-      api.fetch(`/crews/${crewId}/boards/${boardId}/posts`, { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: (_r, { crewId, boardId }) => { qc.invalidateQueries({ queryKey: boardKeys.posts(crewId, boardId) }); },
+    mutationFn: ({
+      crewId,
+      boardId,
+      data,
+    }: {
+      crewId: string;
+      boardId: string;
+      data: { title: string; content: string };
+    }) =>
+      api.fetch(`/crews/${crewId}/boards/${boardId}/posts`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: (_r, { crewId, boardId }) => {
+      qc.invalidateQueries({ queryKey: boardKeys.posts(crewId, boardId) });
+    },
   });
 }
 
 export function useDeletePost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ crewId, boardId, postId }: { crewId: string; boardId: string; postId: string }) =>
-      api.fetch(`/crews/${crewId}/boards/${boardId}/posts/${postId}`, { method: "DELETE" }),
-    onSuccess: (_r, { crewId, boardId }) => { qc.invalidateQueries({ queryKey: boardKeys.posts(crewId, boardId) }); },
+    mutationFn: ({
+      crewId,
+      boardId,
+      postId,
+    }: {
+      crewId: string;
+      boardId: string;
+      postId: string;
+    }) => api.fetch(`/crews/${crewId}/boards/${boardId}/posts/${postId}`, { method: "DELETE" }),
+    onSuccess: (_r, { crewId, boardId }) => {
+      qc.invalidateQueries({ queryKey: boardKeys.posts(crewId, boardId) });
+    },
   });
 }
 
 export function useToggleLike() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ crewId, boardId, postId, liked }: { crewId: string; boardId: string; postId: string; liked: boolean }) =>
-      api.fetch(`/crews/${crewId}/boards/${boardId}/posts/${postId}/like`, { method: liked ? "DELETE" : "POST" }),
+    mutationFn: ({
+      crewId,
+      boardId,
+      postId,
+      liked,
+    }: {
+      crewId: string;
+      boardId: string;
+      postId: string;
+      liked: boolean;
+    }) =>
+      api.fetch(`/crews/${crewId}/boards/${boardId}/posts/${postId}/like`, {
+        method: liked ? "DELETE" : "POST",
+      }),
     onSuccess: (_r, { crewId, boardId, postId }) => {
       qc.invalidateQueries({ queryKey: boardKeys.post(crewId, boardId, postId) });
       qc.invalidateQueries({ queryKey: boardKeys.posts(crewId, boardId) });
@@ -120,8 +162,18 @@ export function useToggleLike() {
 export function useCreateComment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ crewId, boardId, postId, content, parentId }: {
-      crewId: string; boardId: string; postId: string; content: string; parentId?: string;
+    mutationFn: ({
+      crewId,
+      boardId,
+      postId,
+      content,
+      parentId,
+    }: {
+      crewId: string;
+      boardId: string;
+      postId: string;
+      content: string;
+      parentId?: string;
     }) =>
       api.fetch(`/crews/${crewId}/boards/${boardId}/posts/${postId}/comments`, {
         method: "POST",

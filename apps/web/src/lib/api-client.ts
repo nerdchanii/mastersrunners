@@ -1,5 +1,4 @@
-const API_BASE =
-  import.meta.env.VITE_API_URL || "http://localhost:4000/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api/v1";
 
 export class ApiError extends Error {
   constructor(
@@ -128,11 +127,7 @@ class ApiClient {
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({ message: "Request failed" }));
-      throw new ApiError(
-        body.message || `HTTP ${res.status}`,
-        res.status,
-        body,
-      );
+      throw new ApiError(body.message || `HTTP ${res.status}`, res.status, body);
     }
 
     // Handle empty responses (204 No Content, etc.)

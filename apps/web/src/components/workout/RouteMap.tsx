@@ -1,8 +1,9 @@
-import { useMemo } from "react";
-import { MapContainer, TileLayer, Polyline } from "react-leaflet";
 import type { LatLngBoundsExpression, LatLngTuple } from "leaflet";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
+import { useMemo } from "react";
+import { MapContainer, Polyline, TileLayer } from "react-leaflet";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export interface GpsPoint {
   lat: number;
@@ -19,10 +20,7 @@ interface RouteMapProps {
 }
 
 export function RouteMap({ routeData, className }: RouteMapProps) {
-  const positions = useMemo<LatLngTuple[]>(
-    () => routeData.map((p) => [p.lat, p.lon]),
-    [routeData],
-  );
+  const positions = useMemo<LatLngTuple[]>(() => routeData.map((p) => [p.lat, p.lon]), [routeData]);
 
   const bounds = useMemo<LatLngBoundsExpression | undefined>(() => {
     if (positions.length === 0) return undefined;

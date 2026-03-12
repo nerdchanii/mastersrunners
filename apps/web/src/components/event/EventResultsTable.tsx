@@ -1,6 +1,7 @@
-import { Badge } from "@/components/ui/badge";
+import { Award, Medal, Trophy } from "lucide-react";
+
 import { UserAvatar } from "@/components/common/UserAvatar";
-import { Trophy, Medal, Award } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface EventResult {
   resultRank: number | null;

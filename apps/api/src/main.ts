@@ -1,12 +1,14 @@
 import "dotenv/config";
 import "reflect-metadata";
-import { NestFactory } from "@nestjs/core";
+
 import { ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import { NestFactory } from "@nestjs/core";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import express from "express";
-import { AppModule } from "./app.module.js";
+
 import { AllExceptionsFilter } from "./common/filters/http-exception.filter.js";
+import { AppModule } from "./app.module.js";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
@@ -14,11 +16,19 @@ async function bootstrap() {
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use(express.raw({ type: ["application/octet-stream", "image/*", "application/gpx+xml"], limit: "50mb" }));
+  app.use(
+    express.raw({
+      type: ["application/octet-stream", "image/*", "application/gpx+xml"],
+      limit: "50mb",
+    }),
+  );
 
   const frontendUrl = config.get<string>("FRONTEND_URL", "http://localhost:3000");
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       // Allow requests with no origin (e.g., mobile, curl, Playwright)
       if (!origin) return callback(null, true);
       // In development, allow any localhost port

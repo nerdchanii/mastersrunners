@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+
 import { api } from "@/lib/api-client";
 
 interface ExploreCrewItem {
@@ -29,7 +30,12 @@ export const exploreKeys = {
   subRegions: (region: string) => ["crews", "regions", region] as const,
 };
 
-export function useCrewExplore(params: { region?: string; subRegion?: string; sort?: string; cursor?: string }) {
+export function useCrewExplore(params: {
+  region?: string;
+  subRegion?: string;
+  sort?: string;
+  cursor?: string;
+}) {
   return useQuery({
     queryKey: exploreKeys.explore(params),
     queryFn: () => {
@@ -40,7 +46,7 @@ export function useCrewExplore(params: { region?: string; subRegion?: string; so
       if (params.cursor) sp.set("cursor", params.cursor);
       const qs = sp.toString();
       return api.fetch<{ items: ExploreCrewItem[]; nextCursor: string | null }>(
-        `/crews/explore${qs ? `?${qs}` : ""}`
+        `/crews/explore${qs ? `?${qs}` : ""}`,
       );
     },
   });

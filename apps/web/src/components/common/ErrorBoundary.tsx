@@ -1,8 +1,16 @@
+import { AlertTriangle } from "lucide-react";
 import { Component, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Button } from "@/components/ui/button";
-import { AlertTriangle } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -65,9 +73,7 @@ function ErrorFallback({ error, onReload }: ErrorFallbackProps) {
         {error && (
           <CardContent>
             <div className="rounded-lg bg-muted p-3">
-              <p className="text-xs font-mono text-muted-foreground break-all">
-                {error.message}
-              </p>
+              <p className="text-xs font-mono text-muted-foreground break-all">{error.message}</p>
             </div>
           </CardContent>
         )}

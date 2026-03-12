@@ -1,8 +1,9 @@
 import { Test } from "@nestjs/testing";
-import { ShoesService } from "./shoes.service";
-import { ShoeRepository } from "./repositories/shoe.repository";
+
 import type { CreateShoeDto } from "./dto/create-shoe.dto";
 import type { UpdateShoeDto } from "./dto/update-shoe.dto";
+import { ShoeRepository } from "./repositories/shoe.repository";
+import { ShoesService } from "./shoes.service";
 
 const mockShoeRepository = {
   findAllByUser: jest.fn(),
@@ -18,10 +19,7 @@ describe("ShoesService", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
-      providers: [
-        ShoesService,
-        { provide: ShoeRepository, useValue: mockShoeRepository },
-      ],
+      providers: [ShoesService, { provide: ShoeRepository, useValue: mockShoeRepository }],
     }).compile();
     service = module.get(ShoesService);
   });

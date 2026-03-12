@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Req, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, Req } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
-import { EventsService } from "./events.service.js";
+
 import { CreateEventDto } from "./dto/create-event.dto.js";
 import { UpdateEventDto } from "./dto/update-event.dto.js";
+import { EventsService } from "./events.service.js";
 
 @ApiTags("Events")
 @Controller("events")
@@ -68,17 +69,20 @@ export class EventsController {
   submitResult(
     @Param("id") id: string,
     @Req() req: Request,
-    @Body() body: { resultTime: number; resultRank?: number; bibNumber?: string; status: "COMPLETED" | "DNS" | "DNF" }
+    @Body()
+    body: {
+      resultTime: number;
+      resultRank?: number;
+      bibNumber?: string;
+      status: "COMPLETED" | "DNS" | "DNF";
+    },
   ) {
     const { userId } = req.user as { userId: string };
     return this.eventsService.submitResult(id, userId, body);
   }
 
   @Get(":id/results")
-  getResults(
-    @Param("id") id: string,
-    @Query("sortBy") sortBy?: "resultTime" | "resultRank"
-  ) {
+  getResults(@Param("id") id: string, @Query("sortBy") sortBy?: "resultTime" | "resultRank") {
     return this.eventsService.getResults(id, sortBy);
   }
 

@@ -1,19 +1,20 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { UserAvatar } from "@/components/common/UserAvatar";
 import { BarChart3, TrendingUp, Trophy } from "lucide-react";
+import { useState } from "react";
 import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
 } from "recharts";
+
+import { UserAvatar } from "@/components/common/UserAvatar";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCrewAttendanceStats } from "@/hooks/useAttendanceStats";
 
 interface Props {
@@ -119,15 +120,8 @@ export default function CrewAttendanceStats({ crewId }: Props) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize: 12 }}
-                    className="fill-muted-foreground"
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12 }}
-                    className="fill-muted-foreground"
-                  />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} className="fill-muted-foreground" />
+                  <YAxis tick={{ fontSize: 12 }} className="fill-muted-foreground" />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",

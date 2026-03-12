@@ -71,24 +71,18 @@ export function WorkoutDetail({
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white rounded-lg shadow-sm p-6 text-center">
           <div className="text-sm font-medium text-gray-500 mb-2">거리</div>
-          <div className="text-3xl font-bold text-indigo-600">
-            {formatDistance(distance)}
-          </div>
+          <div className="text-3xl font-bold text-indigo-600">{formatDistance(distance)}</div>
           <div className="text-sm text-gray-600 mt-1">km</div>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6 text-center">
           <div className="text-sm font-medium text-gray-500 mb-2">시간</div>
-          <div className="text-2xl font-bold text-gray-900">
-            {formatDuration(duration)}
-          </div>
+          <div className="text-2xl font-bold text-gray-900">{formatDuration(duration)}</div>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6 text-center">
           <div className="text-sm font-medium text-gray-500 mb-2">페이스</div>
-          <div className="text-3xl font-bold text-gray-900">
-            {formatPace(pace)}
-          </div>
+          <div className="text-3xl font-bold text-gray-900">{formatPace(pace)}</div>
           <div className="text-sm text-gray-600 mt-1">/km</div>
         </div>
       </div>
@@ -109,9 +103,7 @@ export function WorkoutDetail({
       {/* Workout type */}
       {workoutType && (
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="text-sm font-medium text-gray-500 mb-2">
-            운동 유형
-          </div>
+          <div className="text-sm font-medium text-gray-500 mb-2">운동 유형</div>
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
               {workoutType.category}

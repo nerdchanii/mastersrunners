@@ -1,29 +1,41 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Query, BadRequestException } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+} from "@nestjs/common";
+import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
-import { CrewsService } from "./crews.service.js";
+
 import { CreateCrewDto } from "./dto/create-crew.dto.js";
-import { UpdateCrewDto } from "./dto/update-crew.dto.js";
-import { CreateCrewTagDto } from "./dto/create-crew-tag.dto.js";
-import { UpdateCrewTagDto } from "./dto/update-crew-tag.dto.js";
 import { CreateCrewActivityDto } from "./dto/create-crew-activity.dto.js";
+import { CreateCrewTagDto } from "./dto/create-crew-tag.dto.js";
+import { UpdateCrewDto } from "./dto/update-crew.dto.js";
 import { UpdateCrewActivityDto } from "./dto/update-crew-activity.dto.js";
+import { UpdateCrewTagDto } from "./dto/update-crew-tag.dto.js";
+import { CrewsService } from "./crews.service.js";
 
 @ApiTags("Crews")
 @Controller("crews")
 export class CrewsController {
   constructor(private readonly crewsService: CrewsService) {}
 
-  @ApiOperation({ summary: '크루 생성' })
-  @ApiResponse({ status: 201, description: '생성 성공' })
+  @ApiOperation({ summary: "크루 생성" })
+  @ApiResponse({ status: 201, description: "생성 성공" })
   @Post()
   create(@Req() req: Request, @Body() dto: CreateCrewDto) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.create(userId, dto);
   }
 
-  @ApiOperation({ summary: '크루 목록 조회' })
-  @ApiResponse({ status: 200, description: '성공' })
+  @ApiOperation({ summary: "크루 목록 조회" })
+  @ApiResponse({ status: 200, description: "성공" })
   @Get()
   findAll(
     @Req() req: Request,
@@ -31,7 +43,7 @@ export class CrewsController {
     @Query("userId") userId?: string,
     @Query("isPublic") isPublic?: string,
     @Query("cursor") cursor?: string,
-    @Query("limit") limit?: string
+    @Query("limit") limit?: string,
   ) {
     const { userId: requesterId } = req.user as { userId: string };
 
@@ -79,37 +91,34 @@ export class CrewsController {
     return this.crewsService.getSubRegions(region);
   }
 
-  @ApiOperation({ summary: '크루 상세 조회' })
-  @ApiResponse({ status: 200, description: '성공' })
+  @ApiOperation({ summary: "크루 상세 조회" })
+  @ApiResponse({ status: 200, description: "성공" })
   @Get(":id")
   findOne(@Param("id") id: string) {
     return this.crewsService.findOne(id);
   }
 
-  @ApiOperation({ summary: '크루 프로필 조회 (집계 정보)' })
-  @ApiResponse({ status: 200, description: '성공' })
+  @ApiOperation({ summary: "크루 프로필 조회 (집계 정보)" })
+  @ApiResponse({ status: 200, description: "성공" })
   @Get(":id/profile")
   getCrewProfile(@Param("id") id: string) {
     return this.crewsService.getCrewProfile(id);
   }
 
-  @ApiOperation({ summary: '크루 게시물 목록 조회' })
-  @ApiResponse({ status: 200, description: '성공' })
+  @ApiOperation({ summary: "크루 게시물 목록 조회" })
+  @ApiResponse({ status: 200, description: "성공" })
   @Get(":id/posts")
-  getCrewPosts(
-    @Param("id") id: string,
-    @Query("cursor") cursor?: string
-  ) {
+  getCrewPosts(@Param("id") id: string, @Query("cursor") cursor?: string) {
     return this.crewsService.getCrewPosts(id, cursor);
   }
 
-  @ApiOperation({ summary: '크루 게시물 작성 (크루장 전용)' })
-  @ApiResponse({ status: 201, description: '생성 성공' })
+  @ApiOperation({ summary: "크루 게시물 작성 (크루장 전용)" })
+  @ApiResponse({ status: 201, description: "생성 성공" })
   @Post(":id/posts")
   createCrewPost(
     @Param("id") id: string,
     @Req() req: Request,
-    @Body() body: { content: string; visibility?: string }
+    @Body() body: { content: string; visibility?: string },
   ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.createCrewPost(id, userId, body);
@@ -144,7 +153,7 @@ export class CrewsController {
     @Param("id") id: string,
     @Param("userId") targetUserId: string,
     @Req() req: Request,
-    @Body("reason") reason?: string
+    @Body("reason") reason?: string,
   ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.kickMember(id, userId, targetUserId, reason);
@@ -155,7 +164,7 @@ export class CrewsController {
     @Param("id") id: string,
     @Param("userId") targetUserId: string,
     @Body("role") role: string,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const { userId } = req.user as { userId: string };
     if (role === "ADMIN") {
@@ -187,13 +196,21 @@ export class CrewsController {
   }
 
   @Post(":id/members/:userId/approve")
-  approveMember(@Param("id") id: string, @Param("userId") targetUserId: string, @Req() req: Request) {
+  approveMember(
+    @Param("id") id: string,
+    @Param("userId") targetUserId: string,
+    @Req() req: Request,
+  ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.approveMember(id, userId, targetUserId);
   }
 
   @Post(":id/members/:userId/reject")
-  rejectMember(@Param("id") id: string, @Param("userId") targetUserId: string, @Req() req: Request) {
+  rejectMember(
+    @Param("id") id: string,
+    @Param("userId") targetUserId: string,
+    @Req() req: Request,
+  ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.rejectMember(id, userId, targetUserId);
   }
@@ -216,7 +233,7 @@ export class CrewsController {
     @Param("id") id: string,
     @Param("tagId") tagId: string,
     @Req() req: Request,
-    @Body() dto: UpdateCrewTagDto
+    @Body() dto: UpdateCrewTagDto,
   ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.updateTag(tagId, id, userId, dto);
@@ -233,7 +250,7 @@ export class CrewsController {
     @Param("id") id: string,
     @Param("memberId") memberId: string,
     @Param("tagId") tagId: string,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.assignTagToMember(id, userId, memberId, tagId);
@@ -244,7 +261,7 @@ export class CrewsController {
     @Param("id") id: string,
     @Param("memberId") memberId: string,
     @Param("tagId") tagId: string,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.removeTagFromMember(id, userId, memberId, tagId);
@@ -253,11 +270,7 @@ export class CrewsController {
   // ============ Chat ============
 
   @Get(":id/chat")
-  getCrewChat(
-    @Param("id") id: string,
-    @Req() req: Request,
-    @Query("cursor") cursor?: string
-  ) {
+  getCrewChat(@Param("id") id: string, @Req() req: Request, @Query("cursor") cursor?: string) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.getCrewChat(id, userId, cursor);
   }
@@ -267,7 +280,7 @@ export class CrewsController {
     @Param("id") id: string,
     @Param("activityId") activityId: string,
     @Req() req: Request,
-    @Query("cursor") cursor?: string
+    @Query("cursor") cursor?: string,
   ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.getActivityChat(id, activityId, userId, cursor);
@@ -296,7 +309,7 @@ export class CrewsController {
     @Query("cursor") cursor?: string,
     @Query("limit") limit?: string,
     @Query("type") type?: string,
-    @Query("status") status?: string
+    @Query("status") status?: string,
   ) {
     return this.crewsService.getActivities(id, {
       cursor,
@@ -316,7 +329,7 @@ export class CrewsController {
     @Param("id") id: string,
     @Param("activityId") activityId: string,
     @Req() req: Request,
-    @Body() dto: UpdateCrewActivityDto
+    @Body() dto: UpdateCrewActivityDto,
   ) {
     const { userId } = req.user as { userId: string };
     const data: Record<string, unknown> = {};
@@ -333,7 +346,7 @@ export class CrewsController {
   deleteActivity(
     @Param("id") id: string,
     @Param("activityId") activityId: string,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.deleteActivity(activityId, id, userId);
@@ -343,7 +356,7 @@ export class CrewsController {
   checkIn(
     @Param("activityId") activityId: string,
     @Req() req: Request,
-    @Body("method") method?: string
+    @Body("method") method?: string,
   ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.checkIn(activityId, userId, method);
@@ -354,18 +367,14 @@ export class CrewsController {
     @Param("id") id: string,
     @Param("activityId") activityId: string,
     @Req() req: Request,
-    @Body("qrCode") qrCode: string
+    @Body("qrCode") qrCode: string,
   ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.qrCheckIn(activityId, id, userId, qrCode);
   }
 
   @Post(":id/activities/:activityId/rsvp")
-  rsvp(
-    @Param("id") id: string,
-    @Param("activityId") activityId: string,
-    @Req() req: Request
-  ) {
+  rsvp(@Param("id") id: string, @Param("activityId") activityId: string, @Req() req: Request) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.rsvp(activityId, id, userId);
   }
@@ -374,7 +383,7 @@ export class CrewsController {
   cancelRsvp(
     @Param("id") id: string,
     @Param("activityId") activityId: string,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.cancelRsvp(activityId, id, userId);
@@ -384,7 +393,7 @@ export class CrewsController {
   completeActivity(
     @Param("id") id: string,
     @Param("activityId") activityId: string,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.completeActivity(activityId, id, userId);
@@ -394,7 +403,7 @@ export class CrewsController {
   cancelActivity(
     @Param("id") id: string,
     @Param("activityId") activityId: string,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.cancelActivity(activityId, id, userId);
@@ -405,17 +414,14 @@ export class CrewsController {
     @Param("id") id: string,
     @Param("activityId") activityId: string,
     @Req() req: Request,
-    @Body("userId") targetUserId: string
+    @Body("userId") targetUserId: string,
   ) {
     const { userId } = req.user as { userId: string };
     return this.crewsService.adminCheckIn(activityId, id, userId, targetUserId);
   }
 
   @Get(":id/members/:userId/attendance-stats")
-  getMemberAttendanceStats(
-    @Param("id") id: string,
-    @Param("userId") userId: string
-  ) {
+  getMemberAttendanceStats(@Param("id") id: string, @Param("userId") userId: string) {
     return this.crewsService.getMemberAttendanceStats(id, userId);
   }
 
@@ -423,16 +429,13 @@ export class CrewsController {
   getCrewAttendanceStats(
     @Param("id") id: string,
     @Query("month") month?: string,
-    @Query("type") type?: string
+    @Query("type") type?: string,
   ) {
     return this.crewsService.getCrewAttendanceStats(id, { month, type });
   }
 
   @Get(":id/activities/:activityId/attendees")
-  getAttendees(
-    @Param("activityId") activityId: string,
-    @Query("status") status?: string
-  ) {
+  getAttendees(@Param("activityId") activityId: string, @Query("status") status?: string) {
     return this.crewsService.getAttendees(activityId, status);
   }
 }

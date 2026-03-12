@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { api } from "@/lib/api-client";
-import { UserAvatar } from "@/components/common/UserAvatar";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+
 import { LoadingPage } from "@/components/common/LoadingPage";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 
 interface FollowUser {
@@ -36,9 +37,9 @@ export default function FollowingPage() {
     const fetchFollowing = async () => {
       try {
         const data = await api.fetch<FollowingResponse | FollowUser[]>(
-          `/follow/following/${userId}`
+          `/follow/following/${userId}`,
         );
-        const items = Array.isArray(data) ? data : (data as FollowingResponse).items ?? [];
+        const items = Array.isArray(data) ? data : ((data as FollowingResponse).items ?? []);
         setFollowing(items);
         const states: Record<string, boolean> = {};
         items.forEach((u) => {
@@ -103,9 +104,7 @@ export default function FollowingPage() {
                 <UserAvatar user={user} size="default" />
                 <div className="min-w-0">
                   <p className="font-medium text-sm truncate">{user.name}</p>
-                  {user.bio && (
-                    <p className="text-xs text-muted-foreground truncate">{user.bio}</p>
-                  )}
+                  {user.bio && <p className="text-xs text-muted-foreground truncate">{user.bio}</p>}
                 </div>
               </Link>
 

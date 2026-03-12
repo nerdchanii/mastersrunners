@@ -1,12 +1,13 @@
+import { Plus, Zap } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Zap } from "lucide-react";
-import { PageHeader } from "@/components/common/PageHeader";
-import { EmptyState } from "@/components/common/EmptyState";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import ChallengeCard from "@/components/challenge/ChallengeCard";
+import { EmptyState } from "@/components/common/EmptyState";
+import { PageHeader } from "@/components/common/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useInfiniteChallenges } from "@/hooks/useChallenges";
 
 type ChallengeTab = "all" | "my";
@@ -79,12 +80,7 @@ export default function ChallengesPage() {
               <p className="text-sm text-destructive font-medium">
                 {error instanceof Error ? error.message : "챌린지 목록을 불러올 수 없습니다."}
               </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleRetry}
-                className="mt-2 h-8"
-              >
+              <Button variant="ghost" size="sm" onClick={handleRetry} className="mt-2 h-8">
                 다시 시도
               </Button>
             </div>
@@ -100,20 +96,13 @@ export default function ChallengesPage() {
             <>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((challenge) => (
-                  <ChallengeCard
-                    key={challenge.id}
-                    challenge={challenge}
-                  />
+                  <ChallengeCard key={challenge.id} challenge={challenge} />
                 ))}
               </div>
 
               {hasMore && (
                 <div className="flex justify-center pt-6">
-                  <Button
-                    onClick={handleLoadMore}
-                    disabled={isFetching}
-                    variant="outline"
-                  >
+                  <Button onClick={handleLoadMore} disabled={isFetching} variant="outline">
                     {isFetching ? "불러오는 중..." : "더보기"}
                   </Button>
                 </div>

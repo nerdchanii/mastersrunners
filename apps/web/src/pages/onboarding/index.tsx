@@ -1,17 +1,18 @@
+import { Activity, Check, ChevronRight, Lock, PartyPopper, User } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, ChevronRight, User, Activity, Lock, PartyPopper } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-context";
-import { api } from "@/lib/api-client";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import { useWorkoutTypes } from "@/hooks/useMessages";
+import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
+import { cn } from "@/lib/utils";
 
 const STEPS = [
   { icon: User, label: "프로필" },
@@ -39,9 +40,7 @@ export default function OnboardingPage() {
   const [isPrivate, setIsPrivate] = useState(false);
 
   const toggleType = (id: string) => {
-    setSelectedTypes((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setSelectedTypes((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const handleNext = () => setStep((s) => s + 1);
@@ -91,8 +90,8 @@ export default function OnboardingPage() {
                   i < step
                     ? "bg-primary text-primary-foreground"
                     : i === step
-                    ? "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2"
-                    : "bg-muted text-muted-foreground",
+                      ? "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2"
+                      : "bg-muted text-muted-foreground",
                 )}
               >
                 {i < step ? <Check className="size-4" /> : i + 1}
@@ -122,7 +121,9 @@ export default function OnboardingPage() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="name">닉네임 <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="name">
+                    닉네임 <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="name"
                     value={name}
@@ -213,13 +214,20 @@ export default function OnboardingPage() {
                     )}
                   >
                     <div className="mt-0.5">
-                      <div className={cn("size-4 rounded-full border-2 flex items-center justify-center", !isPrivate ? "border-primary" : "border-muted-foreground")}>
+                      <div
+                        className={cn(
+                          "size-4 rounded-full border-2 flex items-center justify-center",
+                          !isPrivate ? "border-primary" : "border-muted-foreground",
+                        )}
+                      >
                         {!isPrivate && <div className="size-2 rounded-full bg-primary" />}
                       </div>
                     </div>
                     <div>
                       <p className="font-medium">공개 계정</p>
-                      <p className="text-sm text-muted-foreground">누구나 내 러닝 기록과 게시글을 볼 수 있습니다</p>
+                      <p className="text-sm text-muted-foreground">
+                        누구나 내 러닝 기록과 게시글을 볼 수 있습니다
+                      </p>
                     </div>
                   </button>
                   <button
@@ -230,13 +238,20 @@ export default function OnboardingPage() {
                     )}
                   >
                     <div className="mt-0.5">
-                      <div className={cn("size-4 rounded-full border-2 flex items-center justify-center", isPrivate ? "border-primary" : "border-muted-foreground")}>
+                      <div
+                        className={cn(
+                          "size-4 rounded-full border-2 flex items-center justify-center",
+                          isPrivate ? "border-primary" : "border-muted-foreground",
+                        )}
+                      >
                         {isPrivate && <div className="size-2 rounded-full bg-primary" />}
                       </div>
                     </div>
                     <div>
                       <p className="font-medium">비공개 계정</p>
-                      <p className="text-sm text-muted-foreground">팔로워만 내 기록과 게시글을 볼 수 있습니다</p>
+                      <p className="text-sm text-muted-foreground">
+                        팔로워만 내 기록과 게시글을 볼 수 있습니다
+                      </p>
                     </div>
                   </button>
                 </div>
@@ -254,8 +269,15 @@ export default function OnboardingPage() {
                   이제 다른 러너들과 함께 달려보세요!
                 </p>
                 <div className="pt-2 space-y-1 text-sm text-muted-foreground">
-                  <p>닉네임: <span className="font-medium text-foreground">{name}</span></p>
-                  <p>공개 설정: <span className="font-medium text-foreground">{isPrivate ? "비공개" : "공개"}</span></p>
+                  <p>
+                    닉네임: <span className="font-medium text-foreground">{name}</span>
+                  </p>
+                  <p>
+                    공개 설정:{" "}
+                    <span className="font-medium text-foreground">
+                      {isPrivate ? "비공개" : "공개"}
+                    </span>
+                  </p>
                 </div>
               </div>
             )}
@@ -270,11 +292,7 @@ export default function OnboardingPage() {
             </Button>
           )}
           {step < 2 && (
-            <Button
-              onClick={handleNext}
-              className="flex-1"
-              disabled={step === 0 && !name.trim()}
-            >
+            <Button onClick={handleNext} className="flex-1" disabled={step === 0 && !name.trim()}>
               다음
               <ChevronRight className="size-4 ml-1" />
             </Button>

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 interface ImageLightboxProps {
   images: Array<{ url: string; alt?: string }>;

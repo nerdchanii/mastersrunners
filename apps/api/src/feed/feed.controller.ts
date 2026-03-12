@@ -1,6 +1,7 @@
 import { Controller, Get, Query, Req } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
+import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
+
 import { FeedService } from "./feed.service.js";
 
 @ApiTags("Feed")
@@ -8,8 +9,8 @@ import { FeedService } from "./feed.service.js";
 export class FeedController {
   constructor(private readonly feedService: FeedService) {}
 
-  @ApiOperation({ summary: '게시글 피드 조회' })
-  @ApiResponse({ status: 200, description: '성공' })
+  @ApiOperation({ summary: "게시글 피드 조회" })
+  @ApiResponse({ status: 200, description: "성공" })
   @Get("posts")
   getPostFeed(
     @Req() req: Request,
@@ -17,15 +18,12 @@ export class FeedController {
     @Query("limit") limit?: string,
   ) {
     const { userId } = req.user as { userId: string };
-    const parsedLimit = Math.min(
-      Math.max(parseInt(limit || "10", 10) || 10, 1),
-      50,
-    );
+    const parsedLimit = Math.min(Math.max(parseInt(limit || "10", 10) || 10, 1), 50);
     return this.feedService.getPostFeed(userId, cursor, parsedLimit);
   }
 
-  @ApiOperation({ summary: '워크아웃 피드 조회' })
-  @ApiResponse({ status: 200, description: '성공' })
+  @ApiOperation({ summary: "워크아웃 피드 조회" })
+  @ApiResponse({ status: 200, description: "성공" })
   @Get("workouts")
   getWorkoutFeed(
     @Req() req: Request,
@@ -34,16 +32,8 @@ export class FeedController {
     @Query("excludeLinked") excludeLinked?: string,
   ) {
     const { userId } = req.user as { userId: string };
-    const parsedLimit = Math.min(
-      Math.max(parseInt(limit || "10", 10) || 10, 1),
-      50,
-    );
+    const parsedLimit = Math.min(Math.max(parseInt(limit || "10", 10) || 10, 1), 50);
     const excludeLinkedToPost = excludeLinked === "true";
-    return this.feedService.getWorkoutFeed(
-      userId,
-      cursor,
-      parsedLimit,
-      excludeLinkedToPost,
-    );
+    return this.feedService.getWorkoutFeed(userId, cursor, parsedLimit, excludeLinkedToPost);
   }
 }

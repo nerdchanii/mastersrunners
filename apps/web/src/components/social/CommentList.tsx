@@ -1,12 +1,13 @@
-import { useState, useEffect, useRef } from "react";
 import { Send, Trash2 } from "lucide-react";
-import { api } from "@/lib/api-client";
-import { useAuth } from "@/lib/auth-context";
-import { UserAvatar } from "@/components/common/UserAvatar";
+import { useEffect, useRef, useState } from "react";
+
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { TimeAgo } from "@/components/common/TimeAgo";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { CommentContent } from "@/components/social/MentionLink";
 import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 
 interface Comment {
   id: string;
@@ -38,16 +39,14 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const endpoint =
-    entityType === "workout"
-      ? `/workouts/${entityId}/comments`
-      : `/posts/${entityId}/comments`;
+    entityType === "workout" ? `/workouts/${entityId}/comments` : `/posts/${entityId}/comments`;
 
   const fetchComments = async () => {
     try {
       setIsLoading(true);
-      const data = await api.fetch<{ data: Comment[]; cursor: string | null; hasMore: boolean } | Comment[]>(
-        `${endpoint}?limit=50`
-      );
+      const data = await api.fetch<
+        { data: Comment[]; cursor: string | null; hasMore: boolean } | Comment[]
+      >(`${endpoint}?limit=50`);
 
       const items = Array.isArray(data) ? data : (data?.data ?? []);
 
@@ -119,22 +118,12 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
   };
 
   const renderComment = (comment: Comment, isReply = false) => (
-    <div
-      key={comment.id}
-      className={isReply ? "ml-10 mt-2" : ""}
-    >
+    <div key={comment.id} className={isReply ? "ml-10 mt-2" : ""}>
       <div className="flex gap-2.5">
-        <UserAvatar
-          user={comment.user}
-          size="sm"
-          linkToProfile
-          className="mt-0.5"
-        />
+        <UserAvatar user={comment.user} size="sm" linkToProfile className="mt-0.5" />
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold text-foreground">
-              {comment.user.name}
-            </span>
+            <span className="text-sm font-semibold text-foreground">{comment.user.name}</span>
             <TimeAgo date={comment.createdAt} />
           </div>
           <p className="text-sm text-foreground mt-0.5 whitespace-pre-wrap break-words">
@@ -167,13 +156,9 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
     <div className="space-y-4">
       {/* Comment list */}
       {isLoading ? (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          로딩 중...
-        </p>
+        <p className="text-sm text-muted-foreground text-center py-4">로딩 중...</p>
       ) : comments.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6">
-          첫 댓글을 작성해보세요
-        </p>
+        <p className="text-sm text-muted-foreground text-center py-6">첫 댓글을 작성해보세요</p>
       ) : (
         <div className="space-y-3">
           {comments.map((comment) => (
@@ -190,9 +175,7 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
         <form onSubmit={handleSubmit} className="border-t pt-3">
           {replyingTo && (
             <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
-              <span>
-                {replyingTo.user.name}님에게 답글 작성 중
-              </span>
+              <span>{replyingTo.user.name}님에게 답글 작성 중</span>
               <button
                 type="button"
                 onClick={handleCancelReply}

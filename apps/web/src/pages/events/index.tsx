@@ -1,13 +1,14 @@
+import { Calendar, Loader2, Plus } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import EventCard from "@/components/event/EventCard";
-import { PageHeader } from "@/components/common/PageHeader";
+
 import { EmptyState } from "@/components/common/EmptyState";
+import { PageHeader } from "@/components/common/PageHeader";
+import EventCard from "@/components/event/EventCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Plus, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useInfiniteEvents } from "@/hooks/useEvents";
+import { cn } from "@/lib/utils";
 
 type EventTab = "upcoming" | "past" | "my";
 
@@ -70,7 +71,7 @@ export default function EventsPage() {
               "px-4 py-2.5 font-medium text-sm transition-all relative",
               activeTab === tab.key
                 ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {tab.label}
@@ -111,10 +112,7 @@ export default function EventsPage() {
       {items.length > 0 && (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((event) => (
-            <EventCard
-              key={event.id}
-              event={event}
-            />
+            <EventCard key={event.id} event={event} />
           ))}
         </div>
       )}

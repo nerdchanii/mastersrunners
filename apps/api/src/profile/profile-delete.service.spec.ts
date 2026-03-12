@@ -1,10 +1,12 @@
 import { Test } from "@nestjs/testing";
-import { ProfileService } from "./profile.service";
+
 import { UserRepository } from "../auth/repositories/user.repository";
-import { WorkoutRepository } from "../workouts/repositories/workout.repository";
 import { BlockRepository } from "../block/repositories/block.repository";
-import { FollowRepository } from "../follow/repositories/follow.repository";
 import { DatabaseService } from "../database/database.service";
+import { FollowRepository } from "../follow/repositories/follow.repository";
+import { WorkoutRepository } from "../workouts/repositories/workout.repository";
+
+import { ProfileService } from "./profile.service";
 
 const mockUserRepo = {
   findById: jest.fn(),
@@ -77,7 +79,11 @@ describe("ProfileService - deleteAccount", () => {
   describe("deleteAccount", () => {
     it("should soft delete user and anonymize personal info", async () => {
       const userId = "user-1";
-      mockUserRepo.findById.mockResolvedValue({ id: userId, name: "TestUser", email: "test@example.com" });
+      mockUserRepo.findById.mockResolvedValue({
+        id: userId,
+        name: "TestUser",
+        email: "test@example.com",
+      });
 
       await service.deleteAccount(userId);
 

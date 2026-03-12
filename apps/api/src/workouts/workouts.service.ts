@@ -1,9 +1,11 @@
 import { Injectable } from "@nestjs/common";
-import { WorkoutRepository } from "./repositories/workout.repository.js";
-import { ShoeRepository } from "../shoes/repositories/shoe.repository.js";
+
 import { ChallengeAggregationService } from "../challenges/challenge-aggregation.service.js";
+import { ShoeRepository } from "../shoes/repositories/shoe.repository.js";
+
 import type { CreateWorkoutDto } from "./dto/create-workout.dto.js";
 import type { UpdateWorkoutDto } from "./dto/update-workout.dto.js";
+import { WorkoutRepository } from "./repositories/workout.repository.js";
 
 @Injectable()
 export class WorkoutsService {
@@ -13,7 +15,11 @@ export class WorkoutsService {
     private readonly shoeRepo: ShoeRepository,
   ) {}
 
-  async findAll(requesterUserId: string, options?: { cursor?: string; limit?: number }, targetUserId?: string) {
+  async findAll(
+    requesterUserId: string,
+    options?: { cursor?: string; limit?: number },
+    targetUserId?: string,
+  ) {
     const userId = targetUserId ?? requesterUserId;
 
     if (options?.cursor !== undefined || options?.limit !== undefined) {
@@ -80,8 +86,16 @@ export class WorkoutsService {
         if (gpsTrack.length > 0) {
           const first = gpsTrack[0];
           const last = gpsTrack[gpsTrack.length - 1];
-          firstPoint = { lat: first.lat, lon: first.lon, ...(first.elevation !== undefined && { elevation: first.elevation }) };
-          lastPoint = { lat: last.lat, lon: last.lon, ...(last.elevation !== undefined && { elevation: last.elevation }) };
+          firstPoint = {
+            lat: first.lat,
+            lon: first.lon,
+            ...(first.elevation !== undefined && { elevation: first.elevation }),
+          };
+          lastPoint = {
+            lat: last.lat,
+            lon: last.lon,
+            ...(last.elevation !== undefined && { elevation: last.elevation }),
+          };
         }
       } catch {
         // routeData may not be valid JSON, skip

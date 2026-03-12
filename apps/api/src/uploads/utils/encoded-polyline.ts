@@ -14,10 +14,10 @@ function encodeNumber(num: number): string {
 
   let result = "";
   while (value >= 0x20) {
-    result += String.fromCharCode(((0x20 | (value & 0x1f)) + 63));
+    result += String.fromCharCode((0x20 | (value & 0x1f)) + 63);
     value >>= 5;
   }
-  result += String.fromCharCode((value + 63));
+  result += String.fromCharCode(value + 63);
   return result;
 }
 

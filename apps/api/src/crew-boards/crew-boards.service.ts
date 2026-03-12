@@ -1,6 +1,13 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from "@nestjs/common";
-import { CrewBoardsRepository } from "./crew-boards.repository.js";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+
 import { DatabaseService } from "../database/database.service.js";
+
+import { CrewBoardsRepository } from "./crew-boards.repository.js";
 
 @Injectable()
 export class CrewBoardsService {
@@ -22,7 +29,11 @@ export class CrewBoardsService {
 
   // ============ Boards ============
 
-  async createBoard(crewId: string, userId: string, data: { name: string; type?: string; writePermission?: string }) {
+  async createBoard(
+    crewId: string,
+    userId: string,
+    data: { name: string; type?: string; writePermission?: string },
+  ) {
     const role = await this.getMemberRole(crewId, userId);
     if (!this.isAdmin(role)) throw new ForbiddenException("관리자만 채널을 생성할 수 있습니다.");
 
@@ -34,7 +45,12 @@ export class CrewBoardsService {
     return this.repo.findBoards(crewId);
   }
 
-  async updateBoard(crewId: string, boardId: string, userId: string, data: { name?: string; writePermission?: string; sortOrder?: number }) {
+  async updateBoard(
+    crewId: string,
+    boardId: string,
+    userId: string,
+    data: { name?: string; writePermission?: string; sortOrder?: number },
+  ) {
     const role = await this.getMemberRole(crewId, userId);
     if (!this.isAdmin(role)) throw new ForbiddenException("관리자만 채널을 수정할 수 있습니다.");
 
@@ -50,7 +66,8 @@ export class CrewBoardsService {
 
     const board = await this.repo.findBoardById(boardId);
     if (!board || board.crewId !== crewId) throw new NotFoundException("채널을 찾을 수 없습니다.");
-    if (board.type === "ANNOUNCEMENT") throw new BadRequestException("기본 공지 채널은 삭제할 수 없습니다.");
+    if (board.type === "ANNOUNCEMENT")
+      throw new BadRequestException("기본 공지 채널은 삭제할 수 없습니다.");
 
     return this.repo.deleteBoard(boardId);
   }
@@ -66,7 +83,12 @@ export class CrewBoardsService {
 
   // ============ Posts ============
 
-  async createPost(crewId: string, boardId: string, userId: string, data: { title: string; content: string; images?: string[] }) {
+  async createPost(
+    crewId: string,
+    boardId: string,
+    userId: string,
+    data: { title: string; content: string; images?: string[] },
+  ) {
     const board = await this.repo.findBoardById(boardId);
     if (!board || board.crewId !== crewId) throw new NotFoundException("채널을 찾을 수 없습니다.");
 
@@ -106,7 +128,13 @@ export class CrewBoardsService {
     return { ...post, liked };
   }
 
-  async updatePost(crewId: string, boardId: string, postId: string, userId: string, data: { title?: string; content?: string }) {
+  async updatePost(
+    crewId: string,
+    boardId: string,
+    postId: string,
+    userId: string,
+    data: { title?: string; content?: string },
+  ) {
     const post = await this.repo.findPostById(postId);
     if (!post || post.boardId !== boardId) throw new NotFoundException("글을 찾을 수 없습니다.");
 
@@ -142,13 +170,20 @@ export class CrewBoardsService {
 
   // ============ Comments ============
 
-  async createComment(crewId: string, postId: string, userId: string, content: string, parentId?: string) {
+  async createComment(
+    crewId: string,
+    postId: string,
+    userId: string,
+    content: string,
+    parentId?: string,
+  ) {
     const role = await this.getMemberRole(crewId, userId);
     if (!role) throw new ForbiddenException("크루 멤버만 댓글을 작성할 수 있습니다.");
 
     if (parentId) {
       const parent = await this.repo.findCommentById(parentId);
-      if (!parent || parent.postId !== postId) throw new BadRequestException("잘못된 부모 댓글입니다.");
+      if (!parent || parent.postId !== postId)
+        throw new BadRequestException("잘못된 부모 댓글입니다.");
       if (parent.parentId) throw new BadRequestException("대댓글에는 답글을 달 수 없습니다.");
     }
 

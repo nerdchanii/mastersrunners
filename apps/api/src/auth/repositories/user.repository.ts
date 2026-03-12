@@ -1,5 +1,6 @@
-import { Injectable } from "@nestjs/common";
 import type { TransactionClient } from "@masters/database";
+import { Injectable } from "@nestjs/common";
+
 import { DatabaseService } from "../../database/database.service.js";
 
 interface CreateUserData {
@@ -64,7 +65,17 @@ export class UserRepository {
     });
   }
 
-  async update(id: string, data: { name?: string; bio?: string; profileImage?: string; backgroundImage?: string; isPrivate?: boolean; workoutSharingDefault?: string }) {
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      bio?: string;
+      profileImage?: string;
+      backgroundImage?: string;
+      isPrivate?: boolean;
+      workoutSharingDefault?: string;
+    },
+  ) {
     return this.db.prisma.user.update({
       where: { id },
       data,

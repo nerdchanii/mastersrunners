@@ -1,11 +1,12 @@
-import { Test } from "@nestjs/testing";
 import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
-import { ChallengesService } from "./challenges.service.js";
+import { Test } from "@nestjs/testing";
+
+import type { CreateChallengeDto } from "./dto/create-challenge.dto.js";
+import type { UpdateChallengeDto } from "./dto/update-challenge.dto.js";
 import { ChallengeRepository } from "./repositories/challenge.repository.js";
 import { ChallengeParticipantRepository } from "./repositories/challenge-participant.repository.js";
 import { ChallengeTeamRepository } from "./repositories/challenge-team.repository.js";
-import type { CreateChallengeDto } from "./dto/create-challenge.dto.js";
-import type { UpdateChallengeDto } from "./dto/update-challenge.dto.js";
+import { ChallengesService } from "./challenges.service.js";
 
 const mockChallengeRepository = {
   create: jest.fn(),
@@ -64,7 +65,11 @@ describe("ChallengesService", () => {
       };
       const mockChallenge = { id: "challenge-new", ...dto, creatorId: userId };
       mockChallengeRepository.create.mockResolvedValue(mockChallenge);
-      mockChallengeParticipantRepository.join.mockResolvedValue({ id: "p1", challengeId: "challenge-new", userId });
+      mockChallengeParticipantRepository.join.mockResolvedValue({
+        id: "p1",
+        challengeId: "challenge-new",
+        userId,
+      });
 
       const result = await service.create(userId, dto);
 
@@ -99,7 +104,11 @@ describe("ChallengesService", () => {
       };
       const mockChallenge = { id: "challenge-new", ...dto, creatorId: userId };
       mockChallengeRepository.create.mockResolvedValue(mockChallenge);
-      mockChallengeParticipantRepository.join.mockResolvedValue({ id: "p1", challengeId: "challenge-new", userId });
+      mockChallengeParticipantRepository.join.mockResolvedValue({
+        id: "p1",
+        challengeId: "challenge-new",
+        userId,
+      });
 
       const result = await service.create(userId, dto);
 
@@ -179,7 +188,11 @@ describe("ChallengesService", () => {
           _count: { participants: 5 },
         },
       ];
-      mockChallengeRepository.findAll.mockResolvedValue({ data: mockChallenges, nextCursor: null, hasMore: false });
+      mockChallengeRepository.findAll.mockResolvedValue({
+        data: mockChallenges,
+        nextCursor: null,
+        hasMore: false,
+      });
 
       const result = await service.findAll(options);
 
@@ -239,7 +252,10 @@ describe("ChallengesService", () => {
     it("should update challenge if user is creator", async () => {
       const challengeId = "challenge-123";
       const userId = "user-123";
-      const dto: UpdateChallengeDto = { title: "Updated Title", description: "Updated Description" };
+      const dto: UpdateChallengeDto = {
+        title: "Updated Title",
+        description: "Updated Description",
+      };
       const mockChallenge = { id: challengeId, creatorId: userId };
       const mockUpdated = { ...mockChallenge, ...dto };
       mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
@@ -255,14 +271,18 @@ describe("ChallengesService", () => {
     it("should throw NotFoundException if challenge not found", async () => {
       mockChallengeRepository.findById.mockResolvedValue(null);
 
-      await expect(service.update("non-existent", "user-123", {})).rejects.toThrow(NotFoundException);
+      await expect(service.update("non-existent", "user-123", {})).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if user is not creator", async () => {
       const mockChallenge = { id: "challenge-123", creatorId: "user-999" };
       mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
 
-      await expect(service.update("challenge-123", "user-123", {})).rejects.toThrow(ForbiddenException);
+      await expect(service.update("challenge-123", "user-123", {})).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -313,7 +333,10 @@ describe("ChallengesService", () => {
       const result = await service.join(challengeId, userId);
 
       expect(mockChallengeRepository.findById).toHaveBeenCalledWith(challengeId);
-      expect(mockChallengeParticipantRepository.findParticipant).toHaveBeenCalledWith(challengeId, userId);
+      expect(mockChallengeParticipantRepository.findParticipant).toHaveBeenCalledWith(
+        challengeId,
+        userId,
+      );
       expect(mockChallengeParticipantRepository.join).toHaveBeenCalledWith(challengeId, userId);
       expect(result).toEqual(mockParticipant);
     });
@@ -325,7 +348,11 @@ describe("ChallengesService", () => {
     });
 
     it("should throw BadRequestException if already joined", async () => {
-      const mockChallenge = { id: "challenge-123", startDate: new Date("2026-03-01"), endDate: new Date("2026-03-31") };
+      const mockChallenge = {
+        id: "challenge-123",
+        startDate: new Date("2026-03-01"),
+        endDate: new Date("2026-03-31"),
+      };
       const mockParticipant = { id: "p1", challengeId: "challenge-123", userId: "user-123" };
       mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
       mockChallengeParticipantRepository.findParticipant.mockResolvedValue(mockParticipant);
@@ -357,7 +384,10 @@ describe("ChallengesService", () => {
 
       const result = await service.leave(challengeId, userId);
 
-      expect(mockChallengeParticipantRepository.findParticipant).toHaveBeenCalledWith(challengeId, userId);
+      expect(mockChallengeParticipantRepository.findParticipant).toHaveBeenCalledWith(
+        challengeId,
+        userId,
+      );
       expect(mockChallengeParticipantRepository.leave).toHaveBeenCalledWith(challengeId, userId);
       expect(result).toEqual(mockDeleted);
     });
@@ -384,7 +414,10 @@ describe("ChallengesService", () => {
       const result = await service.updateProgress(challengeId, userId, currentValue);
 
       expect(mockChallengeRepository.findById).toHaveBeenCalledWith(challengeId);
-      expect(mockChallengeParticipantRepository.findParticipant).toHaveBeenCalledWith(challengeId, userId);
+      expect(mockChallengeParticipantRepository.findParticipant).toHaveBeenCalledWith(
+        challengeId,
+        userId,
+      );
       expect(mockChallengeParticipantRepository.updateProgress).toHaveBeenCalledWith(
         challengeId,
         userId,
@@ -419,7 +452,9 @@ describe("ChallengesService", () => {
     it("should throw NotFoundException if challenge not found", async () => {
       mockChallengeRepository.findById.mockResolvedValue(null);
 
-      await expect(service.updateProgress("non-existent", "user-123", 1000)).rejects.toThrow(NotFoundException);
+      await expect(service.updateProgress("non-existent", "user-123", 1000)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw NotFoundException if not participating", async () => {
@@ -427,7 +462,9 @@ describe("ChallengesService", () => {
       mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
       mockChallengeParticipantRepository.findParticipant.mockResolvedValue(null);
 
-      await expect(service.updateProgress("challenge-123", "user-123", 1000)).rejects.toThrow(NotFoundException);
+      await expect(service.updateProgress("challenge-123", "user-123", 1000)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -436,8 +473,18 @@ describe("ChallengesService", () => {
       const challengeId = "challenge-123";
       const mockChallenge = { id: challengeId };
       const mockLeaderboard = [
-        { id: "p1", userId: "user-1", currentValue: 100000, user: { id: "user-1", name: "User 1", profileImage: null } },
-        { id: "p2", userId: "user-2", currentValue: 80000, user: { id: "user-2", name: "User 2", profileImage: null } },
+        {
+          id: "p1",
+          userId: "user-1",
+          currentValue: 100000,
+          user: { id: "user-1", name: "User 1", profileImage: null },
+        },
+        {
+          id: "p2",
+          userId: "user-2",
+          currentValue: 80000,
+          user: { id: "user-2", name: "User 2", profileImage: null },
+        },
       ];
       mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
       mockChallengeParticipantRepository.findLeaderboard.mockResolvedValue(mockLeaderboard);
@@ -445,7 +492,10 @@ describe("ChallengesService", () => {
       const result = await service.getLeaderboard(challengeId);
 
       expect(mockChallengeRepository.findById).toHaveBeenCalledWith(challengeId);
-      expect(mockChallengeParticipantRepository.findLeaderboard).toHaveBeenCalledWith(challengeId, undefined);
+      expect(mockChallengeParticipantRepository.findLeaderboard).toHaveBeenCalledWith(
+        challengeId,
+        undefined,
+      );
       expect(result).toEqual([
         { rank: 1, progress: 100000, user: { id: "user-1", name: "User 1", profileImage: null } },
         { rank: 2, progress: 80000, user: { id: "user-2", name: "User 2", profileImage: null } },
@@ -497,7 +547,9 @@ describe("ChallengesService", () => {
     it("should throw NotFoundException if challenge not found", async () => {
       mockChallengeRepository.findById.mockResolvedValue(null);
 
-      await expect(service.createTeam("non-existent", "user-123", "Team")).rejects.toThrow(NotFoundException);
+      await expect(service.createTeam("non-existent", "user-123", "Team")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if user is not creator or participant", async () => {
@@ -505,7 +557,9 @@ describe("ChallengesService", () => {
       mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
       mockChallengeParticipantRepository.findParticipant.mockResolvedValue(null);
 
-      await expect(service.createTeam("challenge-123", "user-stranger", "Team")).rejects.toThrow(ForbiddenException);
+      await expect(service.createTeam("challenge-123", "user-stranger", "Team")).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -524,15 +578,24 @@ describe("ChallengesService", () => {
       const result = await service.joinTeam(challengeId, userId, teamId);
 
       expect(mockChallengeRepository.findById).toHaveBeenCalledWith(challengeId);
-      expect(mockChallengeParticipantRepository.findParticipant).toHaveBeenCalledWith(challengeId, userId);
-      expect(mockChallengeParticipantRepository.updateTeamId).toHaveBeenCalledWith(challengeId, userId, teamId);
+      expect(mockChallengeParticipantRepository.findParticipant).toHaveBeenCalledWith(
+        challengeId,
+        userId,
+      );
+      expect(mockChallengeParticipantRepository.updateTeamId).toHaveBeenCalledWith(
+        challengeId,
+        userId,
+        teamId,
+      );
       expect(result).toEqual(mockUpdated);
     });
 
     it("should throw NotFoundException if challenge not found", async () => {
       mockChallengeRepository.findById.mockResolvedValue(null);
 
-      await expect(service.joinTeam("non-existent", "user-123", "team-1")).rejects.toThrow(NotFoundException);
+      await expect(service.joinTeam("non-existent", "user-123", "team-1")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw NotFoundException if user is not participating", async () => {
@@ -540,7 +603,9 @@ describe("ChallengesService", () => {
       mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
       mockChallengeParticipantRepository.findParticipant.mockResolvedValue(null);
 
-      await expect(service.joinTeam("challenge-123", "user-123", "team-1")).rejects.toThrow(NotFoundException);
+      await expect(service.joinTeam("challenge-123", "user-123", "team-1")).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -558,15 +623,24 @@ describe("ChallengesService", () => {
       const result = await service.leaveTeam(challengeId, userId);
 
       expect(mockChallengeRepository.findById).toHaveBeenCalledWith(challengeId);
-      expect(mockChallengeParticipantRepository.findParticipant).toHaveBeenCalledWith(challengeId, userId);
-      expect(mockChallengeParticipantRepository.updateTeamId).toHaveBeenCalledWith(challengeId, userId, null);
+      expect(mockChallengeParticipantRepository.findParticipant).toHaveBeenCalledWith(
+        challengeId,
+        userId,
+      );
+      expect(mockChallengeParticipantRepository.updateTeamId).toHaveBeenCalledWith(
+        challengeId,
+        userId,
+        null,
+      );
       expect(result).toEqual(mockUpdated);
     });
 
     it("should throw NotFoundException if challenge not found", async () => {
       mockChallengeRepository.findById.mockResolvedValue(null);
 
-      await expect(service.leaveTeam("non-existent", "user-123")).rejects.toThrow(NotFoundException);
+      await expect(service.leaveTeam("non-existent", "user-123")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw NotFoundException if not participating", async () => {
@@ -574,16 +648,25 @@ describe("ChallengesService", () => {
       mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
       mockChallengeParticipantRepository.findParticipant.mockResolvedValue(null);
 
-      await expect(service.leaveTeam("challenge-123", "user-123")).rejects.toThrow(NotFoundException);
+      await expect(service.leaveTeam("challenge-123", "user-123")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw BadRequestException if not in a team", async () => {
       const mockChallenge = { id: "challenge-123" };
-      const mockParticipant = { id: "p1", challengeId: "challenge-123", userId: "user-123", challengeTeamId: null };
+      const mockParticipant = {
+        id: "p1",
+        challengeId: "challenge-123",
+        userId: "user-123",
+        challengeTeamId: null,
+      };
       mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
       mockChallengeParticipantRepository.findParticipant.mockResolvedValue(mockParticipant);
 
-      await expect(service.leaveTeam("challenge-123", "user-123")).rejects.toThrow(BadRequestException);
+      await expect(service.leaveTeam("challenge-123", "user-123")).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -635,7 +718,9 @@ describe("ChallengesService", () => {
     it("should throw NotFoundException if team not found", async () => {
       mockChallengeTeamRepository.findById.mockResolvedValue(null);
 
-      await expect(service.removeTeam("non-existent", "user-123")).rejects.toThrow(NotFoundException);
+      await expect(service.removeTeam("non-existent", "user-123")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if user is not challenge creator", async () => {
@@ -644,7 +729,9 @@ describe("ChallengesService", () => {
       mockChallengeTeamRepository.findById.mockResolvedValue(mockTeam);
       mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
 
-      await expect(service.removeTeam("team-1", "user-stranger")).rejects.toThrow(ForbiddenException);
+      await expect(service.removeTeam("team-1", "user-stranger")).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 

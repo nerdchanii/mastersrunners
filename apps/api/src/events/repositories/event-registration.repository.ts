@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+
 import { DatabaseService } from "../../database/database.service.js";
 
 @Injectable()
@@ -30,12 +31,16 @@ export class EventRegistrationRepository {
     });
   }
 
-  async updateResult(eventId: string, userId: string, data: {
-    resultTime?: number;
-    resultRank?: number;
-    bibNumber?: string;
-    status?: string;
-  }) {
+  async updateResult(
+    eventId: string,
+    userId: string,
+    data: {
+      resultTime?: number;
+      resultRank?: number;
+      bibNumber?: string;
+      status?: string;
+    },
+  ) {
     return this.db.prisma.eventParticipant.update({
       where: { eventId_userId: { eventId, userId } },
       data,
@@ -56,7 +61,10 @@ export class EventRegistrationRepository {
     });
   }
 
-  async findByEventWithResults(eventId: string, sortBy: "resultTime" | "resultRank" = "resultTime") {
+  async findByEventWithResults(
+    eventId: string,
+    sortBy: "resultTime" | "resultRank" = "resultTime",
+  ) {
     return this.db.prisma.eventParticipant.findMany({
       where: {
         eventId,
@@ -65,9 +73,7 @@ export class EventRegistrationRepository {
       include: {
         user: { select: { id: true, name: true, profileImage: true } },
       },
-      orderBy: sortBy === "resultRank"
-        ? { resultRank: "asc" }
-        : { resultTime: "asc" },
+      orderBy: sortBy === "resultRank" ? { resultRank: "asc" } : { resultTime: "asc" },
     });
   }
 }

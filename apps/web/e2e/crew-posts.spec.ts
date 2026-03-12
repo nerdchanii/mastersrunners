@@ -1,5 +1,6 @@
-import { test, expect } from "@playwright/test";
-import { setupAuth, mockUser } from "./helpers/mock-auth";
+import { expect, test } from "@playwright/test";
+
+import { mockUser, setupAuth } from "./helpers/mock-auth";
 
 const API_BASE = "http://localhost:4000/api/v1";
 

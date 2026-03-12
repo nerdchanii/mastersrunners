@@ -1,15 +1,17 @@
+import { Heart } from "lucide-react";
 import { useMemo } from "react";
 import {
-  LineChart,
   Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
 } from "recharts";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart } from "lucide-react";
+
 import type { GpsPoint } from "./RouteMap";
 
 interface HeartRateChartProps {

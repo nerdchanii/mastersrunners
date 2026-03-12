@@ -1,6 +1,7 @@
 import type { INestApplication } from "@nestjs/common";
-import { createTestApp, closeTestApp, cleanDatabase } from "./setup";
-import { createTestUser, authRequest } from "./helpers/auth.helper";
+
+import { authRequest, createTestUser } from "./helpers/auth.helper";
+import { cleanDatabase, closeTestApp, createTestApp } from "./setup";
 
 describe("Follow (E2E)", () => {
   let app: INestApplication;
@@ -20,8 +21,16 @@ describe("Follow (E2E)", () => {
 
     beforeAll(async () => {
       await cleanDatabase();
-      userA = await createTestUser(app, { email: "follow-pub-a@test.local", name: "Public A", isPrivate: false });
-      userB = await createTestUser(app, { email: "follow-pub-b@test.local", name: "Public B", isPrivate: false });
+      userA = await createTestUser(app, {
+        email: "follow-pub-a@test.local",
+        name: "Public A",
+        isPrivate: false,
+      });
+      userB = await createTestUser(app, {
+        email: "follow-pub-b@test.local",
+        name: "Public B",
+        isPrivate: false,
+      });
     });
 
     it("should follow a public user (auto-accepted)", async () => {
@@ -51,9 +60,7 @@ describe("Follow (E2E)", () => {
     });
 
     it("should reject duplicate follow", async () => {
-      await authRequest(app, userA.accessToken)
-        .post(`/api/v1/follow/${userB.userId}`)
-        .expect(409);
+      await authRequest(app, userA.accessToken).post(`/api/v1/follow/${userB.userId}`).expect(409);
     });
 
     it("should unfollow successfully", async () => {
@@ -70,9 +77,7 @@ describe("Follow (E2E)", () => {
     });
 
     it("should reject self-follow", async () => {
-      await authRequest(app, userA.accessToken)
-        .post(`/api/v1/follow/${userA.userId}`)
-        .expect(409);
+      await authRequest(app, userA.accessToken).post(`/api/v1/follow/${userA.userId}`).expect(409);
     });
   });
 
@@ -84,7 +89,11 @@ describe("Follow (E2E)", () => {
     beforeAll(async () => {
       await cleanDatabase();
       userA = await createTestUser(app, { email: "follow-priv-a@test.local", name: "Requester A" });
-      privateUser = await createTestUser(app, { email: "follow-priv-target@test.local", name: "Private User", isPrivate: true });
+      privateUser = await createTestUser(app, {
+        email: "follow-priv-target@test.local",
+        name: "Private User",
+        isPrivate: true,
+      });
       userC = await createTestUser(app, { email: "follow-priv-c@test.local", name: "Requester C" });
     });
 

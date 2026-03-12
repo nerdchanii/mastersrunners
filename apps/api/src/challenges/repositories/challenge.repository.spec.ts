@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { ChallengeRepository } from "./challenge.repository.js";
+
 import { DatabaseService } from "../../database/database.service.js";
+
+import { ChallengeRepository } from "./challenge.repository.js";
 
 const mockPrisma = {
   challenge: {
@@ -41,7 +43,12 @@ describe("ChallengeRepository", () => {
         isPublic: true,
         imageUrl: "https://example.com/challenge.jpg",
       };
-      const mockCreated = { id: "challenge-new", ...createData, createdAt: new Date(), updatedAt: new Date() };
+      const mockCreated = {
+        id: "challenge-new",
+        ...createData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
       mockPrisma.challenge.create.mockResolvedValue(mockCreated);
 
       const result = await repository.create(createData);
@@ -61,7 +68,12 @@ describe("ChallengeRepository", () => {
         creatorId: "user-123",
         isPublic: false,
       };
-      const mockCreated = { id: "challenge-new", ...createData, createdAt: new Date(), updatedAt: new Date() };
+      const mockCreated = {
+        id: "challenge-new",
+        ...createData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
       mockPrisma.challenge.create.mockResolvedValue(mockCreated);
 
       const result = await repository.create(createData);
@@ -78,9 +90,7 @@ describe("ChallengeRepository", () => {
         id: challengeId,
         title: "100km Challenge",
         deletedAt: null,
-        participants: [
-          { id: "p1", userId: "user-1", user: { id: "user-1", name: "runner1" } },
-        ],
+        participants: [{ id: "p1", userId: "user-1", user: { id: "user-1", name: "runner1" } }],
         teams: [{ id: "team-1", name: "Team A" }],
       };
       mockPrisma.challenge.findFirst.mockResolvedValue(mockChallenge);
@@ -253,7 +263,11 @@ describe("ChallengeRepository", () => {
   describe("remove", () => {
     it("should soft delete challenge by setting deletedAt", async () => {
       const challengeId = "challenge-123";
-      const mockSoftDeleted = { id: challengeId, title: "Deleted Challenge", deletedAt: new Date() };
+      const mockSoftDeleted = {
+        id: challengeId,
+        title: "Deleted Challenge",
+        deletedAt: new Date(),
+      };
       mockPrisma.challenge.update.mockResolvedValue(mockSoftDeleted);
 
       const result = await repository.remove(challengeId);

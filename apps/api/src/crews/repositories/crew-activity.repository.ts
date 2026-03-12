@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service.js';
+import { Injectable } from "@nestjs/common";
+
+import { DatabaseService } from "../../database/database.service.js";
 
 interface CreateActivityData {
   crewId: string;
@@ -34,7 +35,10 @@ export class CrewActivityRepository {
     });
   }
 
-  async findByCrewId(crewId: string, opts?: { cursor?: string; limit?: number; type?: string; status?: string }) {
+  async findByCrewId(
+    crewId: string,
+    opts?: { cursor?: string; limit?: number; type?: string; status?: string },
+  ) {
     const limit = opts?.limit ?? 20;
     return this.databaseService.prisma.crewActivity.findMany({
       where: {
@@ -42,7 +46,7 @@ export class CrewActivityRepository {
         ...(opts?.type && { activityType: opts.type }),
         ...(opts?.status && { status: opts.status }),
       },
-      orderBy: { activityDate: 'desc' },
+      orderBy: { activityDate: "desc" },
       take: limit + 1,
       ...(opts?.cursor && { skip: 1, cursor: { id: opts.cursor } }),
       include: {
@@ -59,10 +63,16 @@ export class CrewActivityRepository {
       include: {
         attendances: {
           select: {
-            id: true, userId: true, status: true, method: true, rsvpAt: true, checkedAt: true, checkedBy: true,
+            id: true,
+            userId: true,
+            status: true,
+            method: true,
+            rsvpAt: true,
+            checkedAt: true,
+            checkedBy: true,
             user: { select: { id: true, name: true, profileImage: true } },
           },
-          orderBy: { rsvpAt: 'asc' },
+          orderBy: { rsvpAt: "asc" },
         },
       },
     });
@@ -94,39 +104,39 @@ export class CrewActivityRepository {
 
   async rsvp(activityId: string, userId: string) {
     return this.databaseService.prisma.crewAttendance.create({
-      data: { activityId, userId, status: 'RSVP' },
+      data: { activityId, userId, status: "RSVP" },
     });
   }
 
   async cancelRsvp(activityId: string, userId: string) {
     return this.databaseService.prisma.crewAttendance.update({
       where: { activityId_userId: { activityId, userId } },
-      data: { status: 'CANCELLED' },
+      data: { status: "CANCELLED" },
     });
   }
 
-  async checkIn(activityId: string, userId: string, method: string = 'MANUAL') {
+  async checkIn(activityId: string, userId: string, method: string = "MANUAL") {
     return this.databaseService.prisma.crewAttendance.update({
       where: { activityId_userId: { activityId, userId } },
-      data: { status: 'CHECKED_IN', method, checkedAt: new Date() },
+      data: { status: "CHECKED_IN", method, checkedAt: new Date() },
     });
   }
 
   async adminCheckIn(activityId: string, userId: string, checkedBy: string) {
     return this.databaseService.prisma.crewAttendance.update({
       where: { activityId_userId: { activityId, userId } },
-      data: { status: 'CHECKED_IN', method: 'ADMIN_MANUAL', checkedAt: new Date(), checkedBy },
+      data: { status: "CHECKED_IN", method: "ADMIN_MANUAL", checkedAt: new Date(), checkedBy },
     });
   }
 
   async completeActivity(activityId: string) {
     const activity = await this.databaseService.prisma.crewActivity.update({
       where: { id: activityId },
-      data: { status: 'COMPLETED', completedAt: new Date() },
+      data: { status: "COMPLETED", completedAt: new Date() },
     });
     await this.databaseService.prisma.crewAttendance.updateMany({
-      where: { activityId, status: 'RSVP' },
-      data: { status: 'NO_SHOW' },
+      where: { activityId, status: "RSVP" },
+      data: { status: "NO_SHOW" },
     });
     return activity;
   }
@@ -134,7 +144,7 @@ export class CrewActivityRepository {
   async cancelActivity(activityId: string) {
     return this.databaseService.prisma.crewActivity.update({
       where: { id: activityId },
-      data: { status: 'CANCELLED' },
+      data: { status: "CANCELLED" },
     });
   }
 
@@ -151,7 +161,7 @@ export class CrewActivityRepository {
         activityId,
         ...(statusFilter && { status: statusFilter }),
       },
-      orderBy: { rsvpAt: 'asc' },
+      orderBy: { rsvpAt: "asc" },
       include: { user: { select: { id: true, name: true, profileImage: true } } },
     });
   }
@@ -171,15 +181,16 @@ export class CrewActivityRepository {
     const popUp = { total: 0, rsvp: 0, checkedIn: 0, noShow: 0, rate: 0 };
 
     for (const a of attendances) {
-      if (a.activity.status !== 'COMPLETED' && a.activity.status !== 'CANCELLED') continue;
-      const bucket = a.activity.activityType === 'OFFICIAL' ? official : popUp;
+      if (a.activity.status !== "COMPLETED" && a.activity.status !== "CANCELLED") continue;
+      const bucket = a.activity.activityType === "OFFICIAL" ? official : popUp;
       bucket.total++;
-      if (a.status === 'CHECKED_IN') bucket.checkedIn++;
-      else if (a.status === 'NO_SHOW') bucket.noShow++;
-      else if (a.status === 'RSVP') bucket.rsvp++;
+      if (a.status === "CHECKED_IN") bucket.checkedIn++;
+      else if (a.status === "NO_SHOW") bucket.noShow++;
+      else if (a.status === "RSVP") bucket.rsvp++;
     }
 
-    official.rate = official.total > 0 ? Math.round((official.checkedIn / official.total) * 100) : 0;
+    official.rate =
+      official.total > 0 ? Math.round((official.checkedIn / official.total) * 100) : 0;
     popUp.rate = popUp.total > 0 ? Math.round((popUp.checkedIn / popUp.total) * 100) : 0;
 
     // Monthly stats (last 6 months)
@@ -187,20 +198,23 @@ export class CrewActivityRepository {
     const now = new Date();
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0);
 
-      let offTotal = 0, offChecked = 0, popTotal = 0, popChecked = 0;
+      let offTotal = 0,
+        offChecked = 0,
+        popTotal = 0,
+        popChecked = 0;
       for (const a of attendances) {
         const actDate = new Date(a.activity.activityDate);
         if (actDate < d || actDate > monthEnd) continue;
-        if (a.activity.status !== 'COMPLETED') continue;
-        if (a.activity.activityType === 'OFFICIAL') {
+        if (a.activity.status !== "COMPLETED") continue;
+        if (a.activity.activityType === "OFFICIAL") {
           offTotal++;
-          if (a.status === 'CHECKED_IN') offChecked++;
+          if (a.status === "CHECKED_IN") offChecked++;
         } else {
           popTotal++;
-          if (a.status === 'CHECKED_IN') popChecked++;
+          if (a.status === "CHECKED_IN") popChecked++;
         }
       }
       monthly.push({
@@ -214,11 +228,11 @@ export class CrewActivityRepository {
   }
 
   async getCrewAttendanceStats(crewId: string, opts?: { month?: string; type?: string }) {
-    const whereActivity: Record<string, unknown> = { crewId, status: 'COMPLETED' };
+    const whereActivity: Record<string, unknown> = { crewId, status: "COMPLETED" };
     if (opts?.type) whereActivity.activityType = opts.type;
 
     if (opts?.month) {
-      const [year, mon] = opts.month.split('-').map(Number);
+      const [year, mon] = opts.month.split("-").map(Number);
       whereActivity.activityDate = {
         gte: new Date(year, mon - 1, 1),
         lt: new Date(year, mon, 1),
@@ -227,7 +241,7 @@ export class CrewActivityRepository {
 
     const activities = await this.databaseService.prisma.crewActivity.findMany({
       where: whereActivity,
-      orderBy: { activityDate: 'desc' },
+      orderBy: { activityDate: "desc" },
       include: {
         attendances: {
           select: { userId: true, status: true },
@@ -240,9 +254,9 @@ export class CrewActivityRepository {
     let totalCheckedIn = 0;
 
     const activityStats = activities.map((act) => {
-      const checkedIn = act.attendances.filter((a) => a.status === 'CHECKED_IN').length;
-      const noShow = act.attendances.filter((a) => a.status === 'NO_SHOW').length;
-      const total = act.attendances.filter((a) => a.status !== 'CANCELLED').length;
+      const checkedIn = act.attendances.filter((a) => a.status === "CHECKED_IN").length;
+      const noShow = act.attendances.filter((a) => a.status === "NO_SHOW").length;
+      const total = act.attendances.filter((a) => a.status !== "CANCELLED").length;
       totalAttendances += total;
       totalCheckedIn += checkedIn;
       return {
@@ -261,29 +275,31 @@ export class CrewActivityRepository {
     const memberMap = new Map<string, { total: number; checkedIn: number; noShow: number }>();
     for (const act of activities) {
       for (const att of act.attendances) {
-        if (att.status === 'CANCELLED') continue;
-        if (!memberMap.has(att.userId)) memberMap.set(att.userId, { total: 0, checkedIn: 0, noShow: 0 });
+        if (att.status === "CANCELLED") continue;
+        if (!memberMap.has(att.userId))
+          memberMap.set(att.userId, { total: 0, checkedIn: 0, noShow: 0 });
         const m = memberMap.get(att.userId)!;
         m.total++;
-        if (att.status === 'CHECKED_IN') m.checkedIn++;
-        else if (att.status === 'NO_SHOW') m.noShow++;
+        if (att.status === "CHECKED_IN") m.checkedIn++;
+        else if (att.status === "NO_SHOW") m.noShow++;
       }
     }
 
     // Fetch user info for member stats
     const userIds = [...memberMap.keys()];
-    const users = userIds.length > 0
-      ? await this.databaseService.prisma.user.findMany({
-          where: { id: { in: userIds } },
-          select: { id: true, name: true, profileImage: true },
-        })
-      : [];
+    const users =
+      userIds.length > 0
+        ? await this.databaseService.prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, name: true, profileImage: true },
+          })
+        : [];
 
     const userMap = new Map(users.map((u) => [u.id, u]));
     const memberStats = [...memberMap.entries()]
       .map(([userId, stats]) => ({
         userId,
-        user: userMap.get(userId) ?? { id: userId, name: '알 수 없음', profileImage: null },
+        user: userMap.get(userId) ?? { id: userId, name: "알 수 없음", profileImage: null },
         total: stats.total,
         checkedIn: stats.checkedIn,
         noShow: stats.noShow,

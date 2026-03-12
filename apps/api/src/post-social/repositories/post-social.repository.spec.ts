@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { PostSocialRepository } from "./post-social.repository";
+
 import { DatabaseService } from "../../database/database.service";
+
+import { PostSocialRepository } from "./post-social.repository";
 
 const mockPrisma = {
   postLike: {
@@ -144,7 +146,7 @@ describe("PostSocialRepository", () => {
       await repository.getLikers(postId, 5);
 
       expect(mockPrisma.postLike.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ take: 5 })
+        expect.objectContaining({ take: 5 }),
       );
     });
 
@@ -158,7 +160,7 @@ describe("PostSocialRepository", () => {
       expect(mockPrisma.postLike.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { postId, userId: { notIn: excludeUserIds } },
-        })
+        }),
       );
     });
 
@@ -171,7 +173,7 @@ describe("PostSocialRepository", () => {
       expect(mockPrisma.postLike.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { postId },
-        })
+        }),
       );
     });
   });
@@ -357,7 +359,7 @@ describe("PostSocialRepository", () => {
           skip: 1,
           cursor: { id: cursor },
           take: 10,
-        })
+        }),
       );
     });
 
@@ -373,7 +375,7 @@ describe("PostSocialRepository", () => {
           where: expect.objectContaining({
             userId: { notIn: excludeUserIds },
           }),
-        })
+        }),
       );
     });
 
@@ -393,7 +395,7 @@ describe("PostSocialRepository", () => {
               }),
             }),
           }),
-        })
+        }),
       );
     });
 

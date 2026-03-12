@@ -1,5 +1,6 @@
-import { test, expect } from "@playwright/test";
-import { setupAuth, mockUser, mockProfileStats } from "./helpers/mock-auth";
+import { expect, test } from "@playwright/test";
+
+import { mockProfileStats, mockUser, setupAuth } from "./helpers/mock-auth";
 
 const API_BASE = "http://localhost:4000/api/v1";
 
@@ -15,7 +16,12 @@ test.describe("프로필 페이지", () => {
           contentType: "application/json",
           body: JSON.stringify({
             user: mockUser,
-            stats: { totalWorkouts: 156, totalDistance: 1520000, totalDuration: 432000, averagePace: 284 },
+            stats: {
+              totalWorkouts: 156,
+              totalDistance: 1520000,
+              totalDuration: 432000,
+              averagePace: 284,
+            },
             followersCount: mockProfileStats.followerCount,
             followingCount: mockProfileStats.followingCount,
           }),
@@ -33,7 +39,11 @@ test.describe("프로필 페이지", () => {
       route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
     });
     await page.route(`${API_BASE}/crews?my=true`, (route) => {
-      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [] }) });
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: [] }),
+      });
     });
   });
 

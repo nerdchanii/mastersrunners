@@ -1,4 +1,5 @@
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { api } from "@/lib/api-client";
 
 export interface Event {
@@ -34,8 +35,7 @@ type EventTab = "upcoming" | "past" | "my";
 
 export const eventKeys = {
   all: ["events"] as const,
-  list: (params?: Record<string, string>) =>
-    [...eventKeys.all, "list", params] as const,
+  list: (params?: Record<string, string>) => [...eventKeys.all, "list", params] as const,
   detail: (id: string) => [...eventKeys.all, "detail", id] as const,
   my: () => [...eventKeys.all, "my"] as const,
   tab: (tab: EventTab) => [...eventKeys.all, "tab", tab] as const,
@@ -66,8 +66,7 @@ export function useInfiniteEvents(tab: EventTab = "upcoming") {
       return api.fetch<EventListResponse>(path);
     },
     initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) =>
-      lastPage?.hasMore ? lastPage.nextCursor : undefined,
+    getNextPageParam: (lastPage) => (lastPage?.hasMore ? lastPage.nextCursor : undefined),
   });
 }
 
@@ -82,8 +81,7 @@ export function useEvent(id: string) {
 export function useJoinEvent() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (eventId: string) =>
-      api.fetch(`/events/${eventId}/register`, { method: "POST" }),
+    mutationFn: (eventId: string) => api.fetch(`/events/${eventId}/register`, { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: eventKeys.all });
     },
@@ -93,8 +91,7 @@ export function useJoinEvent() {
 export function useLeaveEvent() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (eventId: string) =>
-      api.fetch(`/events/${eventId}/cancel`, { method: "DELETE" }),
+    mutationFn: (eventId: string) => api.fetch(`/events/${eventId}/cancel`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: eventKeys.all });
     },

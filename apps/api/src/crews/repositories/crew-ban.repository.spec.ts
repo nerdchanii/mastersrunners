@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { CrewBanRepository } from "./crew-ban.repository.js";
+
 import { DatabaseService } from "../../database/database.service.js";
+
+import { CrewBanRepository } from "./crew-ban.repository.js";
 
 const mockPrisma = {
   crewBan: {
@@ -19,10 +21,7 @@ describe("CrewBanRepository", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
-      providers: [
-        CrewBanRepository,
-        { provide: DatabaseService, useValue: mockDatabaseService },
-      ],
+      providers: [CrewBanRepository, { provide: DatabaseService, useValue: mockDatabaseService }],
     }).compile();
     repo = module.get(CrewBanRepository);
   });

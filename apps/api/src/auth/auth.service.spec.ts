@@ -1,11 +1,12 @@
-import { Test } from "@nestjs/testing";
 import { UnauthorizedException } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
-import { AuthService } from "./auth.service";
-import type { OAuthProfile } from "./auth.service";
-import { UserRepository } from "./repositories/user.repository";
+import { JwtService } from "@nestjs/jwt";
+import { Test } from "@nestjs/testing";
+
 import { AccountRepository } from "./repositories/account.repository";
+import { UserRepository } from "./repositories/user.repository";
+import type { OAuthProfile } from "./auth.service";
+import { AuthService } from "./auth.service";
 
 const mockUserRepo = {
   findById: jest.fn(),
@@ -57,7 +58,11 @@ describe("AuthService", () => {
 
       expect(mockJwtService.sign).toHaveBeenCalledTimes(2);
       expect(mockJwtService.sign).toHaveBeenNthCalledWith(1, { sub: "u1", email: "t@t.com" });
-      expect(mockJwtService.sign).toHaveBeenNthCalledWith(2, { sub: "u1", email: "t@t.com" }, { expiresIn: 604800 });
+      expect(mockJwtService.sign).toHaveBeenNthCalledWith(
+        2,
+        { sub: "u1", email: "t@t.com" },
+        { expiresIn: 604800 },
+      );
       expect(result).toEqual({ accessToken: "access-token", refreshToken: "refresh-token" });
     });
   });
@@ -82,7 +87,11 @@ describe("AuthService", () => {
 
       const result = await service.upsertOAuthUser(baseProfile);
 
-      expect(mockAccountRepo.updateTokens).toHaveBeenCalledWith("a1", "oauth-access", "oauth-refresh");
+      expect(mockAccountRepo.updateTokens).toHaveBeenCalledWith(
+        "a1",
+        "oauth-access",
+        "oauth-refresh",
+      );
       expect(result).toEqual({ ...existingUser, deletedAt: null });
       expect(mockUserRepo.findByEmail).not.toHaveBeenCalled();
       expect(mockUserRepo.createWithAccount).not.toHaveBeenCalled();
@@ -179,7 +188,14 @@ describe("AuthService", () => {
 
   describe("getUser", () => {
     it("should return user profile", async () => {
-      const mockUser = { id: "u1", email: "t@t.com", name: "Test", profileImage: null, bio: "Runner", createdAt: new Date() };
+      const mockUser = {
+        id: "u1",
+        email: "t@t.com",
+        name: "Test",
+        profileImage: null,
+        bio: "Runner",
+        createdAt: new Date(),
+      };
       mockUserRepo.findByIdWithProfile.mockResolvedValue(mockUser);
 
       const result = await service.getUser("u1");

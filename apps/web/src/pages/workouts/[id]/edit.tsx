@@ -1,16 +1,17 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { useWorkout, useUpdateWorkout } from "@/hooks/useWorkouts";
+import { Activity } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
+
+import { LoadingPage } from "@/components/common/LoadingPage";
+import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { LoadingPage } from "@/components/common/LoadingPage";
-import { PageHeader } from "@/components/common/PageHeader";
-import { Activity } from "lucide-react";
+import { useUpdateWorkout, useWorkout } from "@/hooks/useWorkouts";
 import { formatPace } from "@/lib/format";
-import { toast } from "sonner";
 
 export default function EditWorkoutPage() {
   const { id } = useParams<{ id: string }>();
@@ -66,7 +67,10 @@ export default function EditWorkoutPage() {
     e.preventDefault();
     setError(null);
 
-    if (!date) { setError("날짜를 입력해주세요."); return; }
+    if (!date) {
+      setError("날짜를 입력해주세요.");
+      return;
+    }
     const distanceNum = parseFloat(distance);
     if (!distance || isNaN(distanceNum) || distanceNum <= 0) {
       setError("거리는 0보다 큰 숫자여야 합니다.");
@@ -76,7 +80,10 @@ export default function EditWorkoutPage() {
     const minutesNum = parseInt(minutes) || 0;
     const secondsNum = parseInt(seconds) || 0;
     const totalSeconds = hoursNum * 3600 + minutesNum * 60 + secondsNum;
-    if (totalSeconds <= 0) { setError("시간을 입력해주세요."); return; }
+    if (totalSeconds <= 0) {
+      setError("시간을 입력해주세요.");
+      return;
+    }
 
     try {
       await updateWorkout.mutateAsync({
@@ -112,12 +119,22 @@ export default function EditWorkoutPage() {
         <Card>
           <CardContent className="pt-6 space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="date">날짜 <span className="text-destructive">*</span></Label>
-              <Input type="date" id="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              <Label htmlFor="date">
+                날짜 <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                type="date"
+                id="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="distance">거리 (km) <span className="text-destructive">*</span></Label>
+              <Label htmlFor="distance">
+                거리 (km) <span className="text-destructive">*</span>
+              </Label>
               <Input
                 type="number"
                 id="distance"
@@ -130,19 +147,50 @@ export default function EditWorkoutPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>시간 <span className="text-destructive">*</span></Label>
+              <Label>
+                시간 <span className="text-destructive">*</span>
+              </Label>
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="hours" className="text-xs text-muted-foreground">시간</Label>
-                  <Input type="number" id="hours" value={hours} onChange={(e) => setHours(e.target.value)} min="0" placeholder="0" />
+                  <Label htmlFor="hours" className="text-xs text-muted-foreground">
+                    시간
+                  </Label>
+                  <Input
+                    type="number"
+                    id="hours"
+                    value={hours}
+                    onChange={(e) => setHours(e.target.value)}
+                    min="0"
+                    placeholder="0"
+                  />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="minutes" className="text-xs text-muted-foreground">분</Label>
-                  <Input type="number" id="minutes" value={minutes} onChange={(e) => setMinutes(e.target.value)} min="0" max="59" placeholder="30" />
+                  <Label htmlFor="minutes" className="text-xs text-muted-foreground">
+                    분
+                  </Label>
+                  <Input
+                    type="number"
+                    id="minutes"
+                    value={minutes}
+                    onChange={(e) => setMinutes(e.target.value)}
+                    min="0"
+                    max="59"
+                    placeholder="30"
+                  />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="seconds" className="text-xs text-muted-foreground">초</Label>
-                  <Input type="number" id="seconds" value={seconds} onChange={(e) => setSeconds(e.target.value)} min="0" max="59" placeholder="0" />
+                  <Label htmlFor="seconds" className="text-xs text-muted-foreground">
+                    초
+                  </Label>
+                  <Input
+                    type="number"
+                    id="seconds"
+                    value={seconds}
+                    onChange={(e) => setSeconds(e.target.value)}
+                    min="0"
+                    max="59"
+                    placeholder="0"
+                  />
                 </div>
               </div>
             </div>
@@ -187,7 +235,12 @@ export default function EditWorkoutPage() {
         </Card>
 
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate(`/workouts/${id}`)} disabled={updateWorkout.isPending}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate(`/workouts/${id}`)}
+            disabled={updateWorkout.isPending}
+          >
             취소
           </Button>
           <Button type="submit" disabled={updateWorkout.isPending}>

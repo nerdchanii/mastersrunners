@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PassportStrategy } from "@nestjs/passport";
-import { Strategy, Profile } from "passport-kakao";
+import { Profile, Strategy } from "passport-kakao";
 
 @Injectable()
 export class KakaoStrategy extends PassportStrategy(Strategy, "kakao") {
@@ -18,10 +18,7 @@ export class KakaoStrategy extends PassportStrategy(Strategy, "kakao") {
       provider: "kakao" as const,
       providerAccountId: String(profile.id),
       email: profile._json?.kakao_account?.email || null,
-      name:
-        profile.displayName ||
-        profile._json?.properties?.nickname ||
-        "\uC0AC\uC6A9\uC790",
+      name: profile.displayName || profile._json?.properties?.nickname || "\uC0AC\uC6A9\uC790",
       profileImage: profile._json?.properties?.profile_image || null,
       accessToken,
       refreshToken,

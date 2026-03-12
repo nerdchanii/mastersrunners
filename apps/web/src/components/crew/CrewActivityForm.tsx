@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { api } from "@/lib/api-client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { api } from "@/lib/api-client";
 
 interface ActivityFormValues {
   title: string;
@@ -170,7 +171,10 @@ export default function CrewActivityForm({
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           취소
         </Button>
-        <Button type="submit" disabled={isSubmitting || !formData.title.trim() || !formData.activityDate}>
+        <Button
+          type="submit"
+          disabled={isSubmitting || !formData.title.trim() || !formData.activityDate}
+        >
           {isSubmitting ? loadingLabel : submitLabel}
         </Button>
       </div>

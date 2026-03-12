@@ -50,7 +50,7 @@ export function normalizePath(
   points: LatLng[],
   width: number,
   height: number,
-  padding = 4
+  padding = 4,
 ): Array<{ x: number; y: number }> {
   if (points.length < 2) return [];
 

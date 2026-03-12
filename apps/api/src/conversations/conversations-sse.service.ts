@@ -1,5 +1,5 @@
 import { Injectable, MessageEvent } from "@nestjs/common";
-import { Subject, Observable } from "rxjs";
+import { Observable, Subject } from "rxjs";
 
 @Injectable()
 export class ConversationsSseService {

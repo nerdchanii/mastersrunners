@@ -1,7 +1,15 @@
-import { Injectable, ConflictException, ForbiddenException, NotFoundException, Optional } from "@nestjs/common";
-import { FollowRepository } from "./repositories/follow.repository.js";
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  Optional,
+} from "@nestjs/common";
+
 import { BlockRepository } from "../block/repositories/block.repository.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
+
+import { FollowRepository } from "./repositories/follow.repository.js";
 
 @Injectable()
 export class FollowService {
@@ -35,14 +43,16 @@ export class FollowService {
     if (this.notificationsService) {
       const notifType = isPrivate ? "FOLLOW_REQUEST" : "FOLLOW";
       const message = isPrivate ? "회원님에게 팔로우 요청을 보냈습니다." : "회원님을 팔로우합니다.";
-      this.notificationsService.createNotification({
-        userId: followingId,
-        actorId: followerId,
-        type: notifType,
-        referenceType: "FOLLOW",
-        referenceId: followerId,
-        message,
-      }).catch(() => {});
+      this.notificationsService
+        .createNotification({
+          userId: followingId,
+          actorId: followerId,
+          type: notifType,
+          referenceType: "FOLLOW",
+          referenceId: followerId,
+          message,
+        })
+        .catch(() => {});
     }
 
     return result;

@@ -1,7 +1,9 @@
+import { Calendar, Lock, Users } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Calendar, Users, Lock } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+
 import ProgressBar from "./ProgressBar";
 
 interface ChallengeCardProps {
@@ -21,21 +23,31 @@ interface ChallengeCardProps {
 
 function goalTypeLabel(type: string): string {
   switch (type) {
-    case "DISTANCE": return "거리";
-    case "FREQUENCY": return "횟수";
-    case "STREAK": return "연속";
-    case "PACE": return "페이스";
-    default: return type;
+    case "DISTANCE":
+      return "거리";
+    case "FREQUENCY":
+      return "횟수";
+    case "STREAK":
+      return "연속";
+    case "PACE":
+      return "페이스";
+    default:
+      return type;
   }
 }
 
 function goalTypeUnit(type: string): string {
   switch (type) {
-    case "DISTANCE": return "KM";
-    case "FREQUENCY": return "COUNT";
-    case "STREAK": return "DAYS";
-    case "PACE": return "SEC_PER_KM";
-    default: return type;
+    case "DISTANCE":
+      return "KM";
+    case "FREQUENCY":
+      return "COUNT";
+    case "STREAK":
+      return "DAYS";
+    case "PACE":
+      return "SEC_PER_KM";
+    default:
+      return type;
   }
 }
 
@@ -67,9 +79,7 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
       <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
         <CardContent className="p-5 space-y-4">
           <div className="flex items-start justify-between gap-3">
-            <h3 className="text-lg font-semibold line-clamp-1 flex-1">
-              {challenge.title}
-            </h3>
+            <h3 className="text-lg font-semibold line-clamp-1 flex-1">{challenge.title}</h3>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {!challenge.isPublic && (
                 <Badge variant="outline" className="bg-yellow-50">
@@ -81,16 +91,16 @@ export default function ChallengeCard({ challenge }: ChallengeCardProps) {
           </div>
 
           {challenge.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {challenge.description}
-            </p>
+            <p className="text-sm text-muted-foreground line-clamp-2">{challenge.description}</p>
           )}
 
           <div className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="size-4" />
-                <span>{formatDate(challenge.startDate)} ~ {formatDate(challenge.endDate)}</span>
+                <span>
+                  {formatDate(challenge.startDate)} ~ {formatDate(challenge.endDate)}
+                </span>
               </div>
             </div>
 

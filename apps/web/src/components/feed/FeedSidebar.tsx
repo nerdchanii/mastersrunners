@@ -1,7 +1,8 @@
-import { useAuth } from "@/lib/auth-context";
+import { Link } from "react-router-dom";
+
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { useAuth } from "@/lib/auth-context";
 
 export function FeedSidebar() {
   const { user } = useAuth();
@@ -13,9 +14,7 @@ export function FeedSidebar() {
         <div className="rounded-xl border bg-card p-4">
           <UserAvatar user={user} size="lg" showName />
           {user.bio && (
-            <p className="mt-3 text-xs text-muted-foreground line-clamp-2">
-              {user.bio}
-            </p>
+            <p className="mt-3 text-xs text-muted-foreground line-clamp-2">{user.bio}</p>
           )}
           <Link to="/profile" className="block mt-3">
             <Button variant="outline" size="sm" className="w-full text-xs">

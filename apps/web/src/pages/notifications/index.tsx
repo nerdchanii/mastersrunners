@@ -1,15 +1,16 @@
-import { useRef, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
 import { BellOff, Check, CheckCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useCallback, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
+
 import { UserAvatar } from "@/components/common/UserAvatar";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
-  useNotifications,
-  useMarkNotificationRead,
-  useMarkAllNotificationsRead,
   type Notification,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotifications,
 } from "@/hooks/useNotifications";
+import { cn } from "@/lib/utils";
 
 function getNotificationLink(notification: Notification): string | null {
   if (!notification.referenceId || !notification.referenceType) return null;
@@ -104,9 +105,7 @@ function NotificationItem({ notification }: { notification: Notification }) {
         <p
           className={cn(
             "text-sm",
-            !notification.isRead
-              ? "font-medium text-foreground"
-              : "text-muted-foreground",
+            !notification.isRead ? "font-medium text-foreground" : "text-muted-foreground",
           )}
         >
           {notification.message}
@@ -117,9 +116,7 @@ function NotificationItem({ notification }: { notification: Notification }) {
       </div>
 
       {/* Unread indicator */}
-      {!notification.isRead && (
-        <div className="mt-1 size-2 shrink-0 rounded-full bg-primary" />
-      )}
+      {!notification.isRead && <div className="mt-1 size-2 shrink-0 rounded-full bg-primary" />}
     </div>
   );
 
@@ -151,8 +148,7 @@ function NotificationSkeleton() {
 }
 
 export default function NotificationsPage() {
-  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
-    useNotifications();
+  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useNotifications();
   const markAllRead = useMarkAllNotificationsRead();
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -185,9 +181,7 @@ export default function NotificationsPage() {
       <div className="mb-4 flex items-center justify-between px-4">
         <div>
           <h1 className="text-xl font-bold">알림</h1>
-          <p className="text-sm text-muted-foreground">
-            최신 활동을 확인하세요.
-          </p>
+          <p className="text-sm text-muted-foreground">최신 활동을 확인하세요.</p>
         </div>
         {hasUnread && (
           <Button
@@ -224,10 +218,7 @@ export default function NotificationsPage() {
         ) : (
           <>
             {notifications.map((notification: Notification) => (
-              <NotificationItem
-                key={notification.id}
-                notification={notification}
-              />
+              <NotificationItem key={notification.id} notification={notification} />
             ))}
 
             {/* Load more trigger */}

@@ -1,25 +1,44 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api-client";
-import { challengeKeys } from "@/hooks/useChallenges";
+import { toast } from "sonner";
+
+import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { PageHeader } from "@/components/common/PageHeader";
-import { toast } from "sonner";
+import { challengeKeys } from "@/hooks/useChallenges";
+import { api } from "@/lib/api-client";
 
 type GoalType = "DISTANCE" | "FREQUENCY" | "STREAK" | "PACE";
 
-const goalTypeOptions: { value: GoalType; label: string; placeholder: string; unit: string; targetUnit: string }[] = [
+const goalTypeOptions: {
+  value: GoalType;
+  label: string;
+  placeholder: string;
+  unit: string;
+  targetUnit: string;
+}[] = [
   { value: "DISTANCE", label: "거리 (km)", placeholder: "예: 100", unit: "km", targetUnit: "KM" },
   { value: "FREQUENCY", label: "횟수", placeholder: "예: 30", unit: "회", targetUnit: "COUNT" },
   { value: "STREAK", label: "연속 일수", placeholder: "예: 30", unit: "일", targetUnit: "DAYS" },
-  { value: "PACE", label: "페이스 (초/km)", placeholder: "예: 300", unit: "초/km", targetUnit: "SEC_PER_KM" },
+  {
+    value: "PACE",
+    label: "페이스 (초/km)",
+    placeholder: "예: 300",
+    unit: "초/km",
+    targetUnit: "SEC_PER_KM",
+  },
 ];
 
 export default function NewChallengePage() {
@@ -42,10 +61,22 @@ export default function NewChallengePage() {
     e.preventDefault();
     setError(null);
 
-    if (!title.trim()) { setError("챌린지 이름을 입력해주세요."); return; }
-    if (!targetValue || Number(targetValue) <= 0) { setError("목표 값을 올바르게 입력해주세요."); return; }
-    if (!startDate || !endDate) { setError("시작일과 종료일을 선택해주세요."); return; }
-    if (new Date(startDate) >= new Date(endDate)) { setError("종료일은 시작일 이후여야 합니다."); return; }
+    if (!title.trim()) {
+      setError("챌린지 이름을 입력해주세요.");
+      return;
+    }
+    if (!targetValue || Number(targetValue) <= 0) {
+      setError("목표 값을 올바르게 입력해주세요.");
+      return;
+    }
+    if (!startDate || !endDate) {
+      setError("시작일과 종료일을 선택해주세요.");
+      return;
+    }
+    if (new Date(startDate) >= new Date(endDate)) {
+      setError("종료일은 시작일 이후여야 합니다.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -76,7 +107,10 @@ export default function NewChallengePage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <PageHeader title="새 챌린지 만들기" description="목표를 설정하고 함께 도전할 챌린지를 만들어보세요." />
+      <PageHeader
+        title="새 챌린지 만들기"
+        description="목표를 설정하고 함께 도전할 챌린지를 만들어보세요."
+      />
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         {error && (
@@ -90,7 +124,9 @@ export default function NewChallengePage() {
         <Card>
           <CardContent className="pt-6 space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="title">챌린지 이름 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="title">
+                챌린지 이름 <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="title"
                 value={title}
@@ -111,21 +147,27 @@ export default function NewChallengePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="type">목표 유형 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="type">
+                목표 유형 <span className="text-destructive">*</span>
+              </Label>
               <Select value={type} onValueChange={(value) => setType(value as GoalType)}>
                 <SelectTrigger id="type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {goalTypeOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="targetValue">목표 값 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="targetValue">
+                목표 값 <span className="text-destructive">*</span>
+              </Label>
               <div className="relative">
                 <Input
                   type="number"
@@ -145,12 +187,26 @@ export default function NewChallengePage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="startDate">시작일 <span className="text-destructive">*</span></Label>
-                <Input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <Label htmlFor="startDate">
+                  시작일 <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  type="date"
+                  id="startDate"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endDate">종료일 <span className="text-destructive">*</span></Label>
-                <Input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                <Label htmlFor="endDate">
+                  종료일 <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  type="date"
+                  id="endDate"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
               </div>
             </div>
 
@@ -160,17 +216,29 @@ export default function NewChallengePage() {
                 checked={isPublic}
                 onCheckedChange={(checked) => setIsPublic(checked === true)}
               />
-              <Label htmlFor="isPublic" className="cursor-pointer">공개 챌린지</Label>
-              <span className="text-xs text-muted-foreground">비공개로 설정하면 초대받은 사람만 참가할 수 있습니다.</span>
+              <Label htmlFor="isPublic" className="cursor-pointer">
+                공개 챌린지
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                비공개로 설정하면 초대받은 사람만 참가할 수 있습니다.
+              </span>
             </div>
           </CardContent>
         </Card>
 
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={isSubmitting}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate(-1)}
+            disabled={isSubmitting}
+          >
             취소
           </Button>
-          <Button type="submit" disabled={isSubmitting || !title.trim() || !targetValue || !startDate || !endDate}>
+          <Button
+            type="submit"
+            disabled={isSubmitting || !title.trim() || !targetValue || !startDate || !endDate}
+          >
             {isSubmitting ? "생성 중..." : "챌린지 만들기"}
           </Button>
         </div>

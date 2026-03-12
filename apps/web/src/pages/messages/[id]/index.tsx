@@ -1,13 +1,14 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { api, API_BASE } from "@/lib/api-client";
-import { useAuth } from "@/lib/auth-context";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ChevronLeft } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { api, API_BASE } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -158,19 +159,14 @@ export default function MessageDetailPage() {
     setSending(true);
 
     try {
-      const newMessage = await api.fetch<Message>(
-        `/conversations/${id}/messages`,
-        {
-          method: "POST",
-          body: JSON.stringify({ content: trimmedContent }),
-        },
-      );
+      const newMessage = await api.fetch<Message>(`/conversations/${id}/messages`, {
+        method: "POST",
+        body: JSON.stringify({ content: trimmedContent }),
+      });
       setMessages((prev) => [...prev, newMessage]);
       void markAsRead();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "메시지 전송에 실패했습니다.",
-      );
+      setError(err instanceof Error ? err.message : "메시지 전송에 실패했습니다.");
       setContent(trimmedContent);
     } finally {
       setSending(false);
@@ -231,10 +227,7 @@ export default function MessageDetailPage() {
         </div>
         <div className="flex-1 p-4 space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div
-              key={i}
-              className={`flex ${i % 2 === 0 ? "justify-end" : "justify-start"}`}
-            >
+            <div key={i} className={`flex ${i % 2 === 0 ? "justify-end" : "justify-start"}`}>
               <Skeleton className="h-16 w-64 rounded-lg" />
             </div>
           ))}
@@ -299,12 +292,7 @@ export default function MessageDetailPage() {
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         {nextCursor && (
           <div className="flex justify-center mb-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLoadMore}
-              disabled={loadingMore}
-            >
+            <Button variant="outline" size="sm" onClick={handleLoadMore} disabled={loadingMore}>
               {loadingMore ? "불러오는 중..." : "이전 메시지 보기"}
             </Button>
           </div>
@@ -325,13 +313,9 @@ export default function MessageDetailPage() {
                   </div>
                 )}
 
-                <div
-                  className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
-                >
+                <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`flex gap-2 max-w-[70%] ${
-                      isOwn ? "flex-row-reverse" : "flex-row"
-                    }`}
+                    className={`flex gap-2 max-w-[70%] ${isOwn ? "flex-row-reverse" : "flex-row"}`}
                   >
                     {!isOwn && (
                       <Avatar className="h-8 w-8 shrink-0">
@@ -341,15 +325,11 @@ export default function MessageDetailPage() {
                             alt={message.sender.name}
                           />
                         )}
-                        <AvatarFallback>
-                          {message.sender.name[0]}
-                        </AvatarFallback>
+                        <AvatarFallback>{message.sender.name[0]}</AvatarFallback>
                       </Avatar>
                     )}
 
-                    <div
-                      className={`flex flex-col ${isOwn ? "items-end" : "items-start"}`}
-                    >
+                    <div className={`flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
                       <div
                         className={cn(
                           "rounded-lg px-4 py-2",

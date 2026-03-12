@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { WorkoutSocialRepository } from "./workout-social.repository";
+
 import { DatabaseService } from "../../database/database.service";
+
+import { WorkoutSocialRepository } from "./workout-social.repository";
 
 const mockPrisma = {
   workoutLike: {
@@ -177,7 +179,12 @@ describe("WorkoutSocialRepository", () => {
         workoutId: "workout-456",
         content: "Great run!",
       };
-      const mockComment = { id: "comment-1", ...commentData, createdAt: new Date(), updatedAt: new Date() };
+      const mockComment = {
+        id: "comment-1",
+        ...commentData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
       mockPrisma.workoutComment.create.mockResolvedValue(mockComment);
 
       const result = await repository.addComment(commentData);
@@ -195,7 +202,12 @@ describe("WorkoutSocialRepository", () => {
         content: "Reply!",
         parentId: "comment-parent-1",
       };
-      const mockComment = { id: "comment-2", ...commentData, createdAt: new Date(), updatedAt: new Date() };
+      const mockComment = {
+        id: "comment-2",
+        ...commentData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
       mockPrisma.workoutComment.create.mockResolvedValue(mockComment);
 
       const result = await repository.addComment(commentData);
@@ -213,7 +225,12 @@ describe("WorkoutSocialRepository", () => {
         content: "Hey @user-2!",
         mentionedUserIds: ["user-2", "user-3"],
       };
-      const mockComment = { id: "comment-3", ...commentData, createdAt: new Date(), updatedAt: new Date() };
+      const mockComment = {
+        id: "comment-3",
+        ...commentData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
       mockPrisma.workoutComment.create.mockResolvedValue(mockComment);
 
       const result = await repository.addComment(commentData);

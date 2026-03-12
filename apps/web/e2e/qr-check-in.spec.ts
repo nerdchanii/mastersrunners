@@ -1,5 +1,6 @@
-import { test, expect } from "@playwright/test";
-import { setupAuth, mockUser } from "./helpers/mock-auth";
+import { expect, test } from "@playwright/test";
+
+import { mockUser, setupAuth } from "./helpers/mock-auth";
 
 const API_BASE = "http://localhost:4000/api/v1";
 
@@ -71,10 +72,13 @@ const mockCrew = {
   ],
 };
 
-function setupRoutes(page: import("@playwright/test").Page, opts?: {
-  activity?: typeof mockActivity;
-  qrCheckInResponse?: { status: number; body: string };
-}) {
+function setupRoutes(
+  page: import("@playwright/test").Page,
+  opts?: {
+    activity?: typeof mockActivity;
+    qrCheckInResponse?: { status: number; body: string };
+  },
+) {
   const activity = opts?.activity ?? mockActivity;
   return Promise.all([
     page.route(`${API_BASE}/crews/${mockCrewId}/activities/${mockActivityId}`, (route) => {
@@ -92,21 +96,24 @@ function setupRoutes(page: import("@playwright/test").Page, opts?: {
         body: JSON.stringify(mockCrew),
       });
     }),
-    page.route(`${API_BASE}/crews/${mockCrewId}/activities/${mockActivityId}/qr-check-in`, (route) => {
-      if (opts?.qrCheckInResponse) {
-        route.fulfill({
-          status: opts.qrCheckInResponse.status,
-          contentType: "application/json",
-          body: opts.qrCheckInResponse.body,
-        });
-      } else {
-        route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ success: true }),
-        });
-      }
-    }),
+    page.route(
+      `${API_BASE}/crews/${mockCrewId}/activities/${mockActivityId}/qr-check-in`,
+      (route) => {
+        if (opts?.qrCheckInResponse) {
+          route.fulfill({
+            status: opts.qrCheckInResponse.status,
+            contentType: "application/json",
+            body: opts.qrCheckInResponse.body,
+          });
+        } else {
+          route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ success: true }),
+          });
+        }
+      },
+    ),
   ]);
 }
 
@@ -143,7 +150,9 @@ test.describe("QR 체크인 페이지", () => {
         },
       });
 
-      await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}/qr-check-in?code=wrong-code`);
+      await page.goto(
+        `/crews/${mockCrewId}/activities/${mockActivityId}/qr-check-in?code=wrong-code`,
+      );
 
       await page.getByRole("button", { name: /QR 코드로 체크인/ }).click();
 

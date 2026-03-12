@@ -1,5 +1,6 @@
-import { test, expect } from "@playwright/test";
-import { setupAuth, mockWorkoutDetail } from "./helpers/mock-auth";
+import { expect, test } from "@playwright/test";
+
+import { mockWorkoutDetail, setupAuth } from "./helpers/mock-auth";
 
 const API_BASE = "http://localhost:4000/api/v1";
 
@@ -17,13 +18,16 @@ test.describe("워크아웃 상세 페이지", () => {
     });
 
     // Mock comments
-    await page.route(`${API_BASE}/workout-social/workout/${mockWorkoutDetail.id}/comments*`, (route) => {
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ data: [], total: 0 }),
-      });
-    });
+    await page.route(
+      `${API_BASE}/workout-social/workout/${mockWorkoutDetail.id}/comments*`,
+      (route) => {
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ data: [], total: 0 }),
+        });
+      },
+    );
   });
 
   test("기본 정보가 표시된다 (거리, 시간, 페이스)", async ({ page }) => {

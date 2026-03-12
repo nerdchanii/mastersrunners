@@ -1,12 +1,13 @@
+import { Heart, MessageSquare, Plus } from "lucide-react";
 import { useState } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { UserAvatar } from "@/components/common/UserAvatar";
-import { TimeAgo } from "@/components/common/TimeAgo";
-import { Plus, Heart, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
-import { useCrewPosts, useCreateCrewPost } from "@/hooks/useCrewPosts";
+
+import { TimeAgo } from "@/components/common/TimeAgo";
+import { UserAvatar } from "@/components/common/UserAvatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCreateCrewPost, useCrewPosts } from "@/hooks/useCrewPosts";
 
 interface Props {
   crewId: string;
@@ -30,7 +31,7 @@ export default function CrewPostList({ crewId, isOwner }: Props) {
           setShowForm(false);
         },
         onError: () => toast.error("게시물 작성에 실패했습니다."),
-      }
+      },
     );
   };
 
@@ -98,7 +99,12 @@ export default function CrewPostList({ crewId, isOwner }: Props) {
               {post.images.length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mt-3">
                   {post.images.map((img) => (
-                    <img key={img.id} src={img.imageUrl} alt="" className="rounded-lg object-cover w-full" />
+                    <img
+                      key={img.id}
+                      src={img.imageUrl}
+                      alt=""
+                      className="rounded-lg object-cover w-full"
+                    />
                   ))}
                 </div>
               )}

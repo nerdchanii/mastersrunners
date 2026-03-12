@@ -1,11 +1,12 @@
-import { useState, useCallback } from "react";
-import { Rss, Dumbbell } from "lucide-react";
-import FeedCard from "@/components/feed/FeedCard";
-import PostFeedCard from "@/components/feed/PostFeedCard";
-import { FeedSidebar } from "@/components/feed/FeedSidebar";
-import { InfiniteScroll } from "@/components/common/InfiniteScroll";
+import { Dumbbell, Rss } from "lucide-react";
+import { useCallback, useState } from "react";
+
 import { EmptyState } from "@/components/common/EmptyState";
+import { InfiniteScroll } from "@/components/common/InfiniteScroll";
 import { LoadingPage } from "@/components/common/LoadingPage";
+import FeedCard from "@/components/feed/FeedCard";
+import { FeedSidebar } from "@/components/feed/FeedSidebar";
+import PostFeedCard from "@/components/feed/PostFeedCard";
 import { usePostFeed } from "@/hooks/usePosts";
 import { useWorkoutFeed } from "@/hooks/useWorkouts";
 import { cn } from "@/lib/utils";
@@ -59,7 +60,7 @@ export default function FeedPage() {
               "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors border-b-2",
               activeTab === "posts"
                 ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >
             <Rss className="size-4" />
@@ -71,7 +72,7 @@ export default function FeedPage() {
               "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors border-b-2",
               activeTab === "workouts"
                 ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >
             <Dumbbell className="size-4" />
@@ -84,27 +85,15 @@ export default function FeedPage() {
           <LoadingPage variant="feed" className="mt-4" />
         ) : items.length === 0 ? (
           <EmptyState
-            title={
-              activeTab === "posts"
-                ? "아직 게시글이 없습니다"
-                : "아직 워크아웃이 없습니다"
-            }
+            title={activeTab === "posts" ? "아직 게시글이 없습니다" : "아직 워크아웃이 없습니다"}
             description="팔로우하는 러너들의 기록이 여기에 표시됩니다."
           />
         ) : (
-          <InfiniteScroll
-            hasMore={hasMore}
-            loading={loading}
-            onLoadMore={handleLoadMore}
-          >
+          <InfiniteScroll hasMore={hasMore} loading={loading} onLoadMore={handleLoadMore}>
             <div>
               {activeTab === "posts"
-                ? postItems.map((item) => (
-                    <PostFeedCard key={item.id} post={item} />
-                  ))
-                : workoutItems.map((item) => (
-                    <FeedCard key={item.id} workout={item} />
-                  ))}
+                ? postItems.map((item) => <PostFeedCard key={item.id} post={item} />)
+                : workoutItems.map((item) => <FeedCard key={item.id} workout={item} />)}
             </div>
           </InfiniteScroll>
         )}

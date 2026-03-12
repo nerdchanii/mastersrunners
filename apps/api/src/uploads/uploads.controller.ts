@@ -1,6 +1,7 @@
-import { Controller, Post, Delete, Body, Param, Req, BadRequestException } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Param, Post, Req } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
+
 import { UploadsService } from "./uploads.service.js";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -14,7 +15,7 @@ export class UploadsController {
   @Post("presign")
   async getPresignedUrl(
     @Req() req: Request,
-    @Body() body: { filename: string; contentType: string; folder?: string }
+    @Body() body: { filename: string; contentType: string; folder?: string },
   ) {
     const { userId } = req.user as { userId: string };
     const { filename, contentType, folder = "images" } = body;
@@ -38,7 +39,7 @@ export class UploadsController {
   @Post("parse")
   async parseFile(
     @Req() req: Request,
-    @Body() body: { fileKey: string; fileType: string; originalFileName: string }
+    @Body() body: { fileKey: string; fileType: string; originalFileName: string },
   ) {
     const { userId } = req.user as { userId: string };
     const { fileKey, fileType, originalFileName } = body;

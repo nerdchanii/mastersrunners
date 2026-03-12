@@ -1,29 +1,22 @@
+import { ArrowLeft, ChevronRight, Heart, MessageSquare, Pin, Plus, Send } from "lucide-react";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { UserAvatar } from "@/components/common/UserAvatar";
-import { TimeAgo } from "@/components/common/TimeAgo";
-import {
-  MessageSquare,
-  Heart,
-  Pin,
-  Plus,
-  ArrowLeft,
-  Send,
-  ChevronRight,
-} from "lucide-react";
 import { toast } from "sonner";
+
+import { TimeAgo } from "@/components/common/TimeAgo";
+import { UserAvatar } from "@/components/common/UserAvatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  useBoards,
-  useBoardPosts,
-  useBoardPost,
-  useCreatePost,
-  useToggleLike,
-  useCreateComment,
   type Board,
   type BoardPost,
+  useBoardPost,
+  useBoardPosts,
+  useBoards,
+  useCreateComment,
+  useCreatePost,
+  useToggleLike,
 } from "@/hooks/useCrewBoards";
 
 interface Props {
@@ -73,7 +66,7 @@ export default function CrewBoardList({ crewId, isMember, isAdmin }: Props) {
 
   return (
     <div className="space-y-3">
-      {(!boards || boards.length === 0) ? (
+      {!boards || boards.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
             아직 게시판이 없습니다.
@@ -91,7 +84,11 @@ export default function CrewBoardList({ crewId, isMember, isAdmin }: Props) {
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium">{board.name}</h3>
                   <Badge variant="outline" className="text-xs">
-                    {board.type === "ANNOUNCEMENT" ? "공지" : board.type === "FREE" ? "자유" : "일반"}
+                    {board.type === "ANNOUNCEMENT"
+                      ? "공지"
+                      : board.type === "FREE"
+                        ? "자유"
+                        : "일반"}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">{board._count.posts}개 글</p>
@@ -126,8 +123,7 @@ function BoardPosts({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 
-  const canWrite =
-    board.writePermission === "ALL_MEMBERS" ? isMember : isAdmin;
+  const canWrite = board.writePermission === "ALL_MEMBERS" ? isMember : isAdmin;
 
   const handleSubmit = () => {
     if (!title.trim() || !content.trim()) return;
@@ -209,18 +205,13 @@ function BoardPosts({
           >
             <CardContent className="py-4">
               <div className="flex items-start gap-3">
-                <UserAvatar
-                  user={post.author}
-                  size="sm"
-                />
+                <UserAvatar user={post.author} size="sm" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     {post.isPinned && <Pin className="size-3 text-primary" />}
                     <h3 className="font-medium text-sm truncate">{post.title}</h3>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {post.content}
-                  </p>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">{post.content}</p>
                   <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
                     <span>{post.author.name}</span>
                     <TimeAgo date={post.createdAt} />
@@ -387,7 +378,12 @@ function PostDetail({
                 placeholder="댓글을 입력하세요..."
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleComment(); } }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleComment();
+                  }
+                }}
               />
               <Button size="icon" onClick={handleComment} disabled={!comment.trim()}>
                 <Send className="size-4" />

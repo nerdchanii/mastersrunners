@@ -1,25 +1,38 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { useChallenge } from "@/hooks/useChallenges";
-import { api } from "@/lib/api-client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
+
+import { LoadingPage } from "@/components/common/LoadingPage";
+import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PageHeader } from "@/components/common/PageHeader";
-import { LoadingPage } from "@/components/common/LoadingPage";
-import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useChallenge } from "@/hooks/useChallenges";
 import { challengeKeys } from "@/hooks/useChallenges";
+import { api } from "@/lib/api-client";
 
 type GoalType = "DISTANCE" | "FREQUENCY" | "STREAK" | "PACE";
 
-const goalTypeOptions: { value: GoalType; label: string; placeholder: string; unit: string; targetUnit: string }[] = [
+const goalTypeOptions: {
+  value: GoalType;
+  label: string;
+  placeholder: string;
+  unit: string;
+  targetUnit: string;
+}[] = [
   { value: "DISTANCE", label: "거리 (km)", placeholder: "예: 100", unit: "km", targetUnit: "KM" },
   { value: "FREQUENCY", label: "횟수", placeholder: "예: 30", unit: "회", targetUnit: "COUNT" },
   { value: "STREAK", label: "연속 일수", placeholder: "예: 30", unit: "일", targetUnit: "DAYS" },
-  { value: "PACE", label: "페이스 (초/km)", placeholder: "예: 300", unit: "초/km", targetUnit: "SEC_PER_KM" },
+  {
+    value: "PACE",
+    label: "페이스 (초/km)",
+    placeholder: "예: 300",
+    unit: "초/km",
+    targetUnit: "SEC_PER_KM",
+  },
 ];
 
 export default function EditChallengePage() {
@@ -56,10 +69,22 @@ export default function EditChallengePage() {
     e.preventDefault();
     setError(null);
 
-    if (!title.trim()) { setError("챌린지 이름을 입력해주세요."); return; }
-    if (!targetValue || Number(targetValue) <= 0) { setError("목표 값을 올바르게 입력해주세요."); return; }
-    if (!startDate || !endDate) { setError("시작일과 종료일을 선택해주세요."); return; }
-    if (new Date(startDate) >= new Date(endDate)) { setError("종료일은 시작일 이후여야 합니다."); return; }
+    if (!title.trim()) {
+      setError("챌린지 이름을 입력해주세요.");
+      return;
+    }
+    if (!targetValue || Number(targetValue) <= 0) {
+      setError("목표 값을 올바르게 입력해주세요.");
+      return;
+    }
+    if (!startDate || !endDate) {
+      setError("시작일과 종료일을 선택해주세요.");
+      return;
+    }
+    if (new Date(startDate) >= new Date(endDate)) {
+      setError("종료일은 시작일 이후여야 합니다.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -105,7 +130,9 @@ export default function EditChallengePage() {
         <Card>
           <CardContent className="pt-6 space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="title">챌린지 이름 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="title">
+                챌린지 이름 <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="title"
                 value={title}
@@ -126,7 +153,9 @@ export default function EditChallengePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="type">목표 유형 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="type">
+                목표 유형 <span className="text-destructive">*</span>
+              </Label>
               <select
                 id="type"
                 value={type}
@@ -134,13 +163,17 @@ export default function EditChallengePage() {
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               >
                 {goalTypeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="targetValue">목표 값 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="targetValue">
+                목표 값 <span className="text-destructive">*</span>
+              </Label>
               <div className="relative">
                 <Input
                   type="number"
@@ -160,12 +193,26 @@ export default function EditChallengePage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="startDate">시작일 <span className="text-destructive">*</span></Label>
-                <Input type="date" id="startDate" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <Label htmlFor="startDate">
+                  시작일 <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  type="date"
+                  id="startDate"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endDate">종료일 <span className="text-destructive">*</span></Label>
-                <Input type="date" id="endDate" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                <Label htmlFor="endDate">
+                  종료일 <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  type="date"
+                  id="endDate"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
               </div>
             </div>
 
@@ -177,17 +224,29 @@ export default function EditChallengePage() {
                 onChange={(e) => setIsPublic(e.target.checked)}
                 className="h-4 w-4 rounded border-input accent-primary"
               />
-              <Label htmlFor="isPublic" className="cursor-pointer">공개 챌린지</Label>
-              <span className="text-xs text-muted-foreground">비공개로 설정하면 초대받은 사람만 참가할 수 있습니다.</span>
+              <Label htmlFor="isPublic" className="cursor-pointer">
+                공개 챌린지
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                비공개로 설정하면 초대받은 사람만 참가할 수 있습니다.
+              </span>
             </div>
           </CardContent>
         </Card>
 
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate(`/challenges/${id}`)} disabled={isSubmitting}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate(`/challenges/${id}`)}
+            disabled={isSubmitting}
+          >
             취소
           </Button>
-          <Button type="submit" disabled={isSubmitting || !title.trim() || !targetValue || !startDate || !endDate}>
+          <Button
+            type="submit"
+            disabled={isSubmitting || !title.trim() || !targetValue || !startDate || !endDate}
+          >
             {isSubmitting ? "저장 중..." : "저장"}
           </Button>
         </div>

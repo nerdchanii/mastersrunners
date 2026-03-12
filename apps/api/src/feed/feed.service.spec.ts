@@ -1,7 +1,9 @@
 import { Test } from "@nestjs/testing";
-import { FeedService } from "./feed.service";
-import { FeedRepository } from "./repositories/feed.repository";
+
 import { BlockRepository } from "../block/repositories/block.repository";
+
+import { FeedRepository } from "./repositories/feed.repository";
+import { FeedService } from "./feed.service";
 
 const mockFeedRepo = {
   getFollowingIds: jest.fn(),

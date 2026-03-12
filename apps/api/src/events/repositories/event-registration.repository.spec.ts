@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { EventRegistrationRepository } from "./event-registration.repository.js";
+
 import { DatabaseService } from "../../database/database.service.js";
+
+import { EventRegistrationRepository } from "./event-registration.repository.js";
 
 const mockPrisma = {
   eventParticipant: {

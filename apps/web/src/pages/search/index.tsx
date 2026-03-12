@@ -1,16 +1,17 @@
-import { useState, useEffect } from "react";
+import { Hash, Loader2, Search, TrendingUp, User } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Search, User, Hash, TrendingUp, Loader2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
+
+import { UserAvatar } from "@/components/common/UserAvatar";
+import PostFeedCard from "@/components/feed/PostFeedCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UserAvatar } from "@/components/common/UserAvatar";
-import { useUserSearch, type SearchUser } from "@/hooks/useUserSearch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useHashtagPosts, usePopularHashtags } from "@/hooks/useHashtags";
-import PostFeedCard from "@/components/feed/PostFeedCard";
+import { type SearchUser, useUserSearch } from "@/hooks/useUserSearch";
 import { cn } from "@/lib/utils";
 
 // ─── 인기 해시태그 섹션 ────────────────────────────────────────
@@ -89,14 +90,14 @@ function UserResults({ query }: { query: string }) {
           <Link
             key={user.id}
             to={`/profile/${user.id}`}
-            className={cn("flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-muted/50")}
+            className={cn(
+              "flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-muted/50",
+            )}
           >
             <UserAvatar user={user} />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{user.name}</p>
-              {user.bio && (
-                <p className="text-xs text-muted-foreground truncate">{user.bio}</p>
-              )}
+              {user.bio && <p className="text-xs text-muted-foreground truncate">{user.bio}</p>}
               {user._count && (
                 <div className="flex gap-3 mt-0.5 text-xs text-muted-foreground">
                   <span>팔로워 {user._count.followers}</span>
@@ -116,14 +117,8 @@ function UserResults({ query }: { query: string }) {
 
 // ─── 해시태그 검색 결과 ────────────────────────────────────────
 function HashtagResults({ tag }: { tag: string }) {
-  const {
-    data,
-    isLoading,
-    isError,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useHashtagPosts(tag);
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useHashtagPosts(tag);
 
   const posts = data?.pages.flatMap((page) => page?.items ?? []) ?? [];
 
@@ -288,7 +283,9 @@ export default function SearchPage() {
         {/* 해시태그 검색 탭 */}
         <TabsContent value="hashtag" className="mt-4 space-y-4">
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-sm">#</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-sm">
+              #
+            </span>
             <Input
               type="search"
               value={hashtagQuery}
@@ -300,14 +297,10 @@ export default function SearchPage() {
           </div>
 
           {/* 인기 해시태그 - 입력 전 표시 */}
-          {!debouncedHashtag.trim() && (
-            <PopularHashtags />
-          )}
+          {!debouncedHashtag.trim() && <PopularHashtags />}
 
           {/* 해시태그 검색 결과 */}
-          {debouncedHashtag.trim() && (
-            <HashtagResults tag={debouncedHashtag.trim()} />
-          )}
+          {debouncedHashtag.trim() && <HashtagResults tag={debouncedHashtag.trim()} />}
         </TabsContent>
       </Tabs>
     </div>

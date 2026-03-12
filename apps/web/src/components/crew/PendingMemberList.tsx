@@ -1,12 +1,13 @@
-import { toast } from "sonner";
-import { useState, useEffect, useCallback } from "react";
 import { Check, X } from "lucide-react";
-import { api } from "@/lib/api-client";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+
+import { EmptyState } from "@/components/common/EmptyState";
+import { TimeAgo } from "@/components/common/TimeAgo";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/common/EmptyState";
-import { UserAvatar } from "@/components/common/UserAvatar";
-import { TimeAgo } from "@/components/common/TimeAgo";
+import { api } from "@/lib/api-client";
 
 interface PendingMember {
   id: string;
@@ -25,10 +26,7 @@ interface PendingMemberListProps {
   onUpdate: () => void;
 }
 
-export default function PendingMemberList({
-  crewId,
-  onUpdate,
-}: PendingMemberListProps) {
+export default function PendingMemberList({ crewId, onUpdate }: PendingMemberListProps) {
   const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -36,9 +34,7 @@ export default function PendingMemberList({
   const fetchPendingMembers = useCallback(async () => {
     setIsLoading(true);
     try {
-      const allMembers = await api.fetch<PendingMember[]>(
-        `/crews/${crewId}/members`,
-      );
+      const allMembers = await api.fetch<PendingMember[]>(`/crews/${crewId}/members`);
       const pending = (Array.isArray(allMembers) ? allMembers : []).filter(
         (m) => m.status === "PENDING",
       );
@@ -102,10 +98,7 @@ export default function PendingMemberList({
   return (
     <div className="space-y-2">
       {pendingMembers.map((member) => (
-        <div
-          key={member.id}
-          className="flex items-center justify-between p-3 rounded-lg border"
-        >
+        <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border">
           <div className="flex items-center gap-3 min-w-0">
             <UserAvatar user={member.user} size="default" linkToProfile />
             <div className="min-w-0">

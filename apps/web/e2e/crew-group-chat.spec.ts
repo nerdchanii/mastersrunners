@@ -1,5 +1,6 @@
-import { test, expect } from "@playwright/test";
-import { setupAuth, mockUser } from "./helpers/mock-auth";
+import { expect, test } from "@playwright/test";
+
+import { mockUser, setupAuth } from "./helpers/mock-auth";
 
 const API_BASE = "http://localhost:4000/api/v1";
 
@@ -137,7 +138,11 @@ test.describe("크루 그룹 채팅", () => {
       await setupAuth(page);
       await Promise.all([
         page.route(`${API_BASE}/crews/${mockCrewId}`, (route) => {
-          if (route.request().url().includes("/chat") || route.request().url().includes("/activities") || route.request().url().includes("/attendance"))
+          if (
+            route.request().url().includes("/chat") ||
+            route.request().url().includes("/activities") ||
+            route.request().url().includes("/attendance")
+          )
             return route.fallback();
           route.fulfill({
             status: 200,
@@ -214,7 +219,10 @@ test.describe("크루 그룹 채팅", () => {
           });
         }),
         page.route(`${API_BASE}/crews/${mockCrewId}`, (route) => {
-          if (route.request().url().includes("/activities") || route.request().url().includes("/chat"))
+          if (
+            route.request().url().includes("/activities") ||
+            route.request().url().includes("/chat")
+          )
             return route.fallback();
           route.fulfill({
             status: 200,
@@ -236,13 +244,16 @@ test.describe("크루 그룹 채팅", () => {
     test.beforeEach(async ({ page }) => {
       await setupAuth(page);
       await Promise.all([
-        page.route(`${API_BASE}/crews/${mockCrewId}/activities/${mockActivityId}/chat*`, (route) => {
-          route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify(mockEmptyChatResponse),
-          });
-        }),
+        page.route(
+          `${API_BASE}/crews/${mockCrewId}/activities/${mockActivityId}/chat*`,
+          (route) => {
+            route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify(mockEmptyChatResponse),
+            });
+          },
+        ),
         page.route(`${API_BASE}/crews/${mockCrewId}/activities/${mockActivityId}`, (route) => {
           if (route.request().url().includes("/chat")) return route.fallback();
           route.fulfill({

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/auth-context";
-import { api } from "@/lib/api-client";
+import { useNavigate, useParams } from "react-router-dom";
+
+import { LoadingPage } from "@/components/common/LoadingPage";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
-import { LoadingPage } from "@/components/common/LoadingPage";
+import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 
 interface User {
   id: string;
@@ -129,9 +130,7 @@ export default function UserProfilePage() {
           workoutCount: data.stats.totalWorkouts,
         });
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "프로필을 불러오는데 실패했습니다."
-        );
+        setError(err instanceof Error ? err.message : "프로필을 불러오는데 실패했습니다.");
       } finally {
         setIsLoading(false);
       }
@@ -147,14 +146,18 @@ export default function UserProfilePage() {
       setIsTabDataLoading(true);
       try {
         if (activeTab === "posts") {
-          const data = await api.fetch<Post[] | { data: Post[] }>(`/posts?userId=${userId}&limit=12`);
-          setPosts(Array.isArray(data) ? data : data?.data ?? []);
+          const data = await api.fetch<Post[] | { data: Post[] }>(
+            `/posts?userId=${userId}&limit=12`,
+          );
+          setPosts(Array.isArray(data) ? data : (data?.data ?? []));
         } else if (activeTab === "workouts") {
-          const data = await api.fetch<Workout[] | { data: Workout[] }>(`/workouts?userId=${userId}`);
-          setWorkouts(Array.isArray(data) ? data : data?.data ?? []);
+          const data = await api.fetch<Workout[] | { data: Workout[] }>(
+            `/workouts?userId=${userId}`,
+          );
+          setWorkouts(Array.isArray(data) ? data : (data?.data ?? []));
         } else if (activeTab === "crews") {
           const data = await api.fetch<Crew[] | { data: Crew[] }>(`/crews?userId=${userId}`);
-          setCrews(Array.isArray(data) ? data : data?.data ?? []);
+          setCrews(Array.isArray(data) ? data : (data?.data ?? []));
         }
       } catch (err) {
         console.error("Failed to fetch tab data:", err);
@@ -256,9 +259,7 @@ export default function UserProfilePage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="rounded-xl border border-destructive bg-destructive/10 p-6">
           <h2 className="text-lg font-semibold text-destructive mb-2">오류</h2>
-          <p className="text-destructive/90">
-            {error || "프로필을 찾을 수 없습니다."}
-          </p>
+          <p className="text-destructive/90">{error || "프로필을 찾을 수 없습니다."}</p>
         </div>
       </div>
     );

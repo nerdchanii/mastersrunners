@@ -1,8 +1,9 @@
-import { Controller, Post, Delete, Get, Param, Body, Req, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query, Req } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
-import { PostSocialService } from "./post-social.service.js";
+
 import { CreatePostCommentDto } from "./dto/create-post-comment.dto.js";
+import { PostSocialService } from "./post-social.service.js";
 
 @ApiTags("Post Social")
 @Controller("posts")
@@ -32,7 +33,7 @@ export class PostSocialController {
   async addComment(
     @Param("postId") postId: string,
     @Body() dto: CreatePostCommentDto,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const { userId } = req.user as { userId: string };
     return this.postSocialService.addComment(
@@ -40,7 +41,7 @@ export class PostSocialController {
       postId,
       dto.content,
       dto.parentId,
-      dto.mentionedUserId
+      dto.mentionedUserId,
     );
   }
 
@@ -49,7 +50,7 @@ export class PostSocialController {
     @Param("postId") postId: string,
     @Req() req: Request,
     @Query("cursor") cursor?: string,
-    @Query("limit") limit?: string
+    @Query("limit") limit?: string,
   ) {
     const { userId } = req.user as { userId: string };
     const parsedLimit = limit ? parseInt(limit, 10) : undefined;
@@ -60,7 +61,7 @@ export class PostSocialController {
   async deleteComment(
     @Param("postId") postId: string,
     @Param("commentId") commentId: string,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const { userId } = req.user as { userId: string };
     return this.postSocialService.deleteComment(commentId, userId);

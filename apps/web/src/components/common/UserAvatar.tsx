@@ -1,10 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from "@/components/ui/avatar";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 interface UserAvatarProps {
@@ -46,12 +43,8 @@ export function UserAvatar({
 
   const avatarElement = (
     <Avatar className={cn(sizeClasses[size], className)}>
-      {user.profileImage && (
-        <AvatarImage src={user.profileImage} alt={user.name} />
-      )}
-      <AvatarFallback className={textSizes[size]}>
-        {initials}
-      </AvatarFallback>
+      {user.profileImage && <AvatarImage src={user.profileImage} alt={user.name} />}
+      <AvatarFallback className={textSizes[size]}>{initials}</AvatarFallback>
     </Avatar>
   );
 
@@ -59,12 +52,8 @@ export function UserAvatar({
     <div className="flex items-center gap-2.5">
       {avatarElement}
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-foreground truncate">
-          {user.name}
-        </p>
-        {subtitle && (
-          <div className="text-xs text-muted-foreground truncate">{subtitle}</div>
-        )}
+        <p className="text-sm font-semibold text-foreground truncate">{user.name}</p>
+        {subtitle && <div className="text-xs text-muted-foreground truncate">{subtitle}</div>}
       </div>
     </div>
   ) : (

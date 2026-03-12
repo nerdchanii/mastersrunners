@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { ShoeRepository } from "./shoe.repository";
+
 import { DatabaseService } from "../../database/database.service";
+
+import { ShoeRepository } from "./shoe.repository";
 
 const mockPrisma = {
   shoe: {
@@ -18,10 +20,7 @@ describe("ShoeRepository", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
-      providers: [
-        ShoeRepository,
-        { provide: DatabaseService, useValue: { prisma: mockPrisma } },
-      ],
+      providers: [ShoeRepository, { provide: DatabaseService, useValue: { prisma: mockPrisma } }],
     }).compile();
     repository = module.get(ShoeRepository);
   });
@@ -30,8 +29,20 @@ describe("ShoeRepository", () => {
     it("should query shoes by userId ordered by createdAt desc", async () => {
       const userId = "user-123";
       const mockShoes = [
-        { id: "shoe-2", userId, brand: "Nike", model: "Pegasus", createdAt: new Date("2026-02-15") },
-        { id: "shoe-1", userId, brand: "Adidas", model: "Boost", createdAt: new Date("2026-02-10") },
+        {
+          id: "shoe-2",
+          userId,
+          brand: "Nike",
+          model: "Pegasus",
+          createdAt: new Date("2026-02-15"),
+        },
+        {
+          id: "shoe-1",
+          userId,
+          brand: "Adidas",
+          model: "Boost",
+          createdAt: new Date("2026-02-10"),
+        },
       ];
       mockPrisma.shoe.findMany.mockResolvedValue(mockShoes);
 
@@ -76,7 +87,13 @@ describe("ShoeRepository", () => {
         imageUrl: "https://example.com/shoe.jpg",
         maxDistance: 800000,
       };
-      const mockCreated = { id: "shoe-new", ...createData, totalDistance: 0, isRetired: false, createdAt: new Date() };
+      const mockCreated = {
+        id: "shoe-new",
+        ...createData,
+        totalDistance: 0,
+        isRetired: false,
+        createdAt: new Date(),
+      };
       mockPrisma.shoe.create.mockResolvedValue(mockCreated);
 
       const result = await repository.create(createData);
@@ -91,7 +108,13 @@ describe("ShoeRepository", () => {
         brand: "Adidas",
         model: "Ultraboost",
       };
-      const mockCreated = { id: "shoe-new", ...createData, totalDistance: 0, isRetired: false, createdAt: new Date() };
+      const mockCreated = {
+        id: "shoe-new",
+        ...createData,
+        totalDistance: 0,
+        isRetired: false,
+        createdAt: new Date(),
+      };
       mockPrisma.shoe.create.mockResolvedValue(mockCreated);
 
       const result = await repository.create(createData);

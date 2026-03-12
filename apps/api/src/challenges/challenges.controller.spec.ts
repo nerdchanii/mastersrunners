@@ -1,4 +1,5 @@
 import { Test } from "@nestjs/testing";
+
 import { ChallengesController } from "./challenges.controller.js";
 import { ChallengesService } from "./challenges.service.js";
 
@@ -45,7 +46,11 @@ describe("ChallengesController", () => {
 
       const result = await controller.createTeam("challenge-1", mockReq, "Team Alpha");
 
-      expect(mockChallengesService.createTeam).toHaveBeenCalledWith("challenge-1", "user-123", "Team Alpha");
+      expect(mockChallengesService.createTeam).toHaveBeenCalledWith(
+        "challenge-1",
+        "user-123",
+        "Team Alpha",
+      );
       expect(result).toEqual(expected);
     });
   });
@@ -69,7 +74,11 @@ describe("ChallengesController", () => {
 
       const result = await controller.joinTeam("challenge-1", "team-1", mockReq);
 
-      expect(mockChallengesService.joinTeam).toHaveBeenCalledWith("challenge-1", "user-123", "team-1");
+      expect(mockChallengesService.joinTeam).toHaveBeenCalledWith(
+        "challenge-1",
+        "user-123",
+        "team-1",
+      );
       expect(result).toEqual(expected);
     });
   });
@@ -100,9 +109,7 @@ describe("ChallengesController", () => {
 
   describe("getTeamLeaderboard", () => {
     it("should call service.getTeamLeaderboard with challengeId", async () => {
-      const expected = [
-        { teamId: "team-1", teamName: "Alpha", totalValue: 500, memberCount: 5 },
-      ];
+      const expected = [{ teamId: "team-1", teamName: "Alpha", totalValue: 500, memberCount: 5 }];
       mockChallengesService.getTeamLeaderboard.mockResolvedValue(expected);
 
       const result = await controller.getTeamLeaderboard("challenge-1");

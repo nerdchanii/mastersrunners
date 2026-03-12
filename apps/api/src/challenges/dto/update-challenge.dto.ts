@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsBoolean, IsDateString, IsIn } from "class-validator";
+import { IsBoolean, IsDateString, IsIn, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class UpdateChallengeDto {
   @IsOptional()

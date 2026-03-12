@@ -1,20 +1,21 @@
-import { toast } from "sonner";
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
-import { api } from "@/lib/api-client";
-import { useAuth } from "@/lib/auth-context";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { PageHeader } from "@/components/common/PageHeader";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
+
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { UserAvatar } from "@/components/common/UserAvatar";
+import { PageHeader } from "@/components/common/PageHeader";
 import { TimeAgo } from "@/components/common/TimeAgo";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import CrewForm from "@/components/crew/CrewForm";
 import CrewMemberList from "@/components/crew/CrewMemberList";
 import PendingMemberList from "@/components/crew/PendingMemberList";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 
 interface CrewMember {
   id: string;
@@ -81,9 +82,7 @@ export default function CrewSettingsClient() {
       const data = await api.fetch<CrewDetail>(`/crews/${crewId}`);
       setCrew(data);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "크루를 불러올 수 없습니다."
-      );
+      setError(err instanceof Error ? err.message : "크루를 불러올 수 없습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -113,8 +112,7 @@ export default function CrewSettingsClient() {
   const currentMember = crew?.members.find((m) => m.userId === user?.id);
   const currentUserRole = currentMember?.role ?? null;
   const isOwner = currentUserRole === "OWNER";
-  const isOwnerOrAdmin =
-    currentUserRole === "OWNER" || currentUserRole === "ADMIN";
+  const isOwnerOrAdmin = currentUserRole === "OWNER" || currentUserRole === "ADMIN";
 
   const handleEditSubmit = async (data: {
     name: string;
@@ -158,9 +156,7 @@ export default function CrewSettingsClient() {
       });
       await fetchBans();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "차단 해제에 실패했습니다."
-      );
+      toast.error(err instanceof Error ? err.message : "차단 해제에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -192,9 +188,7 @@ export default function CrewSettingsClient() {
         <Card className="border-destructive">
           <CardContent className="p-6">
             <h2 className="text-lg font-semibold text-destructive mb-2">오류</h2>
-            <p className="text-muted-foreground mb-4">
-              {error || "크루를 찾을 수 없습니다."}
-            </p>
+            <p className="text-muted-foreground mb-4">{error || "크루를 찾을 수 없습니다."}</p>
             <Button variant="outline" onClick={() => navigate(-1)}>
               돌아가기
             </Button>
@@ -300,9 +294,7 @@ export default function CrewSettingsClient() {
           <Card>
             <CardHeader>
               <CardTitle>대기 멤버</CardTitle>
-              <CardDescription>
-                가입 요청 승인이 필요한 멤버 목록입니다
-              </CardDescription>
+              <CardDescription>가입 요청 승인이 필요한 멤버 목록입니다</CardDescription>
             </CardHeader>
             <CardContent>
               <PendingMemberList crewId={crewId} onUpdate={fetchCrew} />

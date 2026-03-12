@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { WorkoutTypeRepository } from "./workout-type.repository";
+
 import { DatabaseService } from "../../database/database.service";
+
+import { WorkoutTypeRepository } from "./workout-type.repository";
 
 const mockPrisma = {
   workoutType: {

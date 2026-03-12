@@ -1,5 +1,5 @@
-
 import { useState } from "react";
+
 import { api } from "@/lib/api-client";
 
 type Visibility = "PRIVATE" | "FOLLOWERS" | "PUBLIC";
@@ -15,10 +15,7 @@ const VISIBILITY_LABELS: Record<Visibility, string> = {
   PUBLIC: "전체 공개",
 };
 
-export default function ShareToggle({
-  workoutId,
-  initialVisibility,
-}: ShareToggleProps) {
+export default function ShareToggle({ workoutId, initialVisibility }: ShareToggleProps) {
   const [visibility, setVisibility] = useState<Visibility>(initialVisibility);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,13 +27,10 @@ export default function ShareToggle({
     setError(null);
 
     try {
-      const updatedWorkout = await api.fetch<{ visibility: Visibility }>(
-        `/workouts/${workoutId}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ visibility: newVisibility }),
-        }
-      );
+      const updatedWorkout = await api.fetch<{ visibility: Visibility }>(`/workouts/${workoutId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ visibility: newVisibility }),
+      });
       setVisibility(updatedWorkout.visibility);
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
@@ -59,9 +53,7 @@ export default function ShareToggle({
         <option value="FOLLOWERS">{VISIBILITY_LABELS.FOLLOWERS}</option>
         <option value="PUBLIC">{VISIBILITY_LABELS.PUBLIC}</option>
       </select>
-      {isLoading && (
-        <span className="text-sm text-gray-500">변경 중...</span>
-      )}
+      {isLoading && <span className="text-sm text-gray-500">변경 중...</span>}
       {error && (
         <span className="text-xs text-red-600" role="alert">
           {error}

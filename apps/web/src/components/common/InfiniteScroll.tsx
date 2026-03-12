@@ -1,5 +1,5 @@
-import { useEffect, useRef, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
+import { type ReactNode, useEffect, useRef } from "react";
 
 interface InfiniteScrollProps {
   children: ReactNode;
@@ -28,7 +28,7 @@ export function InfiniteScroll({
           onLoadMore();
         }
       },
-      { rootMargin: `0px 0px ${threshold}px 0px` }
+      { rootMargin: `0px 0px ${threshold}px 0px` },
     );
 
     observer.observe(sentinel);

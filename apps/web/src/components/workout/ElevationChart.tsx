@@ -1,14 +1,9 @@
-import { useMemo } from "react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mountain } from "lucide-react";
+import { useMemo } from "react";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import type { GpsPoint } from "./RouteMap";
 
 interface ElevationChartProps {
@@ -23,9 +18,7 @@ function haversineDistance(a: GpsPoint, b: GpsPoint): number {
   const dLon = toRad(b.lon - a.lon);
   const sinLat = Math.sin(dLat / 2);
   const sinLon = Math.sin(dLon / 2);
-  const h =
-    sinLat * sinLat +
-    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * sinLon * sinLon;
+  const h = sinLat * sinLat + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * sinLon * sinLon;
   return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 

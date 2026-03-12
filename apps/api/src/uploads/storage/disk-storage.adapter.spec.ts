@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { DiskStorageAdapter } from "./disk-storage.adapter.js";
 
 describe("DiskStorageAdapter", () => {
@@ -25,9 +26,13 @@ describe("DiskStorageAdapter", () => {
     it("should return local upload URL", async () => {
       const result = await adapter.getUploadUrl("images/user1/photo.jpg", "image/jpeg");
 
-      expect(result.uploadUrl).toBe("http://localhost:4000/api/v1/uploads/disk/images/user1/photo.jpg");
+      expect(result.uploadUrl).toBe(
+        "http://localhost:4000/api/v1/uploads/disk/images/user1/photo.jpg",
+      );
       expect(result.key).toBe("images/user1/photo.jpg");
-      expect(result.publicUrl).toBe("http://localhost:4000/api/v1/disk-files/images/user1/photo.jpg");
+      expect(result.publicUrl).toBe(
+        "http://localhost:4000/api/v1/disk-files/images/user1/photo.jpg",
+      );
     });
   });
 

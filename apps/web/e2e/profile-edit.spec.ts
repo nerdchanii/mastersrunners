@@ -1,5 +1,6 @@
-import { test, expect } from "@playwright/test";
-import { setupAuth, mockUser } from "./helpers/mock-auth";
+import { expect, test } from "@playwright/test";
+
+import { mockUser, setupAuth } from "./helpers/mock-auth";
 
 const API_BASE = "http://localhost:4000/api/v1";
 
@@ -51,7 +52,11 @@ test.describe("프로필 수정 페이지", () => {
     // Mock PATCH endpoint
     await page.route(`${API_BASE}/profile`, (route) => {
       if (route.request().method() === "PATCH") {
-        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockUser) });
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(mockUser),
+        });
       } else {
         route.continue();
       }

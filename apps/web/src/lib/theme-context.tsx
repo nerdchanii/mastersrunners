@@ -13,25 +13,21 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 const STORAGE_KEY = "theme";
 
 function getSystemTheme(): "light" | "dark" {
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === "light" || stored === "dark" || stored === "system")
-        return stored;
+      if (stored === "light" || stored === "dark" || stored === "system") return stored;
     } catch {
       // Ignore storage access failures and fall back to system theme.
     }
     return "system";
   });
 
-  const resolvedTheme: "light" | "dark" =
-    theme === "system" ? getSystemTheme() : theme;
+  const resolvedTheme: "light" | "dark" = theme === "system" ? getSystemTheme() : theme;
 
   useEffect(() => {
     const root = document.documentElement;
@@ -43,8 +39,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (theme === "system") {
       apply(getSystemTheme());
       const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      const handler = (e: MediaQueryListEvent) =>
-        apply(e.matches ? "dark" : "light");
+      const handler = (e: MediaQueryListEvent) => apply(e.matches ? "dark" : "light");
       mq.addEventListener("change", handler);
       return () => mq.removeEventListener("change", handler);
     } else {

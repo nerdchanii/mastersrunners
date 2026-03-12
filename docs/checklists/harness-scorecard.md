@@ -8,12 +8,12 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 | ----------------------------- | -----: | -----: | --------: | -----: | ---------------: |
 | Agent Entry Point             |     13 |      2 |         0 |     15 |              87% |
 | Document Structure            |      9 |      3 |         0 |     12 |              75% |
-| Invariant Enforcement         |      9 |      5 |         1 |     15 |              64% |
-| Architecture                  |      7 |      5 |         0 |     12 |              58% |
+| Invariant Enforcement         |     12 |      2 |         1 |     15 |              86% |
+| Architecture                  |     10 |      2 |         0 |     12 |              83% |
 | Repository as Source of Truth |      6 |      4 |         0 |     10 |              60% |
 | Operations and Maintenance    |      3 |      5 |         2 |     10 |              38% |
 | Agent Readability             |      7 |      3 |         0 |     10 |              70% |
-| **Total**                     | **54** | **27** |     **3** | **84** | **67% adjusted** |
+| **Total**                     | **60** | **21** |     **3** | **84** | **74% adjusted** |
 
 ## Category Targets
 
@@ -68,40 +68,40 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 
 ### Invariant Enforcement
 
-| category              | item_id | statement              | current_status | exception_id | evidence_path                        | owner   | target_task | notes                                               |
-| --------------------- | ------- | ---------------------- | -------------- | ------------ | ------------------------------------ | ------- | ----------- | --------------------------------------------------- |
-| Invariant Enforcement | INV-001 | Linter 설정 파일 존재  | pass           |              | eslint.config.mjs                    | harness |             |                                                     |
-| Invariant Enforcement | INV-002 | Linter 규칙 적절       | pass           |              | eslint.config.mjs                    | harness | I-0006-010  | import order still missing                          |
-| Invariant Enforcement | INV-003 | Formatter 설정 존재    | fail           |              | package.json                         | harness | I-0006-010  | explicit prettier config missing                    |
-| Invariant Enforcement | INV-004 | Formatter 자동 적용    | pass           |              | .husky/pre-commit                    | harness |             |                                                     |
-| Invariant Enforcement | INV-005 | Type checking 설정     | pass           |              | tsconfig.base.json                   | harness |             |                                                     |
-| Invariant Enforcement | INV-006 | Type strictness 적절   | pass           |              | tsconfig.base.json                   | harness |             |                                                     |
-| Invariant Enforcement | INV-007 | CI 존재                | pass           |              | .github/workflows/ci.yml             | harness |             |                                                     |
-| Invariant Enforcement | INV-008 | CI lint 실행           | pass           |              | .github/workflows/ci.yml             | harness |             |                                                     |
-| Invariant Enforcement | INV-009 | CI 테스트 실행         | pass           |              | .github/workflows/ci.yml             | harness |             |                                                     |
-| Invariant Enforcement | INV-010 | CI type check 실행     | fail           |              | .github/workflows/ci.yml             | harness | I-0006-030  | build implies some checks but no explicit typecheck |
-| Invariant Enforcement | INV-011 | pre-commit hooks 설정  | pass           |              | .husky/pre-commit                    | harness |             |                                                     |
-| Invariant Enforcement | INV-012 | coverage 기준 강제     | fail           |              | apps/api/package.json                | harness | I-0006-030  | no blocking threshold yet                           |
-| Invariant Enforcement | INV-013 | branch protection 규칙 | exception      | EX-0001      | design/operating-rules/exceptions.md | harness | I-0006-040  | external proof required                             |
-| Invariant Enforcement | INV-014 | import 순서 규칙 강제  | fail           |              | eslint.config.mjs                    | harness | I-0006-010  | pending simple-import-sort                          |
-| Invariant Enforcement | INV-015 | 보안 검사 자동 실행    | fail           |              | .github/workflows/                   | harness | I-0006-040  | pending CodeQL/dependency review                    |
+| category              | item_id | statement              | current_status | exception_id | evidence_path                        | owner   | target_task | notes                                                               |
+| --------------------- | ------- | ---------------------- | -------------- | ------------ | ------------------------------------ | ------- | ----------- | ------------------------------------------------------------------- |
+| Invariant Enforcement | INV-001 | Linter 설정 파일 존재  | pass           |              | eslint.config.mjs                    | harness |             |                                                                     |
+| Invariant Enforcement | INV-002 | Linter 규칙 적절       | pass           |              | eslint.config.mjs                    | harness | I-0006-010  | simple-import-sort and hook rules now enforced                      |
+| Invariant Enforcement | INV-003 | Formatter 설정 존재    | pass           |              | .prettierrc.json                     | harness | I-0006-010  | explicit Prettier config committed                                  |
+| Invariant Enforcement | INV-004 | Formatter 자동 적용    | pass           |              | .husky/pre-commit                    | harness |             |                                                                     |
+| Invariant Enforcement | INV-005 | Type checking 설정     | pass           |              | tsconfig.base.json                   | harness |             |                                                                     |
+| Invariant Enforcement | INV-006 | Type strictness 적절   | pass           |              | tsconfig.base.json                   | harness |             |                                                                     |
+| Invariant Enforcement | INV-007 | CI 존재                | pass           |              | .github/workflows/ci.yml             | harness |             |                                                                     |
+| Invariant Enforcement | INV-008 | CI lint 실행           | pass           |              | .github/workflows/ci.yml             | harness |             |                                                                     |
+| Invariant Enforcement | INV-009 | CI 테스트 실행         | pass           |              | .github/workflows/ci.yml             | harness |             |                                                                     |
+| Invariant Enforcement | INV-010 | CI type check 실행     | fail           |              | .github/workflows/ci.yml             | harness | I-0006-030  | build implies some checks but no explicit typecheck                 |
+| Invariant Enforcement | INV-011 | pre-commit hooks 설정  | pass           |              | .husky/pre-commit                    | harness |             |                                                                     |
+| Invariant Enforcement | INV-012 | coverage 기준 강제     | pass           |              | apps/api/jest.config.ts              | harness | I-0006-030  | API coverage gate blocks in CI; web coverage remains follow-up work |
+| Invariant Enforcement | INV-013 | branch protection 규칙 | exception      | EX-0001      | design/operating-rules/exceptions.md | harness | I-0006-040  | external proof required                                             |
+| Invariant Enforcement | INV-014 | import 순서 규칙 강제  | pass           |              | eslint.config.mjs                    | harness | I-0006-010  | simple-import-sort is blocking in lint                              |
+| Invariant Enforcement | INV-015 | 보안 검사 자동 실행    | fail           |              | .github/workflows/                   | harness | I-0006-040  | pending CodeQL/dependency review                                    |
 
 ### Architecture
 
-| category     | item_id | statement              | current_status | exception_id | evidence_path                                        | owner        | target_task | notes                               |
-| ------------ | ------- | ---------------------- | -------------- | ------------ | ---------------------------------------------------- | ------------ | ----------- | ----------------------------------- |
-| Architecture | ARC-001 | 레이어 분리            | pass           |              | apps/api/src/                                        | backend      | I-0005-050  | docs still thin                     |
-| Architecture | ARC-002 | 의존성 방향 일관성     | fail           |              | design/architecture/README.md                        | architecture | I-0006-020  | no automated check yet              |
-| Architecture | ARC-003 | 모듈 경계 명확         | fail           |              | design/backend/README.md                             | backend      | I-0005-050  | docs placeholder only               |
-| Architecture | ARC-004 | import 규칙 존재/강제  | fail           |              | eslint.config.mjs                                    | harness      | I-0006-020  | pending depcruise                   |
-| Architecture | ARC-005 | API contract 명시      | pass           |              | apps/api/src/main.ts                                 | backend      | I-0005-060  | Swagger exists, corpus pending      |
-| Architecture | ARC-006 | 설정과 코드 분리       | pass           |              | apps/api/src/main.ts                                 | backend      |             | ConfigService use                   |
-| Architecture | ARC-007 | 공통 유틸 중앙화       | pass           |              | apps/web/src/lib/utils.ts                            | frontend     |             |                                     |
-| Architecture | ARC-008 | 에러 처리 패턴 일관    | pass           |              | apps/api/src/common/filters/http-exception.filter.ts | backend      | I-0005-050  | runtime docs pending                |
-| Architecture | ARC-009 | 데이터 모델 한 곳 정의 | pass           |              | packages/database/prisma/schema.prisma               | backend      |             |                                     |
-| Architecture | ARC-010 | 외부 의존성 추상화     | fail           |              | apps/api/src/uploads/storage                         | backend      | I-0005-050  | partial today                       |
-| Architecture | ARC-011 | 테스트 구조 대칭       | pass           |              | apps/api/src/\*_/_.spec.ts                           | backend      |             | web weaker but overall partial pass |
-| Architecture | ARC-012 | 순환 의존성 없음       | fail           |              | .github/workflows/ci.yml                             | harness      | I-0006-020  | no automated proof yet              |
+| category     | item_id | statement              | current_status | exception_id | evidence_path                                        | owner        | target_task | notes                                           |
+| ------------ | ------- | ---------------------- | -------------- | ------------ | ---------------------------------------------------- | ------------ | ----------- | ----------------------------------------------- |
+| Architecture | ARC-001 | 레이어 분리            | pass           |              | apps/api/src/                                        | backend      | I-0005-050  | docs still thin                                 |
+| Architecture | ARC-002 | 의존성 방향 일관성     | pass           |              | .dependency-cruiser.cjs                              | architecture | I-0006-020  | dependency-cruiser now proves direction rules   |
+| Architecture | ARC-003 | 모듈 경계 명확         | fail           |              | design/backend/README.md                             | backend      | I-0005-050  | docs placeholder only                           |
+| Architecture | ARC-004 | import 규칙 존재/강제  | pass           |              | .dependency-cruiser.cjs                              | harness      | I-0006-020  | boundary and no-cross-app rules run in CI/local |
+| Architecture | ARC-005 | API contract 명시      | pass           |              | apps/api/src/main.ts                                 | backend      | I-0005-060  | Swagger exists, corpus pending                  |
+| Architecture | ARC-006 | 설정과 코드 분리       | pass           |              | apps/api/src/main.ts                                 | backend      |             | ConfigService use                               |
+| Architecture | ARC-007 | 공통 유틸 중앙화       | pass           |              | apps/web/src/lib/utils.ts                            | frontend     |             |                                                 |
+| Architecture | ARC-008 | 에러 처리 패턴 일관    | pass           |              | apps/api/src/common/filters/http-exception.filter.ts | backend      | I-0005-050  | runtime docs pending                            |
+| Architecture | ARC-009 | 데이터 모델 한 곳 정의 | pass           |              | packages/database/prisma/schema.prisma               | backend      |             |                                                 |
+| Architecture | ARC-010 | 외부 의존성 추상화     | fail           |              | apps/api/src/uploads/storage                         | backend      | I-0005-050  | partial today                                   |
+| Architecture | ARC-011 | 테스트 구조 대칭       | pass           |              | apps/api/src/\*_/_.spec.ts                           | backend      |             | web weaker but overall partial pass             |
+| Architecture | ARC-012 | 순환 의존성 없음       | pass           |              | .github/workflows/ci.yml                             | harness      | I-0006-020  | pnpm depcruise is blocking in CI/local          |
 
 ### Repository as Source of Truth
 

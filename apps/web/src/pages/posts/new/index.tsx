@@ -1,14 +1,13 @@
-import { toast } from "sonner";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { Check, ChevronLeft, Dumbbell, Eye, Image as ImageIcon, Loader2, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useWorkouts } from "@/hooks/useWorkouts";
-import { useCreatePost } from "@/hooks/usePosts";
-import { api } from "@/lib/api-client";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
+
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -17,18 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserAvatar } from "@/components/common/UserAvatar";
+import { Textarea } from "@/components/ui/textarea";
+import { useCreatePost } from "@/hooks/usePosts";
+import { useWorkouts } from "@/hooks/useWorkouts";
+import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { formatDistance, formatDuration } from "@/lib/format";
-import {
-  Check,
-  ChevronLeft,
-  X,
-  Loader2,
-  Image as ImageIcon,
-  Dumbbell,
-  Eye,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ─── 타입 ────────────────────────────────────────────────────
@@ -63,7 +56,9 @@ function StepWorkout({
     <div className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold">워크아웃 선택</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">첨부할 워크아웃을 선택하세요. (선택사항)</p>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          첨부할 워크아웃을 선택하세요. (선택사항)
+        </p>
       </div>
 
       {isLoading ? (
@@ -88,15 +83,13 @@ function StepWorkout({
                 onClick={() => onToggle(workout.id)}
                 className={cn(
                   "w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-colors",
-                  selected
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:bg-accent/50"
+                  selected ? "border-primary bg-primary/5" : "border-border hover:bg-accent/50",
                 )}
               >
                 <div
                   className={cn(
                     "flex-shrink-0 size-5 rounded-full border-2 flex items-center justify-center",
-                    selected ? "border-primary bg-primary" : "border-muted-foreground"
+                    selected ? "border-primary bg-primary" : "border-muted-foreground",
                   )}
                 >
                   {selected && <Check className="size-3 text-primary-foreground" />}
@@ -121,7 +114,9 @@ function StepWorkout({
         <Button type="button" onClick={onNext} className="flex-1">
           다음
           {selectedIds.length > 0 && (
-            <Badge variant="secondary" className="ml-2">{selectedIds.length}</Badge>
+            <Badge variant="secondary" className="ml-2">
+              {selectedIds.length}
+            </Badge>
           )}
         </Button>
       </div>
@@ -162,12 +157,14 @@ function StepPhotos({
           htmlFor="image-input"
           className={cn(
             "flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors",
-            "border-muted-foreground/30 hover:border-primary/50 hover:bg-accent/30"
+            "border-muted-foreground/30 hover:border-primary/50 hover:bg-accent/30",
           )}
         >
           <ImageIcon className="size-8 text-muted-foreground mb-2" />
           <span className="text-sm text-muted-foreground">클릭하여 사진 선택</span>
-          <span className="text-xs text-muted-foreground mt-1">{images.length} / {maxImages}</span>
+          <span className="text-xs text-muted-foreground mt-1">
+            {images.length} / {maxImages}
+          </span>
           <input
             id="image-input"
             type="file"
@@ -218,22 +215,39 @@ function StepPhotos({
       )}
 
       {hasError && (
-        <p className="text-xs text-destructive">업로드 실패한 이미지가 있습니다. 제거 후 다시 시도해주세요.</p>
+        <p className="text-xs text-destructive">
+          업로드 실패한 이미지가 있습니다. 제거 후 다시 시도해주세요.
+        </p>
       )}
 
       <div className="flex gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onSkip} className="flex-1" disabled={isUploading}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onSkip}
+          className="flex-1"
+          disabled={isUploading}
+        >
           사진 없이 진행
         </Button>
-        <Button type="button" onClick={onNext} className="flex-1" disabled={isUploading || hasError}>
+        <Button
+          type="button"
+          onClick={onNext}
+          className="flex-1"
+          disabled={isUploading || hasError}
+        >
           {isUploading ? (
             <>
               <Loader2 className="size-4 mr-2 animate-spin" />
               업로드 중...
             </>
-          ) : "다음"}
+          ) : (
+            "다음"
+          )}
           {images.length > 0 && !isUploading && (
-            <Badge variant="secondary" className="ml-2">{images.length}</Badge>
+            <Badge variant="secondary" className="ml-2">
+              {images.length}
+            </Badge>
           )}
         </Button>
       </div>
@@ -285,10 +299,12 @@ function StepText({
           maxLength={maxChars}
           autoFocus
         />
-        <p className={cn(
-          "text-xs text-right",
-          charsLeft < 100 ? "text-destructive" : "text-muted-foreground"
-        )}>
+        <p
+          className={cn(
+            "text-xs text-right",
+            charsLeft < 100 ? "text-destructive" : "text-muted-foreground",
+          )}
+        >
           {charsLeft.toLocaleString()} / {maxChars.toLocaleString()}
         </p>
       </div>
@@ -304,7 +320,9 @@ function StepText({
         {hashtags.length > 0 && (
           <div className="flex flex-wrap gap-1 pt-1">
             {hashtags.map((tag, i) => (
-              <Badge key={i} variant="secondary">#{tag}</Badge>
+              <Badge key={i} variant="secondary">
+                #{tag}
+              </Badge>
             ))}
           </div>
         )}
@@ -389,7 +407,10 @@ function StepPreview({
           {images.length > 0 && (
             <div className="grid grid-cols-3 gap-1.5">
               {images.map((img) => (
-                <div key={img.preview} className="aspect-square rounded-lg overflow-hidden border bg-muted">
+                <div
+                  key={img.preview}
+                  className="aspect-square rounded-lg overflow-hidden border bg-muted"
+                >
                   <img src={img.preview} alt="첨부 이미지" className="w-full h-full object-cover" />
                 </div>
               ))}
@@ -397,15 +418,15 @@ function StepPreview({
           )}
 
           {/* 내용 */}
-          {content && (
-            <p className="text-sm whitespace-pre-wrap">{content}</p>
-          )}
+          {content && <p className="text-sm whitespace-pre-wrap">{content}</p>}
 
           {/* 해시태그 */}
           {hashtags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {hashtags.map((tag, i) => (
-                <Badge key={i} variant="secondary">#{tag}</Badge>
+                <Badge key={i} variant="secondary">
+                  #{tag}
+                </Badge>
               ))}
             </div>
           )}
@@ -414,10 +435,15 @@ function StepPreview({
           {selectedWorkouts.length > 0 && (
             <div className="space-y-1.5 pt-1 border-t">
               {selectedWorkouts.map((workout) => (
-                <div key={workout.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div
+                  key={workout.id}
+                  className="flex items-center gap-2 text-sm text-muted-foreground"
+                >
                   <Dumbbell className="size-3.5" />
                   <span>{workout.workoutType?.name ?? "워크아웃"}</span>
-                  <span className="text-xs">· {formatDistance(workout.distance)} km · {formatDuration(workout.duration)}</span>
+                  <span className="text-xs">
+                    · {formatDistance(workout.distance)} km · {formatDuration(workout.duration)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -449,7 +475,9 @@ function StepPreview({
             <Loader2 className="size-4 mr-2 animate-spin" />
             게시 중...
           </>
-        ) : "게시하기"}
+        ) : (
+          "게시하기"
+        )}
       </Button>
     </div>
   );
@@ -466,7 +494,7 @@ export default function NewPostPage() {
 
   const [step, setStep] = useState<Step>(0);
   const [selectedWorkoutIds, setSelectedWorkoutIds] = useState<string[]>(
-    preselectedWorkoutId ? [preselectedWorkoutId] : []
+    preselectedWorkoutId ? [preselectedWorkoutId] : [],
   );
   const [images, setImages] = useState<ImageUpload[]>([]);
   const [content, setContent] = useState("");
@@ -475,7 +503,10 @@ export default function NewPostPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const maxImages = 5;
-  const hashtags = hashtagsInput.split(",").map((t) => t.trim()).filter((t) => t.length > 0);
+  const hashtags = hashtagsInput
+    .split(",")
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
 
   // 브라우저 back 버튼 처리
   const stepRef = useRef(step);
@@ -534,13 +565,15 @@ export default function NewPostPage() {
           headers: { "Content-Type": file.type },
         });
         setImages((prev) =>
-          prev.map((img) => img.preview === preview ? { ...img, publicUrl, uploading: false } : img)
+          prev.map((img) =>
+            img.preview === preview ? { ...img, publicUrl, uploading: false } : img,
+          ),
         );
       } catch {
         setImages((prev) =>
           prev.map((img) =>
-            img.preview === preview ? { ...img, uploading: false, error: "업로드 실패" } : img
-          )
+            img.preview === preview ? { ...img, uploading: false, error: "업로드 실패" } : img,
+          ),
         );
       }
     }
@@ -560,7 +593,7 @@ export default function NewPostPage() {
     return () => {
       images.forEach((img) => URL.revokeObjectURL(img.preview));
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubmit = async () => {
@@ -601,13 +634,15 @@ export default function NewPostPage() {
               <div
                 className={cn(
                   "h-1 rounded-full transition-colors",
-                  i <= step ? "bg-primary" : "bg-muted"
+                  i <= step ? "bg-primary" : "bg-muted",
                 )}
               />
-              <p className={cn(
-                "text-[10px] mt-1 text-center transition-colors",
-                i === step ? "text-primary font-medium" : "text-muted-foreground"
-              )}>
+              <p
+                className={cn(
+                  "text-[10px] mt-1 text-center transition-colors",
+                  i === step ? "text-primary font-medium" : "text-muted-foreground",
+                )}
+              >
                 {label}
               </p>
             </div>
@@ -621,7 +656,7 @@ export default function NewPostPage() {
           selectedIds={selectedWorkoutIds}
           onToggle={(id) =>
             setSelectedWorkoutIds((prev) =>
-              prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+              prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
             )
           }
           onSkip={goNext}

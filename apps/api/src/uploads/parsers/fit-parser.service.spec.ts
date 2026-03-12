@@ -1,4 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
+
 import { FitParserService } from "./fit-parser.service.js";
 
 describe("FitParserService", () => {
@@ -16,9 +17,7 @@ describe("FitParserService", () => {
     it("should throw on too-short buffer", async () => {
       const shortBuffer = Buffer.from([0x00, 0x01, 0x02]);
 
-      await expect(service.parse(shortBuffer)).rejects.toThrow(
-        "Invalid FIT file: too short"
-      );
+      await expect(service.parse(shortBuffer)).rejects.toThrow("Invalid FIT file: too short");
     });
 
     it("should throw on invalid header size", async () => {
@@ -27,7 +26,7 @@ describe("FitParserService", () => {
       invalidBuffer[0] = 16; // Invalid header size
 
       await expect(service.parse(invalidBuffer)).rejects.toThrow(
-        "Invalid FIT file: bad header size"
+        "Invalid FIT file: bad header size",
       );
     });
 
@@ -37,25 +36,23 @@ describe("FitParserService", () => {
       fitBuffer[0] = 12; // Valid header size
 
       // Mock the fit-file-parser to return session data
-      jest
-        .spyOn(service as any, "parseFitBuffer")
-        .mockResolvedValueOnce({
-          sessions: [
-            {
-              total_distance: 5000, // meters
-              total_timer_time: 1500, // seconds
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              timestamp: new Date("2026-02-16T10:25:00Z"),
-              avg_heart_rate: 150,
-              max_heart_rate: 180,
-              total_calories: 300,
-              total_ascent: 50,
-              avg_cadence: 85,
-              max_cadence: 95,
-            },
-          ],
-          records: [],
-        });
+      jest.spyOn(service as any, "parseFitBuffer").mockResolvedValueOnce({
+        sessions: [
+          {
+            total_distance: 5000, // meters
+            total_timer_time: 1500, // seconds
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            timestamp: new Date("2026-02-16T10:25:00Z"),
+            avg_heart_rate: 150,
+            max_heart_rate: 180,
+            total_calories: 300,
+            total_ascent: 50,
+            avg_cadence: 85,
+            max_cadence: 95,
+          },
+        ],
+        records: [],
+      });
 
       const result = await service.parse(fitBuffer);
 
@@ -80,30 +77,28 @@ describe("FitParserService", () => {
       const fitBuffer = Buffer.alloc(100);
       fitBuffer[0] = 12;
 
-      jest
-        .spyOn(service as any, "parseFitBuffer")
-        .mockResolvedValueOnce({
-          sessions: [
-            {
-              total_distance: 1000,
-              total_timer_time: 300,
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              timestamp: new Date("2026-02-16T10:05:00Z"),
-            },
-          ],
-          records: [
-            {
-              position_lat: 376739502, // semicircles
-              position_long: 1268315888, // semicircles
-              timestamp: new Date("2026-02-16T10:00:00Z"),
-            },
-            {
-              position_lat: 376740000,
-              position_long: 1268316000,
-              timestamp: new Date("2026-02-16T10:01:00Z"),
-            },
-          ],
-        });
+      jest.spyOn(service as any, "parseFitBuffer").mockResolvedValueOnce({
+        sessions: [
+          {
+            total_distance: 1000,
+            total_timer_time: 300,
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            timestamp: new Date("2026-02-16T10:05:00Z"),
+          },
+        ],
+        records: [
+          {
+            position_lat: 376739502, // semicircles
+            position_long: 1268315888, // semicircles
+            timestamp: new Date("2026-02-16T10:00:00Z"),
+          },
+          {
+            position_lat: 376740000,
+            position_long: 1268316000,
+            timestamp: new Date("2026-02-16T10:01:00Z"),
+          },
+        ],
+      });
 
       const result = await service.parse(fitBuffer);
 
@@ -120,19 +115,17 @@ describe("FitParserService", () => {
       const fitBuffer = Buffer.alloc(100);
       fitBuffer[0] = 12;
 
-      jest
-        .spyOn(service as any, "parseFitBuffer")
-        .mockResolvedValueOnce({
-          sessions: [
-            {
-              total_distance: 5000,
-              total_timer_time: 1500,
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              timestamp: new Date("2026-02-16T10:25:00Z"),
-            },
-          ],
-          records: [], // No GPS records
-        });
+      jest.spyOn(service as any, "parseFitBuffer").mockResolvedValueOnce({
+        sessions: [
+          {
+            total_distance: 5000,
+            total_timer_time: 1500,
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            timestamp: new Date("2026-02-16T10:25:00Z"),
+          },
+        ],
+        records: [], // No GPS records
+      });
 
       const result = await service.parse(fitBuffer);
 
@@ -145,20 +138,18 @@ describe("FitParserService", () => {
       const fitBuffer = Buffer.alloc(100);
       fitBuffer[0] = 12;
 
-      jest
-        .spyOn(service as any, "parseFitBuffer")
-        .mockResolvedValueOnce({
-          sessions: [
-            {
-              total_distance: 3000,
-              total_timer_time: 900,
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              timestamp: new Date("2026-02-16T10:15:00Z"),
-              // No heart rate, calories, elevation, or cadence
-            },
-          ],
-          records: [],
-        });
+      jest.spyOn(service as any, "parseFitBuffer").mockResolvedValueOnce({
+        sessions: [
+          {
+            total_distance: 3000,
+            total_timer_time: 900,
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            timestamp: new Date("2026-02-16T10:15:00Z"),
+            // No heart rate, calories, elevation, or cadence
+          },
+        ],
+        records: [],
+      });
 
       const result = await service.parse(fitBuffer);
 
@@ -174,16 +165,12 @@ describe("FitParserService", () => {
       const fitBuffer = Buffer.alloc(100);
       fitBuffer[0] = 12;
 
-      jest
-        .spyOn(service as any, "parseFitBuffer")
-        .mockResolvedValueOnce({
-          sessions: [], // No sessions
-          records: [],
-        });
+      jest.spyOn(service as any, "parseFitBuffer").mockResolvedValueOnce({
+        sessions: [], // No sessions
+        records: [],
+      });
 
-      await expect(service.parse(fitBuffer)).rejects.toThrow(
-        "No session data found in FIT file"
-      );
+      await expect(service.parse(fitBuffer)).rejects.toThrow("No session data found in FIT file");
     });
 
     it("should throw error when parsing fails", async () => {
@@ -195,7 +182,7 @@ describe("FitParserService", () => {
         .mockRejectedValueOnce(new Error("Invalid FIT format"));
 
       await expect(service.parse(fitBuffer)).rejects.toThrow(
-        "Failed to parse FIT file: Invalid FIT format"
+        "Failed to parse FIT file: Invalid FIT format",
       );
     });
 
@@ -203,51 +190,49 @@ describe("FitParserService", () => {
       const fitBuffer = Buffer.alloc(100);
       fitBuffer[0] = 12;
 
-      jest
-        .spyOn(service as any, "parseFitBuffer")
-        .mockResolvedValueOnce({
-          sessions: [
-            {
-              total_distance: 5000,
-              total_timer_time: 1500,
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              timestamp: new Date("2026-02-16T10:25:00Z"),
-            },
-          ],
-          records: [],
-          laps: [
-            {
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              timestamp: new Date("2026-02-16T10:05:00Z"),
-              total_distance: 1000,
-              total_timer_time: 300,
-              avg_heart_rate: 145,
-              max_heart_rate: 160,
-              avg_cadence: 82,
-              total_calories: 60,
-            },
-            {
-              start_time: new Date("2026-02-16T10:05:00Z"),
-              timestamp: new Date("2026-02-16T10:10:00Z"),
-              total_distance: 1000,
-              total_timer_time: 290,
-              avg_heart_rate: 155,
-              max_heart_rate: 170,
-              avg_cadence: 85,
-              total_calories: 65,
-            },
-            {
-              start_time: new Date("2026-02-16T10:10:00Z"),
-              timestamp: new Date("2026-02-16T10:15:00Z"),
-              total_distance: 1000,
-              total_timer_time: 310,
-              avg_heart_rate: 150,
-              max_heart_rate: 165,
-              avg_cadence: 80,
-              total_calories: 62,
-            },
-          ],
-        });
+      jest.spyOn(service as any, "parseFitBuffer").mockResolvedValueOnce({
+        sessions: [
+          {
+            total_distance: 5000,
+            total_timer_time: 1500,
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            timestamp: new Date("2026-02-16T10:25:00Z"),
+          },
+        ],
+        records: [],
+        laps: [
+          {
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            timestamp: new Date("2026-02-16T10:05:00Z"),
+            total_distance: 1000,
+            total_timer_time: 300,
+            avg_heart_rate: 145,
+            max_heart_rate: 160,
+            avg_cadence: 82,
+            total_calories: 60,
+          },
+          {
+            start_time: new Date("2026-02-16T10:05:00Z"),
+            timestamp: new Date("2026-02-16T10:10:00Z"),
+            total_distance: 1000,
+            total_timer_time: 290,
+            avg_heart_rate: 155,
+            max_heart_rate: 170,
+            avg_cadence: 85,
+            total_calories: 65,
+          },
+          {
+            start_time: new Date("2026-02-16T10:10:00Z"),
+            timestamp: new Date("2026-02-16T10:15:00Z"),
+            total_distance: 1000,
+            total_timer_time: 310,
+            avg_heart_rate: 150,
+            max_heart_rate: 165,
+            avg_cadence: 80,
+            total_calories: 62,
+          },
+        ],
+      });
 
       const result = await service.parse(fitBuffer);
 
@@ -285,27 +270,25 @@ describe("FitParserService", () => {
       const fitBuffer = Buffer.alloc(100);
       fitBuffer[0] = 12;
 
-      jest
-        .spyOn(service as any, "parseFitBuffer")
-        .mockResolvedValueOnce({
-          sessions: [
-            {
-              total_distance: 2000,
-              total_timer_time: 600,
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              timestamp: new Date("2026-02-16T10:10:00Z"),
-            },
-          ],
-          records: [],
-          laps: [
-            {
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              total_distance: 1000,
-              total_timer_time: 300,
-              // no heart_rate, cadence, calories
-            },
-          ],
-        });
+      jest.spyOn(service as any, "parseFitBuffer").mockResolvedValueOnce({
+        sessions: [
+          {
+            total_distance: 2000,
+            total_timer_time: 600,
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            timestamp: new Date("2026-02-16T10:10:00Z"),
+          },
+        ],
+        records: [],
+        laps: [
+          {
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            total_distance: 1000,
+            total_timer_time: 300,
+            // no heart_rate, cadence, calories
+          },
+        ],
+      });
 
       const result = await service.parse(fitBuffer);
 
@@ -320,20 +303,18 @@ describe("FitParserService", () => {
       const fitBuffer = Buffer.alloc(100);
       fitBuffer[0] = 12;
 
-      jest
-        .spyOn(service as any, "parseFitBuffer")
-        .mockResolvedValueOnce({
-          sessions: [
-            {
-              total_distance: 5000,
-              total_timer_time: 1500,
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              timestamp: new Date("2026-02-16T10:25:00Z"),
-            },
-          ],
-          records: [],
-          // no laps field
-        });
+      jest.spyOn(service as any, "parseFitBuffer").mockResolvedValueOnce({
+        sessions: [
+          {
+            total_distance: 5000,
+            total_timer_time: 1500,
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            timestamp: new Date("2026-02-16T10:25:00Z"),
+          },
+        ],
+        records: [],
+        // no laps field
+      });
 
       const result = await service.parse(fitBuffer);
       expect(result.laps).toBeUndefined();
@@ -343,36 +324,34 @@ describe("FitParserService", () => {
       const fitBuffer = Buffer.alloc(100);
       fitBuffer[0] = 12;
 
-      jest
-        .spyOn(service as any, "parseFitBuffer")
-        .mockResolvedValueOnce({
-          sessions: [
-            {
-              total_distance: 1000,
-              total_timer_time: 300,
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              timestamp: new Date("2026-02-16T10:05:00Z"),
-            },
-          ],
-          records: [
-            {
-              position_lat: 376739502,
-              position_long: 1268315888,
-              timestamp: new Date("2026-02-16T10:00:00Z"),
-              altitude: 52.5,
-              heart_rate: 142,
-              cadence: 83,
-            },
-            {
-              position_lat: 376740000,
-              position_long: 1268316000,
-              timestamp: new Date("2026-02-16T10:01:00Z"),
-              altitude: 55.2,
-              heart_rate: 148,
-              cadence: 85,
-            },
-          ],
-        });
+      jest.spyOn(service as any, "parseFitBuffer").mockResolvedValueOnce({
+        sessions: [
+          {
+            total_distance: 1000,
+            total_timer_time: 300,
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            timestamp: new Date("2026-02-16T10:05:00Z"),
+          },
+        ],
+        records: [
+          {
+            position_lat: 376739502,
+            position_long: 1268315888,
+            timestamp: new Date("2026-02-16T10:00:00Z"),
+            altitude: 52.5,
+            heart_rate: 142,
+            cadence: 83,
+          },
+          {
+            position_lat: 376740000,
+            position_long: 1268316000,
+            timestamp: new Date("2026-02-16T10:01:00Z"),
+            altitude: 55.2,
+            heart_rate: 148,
+            cadence: 85,
+          },
+        ],
+      });
 
       const result = await service.parse(fitBuffer);
 
@@ -395,27 +374,25 @@ describe("FitParserService", () => {
       const fitBuffer = Buffer.alloc(100);
       fitBuffer[0] = 12;
 
-      jest
-        .spyOn(service as any, "parseFitBuffer")
-        .mockResolvedValueOnce({
-          sessions: [
-            {
-              total_distance: 1000,
-              total_timer_time: 300,
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              timestamp: new Date("2026-02-16T10:05:00Z"),
-            },
-          ],
-          records: [
-            {
-              position_lat: 376739502,
-              position_long: 1268315888,
-              timestamp: new Date("2026-02-16T10:00:00Z"),
-              enhanced_altitude: 100.3,
-              // no altitude field
-            },
-          ],
-        });
+      jest.spyOn(service as any, "parseFitBuffer").mockResolvedValueOnce({
+        sessions: [
+          {
+            total_distance: 1000,
+            total_timer_time: 300,
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            timestamp: new Date("2026-02-16T10:05:00Z"),
+          },
+        ],
+        records: [
+          {
+            position_lat: 376739502,
+            position_long: 1268315888,
+            timestamp: new Date("2026-02-16T10:00:00Z"),
+            enhanced_altitude: 100.3,
+            // no altitude field
+          },
+        ],
+      });
 
       const result = await service.parse(fitBuffer);
 
@@ -426,26 +403,24 @@ describe("FitParserService", () => {
       const fitBuffer = Buffer.alloc(100);
       fitBuffer[0] = 12;
 
-      jest
-        .spyOn(service as any, "parseFitBuffer")
-        .mockResolvedValueOnce({
-          sessions: [
-            {
-              total_distance: 1000,
-              total_timer_time: 300,
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              timestamp: new Date("2026-02-16T10:05:00Z"),
-            },
-          ],
-          records: [
-            {
-              position_lat: 376739502,
-              position_long: 1268315888,
-              timestamp: new Date("2026-02-16T10:00:00Z"),
-              // no altitude, heart_rate, cadence
-            },
-          ],
-        });
+      jest.spyOn(service as any, "parseFitBuffer").mockResolvedValueOnce({
+        sessions: [
+          {
+            total_distance: 1000,
+            total_timer_time: 300,
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            timestamp: new Date("2026-02-16T10:05:00Z"),
+          },
+        ],
+        records: [
+          {
+            position_lat: 376739502,
+            position_long: 1268315888,
+            timestamp: new Date("2026-02-16T10:00:00Z"),
+            // no altitude, heart_rate, cadence
+          },
+        ],
+      });
 
       const result = await service.parse(fitBuffer);
 
@@ -458,26 +433,24 @@ describe("FitParserService", () => {
       const fitBuffer = Buffer.alloc(100);
       fitBuffer[0] = 12;
 
-      jest
-        .spyOn(service as any, "parseFitBuffer")
-        .mockResolvedValueOnce({
-          sessions: [
-            {
-              total_distance: 1000,
-              total_timer_time: 300,
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              timestamp: new Date("2026-02-16T10:05:00Z"),
-            },
-          ],
-          records: [],
-          laps: [
-            {
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              total_distance: 0,
-              total_timer_time: 10,
-            },
-          ],
-        });
+      jest.spyOn(service as any, "parseFitBuffer").mockResolvedValueOnce({
+        sessions: [
+          {
+            total_distance: 1000,
+            total_timer_time: 300,
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            timestamp: new Date("2026-02-16T10:05:00Z"),
+          },
+        ],
+        records: [],
+        laps: [
+          {
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            total_distance: 0,
+            total_timer_time: 10,
+          },
+        ],
+      });
 
       const result = await service.parse(fitBuffer);
 
@@ -488,19 +461,17 @@ describe("FitParserService", () => {
       const fitBuffer = Buffer.alloc(100);
       fitBuffer[0] = 12;
 
-      jest
-        .spyOn(service as any, "parseFitBuffer")
-        .mockResolvedValueOnce({
-          sessions: [
-            {
-              total_distance: 10000, // 10 km
-              total_timer_time: 3000, // 50 minutes
-              start_time: new Date("2026-02-16T10:00:00Z"),
-              timestamp: new Date("2026-02-16T10:50:00Z"),
-            },
-          ],
-          records: [],
-        });
+      jest.spyOn(service as any, "parseFitBuffer").mockResolvedValueOnce({
+        sessions: [
+          {
+            total_distance: 10000, // 10 km
+            total_timer_time: 3000, // 50 minutes
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            timestamp: new Date("2026-02-16T10:50:00Z"),
+          },
+        ],
+        records: [],
+      });
 
       const result = await service.parse(fitBuffer);
 

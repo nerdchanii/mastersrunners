@@ -1,6 +1,8 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { WorkoutFileRepository } from "./workout-file.repository.js";
+
 import { DatabaseService } from "../../database/database.service.js";
+
+import { WorkoutFileRepository } from "./workout-file.repository.js";
 
 describe("WorkoutFileRepository", () => {
   let repository: WorkoutFileRepository;

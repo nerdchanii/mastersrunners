@@ -1,26 +1,27 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Query } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from "@nestjs/common";
+import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
-import { ChallengesService } from "./challenges.service.js";
+
 import { CreateChallengeDto } from "./dto/create-challenge.dto.js";
 import { UpdateChallengeDto } from "./dto/update-challenge.dto.js";
 import { UpdateProgressDto } from "./dto/update-progress.dto.js";
+import { ChallengesService } from "./challenges.service.js";
 
 @ApiTags("Challenges")
 @Controller("challenges")
 export class ChallengesController {
   constructor(private readonly challengesService: ChallengesService) {}
 
-  @ApiOperation({ summary: '챌린지 생성' })
-  @ApiResponse({ status: 201, description: '생성 성공' })
+  @ApiOperation({ summary: "챌린지 생성" })
+  @ApiResponse({ status: 201, description: "생성 성공" })
   @Post()
   create(@Req() req: Request, @Body() dto: CreateChallengeDto) {
     const { userId } = req.user as { userId: string };
     return this.challengesService.create(userId, dto);
   }
 
-  @ApiOperation({ summary: '챌린지 목록 조회' })
-  @ApiResponse({ status: 200, description: '성공' })
+  @ApiOperation({ summary: "챌린지 목록 조회" })
+  @ApiResponse({ status: 200, description: "성공" })
   @Get()
   findAll(
     @Query("isPublic") isPublic?: string,
@@ -49,8 +50,8 @@ export class ChallengesController {
     });
   }
 
-  @ApiOperation({ summary: '챌린지 상세 조회' })
-  @ApiResponse({ status: 200, description: '성공' })
+  @ApiOperation({ summary: "챌린지 상세 조회" })
+  @ApiResponse({ status: 200, description: "성공" })
   @Get(":id")
   findOne(@Param("id") id: string, @Req() req: Request) {
     const userId = (req.user as { userId: string } | undefined)?.userId;
@@ -87,8 +88,8 @@ export class ChallengesController {
     return this.challengesService.updateProgress(id, userId, dto.currentValue);
   }
 
-  @ApiOperation({ summary: '챌린지 리더보드 조회' })
-  @ApiResponse({ status: 200, description: '성공' })
+  @ApiOperation({ summary: "챌린지 리더보드 조회" })
+  @ApiResponse({ status: 200, description: "성공" })
   @Get(":id/leaderboard")
   getLeaderboard(@Param("id") id: string, @Query("limit") limit?: string) {
     return this.challengesService.getLeaderboard(id, limit ? parseInt(limit, 10) : undefined);

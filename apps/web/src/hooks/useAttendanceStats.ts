@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+
 import { api } from "@/lib/api-client";
 
 interface AttendanceBucket {
@@ -48,8 +49,7 @@ export interface CrewAttendanceStats {
 }
 
 export const attendanceKeys = {
-  member: (crewId: string, userId: string) =>
-    ["crews", crewId, "attendance", userId] as const,
+  member: (crewId: string, userId: string) => ["crews", crewId, "attendance", userId] as const,
   crew: (crewId: string, opts?: { month?: string; type?: string }) =>
     ["crews", crewId, "attendance-stats", opts] as const,
 };
@@ -58,17 +58,12 @@ export function useMemberAttendanceStats(crewId: string, userId: string) {
   return useQuery({
     queryKey: attendanceKeys.member(crewId, userId),
     queryFn: () =>
-      api.fetch<MemberAttendanceStats>(
-        `/crews/${crewId}/members/${userId}/attendance-stats`,
-      ),
+      api.fetch<MemberAttendanceStats>(`/crews/${crewId}/members/${userId}/attendance-stats`),
     enabled: !!crewId && !!userId,
   });
 }
 
-export function useCrewAttendanceStats(
-  crewId: string,
-  opts?: { month?: string; type?: string },
-) {
+export function useCrewAttendanceStats(crewId: string, opts?: { month?: string; type?: string }) {
   return useQuery({
     queryKey: attendanceKeys.crew(crewId, opts),
     queryFn: () => {

@@ -1,17 +1,12 @@
+import { Loader2 } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuth } from "@/lib/auth-context";
-import { api, API_BASE } from "@/lib/api-client";
+
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Loader2 } from "lucide-react";
+import { api, API_BASE } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 
 function LoginContent() {
   const navigate = useNavigate();
@@ -136,9 +131,7 @@ function LoginContent() {
               <Separator className="my-4" />
 
               <div className="space-y-2">
-                <p className="text-center text-xs text-muted-foreground">
-                  개발 전용
-                </p>
+                <p className="text-center text-xs text-muted-foreground">개발 전용</p>
                 <Button
                   onClick={async () => {
                     try {

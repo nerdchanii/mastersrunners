@@ -1,10 +1,7 @@
+import { MessageCircle, MoreHorizontal, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Settings, MessageCircle, MoreHorizontal } from "lucide-react";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from "@/components/ui/avatar";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -83,21 +80,15 @@ export function ProfileHeader({
         {/* Avatar overlapping cover */}
         <div className="-mt-12 sm:-mt-14 mb-3">
           <Avatar className="size-24 sm:size-28 ring-4 ring-card">
-            {user.profileImage && (
-              <AvatarImage src={user.profileImage} alt={user.name} />
-            )}
-            <AvatarFallback className="text-3xl sm:text-4xl bg-muted">
-              {initials}
-            </AvatarFallback>
+            {user.profileImage && <AvatarImage src={user.profileImage} alt={user.name} />}
+            <AvatarFallback className="text-3xl sm:text-4xl bg-muted">{initials}</AvatarFallback>
           </Avatar>
         </div>
 
         {/* Name + Actions Row */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold text-foreground truncate sm:text-2xl">
-              {user.name}
-            </h1>
+            <h1 className="text-xl font-bold text-foreground truncate sm:text-2xl">{user.name}</h1>
             {user.bio && (
               <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap line-clamp-3">
                 {user.bio}
@@ -124,7 +115,7 @@ export function ProfileHeader({
                   className={cn(
                     "min-w-[80px]",
                     isFollowing &&
-                      "hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
+                      "hover:bg-destructive hover:text-destructive-foreground hover:border-destructive",
                   )}
                 >
                   {isFollowLoading ? "처리 중..." : getFollowButtonText()}
@@ -153,29 +144,15 @@ export function ProfileHeader({
         {stats && (
           <div className="mt-4 flex items-center gap-5">
             <div className="text-sm">
-              <span className="font-bold text-foreground tabular-nums">
-                {stats.postCount}
-              </span>{" "}
+              <span className="font-bold text-foreground tabular-nums">{stats.postCount}</span>{" "}
               <span className="text-muted-foreground">게시물</span>
             </div>
-            <button
-              type="button"
-              onClick={onFollowersClick}
-              className="text-sm hover:underline"
-            >
-              <span className="font-bold text-foreground tabular-nums">
-                {stats.followerCount}
-              </span>{" "}
+            <button type="button" onClick={onFollowersClick} className="text-sm hover:underline">
+              <span className="font-bold text-foreground tabular-nums">{stats.followerCount}</span>{" "}
               <span className="text-muted-foreground">팔로워</span>
             </button>
-            <button
-              type="button"
-              onClick={onFollowingClick}
-              className="text-sm hover:underline"
-            >
-              <span className="font-bold text-foreground tabular-nums">
-                {stats.followingCount}
-              </span>{" "}
+            <button type="button" onClick={onFollowingClick} className="text-sm hover:underline">
+              <span className="font-bold text-foreground tabular-nums">{stats.followingCount}</span>{" "}
               <span className="text-muted-foreground">팔로잉</span>
             </button>
           </div>

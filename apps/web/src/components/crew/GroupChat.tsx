@@ -1,12 +1,13 @@
-import { useState, useRef, useEffect } from "react";
-import { useAuth } from "@/lib/auth-context";
+import { MessageCircle, Send } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UserAvatar } from "@/components/common/UserAvatar";
-import { Send, MessageCircle } from "lucide-react";
 import type { ChatMessage, ChatResponse } from "@/hooks/useGroupChat";
 import { useSendGroupMessage } from "@/hooks/useGroupChat";
+import { useAuth } from "@/lib/auth-context";
 
 interface GroupChatProps {
   data: ChatResponse | undefined;
@@ -128,9 +129,7 @@ export default function GroupChat({ data, isLoading, crewId, activityId }: Group
 function MessageBubble({ message, isOwn }: { message: ChatMessage; isOwn: boolean }) {
   if (message.deletedAt) {
     return (
-      <div className="text-center text-xs text-muted-foreground py-1">
-        삭제된 메시지입니다.
-      </div>
+      <div className="text-center text-xs text-muted-foreground py-1">삭제된 메시지입니다.</div>
     );
   }
 
@@ -147,14 +146,10 @@ function MessageBubble({ message, isOwn }: { message: ChatMessage; isOwn: boolea
         />
       )}
       <div className={`max-w-[70%] ${isOwn ? "text-right" : ""}`}>
-        {!isOwn && (
-          <p className="text-xs text-muted-foreground mb-0.5">{message.sender.name}</p>
-        )}
+        {!isOwn && <p className="text-xs text-muted-foreground mb-0.5">{message.sender.name}</p>}
         <div
           className={`inline-block rounded-lg px-3 py-2 text-sm ${
-            isOwn
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted"
+            isOwn ? "bg-primary text-primary-foreground" : "bg-muted"
           }`}
         >
           <p className="whitespace-pre-wrap break-words">{message.content}</p>

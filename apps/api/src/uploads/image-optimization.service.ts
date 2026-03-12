@@ -13,10 +13,7 @@ export class ImageOptimizationService {
     return contentType.startsWith("image/");
   }
 
-  async resizeAndOptimize(
-    buffer: Buffer,
-    options: ResizeOptions = {},
-  ): Promise<Buffer> {
+  async resizeAndOptimize(buffer: Buffer, options: ResizeOptions = {}): Promise<Buffer> {
     const { maxWidth = 1920, maxHeight = 1920, quality = 80 } = options;
 
     return sharp(buffer)
@@ -29,9 +26,7 @@ export class ImageOptimizationService {
   }
 
   async convertToWebP(buffer: Buffer, quality = 80): Promise<Buffer> {
-    return sharp(buffer)
-      .webp({ quality })
-      .toBuffer();
+    return sharp(buffer).webp({ quality }).toBuffer();
   }
 
   async generateThumbnail(buffer: Buffer, size = 300): Promise<Buffer> {

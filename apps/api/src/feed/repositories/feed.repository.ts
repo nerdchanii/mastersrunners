@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+
 import { DatabaseService } from "../../database/database.service.js";
 
 interface FeedOptions {
@@ -105,11 +106,8 @@ export class FeedRepository {
     return posts;
   }
 
-  async getWorkoutFeed(
-    options: FeedOptions & { excludeLinkedToPost?: boolean },
-  ) {
-    const { userId, followingIds, cursor, limit, excludeLinkedToPost } =
-      options;
+  async getWorkoutFeed(options: FeedOptions & { excludeLinkedToPost?: boolean }) {
+    const { userId, followingIds, cursor, limit, excludeLinkedToPost } = options;
 
     const workouts = await this.db.prisma.workout.findMany({
       where: {

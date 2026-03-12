@@ -1,7 +1,8 @@
-import { useAuth } from "@/lib/auth-context";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/common/UserAvatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/lib/auth-context";
+import { cn } from "@/lib/utils";
+
 import ProgressBar from "./ProgressBar";
 
 interface LeaderboardEntry {
@@ -23,15 +24,25 @@ interface LeaderboardTableProps {
 
 function goalTypeUnit(type: string): string {
   switch (type) {
-    case "DISTANCE": return "KM";
-    case "FREQUENCY": return "COUNT";
-    case "STREAK": return "DAYS";
-    case "PACE": return "SEC_PER_KM";
-    default: return type;
+    case "DISTANCE":
+      return "KM";
+    case "FREQUENCY":
+      return "COUNT";
+    case "STREAK":
+      return "DAYS";
+    case "PACE":
+      return "SEC_PER_KM";
+    default:
+      return type;
   }
 }
 
-export default function LeaderboardTable({ entries, goalValue, goalType, isLoading }: LeaderboardTableProps) {
+export default function LeaderboardTable({
+  entries,
+  goalValue,
+  goalType,
+  isLoading,
+}: LeaderboardTableProps) {
   const { user } = useAuth();
 
   if (isLoading) {
@@ -71,7 +82,7 @@ export default function LeaderboardTable({ entries, goalValue, goalType, isLoadi
             className={cn(
               "flex items-center gap-4 p-4 rounded-lg border transition-colors",
               isTop3 && "bg-primary/5 border-primary/20",
-              isCurrentUser && "ring-2 ring-primary/30 bg-primary/5"
+              isCurrentUser && "ring-2 ring-primary/30 bg-primary/5",
             )}
           >
             <div className="w-8 text-center flex-shrink-0">
@@ -85,26 +96,20 @@ export default function LeaderboardTable({ entries, goalValue, goalType, isLoadi
             </div>
 
             <div className="flex items-center gap-2.5 flex-shrink-0 min-w-[120px]">
-              <UserAvatar
-                user={entry.user}
-                size="sm"
-                linkToProfile={true}
-              />
-              <span className={cn(
-                "text-sm font-medium truncate",
-                isCurrentUser && "font-semibold text-primary"
-              )}>
+              <UserAvatar user={entry.user} size="sm" linkToProfile={true} />
+              <span
+                className={cn(
+                  "text-sm font-medium truncate",
+                  isCurrentUser && "font-semibold text-primary",
+                )}
+              >
                 {entry.user.name}
                 {isCurrentUser && " (나)"}
               </span>
             </div>
 
             <div className="flex-1 min-w-0">
-              <ProgressBar
-                current={entry.progress}
-                target={goalValue}
-                unit={unit}
-              />
+              <ProgressBar current={entry.progress} target={goalValue} unit={unit} />
             </div>
           </div>
         );

@@ -1,8 +1,10 @@
-import { Test } from "@nestjs/testing";
 import { ConflictException } from "@nestjs/common";
-import { BlockService } from "./block.service.js";
-import { BlockRepository } from "./repositories/block.repository.js";
+import { Test } from "@nestjs/testing";
+
 import { DatabaseService } from "../database/database.service.js";
+
+import { BlockRepository } from "./repositories/block.repository.js";
+import { BlockService } from "./block.service.js";
 
 const mockBlockRepository = {
   block: jest.fn(),
@@ -37,9 +39,7 @@ describe("BlockService", () => {
     it("should throw ConflictException when trying to block oneself", async () => {
       const userId = "user-123";
 
-      await expect(service.block(userId, userId)).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(service.block(userId, userId)).rejects.toThrow(ConflictException);
       await expect(service.block(userId, userId)).rejects.toThrow(
         "자기 자신을 차단할 수 없습니다.",
       );

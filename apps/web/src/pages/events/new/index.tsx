@@ -1,15 +1,16 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api-client";
-import { eventKeys } from "@/hooks/useEvents";
+import { toast } from "sonner";
+
+import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PageHeader } from "@/components/common/PageHeader";
-import { toast } from "sonner";
+import { eventKeys } from "@/hooks/useEvents";
+import { api } from "@/lib/api-client";
 
 export default function NewEventPage() {
   const navigate = useNavigate();
@@ -27,8 +28,14 @@ export default function NewEventPage() {
     e.preventDefault();
     setError(null);
 
-    if (!title.trim()) { setError("대회 이름을 입력해주세요."); return; }
-    if (!eventDate) { setError("대회 날짜를 선택해주세요."); return; }
+    if (!title.trim()) {
+      setError("대회 이름을 입력해주세요.");
+      return;
+    }
+    if (!eventDate) {
+      setError("대회 날짜를 선택해주세요.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -70,7 +77,9 @@ export default function NewEventPage() {
         <Card>
           <CardContent className="pt-6 space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="title">대회 이름 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="title">
+                대회 이름 <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="title"
                 value={title}
@@ -91,7 +100,9 @@ export default function NewEventPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="eventDate">대회 날짜 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="eventDate">
+                대회 날짜 <span className="text-destructive">*</span>
+              </Label>
               <Input
                 type="datetime-local"
                 id="eventDate"
@@ -126,7 +137,12 @@ export default function NewEventPage() {
         </Card>
 
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={isSubmitting}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate(-1)}
+            disabled={isSubmitting}
+          >
             취소
           </Button>
           <Button type="submit" disabled={isSubmitting || !title.trim() || !eventDate}>

@@ -1,17 +1,19 @@
 import { Module, type Provider } from "@nestjs/common";
+import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
-import { ConfigModule, ConfigService } from "@nestjs/config";
+
+import { DatabaseModule } from "../database/database.module.js";
+
+import { JwtSseGuard } from "./guards/jwt-sse.guard.js";
+import { AccountRepository } from "./repositories/account.repository.js";
+import { UserRepository } from "./repositories/user.repository.js";
+import { GoogleStrategy } from "./strategies/google.strategy.js";
+import { JwtStrategy } from "./strategies/jwt.strategy.js";
+import { KakaoStrategy } from "./strategies/kakao.strategy.js";
+import { NaverStrategy } from "./strategies/naver.strategy.js";
 import { AuthController } from "./auth.controller.js";
 import { AuthService } from "./auth.service.js";
-import { JwtStrategy } from "./strategies/jwt.strategy.js";
-import { JwtSseGuard } from "./guards/jwt-sse.guard.js";
-import { KakaoStrategy } from "./strategies/kakao.strategy.js";
-import { GoogleStrategy } from "./strategies/google.strategy.js";
-import { NaverStrategy } from "./strategies/naver.strategy.js";
-import { UserRepository } from "./repositories/user.repository.js";
-import { AccountRepository } from "./repositories/account.repository.js";
-import { DatabaseModule } from "../database/database.module.js";
 
 // Only register OAuth strategies when credentials are configured.
 // dotenv/config runs synchronously before module loading, so process.env is safe here.
@@ -36,7 +38,14 @@ if (process.env.NAVER_CLIENT_ID) oauthStrategies.push(NaverStrategy);
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtSseGuard, ...oauthStrategies, UserRepository, AccountRepository],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtSseGuard,
+    ...oauthStrategies,
+    UserRepository,
+    AccountRepository,
+  ],
   exports: [AuthService, UserRepository, JwtModule, JwtSseGuard],
 })
 export class AuthModule {}

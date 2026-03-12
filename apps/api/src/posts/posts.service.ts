@@ -1,8 +1,10 @@
-import { Injectable, ForbiddenException, NotFoundException } from "@nestjs/common";
-import { PostRepository } from "./repositories/post.repository.js";
+import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+
 import { BlockRepository } from "../block/repositories/block.repository.js";
+
 import type { CreatePostDto } from "./dto/create-post.dto.js";
 import type { UpdatePostDto } from "./dto/update-post.dto.js";
+import { PostRepository } from "./repositories/post.repository.js";
 
 @Injectable()
 export class PostsService {
@@ -30,11 +32,7 @@ export class PostsService {
       hashtags,
     };
 
-    return this.postRepo.createWithRelations(
-      postData,
-      dto.workoutIds,
-      dto.imageUrls,
-    );
+    return this.postRepo.createWithRelations(postData, dto.workoutIds, dto.imageUrls);
   }
 
   async findById(id: string, currentUserId?: string) {

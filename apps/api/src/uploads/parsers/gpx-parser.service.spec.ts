@@ -1,4 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
+
 import { GpxParserService } from "./gpx-parser.service.js";
 
 describe("GpxParserService", () => {
@@ -63,7 +64,7 @@ describe("GpxParserService", () => {
 </gpx>`;
 
       await expect(service.parse(insufficientGpx)).rejects.toThrow(
-        "GPX file has insufficient track points"
+        "GPX file has insufficient track points",
       );
     });
 
@@ -77,7 +78,7 @@ describe("GpxParserService", () => {
 </gpx>`;
 
       await expect(service.parse(emptyGpx)).rejects.toThrow(
-        "GPX file has insufficient track points"
+        "GPX file has insufficient track points",
       );
     });
 
@@ -288,7 +289,7 @@ describe("GpxParserService", () => {
         cadence: 85,
       });
       expect(result.gpsTrack?.[1]).toMatchObject({
-        lat: 37.7750,
+        lat: 37.775,
         lon: -122.4195,
         elevation: 105.5,
         heartRate: 155,

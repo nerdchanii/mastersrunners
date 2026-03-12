@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+
 import { DatabaseService } from "../../database/database.service.js";
 
 interface AddCommentData {
@@ -61,7 +62,9 @@ export class PostSocialRepository {
         },
       },
     });
-    return likes.map((like: { user: { id: string; name: string; profileImage: string | null } }) => like.user);
+    return likes.map(
+      (like: { user: { id: string; name: string; profileImage: string | null } }) => like.user,
+    );
   }
 
   // PostComment methods

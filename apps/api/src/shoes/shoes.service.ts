@@ -1,7 +1,8 @@
 import { Injectable } from "@nestjs/common";
-import { ShoeRepository } from "./repositories/shoe.repository.js";
+
 import type { CreateShoeDto } from "./dto/create-shoe.dto.js";
 import type { UpdateShoeDto } from "./dto/update-shoe.dto.js";
+import { ShoeRepository } from "./repositories/shoe.repository.js";
 
 @Injectable()
 export class ShoesService {

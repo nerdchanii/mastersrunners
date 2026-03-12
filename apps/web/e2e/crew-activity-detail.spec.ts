@@ -1,5 +1,6 @@
-import { test, expect } from "@playwright/test";
-import { setupAuth, mockUser } from "./helpers/mock-auth";
+import { expect, test } from "@playwright/test";
+
+import { mockUser, setupAuth } from "./helpers/mock-auth";
 
 const API_BASE = "http://localhost:4000/api/v1";
 
@@ -129,10 +130,13 @@ const mockCrewMemberOnly = {
   ],
 };
 
-function setupActivityRoutes(page: import("@playwright/test").Page, opts?: {
-  activity?: typeof mockActivity;
-  crew?: typeof mockCrew;
-}) {
+function setupActivityRoutes(
+  page: import("@playwright/test").Page,
+  opts?: {
+    activity?: typeof mockActivity;
+    crew?: typeof mockCrew;
+  },
+) {
   const activity = opts?.activity ?? mockActivity;
   const crew = opts?.crew ?? mockCrew;
   return Promise.all([
@@ -176,7 +180,9 @@ test.describe("크루 활동 상세 페이지", () => {
     test("Admin 드롭다운 메뉴가 표시된다", async ({ page }) => {
       await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}`);
 
-      const menuTrigger = page.locator("button").filter({ has: page.locator("svg.lucide-ellipsis") });
+      const menuTrigger = page
+        .locator("button")
+        .filter({ has: page.locator("svg.lucide-ellipsis") });
       await expect(menuTrigger).toBeVisible();
 
       await menuTrigger.click();
@@ -232,7 +238,9 @@ test.describe("크루 활동 상세 페이지", () => {
       await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}`);
 
       await expect(page.getByText("월요일 아침 러닝")).toBeVisible();
-      const menuTrigger = page.locator("button").filter({ has: page.locator("svg.lucide-ellipsis") });
+      const menuTrigger = page
+        .locator("button")
+        .filter({ has: page.locator("svg.lucide-ellipsis") });
       await expect(menuTrigger).not.toBeVisible();
     });
 

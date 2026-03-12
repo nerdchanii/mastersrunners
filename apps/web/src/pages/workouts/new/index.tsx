@@ -1,27 +1,28 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import {
-  Upload,
-  FileText,
   Activity,
   Clock,
-  Route,
   Eye,
-  Heart,
+  FileText,
   Flame,
-  Mountain,
-  MapPin,
   Footprints,
+  Heart,
+  MapPin,
+  Mountain,
+  Route,
+  Upload,
 } from "lucide-react";
-import { api } from "@/lib/api-client";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import { PageHeader } from "@/components/common/PageHeader";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { PageHeader } from "@/components/common/PageHeader";
+import { api } from "@/lib/api-client";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 
 interface ParsedWorkoutData {
@@ -188,7 +189,8 @@ export default function NewWorkoutPage() {
   const validateForm = (): string | null => {
     if (!date) return "날짜를 입력해주세요.";
     const distanceNum = parseFloat(distance);
-    if (!distance || isNaN(distanceNum) || distanceNum <= 0) return "거리는 0보다 큰 숫자여야 합니다.";
+    if (!distance || isNaN(distanceNum) || distanceNum <= 0)
+      return "거리는 0보다 큰 숫자여야 합니다.";
     const hoursNum = parseInt(hours) || 0;
     const minutesNum = parseInt(minutes) || 0;
     const secondsNum = parseInt(seconds) || 0;
@@ -242,7 +244,10 @@ export default function NewWorkoutPage() {
 
   return (
     <div className="container max-w-3xl py-6">
-      <PageHeader title="새 기록 추가" description="훈련 파일을 업로드하거나 직접 기록을 입력하세요." />
+      <PageHeader
+        title="새 기록 추가"
+        description="훈련 파일을 업로드하거나 직접 기록을 입력하세요."
+      />
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         {error && (
@@ -363,7 +368,10 @@ export default function NewWorkoutPage() {
                   </div>
 
                   {/* Secondary metrics */}
-                  {(parsedData.avgHeartRate || parsedData.calories || parsedData.elevationGain || parsedData.avgCadence) && (
+                  {(parsedData.avgHeartRate ||
+                    parsedData.calories ||
+                    parsedData.elevationGain ||
+                    parsedData.avgCadence) && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {parsedData.avgHeartRate != null && (
                         <div className="flex items-center gap-2 rounded-lg border p-2.5">
@@ -377,7 +385,9 @@ export default function NewWorkoutPage() {
                                   /{Math.round(parsedData.maxHeartRate)}
                                 </span>
                               )}
-                              <span className="text-xs font-normal text-muted-foreground ml-0.5">bpm</span>
+                              <span className="text-xs font-normal text-muted-foreground ml-0.5">
+                                bpm
+                              </span>
                             </p>
                           </div>
                         </div>
@@ -390,7 +400,9 @@ export default function NewWorkoutPage() {
                             <p className="text-[10px] text-muted-foreground leading-none">칼로리</p>
                             <p className="text-sm font-semibold tabular-nums">
                               {Math.round(parsedData.calories)}
-                              <span className="text-xs font-normal text-muted-foreground ml-0.5">kcal</span>
+                              <span className="text-xs font-normal text-muted-foreground ml-0.5">
+                                kcal
+                              </span>
                             </p>
                           </div>
                         </div>
@@ -400,10 +412,14 @@ export default function NewWorkoutPage() {
                         <div className="flex items-center gap-2 rounded-lg border p-2.5">
                           <Mountain className="size-4 text-green-600 shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-[10px] text-muted-foreground leading-none">고도 상승</p>
+                            <p className="text-[10px] text-muted-foreground leading-none">
+                              고도 상승
+                            </p>
                             <p className="text-sm font-semibold tabular-nums">
                               {Math.round(parsedData.elevationGain)}
-                              <span className="text-xs font-normal text-muted-foreground ml-0.5">m</span>
+                              <span className="text-xs font-normal text-muted-foreground ml-0.5">
+                                m
+                              </span>
                             </p>
                           </div>
                         </div>
@@ -413,10 +429,14 @@ export default function NewWorkoutPage() {
                         <div className="flex items-center gap-2 rounded-lg border p-2.5">
                           <Footprints className="size-4 text-blue-500 shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-[10px] text-muted-foreground leading-none">케이던스</p>
+                            <p className="text-[10px] text-muted-foreground leading-none">
+                              케이던스
+                            </p>
                             <p className="text-sm font-semibold tabular-nums">
                               {Math.round(parsedData.avgCadence)}
-                              <span className="text-xs font-normal text-muted-foreground ml-0.5">spm</span>
+                              <span className="text-xs font-normal text-muted-foreground ml-0.5">
+                                spm
+                              </span>
                             </p>
                           </div>
                         </div>
@@ -472,16 +492,45 @@ export default function NewWorkoutPage() {
                   </Label>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">
-                      <Label htmlFor="hours-m" className="text-xs text-muted-foreground">시간</Label>
-                      <Input type="number" id="hours-m" value={hours} onChange={(e) => setHours(e.target.value)} min="0" placeholder="0" />
+                      <Label htmlFor="hours-m" className="text-xs text-muted-foreground">
+                        시간
+                      </Label>
+                      <Input
+                        type="number"
+                        id="hours-m"
+                        value={hours}
+                        onChange={(e) => setHours(e.target.value)}
+                        min="0"
+                        placeholder="0"
+                      />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="minutes-m" className="text-xs text-muted-foreground">분</Label>
-                      <Input type="number" id="minutes-m" value={minutes} onChange={(e) => setMinutes(e.target.value)} min="0" max="59" placeholder="30" />
+                      <Label htmlFor="minutes-m" className="text-xs text-muted-foreground">
+                        분
+                      </Label>
+                      <Input
+                        type="number"
+                        id="minutes-m"
+                        value={minutes}
+                        onChange={(e) => setMinutes(e.target.value)}
+                        min="0"
+                        max="59"
+                        placeholder="30"
+                      />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="seconds-m" className="text-xs text-muted-foreground">초</Label>
-                      <Input type="number" id="seconds-m" value={seconds} onChange={(e) => setSeconds(e.target.value)} min="0" max="59" placeholder="0" />
+                      <Label htmlFor="seconds-m" className="text-xs text-muted-foreground">
+                        초
+                      </Label>
+                      <Input
+                        type="number"
+                        id="seconds-m"
+                        value={seconds}
+                        onChange={(e) => setSeconds(e.target.value)}
+                        min="0"
+                        max="59"
+                        placeholder="0"
+                      />
                     </div>
                   </div>
                 </div>
@@ -511,7 +560,11 @@ export default function NewWorkoutPage() {
                   </Label>
                   <div className="grid grid-cols-3 gap-2">
                     {(["FOLLOWERS", "PUBLIC", "PRIVATE"] as const).map((v) => {
-                      const labels = { FOLLOWERS: "팔로워", PUBLIC: "전체 공개", PRIVATE: "비공개" };
+                      const labels = {
+                        FOLLOWERS: "팔로워",
+                        PUBLIC: "전체 공개",
+                        PRIVATE: "비공개",
+                      };
                       return (
                         <button
                           key={v}
@@ -537,7 +590,13 @@ export default function NewWorkoutPage() {
               <h3 className="text-sm font-semibold text-muted-foreground">저장 후 설정</h3>
               <div className="space-y-2">
                 <Label htmlFor="memo">메모 (선택)</Label>
-                <Textarea id="memo" value={memo} onChange={(e) => setMemo(e.target.value)} rows={3} placeholder="오늘의 훈련에 대한 메모를 남겨보세요..." />
+                <Textarea
+                  id="memo"
+                  value={memo}
+                  onChange={(e) => setMemo(e.target.value)}
+                  rows={3}
+                  placeholder="오늘의 훈련에 대한 메모를 남겨보세요..."
+                />
               </div>
               <div className="space-y-2">
                 <Label>공개 설정</Label>
@@ -545,7 +604,12 @@ export default function NewWorkoutPage() {
                   {(["FOLLOWERS", "PUBLIC", "PRIVATE"] as const).map((v) => {
                     const labels = { FOLLOWERS: "팔로워", PUBLIC: "전체 공개", PRIVATE: "비공개" };
                     return (
-                      <button key={v} type="button" onClick={() => setVisibility(v)} className={`rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all ${visibility === v ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}>
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setVisibility(v)}
+                        className={`rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all ${visibility === v ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}
+                      >
                         {labels[v]}
                       </button>
                     );
@@ -560,7 +624,10 @@ export default function NewWorkoutPage() {
           <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting}>
             취소
           </Button>
-          <Button type="submit" disabled={isSubmitting || (activeTab === "file" && !workoutCreated && !parsedData)}>
+          <Button
+            type="submit"
+            disabled={isSubmitting || (activeTab === "file" && !workoutCreated && !parsedData)}
+          >
             {isSubmitting ? "저장 중..." : workoutCreated ? "완료" : "저장"}
           </Button>
         </div>

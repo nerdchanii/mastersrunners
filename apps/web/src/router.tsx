@@ -1,15 +1,15 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+
+import { BottomNav } from "@/components/common/BottomNav";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { LoadingPage } from "@/components/common/LoadingPage";
+import Header from "@/components/layout/Header";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { ThemeProvider } from "@/lib/theme-context";
-import Header from "@/components/layout/Header";
-import { BottomNav } from "@/components/common/BottomNav";
-import { LoadingPage } from "@/components/common/LoadingPage";
-import { ErrorBoundary } from "@/components/common/ErrorBoundary";
-
+import AuthCallbackPage from "@/pages/auth/callback";
 // Auth pages (small, load eagerly)
 import LoginPage from "@/pages/login";
-import AuthCallbackPage from "@/pages/auth/callback";
 
 // Lazy-loaded pages
 const FeedPage = lazy(() => import("@/pages/feed"));
@@ -102,7 +102,11 @@ function AuthLayout() {
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
-    errorElement: <ErrorBoundary><div /></ErrorBoundary>,
+    errorElement: (
+      <ErrorBoundary>
+        <div />
+      </ErrorBoundary>
+    ),
     children: [
       // Root redirect
       { path: "/", element: <Navigate to="/feed" replace /> },
@@ -110,9 +114,7 @@ export const router = createBrowserRouter([
       // Auth layout
       {
         element: <AuthLayout />,
-        children: [
-          { path: "/login", element: <LoginPage /> },
-        ],
+        children: [{ path: "/login", element: <LoginPage /> }],
       },
 
       // Auth callback (no layout)

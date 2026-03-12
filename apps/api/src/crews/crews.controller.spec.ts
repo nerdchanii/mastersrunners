@@ -1,4 +1,5 @@
 import { Test } from "@nestjs/testing";
+
 import { CrewsController } from "./crews.controller.js";
 import { CrewsService } from "./crews.service.js";
 
@@ -70,7 +71,11 @@ describe("CrewsController", () => {
 
       const result = await controller.approveMember("crew-1", "user-target", mockReq);
 
-      expect(mockCrewsService.approveMember).toHaveBeenCalledWith("crew-1", "user-123", "user-target");
+      expect(mockCrewsService.approveMember).toHaveBeenCalledWith(
+        "crew-1",
+        "user-123",
+        "user-target",
+      );
       expect(result).toEqual(expected);
     });
   });
@@ -82,7 +87,11 @@ describe("CrewsController", () => {
 
       const result = await controller.rejectMember("crew-1", "user-target", mockReq);
 
-      expect(mockCrewsService.rejectMember).toHaveBeenCalledWith("crew-1", "user-123", "user-target");
+      expect(mockCrewsService.rejectMember).toHaveBeenCalledWith(
+        "crew-1",
+        "user-123",
+        "user-target",
+      );
       expect(result).toEqual(expected);
     });
   });
@@ -97,7 +106,12 @@ describe("CrewsController", () => {
 
       const result = await controller.createTag("crew-1", mockReq, dto as any);
 
-      expect(mockCrewsService.createTag).toHaveBeenCalledWith("crew-1", "user-123", "Active", "#FF0000");
+      expect(mockCrewsService.createTag).toHaveBeenCalledWith(
+        "crew-1",
+        "user-123",
+        "Active",
+        "#FF0000",
+      );
       expect(result).toEqual(expected);
     });
   });
@@ -146,7 +160,12 @@ describe("CrewsController", () => {
 
       const result = await controller.assignTagToMember("crew-1", "member-1", "tag-1", mockReq);
 
-      expect(mockCrewsService.assignTagToMember).toHaveBeenCalledWith("crew-1", "user-123", "member-1", "tag-1");
+      expect(mockCrewsService.assignTagToMember).toHaveBeenCalledWith(
+        "crew-1",
+        "user-123",
+        "member-1",
+        "tag-1",
+      );
       expect(result).toEqual(expected);
     });
   });
@@ -158,7 +177,12 @@ describe("CrewsController", () => {
 
       const result = await controller.removeTagFromMember("crew-1", "member-1", "tag-1", mockReq);
 
-      expect(mockCrewsService.removeTagFromMember).toHaveBeenCalledWith("crew-1", "user-123", "member-1", "tag-1");
+      expect(mockCrewsService.removeTagFromMember).toHaveBeenCalledWith(
+        "crew-1",
+        "user-123",
+        "member-1",
+        "tag-1",
+      );
       expect(result).toEqual(expected);
     });
   });
@@ -244,7 +268,12 @@ describe("CrewsController", () => {
 
       const result = await controller.updateActivity("crew-1", "activity-1", mockReq, dto as any);
 
-      expect(mockCrewsService.updateActivity).toHaveBeenCalledWith("activity-1", "crew-1", "user-123", { title: "Updated Run" });
+      expect(mockCrewsService.updateActivity).toHaveBeenCalledWith(
+        "activity-1",
+        "crew-1",
+        "user-123",
+        { title: "Updated Run" },
+      );
       expect(result).toEqual(expected);
     });
   });
@@ -256,7 +285,11 @@ describe("CrewsController", () => {
 
       const result = await controller.deleteActivity("crew-1", "activity-1", mockReq);
 
-      expect(mockCrewsService.deleteActivity).toHaveBeenCalledWith("activity-1", "crew-1", "user-123");
+      expect(mockCrewsService.deleteActivity).toHaveBeenCalledWith(
+        "activity-1",
+        "crew-1",
+        "user-123",
+      );
       expect(result).toEqual(expected);
     });
   });

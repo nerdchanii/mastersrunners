@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+
 import { DatabaseService } from "../../database/database.service.js";
 
 @Injectable()
@@ -17,7 +18,12 @@ export class ChallengeParticipantRepository {
     });
   }
 
-  async updateProgress(challengeId: string, userId: string, currentValue: number, completed?: boolean) {
+  async updateProgress(
+    challengeId: string,
+    userId: string,
+    currentValue: number,
+    completed?: boolean,
+  ) {
     const data: {
       currentValue: number;
       isCompleted?: boolean;

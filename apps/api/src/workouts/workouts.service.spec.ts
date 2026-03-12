@@ -1,8 +1,10 @@
 import { Test } from "@nestjs/testing";
-import { WorkoutsService } from "./workouts.service";
-import { WorkoutRepository } from "./repositories/workout.repository";
+
 import { ChallengeAggregationService } from "../challenges/challenge-aggregation.service";
 import { ShoeRepository } from "../shoes/repositories/shoe.repository";
+
+import { WorkoutRepository } from "./repositories/workout.repository";
+import { WorkoutsService } from "./workouts.service";
 
 const mockWorkoutRepo = {
   findAllByUser: jest.fn(),
@@ -55,7 +57,13 @@ describe("WorkoutsService", () => {
 
   describe("create", () => {
     it("should calculate pace correctly: duration / (distance / 1000)", async () => {
-      const dto = { distance: 10000, duration: 3600, date: "2026-01-01", memo: "long run", visibility: "PUBLIC" };
+      const dto = {
+        distance: 10000,
+        duration: 3600,
+        date: "2026-01-01",
+        memo: "long run",
+        visibility: "PUBLIC",
+      };
       mockWorkoutRepo.create.mockResolvedValue({ id: "w1" });
       mockChallengeAggregation.onWorkoutCreated.mockResolvedValue(undefined);
 
@@ -147,7 +155,7 @@ describe("WorkoutsService", () => {
       expect(result).toEqual(workout);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Failed to aggregate challenge progress:",
-        expect.any(Error)
+        expect.any(Error),
       );
 
       consoleErrorSpy.mockRestore();
@@ -162,7 +170,12 @@ describe("WorkoutsService", () => {
       const result = await service.findOne("w1");
 
       expect(mockWorkoutRepo.findByIdWithUser).toHaveBeenCalledWith("w1");
-      expect(result).toMatchObject({ id: "w1", workoutFiles: [], workoutRoutes: [], workoutLaps: [] });
+      expect(result).toMatchObject({
+        id: "w1",
+        workoutFiles: [],
+        workoutRoutes: [],
+        workoutLaps: [],
+      });
     });
 
     it("should return null when workout not found", async () => {
@@ -186,7 +199,7 @@ describe("WorkoutsService", () => {
         route: {
           id: "r1",
           encodedPolyline: "abc123",
-          routeData: "[{\"lat\":37.5,\"lon\":127.0}]",
+          routeData: '[{"lat":37.5,"lon":127.0}]',
           boundNorth: 37.6,
           boundSouth: 37.4,
           boundEast: 127.1,

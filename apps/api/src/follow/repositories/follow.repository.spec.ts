@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { FollowRepository } from "./follow.repository";
+
 import { DatabaseService } from "../../database/database.service";
+
+import { FollowRepository } from "./follow.repository";
 
 const mockPrisma = {
   follow: {
@@ -28,10 +30,7 @@ describe("FollowRepository", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
-      providers: [
-        FollowRepository,
-        { provide: DatabaseService, useValue: mockDatabaseService },
-      ],
+      providers: [FollowRepository, { provide: DatabaseService, useValue: mockDatabaseService }],
     }).compile();
     repository = module.get(FollowRepository);
   });

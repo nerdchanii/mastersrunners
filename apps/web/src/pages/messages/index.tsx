@@ -1,15 +1,16 @@
-import { useNavigate } from "react-router-dom";
 import { MessageCircle } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
-import { useConversations, type Conversation } from "@/hooks/useMessages";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useNavigate } from "react-router-dom";
+
+import { EmptyState } from "@/components/common/EmptyState";
+import { PageHeader } from "@/components/common/PageHeader";
+import { TimeAgo } from "@/components/common/TimeAgo";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { PageHeader } from "@/components/common/PageHeader";
-import { EmptyState } from "@/components/common/EmptyState";
-import { TimeAgo } from "@/components/common/TimeAgo";
+import { Skeleton } from "@/components/ui/skeleton";
+import { type Conversation, useConversations } from "@/hooks/useMessages";
+import { useAuth } from "@/lib/auth-context";
 
 export default function MessagesPage() {
   const navigate = useNavigate();
@@ -53,7 +54,9 @@ export default function MessagesPage() {
       <div className="max-w-2xl mx-auto space-y-6">
         <PageHeader title="메시지" description="러너들과 대화하세요" />
         <Card className="p-6 border-destructive/30">
-          <p className="text-destructive">{error instanceof Error ? error.message : "오류가 발생했습니다."}</p>
+          <p className="text-destructive">
+            {error instanceof Error ? error.message : "오류가 발생했습니다."}
+          </p>
         </Card>
       </div>
     );
@@ -105,7 +108,9 @@ export default function MessagesPage() {
                     )}
                   </div>
                   {lastMessage && (
-                    <p className={`text-sm mt-0.5 ${conversation.unreadCount > 0 ? "font-medium text-foreground" : "text-muted-foreground"}`}>
+                    <p
+                      className={`text-sm mt-0.5 ${conversation.unreadCount > 0 ? "font-medium text-foreground" : "text-muted-foreground"}`}
+                    >
                       {truncate(lastMessage.content, 50)}
                     </p>
                   )}

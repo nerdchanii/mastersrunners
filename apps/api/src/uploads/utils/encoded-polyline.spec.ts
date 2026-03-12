@@ -1,4 +1,4 @@
-import { encodePolyline, decodePolyline } from "./encoded-polyline";
+import { decodePolyline, encodePolyline } from "./encoded-polyline";
 
 describe("encoded-polyline", () => {
   describe("encodePolyline", () => {

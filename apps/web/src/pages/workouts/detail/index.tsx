@@ -1,33 +1,34 @@
-import { useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
-  Trash2,
-  Calendar,
   Activity as ActivityIcon,
+  ArrowLeft,
+  Calendar,
   Footprints,
-  Share2,
   ImageIcon,
+  Share2,
+  Trash2,
 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-context";
-import { useWorkout, useDeleteWorkout } from "@/hooks/useWorkouts";
+
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { UserAvatar } from "@/components/common/UserAvatar";
 import { LoadingPage } from "@/components/common/LoadingPage";
 import { StatItem } from "@/components/common/StatItem";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { LikeButton } from "@/components/social/LikeButton";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { CommentList } from "@/components/social/CommentList";
-import { RouteMap, type GpsPoint } from "@/components/workout/RouteMap";
+import { LikeButton } from "@/components/social/LikeButton";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ElevationChart } from "@/components/workout/ElevationChart";
 import { HeartRateChart } from "@/components/workout/HeartRateChart";
 import { LapsTable, type WorkoutLap } from "@/components/workout/LapsTable";
-import { WorkoutMetrics, type WorkoutMetricsData } from "@/components/workout/WorkoutMetrics";
-import { SourceInfo, type WorkoutFile } from "@/components/workout/SourceInfo";
+import { type GpsPoint, RouteMap } from "@/components/workout/RouteMap";
 import { ShareCardGenerator } from "@/components/workout/ShareCardGenerator";
+import { SourceInfo, type WorkoutFile } from "@/components/workout/SourceInfo";
+import { WorkoutMetrics, type WorkoutMetricsData } from "@/components/workout/WorkoutMetrics";
+import { useDeleteWorkout, useWorkout } from "@/hooks/useWorkouts";
+import { useAuth } from "@/lib/auth-context";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 
 interface WorkoutRoute {
@@ -81,10 +82,7 @@ export default function WorkoutDetailPage() {
     }
   }, [typedWorkout]);
 
-  const hasElevation = useMemo(
-    () => routeData.some((p) => p.elevation != null),
-    [routeData],
-  );
+  const hasElevation = useMemo(() => routeData.some((p) => p.elevation != null), [routeData]);
   const hasHeartRate = useMemo(
     () => routeData.some((p) => p.heartRate != null && p.heartRate > 0),
     [routeData],
@@ -135,7 +133,9 @@ export default function WorkoutDetailPage() {
     return (
       <Card className="p-8">
         <div className="text-center">
-          <p className="text-destructive">{error.message || "워크아웃을 불러오는데 실패했습니다."}</p>
+          <p className="text-destructive">
+            {error.message || "워크아웃을 불러오는데 실패했습니다."}
+          </p>
           <Button onClick={() => navigate(-1)} className="mt-4" variant="outline">
             돌아가기
           </Button>
@@ -198,7 +198,11 @@ export default function WorkoutDetailPage() {
         <div className="flex items-center gap-2">
           {isOwner && (
             <>
-              <Button onClick={() => navigate(`/workouts/${workoutId}/edit`)} variant="outline" size="sm">
+              <Button
+                onClick={() => navigate(`/workouts/${workoutId}/edit`)}
+                variant="outline"
+                size="sm"
+              >
                 수정
               </Button>
               <Button onClick={() => setConfirmOpen(true)} variant="destructive" size="sm">
@@ -207,11 +211,7 @@ export default function WorkoutDetailPage() {
               </Button>
             </>
           )}
-          <Button
-            onClick={() => setShareCardOpen(true)}
-            variant="outline"
-            size="sm"
-          >
+          <Button onClick={() => setShareCardOpen(true)} variant="outline" size="sm">
             <ImageIcon className="size-4" />
             카드 생성
           </Button>
@@ -229,16 +229,20 @@ export default function WorkoutDetailPage() {
       {/* Basic Info */}
       <Card>
         <CardHeader>
-          <UserAvatar user={typedWorkout.user} showName subtitle={
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Calendar className="size-3" />
-              {new Date(typedWorkout.date).toLocaleDateString("ko-KR", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </div>
-          } />
+          <UserAvatar
+            user={typedWorkout.user}
+            showName
+            subtitle={
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Calendar className="size-3" />
+                {new Date(typedWorkout.date).toLocaleDateString("ko-KR", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </div>
+            }
+          />
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-around py-4 border-y">

@@ -1,7 +1,8 @@
 import type { INestApplication } from "@nestjs/common";
 import request from "supertest";
-import { getDbService } from "../setup";
+
 import { AuthService } from "../../src/auth/auth.service";
+import { getDbService } from "../setup";
 
 interface TestUserResult {
   accessToken: string;
@@ -16,16 +17,12 @@ let userCounter = 0;
  * This always creates/returns the same hardcoded dev user.
  */
 export async function loginDevUser(app: INestApplication): Promise<TestUserResult> {
-  const res = await request(app.getHttpServer())
-    .post("/api/v1/auth/dev-login")
-    .expect(201);
+  const res = await request(app.getHttpServer()).post("/api/v1/auth/dev-login").expect(201);
 
   const { accessToken, refreshToken } = res.body;
 
   // Decode the token to get userId
-  const payload = JSON.parse(
-    Buffer.from(accessToken.split(".")[1], "base64").toString(),
-  );
+  const payload = JSON.parse(Buffer.from(accessToken.split(".")[1], "base64").toString());
 
   return {
     accessToken,

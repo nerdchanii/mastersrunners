@@ -1,7 +1,8 @@
 import js from "@eslint/js";
+import reactHooks from "eslint-plugin-react-hooks";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-import reactHooks from "eslint-plugin-react-hooks";
 
 const browserGlobals = {
   ...globals.browser,
@@ -29,10 +30,13 @@ export default [
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ["**/*.{ts,tsx}"],
+    files: ["**/*.{js,mjs,ts,tsx}"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
+    },
+    plugins: {
+      "simple-import-sort": simpleImportSort,
     },
     rules: {
       "no-undef": "off",
@@ -43,6 +47,21 @@ export default [
           argsIgnorePattern: "^_",
           caughtErrorsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
+        },
+      ],
+      "simple-import-sort/exports": "error",
+      "simple-import-sort/imports": [
+        "error",
+        {
+          groups: [
+            ["^\\u0000"],
+            ["^node:"],
+            ["^@masters/", "^@?\\w"],
+            ["^@/"],
+            ["^\\.\\.(?!/?$)", "^\\.\\./?$"],
+            ["^\\./(?=.*/)", "^\\.(?!/?$)", "^\\./?$"],
+            ["^.+\\.?(css|scss)$"],
+          ],
         },
       ],
     },
@@ -72,11 +91,7 @@ export default [
     },
   },
   {
-    files: [
-      "apps/api/**/*.spec.ts",
-      "apps/api/**/*.e2e-spec.ts",
-      "apps/api/test/**/*.ts",
-    ],
+    files: ["apps/api/**/*.spec.ts", "apps/api/**/*.e2e-spec.ts", "apps/api/test/**/*.ts"],
     languageOptions: {
       globals: {
         ...globals.jest,

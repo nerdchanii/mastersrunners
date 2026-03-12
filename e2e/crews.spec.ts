@@ -221,13 +221,10 @@ test.describe.serial("크루 API 엔드포인트", () => {
 
   // ── PATCH /crews/:id/tags/:tagId ─────────────────────────────────────────────
   test("PATCH /crews/:id/tags/:tagId - 태그 수정", async ({ request }) => {
-    const res = await request.patch(
-      `${API_URL}/crews/${crewId}/tags/${tagId}`,
-      {
-        headers: authHeaders(),
-        data: { name: "수정된 태그", color: "#EF4444" },
-      },
-    );
+    const res = await request.patch(`${API_URL}/crews/${crewId}/tags/${tagId}`, {
+      headers: authHeaders(),
+      data: { name: "수정된 태그", color: "#EF4444" },
+    });
     expect(res.status()).toBe(200);
 
     const body = await res.json();
@@ -237,12 +234,9 @@ test.describe.serial("크루 API 엔드포인트", () => {
 
   // ── DELETE /crews/:id/tags/:tagId ────────────────────────────────────────────
   test("DELETE /crews/:id/tags/:tagId - 태그 삭제", async ({ request }) => {
-    const res = await request.delete(
-      `${API_URL}/crews/${crewId}/tags/${tagId}`,
-      {
-        headers: authHeaders(),
-      },
-    );
+    const res = await request.delete(`${API_URL}/crews/${crewId}/tags/${tagId}`, {
+      headers: authHeaders(),
+    });
     // 200 or 204
     expect([200, 204]).toContain(res.status());
 
@@ -293,15 +287,10 @@ test.describe.serial("크루 API 엔드포인트", () => {
   });
 
   // ── GET /crews/:id/activities/:activityId ────────────────────────────────────
-  test("GET /crews/:id/activities/:activityId - 단일 활동 조회", async ({
-    request,
-  }) => {
-    const res = await request.get(
-      `${API_URL}/crews/${crewId}/activities/${activityId}`,
-      {
-        headers: authHeaders(),
-      },
-    );
+  test("GET /crews/:id/activities/:activityId - 단일 활동 조회", async ({ request }) => {
+    const res = await request.get(`${API_URL}/crews/${crewId}/activities/${activityId}`, {
+      headers: authHeaders(),
+    });
     expect(res.status()).toBe(200);
 
     const body = await res.json();
@@ -310,30 +299,20 @@ test.describe.serial("크루 API 엔드포인트", () => {
   });
 
   // ── POST /crews/:id/activities/:activityId/check-in ──────────────────────────
-  test("POST /crews/:id/activities/:activityId/check-in - 체크인", async ({
-    request,
-  }) => {
-    const res = await request.post(
-      `${API_URL}/crews/${crewId}/activities/${activityId}/check-in`,
-      {
-        headers: authHeaders(),
-        data: { method: "manual" },
-      },
-    );
+  test("POST /crews/:id/activities/:activityId/check-in - 체크인", async ({ request }) => {
+    const res = await request.post(`${API_URL}/crews/${crewId}/activities/${activityId}/check-in`, {
+      headers: authHeaders(),
+      data: { method: "manual" },
+    });
     // 201 on first check-in; 409 if already checked in (idempotent is ok)
     expect([201, 409]).toContain(res.status());
   });
 
   // ── GET /crews/:id/activities/:activityId/attendees ──────────────────────────
-  test("GET /crews/:id/activities/:activityId/attendees - 참석자 목록", async ({
-    request,
-  }) => {
-    const res = await request.get(
-      `${API_URL}/crews/${crewId}/activities/${activityId}/attendees`,
-      {
-        headers: authHeaders(),
-      },
-    );
+  test("GET /crews/:id/activities/:activityId/attendees - 참석자 목록", async ({ request }) => {
+    const res = await request.get(`${API_URL}/crews/${crewId}/activities/${activityId}/attendees`, {
+      headers: authHeaders(),
+    });
     expect(res.status()).toBe(200);
 
     const body = await res.json();
@@ -341,15 +320,10 @@ test.describe.serial("크루 API 엔드포인트", () => {
   });
 
   // ── GET /crews/:id/members/pending ───────────────────────────────────────────
-  test("GET /crews/:id/members/pending - 대기 멤버 목록 (오너 접근)", async ({
-    request,
-  }) => {
-    const res = await request.get(
-      `${API_URL}/crews/${crewId}/members/pending`,
-      {
-        headers: authHeaders(),
-      },
-    );
+  test("GET /crews/:id/members/pending - 대기 멤버 목록 (오너 접근)", async ({ request }) => {
+    const res = await request.get(`${API_URL}/crews/${crewId}/members/pending`, {
+      headers: authHeaders(),
+    });
     // Owner should be able to see pending members
     expect(res.status()).toBe(200);
     const body = await res.json();
@@ -357,9 +331,7 @@ test.describe.serial("크루 API 엔드포인트", () => {
   });
 
   // ── POST /crews/:id/join (owner cannot join own crew) ────────────────────────
-  test("POST /crews/:id/join - 이미 멤버인 크루 가입 시도 (409)", async ({
-    request,
-  }) => {
+  test("POST /crews/:id/join - 이미 멤버인 크루 가입 시도 (409)", async ({ request }) => {
     // The creator is already a member, so joining should return 409 Conflict
     const res = await request.post(`${API_URL}/crews/${crewId}/join`, {
       headers: authHeaders(),
@@ -369,9 +341,7 @@ test.describe.serial("크루 API 엔드포인트", () => {
   });
 
   // ── DELETE /crews/:id/leave (owner cannot leave) ─────────────────────────────
-  test("DELETE /crews/:id/leave - 오너는 탈퇴 불가 (403)", async ({
-    request,
-  }) => {
+  test("DELETE /crews/:id/leave - 오너는 탈퇴 불가 (403)", async ({ request }) => {
     const res = await request.delete(`${API_URL}/crews/${crewId}/leave`, {
       headers: authHeaders(),
     });
@@ -464,9 +434,7 @@ test.describe("크루 UI 테스트", () => {
     await page.goto(`${BASE_URL}/crews/new`);
     await page.waitForTimeout(2000);
 
-    const roundedElements = page.locator(
-      '[class*="rounded-lg"], [class*="rounded-xl"]',
-    );
+    const roundedElements = page.locator('[class*="rounded-lg"], [class*="rounded-xl"]');
     const count = await roundedElements.count();
     expect(count).toBeGreaterThan(0);
   });
@@ -542,9 +510,7 @@ test.describe("크루 UI 테스트", () => {
   });
 
   // ── 크루 상세 페이지 - 멤버 탭 내용 ──────────────────────────────────────────
-  test("크루 상세 페이지 - 멤버 탭 클릭 시 멤버 목록 표시", async ({
-    page,
-  }) => {
+  test("크루 상세 페이지 - 멤버 탭 클릭 시 멤버 목록 표시", async ({ page }) => {
     let testCrewId = crewId;
     if (!testCrewId) {
       const res = await page.request.post(`${API_URL}/crews`, {
@@ -627,9 +593,7 @@ test.describe("크루 UI 테스트", () => {
   });
 
   // ── 크루 설정 - 위험 구역 섹션 ───────────────────────────────────────────────
-  test("크루 설정 페이지 - 위험 구역(크루 삭제) 섹션 존재", async ({
-    page,
-  }) => {
+  test("크루 설정 페이지 - 위험 구역(크루 삭제) 섹션 존재", async ({ page }) => {
     let testCrewId = crewId;
     if (!testCrewId) {
       const res = await page.request.post(`${API_URL}/crews`, {
@@ -719,9 +683,7 @@ test.describe("크루 엣지 케이스", () => {
   });
 
   // ── 너무 짧은 이름(1자) 으로 크루 생성 시 400 ──────────────────────────────
-  test("POST /crews - 이름 1자로 생성 시 400 반환 (최소 2자)", async ({
-    request,
-  }) => {
+  test("POST /crews - 이름 1자로 생성 시 400 반환 (최소 2자)", async ({ request }) => {
     const res = await request.post(`${API_URL}/crews`, {
       headers: authHeaders(),
       data: { name: "A", isPublic: true },
@@ -730,9 +692,7 @@ test.describe("크루 엣지 케이스", () => {
   });
 
   // ── 이름 51자 초과 시 400 ────────────────────────────────────────────────────
-  test("POST /crews - 이름 51자 초과 시 400 반환 (최대 50자)", async ({
-    request,
-  }) => {
+  test("POST /crews - 이름 51자 초과 시 400 반환 (최대 50자)", async ({ request }) => {
     const longName = "A".repeat(51);
     const res = await request.post(`${API_URL}/crews`, {
       headers: authHeaders(),
@@ -757,12 +717,9 @@ test.describe("크루 엣지 케이스", () => {
 
   // ── 존재하지 않는 크루 조회 시 404 ──────────────────────────────────────────
   test("GET /crews/:id - 존재하지 않는 ID 조회 시 404", async ({ request }) => {
-    const res = await request.get(
-      `${API_URL}/crews/00000000-0000-0000-0000-000000000000`,
-      {
-        headers: authHeaders(),
-      },
-    );
+    const res = await request.get(`${API_URL}/crews/00000000-0000-0000-0000-000000000000`, {
+      headers: authHeaders(),
+    });
     expect(res.status()).toBe(404);
   });
 
@@ -778,12 +735,9 @@ test.describe("크루 엣지 케이스", () => {
     const tempCrewId = created.id;
 
     try {
-      const leaveRes = await request.delete(
-        `${API_URL}/crews/${tempCrewId}/leave`,
-        {
-          headers: authHeaders(),
-        },
-      );
+      const leaveRes = await request.delete(`${API_URL}/crews/${tempCrewId}/leave`, {
+        headers: authHeaders(),
+      });
       expect(leaveRes.status()).toBe(403);
     } finally {
       // Clean up regardless
@@ -794,9 +748,7 @@ test.describe("크루 엣지 케이스", () => {
   });
 
   // ── 비멤버가 대기 멤버 목록 조회 시 403 ─────────────────────────────────────
-  test("GET /crews/:id/members/pending - 비멤버 접근 시 403", async ({
-    request,
-  }) => {
+  test("GET /crews/:id/members/pending - 비멤버 접근 시 403", async ({ request }) => {
     // Create a crew with one user, then try to access pending as a different user.
     // Since we only have one dev user, we test by creating a private crew and
     // checking that pending list is accessible (it is, as owner).
@@ -813,18 +765,13 @@ test.describe("크루 엣지 케이스", () => {
 
     try {
       // Owner can access pending list → 200
-      const ownerRes = await request.get(
-        `${API_URL}/crews/${tempCrewId}/members/pending`,
-        {
-          headers: authHeaders(),
-        },
-      );
+      const ownerRes = await request.get(`${API_URL}/crews/${tempCrewId}/members/pending`, {
+        headers: authHeaders(),
+      });
       expect(ownerRes.status()).toBe(200);
 
       // Unauthenticated access → 401
-      const unauthRes = await request.get(
-        `${API_URL}/crews/${tempCrewId}/members/pending`,
-      );
+      const unauthRes = await request.get(`${API_URL}/crews/${tempCrewId}/members/pending`);
       expect(unauthRes.status()).toBe(401);
     } finally {
       await request.delete(`${API_URL}/crews/${tempCrewId}`, {
@@ -845,9 +792,7 @@ test.describe("크루 엣지 케이스", () => {
   });
 
   // ── 활동 생성 시 activityDate 필수 필드 누락 → 400 ───────────────────────────
-  test("POST /crews/:id/activities - activityDate 누락 시 400", async ({
-    request,
-  }) => {
+  test("POST /crews/:id/activities - activityDate 누락 시 400", async ({ request }) => {
     // Create a temporary crew to test on
     const createRes = await request.post(`${API_URL}/crews`, {
       headers: authHeaders(),
@@ -858,16 +803,13 @@ test.describe("크루 엣지 케이스", () => {
     const tempCrewId = created.id;
 
     try {
-      const actRes = await request.post(
-        `${API_URL}/crews/${tempCrewId}/activities`,
-        {
-          headers: authHeaders(),
-          data: {
-            title: "날짜없는 활동",
-            // activityDate intentionally omitted
-          },
+      const actRes = await request.post(`${API_URL}/crews/${tempCrewId}/activities`, {
+        headers: authHeaders(),
+        data: {
+          title: "날짜없는 활동",
+          // activityDate intentionally omitted
         },
-      );
+      });
       expect(actRes.status()).toBe(400);
     } finally {
       await request.delete(`${API_URL}/crews/${tempCrewId}`, {
@@ -887,16 +829,13 @@ test.describe("크루 엣지 케이스", () => {
     const tempCrewId = created.id;
 
     try {
-      const tagRes = await request.post(
-        `${API_URL}/crews/${tempCrewId}/tags`,
-        {
-          headers: authHeaders(),
-          data: {
-            // name intentionally omitted
-            color: "#3B82F6",
-          },
+      const tagRes = await request.post(`${API_URL}/crews/${tempCrewId}/tags`, {
+        headers: authHeaders(),
+        data: {
+          // name intentionally omitted
+          color: "#3B82F6",
         },
-      );
+      });
       expect(tagRes.status()).toBe(400);
     } finally {
       await request.delete(`${API_URL}/crews/${tempCrewId}`, {

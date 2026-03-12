@@ -1,9 +1,12 @@
-import { Controller, Get, Req, Res, NotFoundException, Inject } from "@nestjs/common";
-import type { Request, Response } from "express";
-import { resolve, join } from "node:path";
 import { promises as fs } from "node:fs";
+import { join, resolve } from "node:path";
+
+import { Controller, Get, Inject, NotFoundException, Req, Res } from "@nestjs/common";
+import type { Request, Response } from "express";
 import { lookup } from "mime-types";
+
 import { Public } from "../common/decorators/public.decorator.js";
+
 import { DiskStorageAdapter } from "./storage/disk-storage.adapter.js";
 import { STORAGE_ADAPTER } from "./storage/storage-adapter.interface.js";
 
@@ -11,9 +14,7 @@ const ROUTE_PREFIX = "/disk-files/";
 
 @Controller("disk-files")
 export class DiskFilesController {
-  constructor(
-    @Inject(STORAGE_ADAPTER) private readonly storage: DiskStorageAdapter,
-  ) {}
+  constructor(@Inject(STORAGE_ADAPTER) private readonly storage: DiskStorageAdapter) {}
 
   @Public()
   @Get("*key")

@@ -1,10 +1,12 @@
+import { ConflictException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import { ConflictException, NotFoundException, ForbiddenException } from "@nestjs/common";
-import { WorkoutSocialService } from "./workout-social.service";
-import { WorkoutSocialRepository } from "./repositories/workout-social.repository";
+
 import { BlockRepository } from "../block/repositories/block.repository";
 import { WorkoutRepository } from "../workouts/repositories/workout.repository";
+
 import type { CreateWorkoutCommentDto } from "./dto/create-workout-comment.dto";
+import { WorkoutSocialRepository } from "./repositories/workout-social.repository";
+import { WorkoutSocialService } from "./workout-social.service";
 
 const mockRepository = {
   likeWorkout: jest.fn(),
@@ -31,7 +33,10 @@ describe("WorkoutSocialService", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     mockBlockRepository.getBlockedUserIds.mockResolvedValue([]);
-    mockWorkoutRepository.findByIdWithUser.mockResolvedValue({ id: "workout-456", deletedAt: null });
+    mockWorkoutRepository.findByIdWithUser.mockResolvedValue({
+      id: "workout-456",
+      deletedAt: null,
+    });
     const module = await Test.createTestingModule({
       providers: [
         WorkoutSocialService,
@@ -63,7 +68,9 @@ describe("WorkoutSocialService", () => {
       mockRepository.likeWorkout.mockRejectedValue(prismaError);
 
       await expect(service.likeWorkout(userId, workoutId)).rejects.toThrow(ConflictException);
-      await expect(service.likeWorkout(userId, workoutId)).rejects.toThrow("이미 좋아요를 누른 운동입니다.");
+      await expect(service.likeWorkout(userId, workoutId)).rejects.toThrow(
+        "이미 좋아요를 누른 운동입니다.",
+      );
     });
 
     it("should rethrow other errors", async () => {
@@ -119,7 +126,13 @@ describe("WorkoutSocialService", () => {
       const userId = "user-123";
       const workoutId = "workout-456";
       const dto: CreateWorkoutCommentDto = { content: "Great run!" };
-      const mockComment = { id: "comment-1", userId, workoutId, content: dto.content, createdAt: new Date() };
+      const mockComment = {
+        id: "comment-1",
+        userId,
+        workoutId,
+        content: dto.content,
+        createdAt: new Date(),
+      };
       mockRepository.addComment.mockResolvedValue(mockComment);
 
       const result = await service.addComment(userId, workoutId, dto);
@@ -136,7 +149,14 @@ describe("WorkoutSocialService", () => {
       const userId = "user-123";
       const workoutId = "workout-456";
       const dto: CreateWorkoutCommentDto = { content: "Reply!", parentId: "comment-parent-1" };
-      const mockComment = { id: "comment-2", userId, workoutId, content: dto.content, parentId: dto.parentId, createdAt: new Date() };
+      const mockComment = {
+        id: "comment-2",
+        userId,
+        workoutId,
+        content: dto.content,
+        parentId: dto.parentId,
+        createdAt: new Date(),
+      };
       mockRepository.addComment.mockResolvedValue(mockComment);
 
       const result = await service.addComment(userId, workoutId, dto);
@@ -153,8 +173,18 @@ describe("WorkoutSocialService", () => {
     it("should pass mentionedUserIds when creating a comment with mentions", async () => {
       const userId = "user-123";
       const workoutId = "workout-456";
-      const dto: CreateWorkoutCommentDto = { content: "Hey @user-2!", mentionedUserIds: ["user-2", "user-3"] };
-      const mockComment = { id: "comment-3", userId, workoutId, content: dto.content, mentionedUserIds: dto.mentionedUserIds, createdAt: new Date() };
+      const dto: CreateWorkoutCommentDto = {
+        content: "Hey @user-2!",
+        mentionedUserIds: ["user-2", "user-3"],
+      };
+      const mockComment = {
+        id: "comment-3",
+        userId,
+        workoutId,
+        content: dto.content,
+        mentionedUserIds: dto.mentionedUserIds,
+        createdAt: new Date(),
+      };
       mockRepository.addComment.mockResolvedValue(mockComment);
 
       const result = await service.addComment(userId, workoutId, dto);
@@ -215,7 +245,9 @@ describe("WorkoutSocialService", () => {
       mockRepository.findCommentById.mockResolvedValue(null);
 
       await expect(service.deleteComment(commentId, userId)).rejects.toThrow(NotFoundException);
-      await expect(service.deleteComment(commentId, userId)).rejects.toThrow("댓글을 찾을 수 없습니다.");
+      await expect(service.deleteComment(commentId, userId)).rejects.toThrow(
+        "댓글을 찾을 수 없습니다.",
+      );
       expect(mockRepository.deleteComment).not.toHaveBeenCalled();
     });
 
@@ -226,8 +258,12 @@ describe("WorkoutSocialService", () => {
       const mockComment = { id: commentId, userId: ownerId, content: "Test", deletedAt: null };
       mockRepository.findCommentById.mockResolvedValue(mockComment);
 
-      await expect(service.deleteComment(commentId, requestingUserId)).rejects.toThrow(ForbiddenException);
-      await expect(service.deleteComment(commentId, requestingUserId)).rejects.toThrow("본인의 댓글만 삭제할 수 있습니다.");
+      await expect(service.deleteComment(commentId, requestingUserId)).rejects.toThrow(
+        ForbiddenException,
+      );
+      await expect(service.deleteComment(commentId, requestingUserId)).rejects.toThrow(
+        "본인의 댓글만 삭제할 수 있습니다.",
+      );
       expect(mockRepository.deleteComment).not.toHaveBeenCalled();
     });
   });
@@ -267,9 +303,7 @@ describe("WorkoutSocialService", () => {
       await service.getComments(workoutId, currentUserId);
 
       expect(mockBlockRepository.getBlockedUserIds).toHaveBeenCalledWith(currentUserId);
-      expect(mockRepository.getComments).toHaveBeenCalledWith(
-        workoutId, undefined, 20, blockedIds,
-      );
+      expect(mockRepository.getComments).toHaveBeenCalledWith(workoutId, undefined, 20, blockedIds);
     });
 
     it("should not call blockRepo when currentUserId is not provided", async () => {

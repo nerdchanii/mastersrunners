@@ -1,8 +1,10 @@
-import { Test } from "@nestjs/testing";
 import { ConflictException, ForbiddenException, NotFoundException } from "@nestjs/common";
-import { FollowService } from "./follow.service";
-import { FollowRepository } from "./repositories/follow.repository";
+import { Test } from "@nestjs/testing";
+
 import { BlockRepository } from "../block/repositories/block.repository";
+
+import { FollowRepository } from "./repositories/follow.repository";
+import { FollowService } from "./follow.service";
 
 const mockFollowRepository = {
   findFollow: jest.fn(),
@@ -40,7 +42,7 @@ describe("FollowService", () => {
   describe("follow", () => {
     it("should throw ConflictException if trying to follow self", async () => {
       await expect(service.follow("user-1", "user-1")).rejects.toThrow(
-        new ConflictException("자기 자신을 팔로우할 수 없습니다.")
+        new ConflictException("자기 자신을 팔로우할 수 없습니다."),
       );
     });
 
@@ -55,7 +57,7 @@ describe("FollowService", () => {
       });
 
       await expect(service.follow(followerId, followingId)).rejects.toThrow(
-        new ConflictException("이미 팔로우하고 있습니다.")
+        new ConflictException("이미 팔로우하고 있습니다."),
       );
       expect(mockFollowRepository.findFollow).toHaveBeenCalledWith(followerId, followingId);
     });
@@ -118,7 +120,7 @@ describe("FollowService", () => {
       mockFollowRepository.findFollow.mockResolvedValue(null);
 
       await expect(service.unfollow(followerId, followingId)).rejects.toThrow(
-        new NotFoundException("팔로우 관계를 찾을 수 없습니다.")
+        new NotFoundException("팔로우 관계를 찾을 수 없습니다."),
       );
     });
 
@@ -152,7 +154,7 @@ describe("FollowService", () => {
       mockFollowRepository.findFollow.mockResolvedValue(null);
 
       await expect(service.acceptRequest(userId, followerId)).rejects.toThrow(
-        new NotFoundException("팔로우 요청을 찾을 수 없습니다.")
+        new NotFoundException("팔로우 요청을 찾을 수 없습니다."),
       );
     });
 
@@ -167,7 +169,7 @@ describe("FollowService", () => {
       });
 
       await expect(service.acceptRequest(userId, followerId)).rejects.toThrow(
-        new ConflictException("이미 수락된 요청입니다.")
+        new ConflictException("이미 수락된 요청입니다."),
       );
     });
 
@@ -202,7 +204,7 @@ describe("FollowService", () => {
       mockFollowRepository.findFollow.mockResolvedValue(null);
 
       await expect(service.rejectRequest(userId, followerId)).rejects.toThrow(
-        new NotFoundException("팔로우 요청을 찾을 수 없습니다.")
+        new NotFoundException("팔로우 요청을 찾을 수 없습니다."),
       );
     });
 
@@ -258,7 +260,11 @@ describe("FollowService", () => {
       await service.getFollowers(userId);
 
       expect(mockBlockRepository.getBlockedUserIds).toHaveBeenCalledWith(userId);
-      expect(mockFollowRepository.findFollowers).toHaveBeenCalledWith(userId, "ACCEPTED", blockedIds);
+      expect(mockFollowRepository.findFollowers).toHaveBeenCalledWith(
+        userId,
+        "ACCEPTED",
+        blockedIds,
+      );
     });
   });
 
@@ -291,7 +297,11 @@ describe("FollowService", () => {
       await service.getFollowing(userId);
 
       expect(mockBlockRepository.getBlockedUserIds).toHaveBeenCalledWith(userId);
-      expect(mockFollowRepository.findFollowing).toHaveBeenCalledWith(userId, "ACCEPTED", blockedIds);
+      expect(mockFollowRepository.findFollowing).toHaveBeenCalledWith(
+        userId,
+        "ACCEPTED",
+        blockedIds,
+      );
     });
   });
 

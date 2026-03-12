@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { BlockRepository } from "./block.repository.js";
+
 import { DatabaseService } from "../../database/database.service.js";
+
+import { BlockRepository } from "./block.repository.js";
 
 const mockDatabaseService = {
   prisma: {
@@ -20,10 +22,7 @@ describe("BlockRepository", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
-      providers: [
-        BlockRepository,
-        { provide: DatabaseService, useValue: mockDatabaseService },
-      ],
+      providers: [BlockRepository, { provide: DatabaseService, useValue: mockDatabaseService }],
     }).compile();
     repository = module.get(BlockRepository);
   });

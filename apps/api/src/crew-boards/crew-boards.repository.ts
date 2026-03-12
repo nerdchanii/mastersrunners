@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+
 import { DatabaseService } from "../database/database.service.js";
 
 @Injectable()
@@ -7,7 +8,10 @@ export class CrewBoardsRepository {
 
   // ============ Boards ============
 
-  async createBoard(crewId: string, data: { name: string; type?: string; writePermission?: string; sortOrder?: number }) {
+  async createBoard(
+    crewId: string,
+    data: { name: string; type?: string; writePermission?: string; sortOrder?: number },
+  ) {
     return this.db.prisma.crewBoard.create({
       data: { crewId, ...data },
     });
@@ -25,7 +29,10 @@ export class CrewBoardsRepository {
     return this.db.prisma.crewBoard.findUnique({ where: { id: boardId } });
   }
 
-  async updateBoard(boardId: string, data: { name?: string; writePermission?: string; sortOrder?: number }) {
+  async updateBoard(
+    boardId: string,
+    data: { name?: string; writePermission?: string; sortOrder?: number },
+  ) {
     return this.db.prisma.crewBoard.update({ where: { id: boardId }, data });
   }
 
@@ -35,7 +42,11 @@ export class CrewBoardsRepository {
 
   // ============ Posts ============
 
-  async createPost(boardId: string, authorId: string, data: { title: string; content: string; images?: string[] }) {
+  async createPost(
+    boardId: string,
+    authorId: string,
+    data: { title: string; content: string; images?: string[] },
+  ) {
     return this.db.prisma.crewBoardPost.create({
       data: {
         boardId,

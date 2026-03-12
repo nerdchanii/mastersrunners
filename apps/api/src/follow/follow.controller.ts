@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Delete, Param, Req } from "@nestjs/common";
+import { Controller, Delete, Get, Param, Post, Req } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
+
 import { FollowService } from "./follow.service.js";
 
 @ApiTags("Follow")

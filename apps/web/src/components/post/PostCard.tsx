@@ -1,12 +1,12 @@
-
 import { Heart, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useLikePost } from "@/hooks/usePosts";
+
+import { TimeAgo } from "@/components/common/TimeAgo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TimeAgo } from "@/components/common/TimeAgo";
+import { Card, CardContent } from "@/components/ui/card";
+import { useLikePost } from "@/hooks/usePosts";
 import { cn } from "@/lib/utils";
 
 interface User {
@@ -51,9 +51,7 @@ export function PostCard({
         {/* User Info */}
         <div className="flex items-center gap-3 mb-3">
           <Avatar className="size-10">
-            {user.profileImage && (
-              <AvatarImage src={user.profileImage} alt={user.name} />
-            )}
+            {user.profileImage && <AvatarImage src={user.profileImage} alt={user.name} />}
             <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
@@ -96,12 +94,10 @@ export function PostCard({
             disabled={likePost.isPending}
             className={cn(
               "flex items-center gap-1.5 px-2 h-8 text-muted-foreground hover:text-destructive",
-              isLiked && "text-destructive"
+              isLiked && "text-destructive",
             )}
           >
-            <Heart
-              className={cn("size-4", isLiked && "fill-current")}
-            />
+            <Heart className={cn("size-4", isLiked && "fill-current")} />
             <span className="text-xs">
               {likesCount > 0 ? likesCount.toLocaleString() : "좋아요"}
             </span>

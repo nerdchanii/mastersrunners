@@ -1,21 +1,16 @@
+import { Plus, Tag, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useState, useEffect, useCallback } from "react";
-import { Plus, X, Tag } from "lucide-react";
-import { api } from "@/lib/api-client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { EmptyState } from "@/components/common/EmptyState";
 import { UserAvatar } from "@/components/common/UserAvatar";
-import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/lib/api-client";
 
 interface CrewTag {
   id: string;
@@ -63,11 +58,7 @@ const TAG_COLORS = [
   "#ec4899", // pink
 ];
 
-export default function CrewTagManager({
-  crewId,
-  isAdmin,
-  members,
-}: CrewTagManagerProps) {
+export default function CrewTagManager({ crewId, isAdmin, members }: CrewTagManagerProps) {
   const [tags, setTags] = useState<TagWithMembers[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -111,9 +102,7 @@ export default function CrewTagManager({
       setShowCreateForm(false);
       await fetchTags();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "태그 생성에 실패했습니다.",
-      );
+      toast.error(err instanceof Error ? err.message : "태그 생성에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -129,9 +118,7 @@ export default function CrewTagManager({
       setDeleteTarget(null);
       await fetchTags();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "태그 삭제에 실패했습니다.",
-      );
+      toast.error(err instanceof Error ? err.message : "태그 삭제에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -145,9 +132,7 @@ export default function CrewTagManager({
       });
       await fetchTags();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "태그 할당에 실패했습니다.",
-      );
+      toast.error(err instanceof Error ? err.message : "태그 할당에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -161,9 +146,7 @@ export default function CrewTagManager({
       });
       await fetchTags();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "태그 제거에 실패했습니다.",
-      );
+      toast.error(err instanceof Error ? err.message : "태그 제거에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -221,8 +204,7 @@ export default function CrewTagManager({
                       className="w-8 h-8 rounded-full border-2 transition-all"
                       style={{
                         backgroundColor: color,
-                        borderColor:
-                          newTagColor === color ? "#000" : "transparent",
+                        borderColor: newTagColor === color ? "#000" : "transparent",
                       }}
                     />
                   ))}
@@ -230,17 +212,10 @@ export default function CrewTagManager({
               </div>
 
               <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowCreateForm(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
                   취소
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || !newTagName.trim()}
-                >
+                <Button type="submit" disabled={isSubmitting || !newTagName.trim()}>
                   {isSubmitting ? "생성 중..." : "생성"}
                 </Button>
               </div>
@@ -254,9 +229,7 @@ export default function CrewTagManager({
           icon={Tag}
           title="태그가 없습니다"
           description={
-            isAdmin
-              ? "태그를 만들어 멤버를 분류해보세요!"
-              : "아직 생성된 태그가 없습니다."
+            isAdmin ? "태그를 만들어 멤버를 분류해보세요!" : "아직 생성된 태그가 없습니다."
           }
           actionLabel={isAdmin ? "태그 만들기" : undefined}
           onAction={isAdmin ? () => setShowCreateForm(true) : undefined}
@@ -268,11 +241,7 @@ export default function CrewTagManager({
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge
-                      style={{ backgroundColor: tag.color, color: "#fff" }}
-                    >
-                      {tag.name}
-                    </Badge>
+                    <Badge style={{ backgroundColor: tag.color, color: "#fff" }}>{tag.name}</Badge>
                     <CardDescription>{tag.members.length}명</CardDescription>
                   </div>
                   {isAdmin && (
@@ -280,9 +249,7 @@ export default function CrewTagManager({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() =>
-                          setSelectedTag(selectedTag === tag.id ? null : tag.id)
-                        }
+                        onClick={() => setSelectedTag(selectedTag === tag.id ? null : tag.id)}
                       >
                         {selectedTag === tag.id ? "닫기" : "멤버 추가"}
                       </Button>
@@ -305,10 +272,7 @@ export default function CrewTagManager({
                     <p className="text-sm font-medium mb-2">멤버 선택</p>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {members
-                        .filter(
-                          (m) =>
-                            !tag.members.some((tm) => tm.user.id === m.userId),
-                        )
+                        .filter((m) => !tag.members.some((tm) => tm.user.id === m.userId))
                         .map((member) => (
                           <button
                             key={member.userId}
@@ -316,11 +280,7 @@ export default function CrewTagManager({
                             disabled={isSubmitting}
                             className="w-full flex items-center gap-2 p-2 hover:bg-background rounded-lg transition-colors text-left"
                           >
-                            <UserAvatar
-                              user={member.user}
-                              size="sm"
-                              linkToProfile={false}
-                            />
+                            <UserAvatar user={member.user} size="sm" linkToProfile={false} />
                             <span className="text-sm">{member.user.name}</span>
                           </button>
                         ))}
@@ -339,11 +299,7 @@ export default function CrewTagManager({
                         key={member.id}
                         className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full"
                       >
-                        <UserAvatar
-                          user={member.user}
-                          size="sm"
-                          linkToProfile={false}
-                        />
+                        <UserAvatar user={member.user} size="sm" linkToProfile={false} />
                         <span className="text-sm">{member.user.name}</span>
                         {isAdmin && (
                           <button

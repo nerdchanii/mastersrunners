@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+
 import { WorkoutTypeRepository } from "./repositories/workout-type.repository.js";
 
 @Injectable()

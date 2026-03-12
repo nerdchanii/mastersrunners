@@ -83,7 +83,7 @@ test.describe("A-1: 소규모 UI 개선", () => {
       test.skip();
       return;
     }
-    const shareButtons = page.locator('button:has(svg)');
+    const shareButtons = page.locator("button:has(svg)");
     const count = await shareButtons.count();
     expect(count).toBeGreaterThanOrEqual(0); // 빈 피드에서도 통과
   });
@@ -171,7 +171,11 @@ test.describe("C-1: 다크 모드", () => {
     await page.goto(`${BASE_URL}/feed`);
     await page.waitForTimeout(2000);
     // Sun/Moon/Monitor 아이콘 버튼 찾기
-    const themeButton = page.locator('button:has(svg[class*="lucide-sun"]), button:has(svg[class*="lucide-moon"]), button:has(svg), header button').first();
+    const themeButton = page
+      .locator(
+        'button:has(svg[class*="lucide-sun"]), button:has(svg[class*="lucide-moon"]), button:has(svg), header button',
+      )
+      .first();
     await expect(themeButton).toBeVisible();
   });
 
@@ -181,7 +185,7 @@ test.describe("C-1: 다크 모드", () => {
 
     // 현재 테마 확인
     const initialDark = await page.evaluate(() =>
-      document.documentElement.classList.contains("dark")
+      document.documentElement.classList.contains("dark"),
     );
 
     // localStorage에 dark 테마 설정
@@ -192,9 +196,7 @@ test.describe("C-1: 다크 모드", () => {
     await page.reload();
     await page.waitForTimeout(1000);
 
-    const isDark = await page.evaluate(() =>
-      document.documentElement.classList.contains("dark")
-    );
+    const isDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
     expect(isDark).toBe(true);
   });
 

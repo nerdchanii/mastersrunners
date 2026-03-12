@@ -1,13 +1,14 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { Bell, MessageCircle, Monitor, Moon, Sun } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useState, useEffect, useCallback } from "react";
+
+import { Badge } from "@/components/ui/badge";
+import { notificationKeys } from "@/hooks/useNotifications";
+import { api, API_BASE } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
-import { api, API_BASE } from "@/lib/api-client";
-import { useQueryClient } from "@tanstack/react-query";
-import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Bell, Sun, Moon, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { notificationKeys } from "@/hooks/useNotifications";
 
 interface ConversationsResponse {
   data: Array<{ unreadCount: number }>;
@@ -33,8 +34,7 @@ export default function Header() {
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
-  const isActive = (path: string) =>
-    pathname === path || pathname.startsWith(path + "/");
+  const isActive = (path: string) => pathname === path || pathname.startsWith(path + "/");
 
   const fetchUnreadMessageCount = useCallback(async () => {
     try {
@@ -66,7 +66,7 @@ export default function Header() {
 
     // DM SSE — 새 메시지 수신 시 unread 갱신
     const dmEventSource = new EventSource(
-      `${API_BASE}/conversations/sse?token=${encodeURIComponent(token)}`
+      `${API_BASE}/conversations/sse?token=${encodeURIComponent(token)}`,
     );
     dmEventSource.addEventListener("new-message", () => {
       fetchUnreadMessageCount();
@@ -77,7 +77,7 @@ export default function Header() {
     let notifEventSource: EventSource | null = null;
     try {
       notifEventSource = new EventSource(
-        `${API_BASE}/notifications/sse?token=${encodeURIComponent(token)}`
+        `${API_BASE}/notifications/sse?token=${encodeURIComponent(token)}`,
       );
       notifEventSource.addEventListener("notification", () => {
         fetchUnreadNotifCount();
@@ -104,10 +104,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 hidden w-full border-b bg-background/95 backdrop-blur-lg md:block">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-        <Link
-          to="/"
-          className="text-lg font-bold tracking-tight text-foreground"
-        >
+        <Link to="/" className="text-lg font-bold tracking-tight text-foreground">
           마스터즈 러너스
         </Link>
 
@@ -120,7 +117,7 @@ export default function Header() {
                 "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 isActive(link.href)
                   ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground",
               )}
             >
               {link.label}
@@ -158,7 +155,7 @@ export default function Header() {
                 to="/messages"
                 className={cn(
                   "relative rounded-lg p-2 transition-colors hover:bg-accent",
-                  isActive("/messages") && "bg-accent"
+                  isActive("/messages") && "bg-accent",
                 )}
               >
                 <MessageCircle className="size-5 text-foreground" />
@@ -174,7 +171,7 @@ export default function Header() {
                 to="/notifications"
                 className={cn(
                   "relative rounded-lg p-2 transition-colors hover:bg-accent",
-                  isActive("/notifications") && "bg-accent"
+                  isActive("/notifications") && "bg-accent",
                 )}
               >
                 <Bell className="size-5 text-foreground" />

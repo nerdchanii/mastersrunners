@@ -1,7 +1,8 @@
 import type { INestApplication } from "@nestjs/common";
 import request from "supertest";
-import { createTestApp, closeTestApp, cleanDatabase } from "./setup";
-import { createTestUser, authRequest } from "./helpers/auth.helper";
+
+import { authRequest, createTestUser } from "./helpers/auth.helper";
+import { cleanDatabase, closeTestApp, createTestApp } from "./setup";
 
 describe("Workouts (E2E)", () => {
   let app: INestApplication;
@@ -47,9 +48,7 @@ describe("Workouts (E2E)", () => {
     });
 
     it("GET /api/v1/workouts - should list own workouts", async () => {
-      const res = await authRequest(app, userA.accessToken)
-        .get("/api/v1/workouts")
-        .expect(200);
+      const res = await authRequest(app, userA.accessToken).get("/api/v1/workouts").expect(200);
 
       expect(Array.isArray(res.body)).toBe(true);
       expect(res.body.length).toBeGreaterThanOrEqual(1);
@@ -76,14 +75,10 @@ describe("Workouts (E2E)", () => {
     });
 
     it("DELETE /api/v1/workouts/:id - should soft delete workout", async () => {
-      await authRequest(app, userA.accessToken)
-        .delete(`/api/v1/workouts/${workoutId}`)
-        .expect(200);
+      await authRequest(app, userA.accessToken).delete(`/api/v1/workouts/${workoutId}`).expect(200);
 
       // After soft delete, workout should not be found
-      await authRequest(app, userA.accessToken)
-        .get(`/api/v1/workouts/${workoutId}`)
-        .expect(404);
+      await authRequest(app, userA.accessToken).get(`/api/v1/workouts/${workoutId}`).expect(404);
     });
   });
 
@@ -134,9 +129,7 @@ describe("Workouts (E2E)", () => {
     });
 
     it("unauthenticated user is denied access to private workout", async () => {
-      await request(app.getHttpServer())
-        .get(`/api/v1/workouts/${privateWorkoutId}`)
-        .expect(403);
+      await request(app.getHttpServer()).get(`/api/v1/workouts/${privateWorkoutId}`).expect(403);
     });
   });
 
@@ -151,10 +144,7 @@ describe("Workouts (E2E)", () => {
     });
 
     it("should reject unauthenticated create", async () => {
-      await request(app.getHttpServer())
-        .post("/api/v1/workouts")
-        .send(validWorkout)
-        .expect(401);
+      await request(app.getHttpServer()).post("/api/v1/workouts").send(validWorkout).expect(401);
     });
 
     it("should reject update by non-owner", async () => {
@@ -165,9 +155,7 @@ describe("Workouts (E2E)", () => {
     });
 
     it("should reject delete by non-owner", async () => {
-      await authRequest(app, userB.accessToken)
-        .delete(`/api/v1/workouts/${workoutId}`)
-        .expect(403);
+      await authRequest(app, userB.accessToken).delete(`/api/v1/workouts/${workoutId}`).expect(403);
     });
   });
 

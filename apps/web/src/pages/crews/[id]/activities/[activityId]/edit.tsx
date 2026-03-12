@@ -1,13 +1,14 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-context";
-import { useCrew } from "@/hooks/useCrews";
-import { useCrewActivity, useUpdateActivity } from "@/hooks/useCrewActivities";
+
+import CrewActivityForm from "@/components/crew/CrewActivityForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
-import CrewActivityForm from "@/components/crew/CrewActivityForm";
+import { useCrewActivity, useUpdateActivity } from "@/hooks/useCrewActivities";
+import { useCrew } from "@/hooks/useCrews";
+import { useAuth } from "@/lib/auth-context";
 
 export default function CrewActivityEditPage() {
   const { id: crewId, activityId } = useParams<{ id: string; activityId: string }>();
@@ -17,15 +18,14 @@ export default function CrewActivityEditPage() {
   const { data: crew, isLoading: crewLoading } = useCrew(crewId ?? "");
   const { data: activity, isLoading: activityLoading } = useCrewActivity(
     crewId ?? "",
-    activityId ?? ""
+    activityId ?? "",
   );
   const updateActivity = useUpdateActivity();
 
   const isLoading = crewLoading || activityLoading;
 
   const currentMember = crew?.members?.find((m) => m.user.id === user?.id);
-  const isAdmin =
-    currentMember?.role === "OWNER" || currentMember?.role === "ADMIN";
+  const isAdmin = currentMember?.role === "OWNER" || currentMember?.role === "ADMIN";
 
   if (isLoading) {
     return (

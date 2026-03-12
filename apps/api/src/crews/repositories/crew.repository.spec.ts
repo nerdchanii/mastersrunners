@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { CrewRepository } from "./crew.repository.js";
+
 import { DatabaseService } from "../../database/database.service.js";
+
+import { CrewRepository } from "./crew.repository.js";
 
 const mockPrisma = {
   crew: {
@@ -17,10 +19,7 @@ describe("CrewRepository", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
-      providers: [
-        CrewRepository,
-        { provide: DatabaseService, useValue: { prisma: mockPrisma } },
-      ],
+      providers: [CrewRepository, { provide: DatabaseService, useValue: { prisma: mockPrisma } }],
     }).compile();
     repository = module.get(CrewRepository);
   });
@@ -85,11 +84,14 @@ describe("CrewRepository", () => {
         deletedAt: null,
         members: [
           { id: "member-1", userId: "user-1", role: "OWNER", user: { id: "user-1", name: "john" } },
-          { id: "member-2", userId: "user-2", role: "MEMBER", user: { id: "user-2", name: "jane" } },
+          {
+            id: "member-2",
+            userId: "user-2",
+            role: "MEMBER",
+            user: { id: "user-2", name: "jane" },
+          },
         ],
-        tags: [
-          { id: "tag-1", name: "Beginner", color: "#3B82F6" },
-        ],
+        tags: [{ id: "tag-1", name: "Beginner", color: "#3B82F6" }],
       };
       mockPrisma.crew.findUnique.mockResolvedValue(mockCrew);
 

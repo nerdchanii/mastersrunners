@@ -1,13 +1,18 @@
 import { Link } from "react-router-dom";
-import { formatDistance, formatDuration, formatPace } from "@/lib/format";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { Badge } from "@/components/ui/badge";
-import ShareToggle from "./ShareToggle";
+import { Card, CardContent } from "@/components/ui/card";
+import { formatDistance, formatDuration, formatPace } from "@/lib/format";
+
 import { MiniRouteMap } from "./MiniRouteMap";
+import ShareToggle from "./ShareToggle";
 
 type Visibility = "PRIVATE" | "FOLLOWERS" | "PUBLIC";
 
-const VISIBILITY_BADGE: Record<Visibility, { label: string; variant: "default" | "secondary" | "outline" }> = {
+const VISIBILITY_BADGE: Record<
+  Visibility,
+  { label: string; variant: "default" | "secondary" | "outline" }
+> = {
   PUBLIC: { label: "전체 공개", variant: "default" },
   FOLLOWERS: { label: "팔로워 공개", variant: "secondary" },
   PRIVATE: { label: "비공개", variant: "outline" },

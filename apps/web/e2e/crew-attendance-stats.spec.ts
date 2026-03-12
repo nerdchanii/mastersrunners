@@ -1,5 +1,6 @@
-import { test, expect } from "@playwright/test";
-import { setupAuth, mockUser } from "./helpers/mock-auth";
+import { expect, test } from "@playwright/test";
+
+import { mockUser, setupAuth } from "./helpers/mock-auth";
 
 const API_BASE = "http://localhost:4000/api/v1";
 
@@ -82,7 +83,10 @@ const mockCrewStats = {
 function setupRoutes(page: import("@playwright/test").Page) {
   return Promise.all([
     page.route(`${API_BASE}/crews/${mockCrewId}`, (route) => {
-      if (route.request().url().includes("/attendance-stats") || route.request().url().includes("/activities"))
+      if (
+        route.request().url().includes("/attendance-stats") ||
+        route.request().url().includes("/activities")
+      )
         return route.fallback();
       route.fulfill({
         status: 200,

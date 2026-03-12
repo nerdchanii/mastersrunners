@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service.js';
+import { Injectable } from "@nestjs/common";
+
+import { DatabaseService } from "../../database/database.service.js";
 
 @Injectable()
 export class CrewTagRepository {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async create(crewId: string, name: string, color: string = '#3B82F6') {
+  async create(crewId: string, name: string, color: string = "#3B82F6") {
     return this.databaseService.prisma.crewTag.create({
       data: {
         crewId,
@@ -18,7 +19,7 @@ export class CrewTagRepository {
   async findByCrewId(crewId: string) {
     return this.databaseService.prisma.crewTag.findMany({
       where: { crewId },
-      orderBy: { name: 'asc' },
+      orderBy: { name: "asc" },
     });
   }
 

@@ -1,16 +1,17 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { useEvent, eventKeys } from "@/hooks/useEvents";
-import { api } from "@/lib/api-client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
+
+import { LoadingPage } from "@/components/common/LoadingPage";
+import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PageHeader } from "@/components/common/PageHeader";
-import { LoadingPage } from "@/components/common/LoadingPage";
-import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { eventKeys, useEvent } from "@/hooks/useEvents";
+import { api } from "@/lib/api-client";
 
 export default function EditEventPage() {
   const { id } = useParams<{ id: string }>();
@@ -41,8 +42,14 @@ export default function EditEventPage() {
     e.preventDefault();
     setError(null);
 
-    if (!title.trim()) { setError("대회 이름을 입력해주세요."); return; }
-    if (!eventDate) { setError("대회 날짜를 선택해주세요."); return; }
+    if (!title.trim()) {
+      setError("대회 이름을 입력해주세요.");
+      return;
+    }
+    if (!eventDate) {
+      setError("대회 날짜를 선택해주세요.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -85,7 +92,9 @@ export default function EditEventPage() {
         <Card>
           <CardContent className="pt-6 space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="title">대회 이름 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="title">
+                대회 이름 <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="title"
                 value={title}
@@ -106,7 +115,9 @@ export default function EditEventPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="eventDate">대회 날짜 <span className="text-destructive">*</span></Label>
+              <Label htmlFor="eventDate">
+                대회 날짜 <span className="text-destructive">*</span>
+              </Label>
               <Input
                 type="datetime-local"
                 id="eventDate"
@@ -141,7 +152,12 @@ export default function EditEventPage() {
         </Card>
 
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate(`/events/${id}`)} disabled={isSubmitting}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate(`/events/${id}`)}
+            disabled={isSubmitting}
+          >
             취소
           </Button>
           <Button type="submit" disabled={isSubmitting || !title.trim() || !eventDate}>

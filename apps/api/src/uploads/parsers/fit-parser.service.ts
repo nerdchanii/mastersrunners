@@ -122,7 +122,9 @@ export class FitParserService {
       if (error instanceof Error && error.message === "No session data found in FIT file") {
         throw error;
       }
-      throw new Error(`Failed to parse FIT file: ${error instanceof Error ? error.message : "Unknown error"}`);
+      throw new Error(
+        `Failed to parse FIT file: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -142,7 +144,7 @@ export class FitParserService {
       // fit-file-parser expects ArrayBuffer, convert Buffer to ArrayBuffer
       const arrayBuffer = buffer.buffer.slice(
         buffer.byteOffset,
-        buffer.byteOffset + buffer.byteLength
+        buffer.byteOffset + buffer.byteLength,
       );
       parser.parse(arrayBuffer as ArrayBuffer, (error: string | undefined, data: any) => {
         if (error) {

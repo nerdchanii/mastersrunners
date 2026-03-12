@@ -1,14 +1,15 @@
-import { toast } from "sonner";
+import { ChevronDown, ChevronUp, Crown, MessageCircle, Shield, UserX } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Crown, Shield, UserX, ChevronUp, ChevronDown, MessageCircle } from "lucide-react";
-import { api } from "@/lib/api-client";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { UserAvatar } from "@/components/common/UserAvatar";
+import { toast } from "sonner";
+
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TimeAgo } from "@/components/common/TimeAgo";
+import { UserAvatar } from "@/components/common/UserAvatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api-client";
 
 interface Member {
   id: string;
@@ -149,15 +150,9 @@ export default function CrewMemberList({
                 <UserAvatar user={member.user} size="default" linkToProfile />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium truncate">
-                      {member.user.name}
-                    </span>
-                    {member.role === "OWNER" && (
-                      <Crown className="w-3.5 h-3.5 text-amber-600" />
-                    )}
-                    {member.role === "ADMIN" && (
-                      <Shield className="w-3.5 h-3.5 text-blue-600" />
-                    )}
+                    <span className="text-sm font-medium truncate">{member.user.name}</span>
+                    {member.role === "OWNER" && <Crown className="w-3.5 h-3.5 text-amber-600" />}
+                    {member.role === "ADMIN" && <Shield className="w-3.5 h-3.5 text-blue-600" />}
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="text-xs">

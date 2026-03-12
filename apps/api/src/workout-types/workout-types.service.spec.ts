@@ -1,6 +1,7 @@
 import { Test } from "@nestjs/testing";
-import { WorkoutTypesService } from "./workout-types.service";
+
 import { WorkoutTypeRepository } from "./repositories/workout-type.repository";
+import { WorkoutTypesService } from "./workout-types.service";
 
 const mockRepository = {
   findAllActive: jest.fn(),
@@ -41,12 +42,8 @@ describe("WorkoutTypesService", () => {
           { id: "1", category: "EASY", name: "EASY_RUN", sortOrder: 0, isActive: true },
           { id: "2", category: "EASY", name: "RECOVERY", sortOrder: 1, isActive: true },
         ],
-        LONG_RUN: [
-          { id: "3", category: "LONG_RUN", name: "LSD", sortOrder: 0, isActive: true },
-        ],
-        SPEED: [
-          { id: "4", category: "SPEED", name: "INTERVAL", sortOrder: 0, isActive: true },
-        ],
+        LONG_RUN: [{ id: "3", category: "LONG_RUN", name: "LSD", sortOrder: 0, isActive: true }],
+        SPEED: [{ id: "4", category: "SPEED", name: "INTERVAL", sortOrder: 0, isActive: true }],
       });
     });
 

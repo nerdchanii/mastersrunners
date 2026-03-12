@@ -7,9 +7,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   outDir: "dist",
-  external: [
-    "@prisma/adapter-pg",
-    "pg",
-    "@prisma/client",
-  ],
+  external: ["@prisma/adapter-pg", "pg", "@prisma/client"],
 });

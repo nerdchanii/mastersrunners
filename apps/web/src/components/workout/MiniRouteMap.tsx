@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+
 import { decodePolyline, normalizePath } from "@/lib/polyline";
 
 interface MiniRouteMapProps {
@@ -22,7 +23,9 @@ export function MiniRouteMap({
       const coords = decodePolyline(encodedPolyline);
       if (coords.length < 2) return "";
       const normalized = normalizePath(coords, size, size, 4);
-      return normalized.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+      return normalized
+        .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+        .join(" ");
     } catch {
       return "";
     }

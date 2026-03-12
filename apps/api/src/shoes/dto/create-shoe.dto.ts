@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, MaxLength, Min } from "class-validator";
+import { IsNumber, IsOptional, IsString, MaxLength, Min } from "class-validator";
 
 export class CreateShoeDto {
   @IsString()

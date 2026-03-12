@@ -1,11 +1,12 @@
+import { Activity, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Activity } from "lucide-react";
-import WorkoutCard from "@/components/workout/WorkoutCard";
-import { PageHeader } from "@/components/common/PageHeader";
+
 import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingPage } from "@/components/common/LoadingPage";
+import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import WorkoutCard from "@/components/workout/WorkoutCard";
 import { useWorkouts } from "@/hooks/useWorkouts";
 
 export default function WorkoutsPage() {
@@ -39,8 +40,7 @@ export default function WorkoutsPage() {
         actions={
           workouts.length > 0 && (
             <Button onClick={() => navigate("/workouts/new")}>
-              <Plus className="size-4" />
-              새 기록 추가
+              <Plus className="size-4" />새 기록 추가
             </Button>
           )
         }

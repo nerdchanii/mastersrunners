@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { FeedRepository } from "./feed.repository";
+
 import { DatabaseService } from "../../database/database.service";
+
+import { FeedRepository } from "./feed.repository";
 
 const mockDb = {
   prisma: {
@@ -23,10 +25,7 @@ describe("FeedRepository", () => {
     jest.clearAllMocks();
 
     const module = await Test.createTestingModule({
-      providers: [
-        FeedRepository,
-        { provide: DatabaseService, useValue: mockDb },
-      ],
+      providers: [FeedRepository, { provide: DatabaseService, useValue: mockDb }],
     }).compile();
 
     repo = module.get(FeedRepository);

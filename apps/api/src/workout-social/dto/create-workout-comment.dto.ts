@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray, IsUUID, MaxLength } from "class-validator";
+import { IsArray, IsOptional, IsString, IsUUID, MaxLength } from "class-validator";
 
 export class CreateWorkoutCommentDto {
   @IsString()

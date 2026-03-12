@@ -1,11 +1,13 @@
-import { Test } from "@nestjs/testing";
 import { BadRequestException, ForbiddenException, NotFoundException } from "@nestjs/common";
-import { EventsService } from "./events.service.js";
-import { EventRepository } from "./repositories/event.repository.js";
-import { EventRegistrationRepository } from "./repositories/event-registration.repository.js";
+import { Test } from "@nestjs/testing";
+
 import { WorkoutRepository } from "../workouts/repositories/workout.repository.js";
+
 import type { CreateEventDto } from "./dto/create-event.dto.js";
 import type { UpdateEventDto } from "./dto/update-event.dto.js";
+import { EventRepository } from "./repositories/event.repository.js";
+import { EventRegistrationRepository } from "./repositories/event-registration.repository.js";
+import { EventsService } from "./events.service.js";
 
 const mockEventRepository = {
   create: jest.fn(),
@@ -57,7 +59,7 @@ describe("EventsService", () => {
         eventDate: "2026-10-15",
         location: "Seoul Olympic Park",
         latitude: 37.5219,
-        longitude: 127.1230,
+        longitude: 127.123,
         imageUrl: "https://example.com/event.jpg",
         maxParticipants: 1000,
       };
@@ -173,7 +175,9 @@ describe("EventsService", () => {
     it("should throw NotFoundException if event not found", async () => {
       mockEventRepository.findById.mockResolvedValue(null);
 
-      await expect(service.update("non-existent", "user-123", {})).rejects.toThrow(NotFoundException);
+      await expect(service.update("non-existent", "user-123", {})).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if user is not creator", async () => {
@@ -228,7 +232,10 @@ describe("EventsService", () => {
       const result = await service.register(eventId, userId);
 
       expect(mockEventRepository.findById).toHaveBeenCalledWith(eventId);
-      expect(mockEventRegistrationRepository.findRegistration).toHaveBeenCalledWith(eventId, userId);
+      expect(mockEventRegistrationRepository.findRegistration).toHaveBeenCalledWith(
+        eventId,
+        userId,
+      );
       expect(mockEventRegistrationRepository.countRegistered).toHaveBeenCalledWith(eventId);
       expect(mockEventRegistrationRepository.register).toHaveBeenCalledWith(eventId, userId);
       expect(result).toEqual(mockRegistration);
@@ -242,7 +249,12 @@ describe("EventsService", () => {
 
     it("should throw BadRequestException if already registered with REGISTERED status", async () => {
       const mockEvent = { id: "event-123" };
-      const mockExisting = { id: "reg-1", eventId: "event-123", userId: "user-123", status: "REGISTERED" };
+      const mockExisting = {
+        id: "reg-1",
+        eventId: "event-123",
+        userId: "user-123",
+        status: "REGISTERED",
+      };
       mockEventRepository.findById.mockResolvedValue(mockEvent);
       mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockExisting);
 
@@ -303,7 +315,10 @@ describe("EventsService", () => {
 
       const result = await service.cancel(eventId, userId);
 
-      expect(mockEventRegistrationRepository.findRegistration).toHaveBeenCalledWith(eventId, userId);
+      expect(mockEventRegistrationRepository.findRegistration).toHaveBeenCalledWith(
+        eventId,
+        userId,
+      );
       expect(mockEventRegistrationRepository.cancel).toHaveBeenCalledWith(eventId, userId);
       expect(result).toEqual(mockCancelled);
     });
@@ -315,7 +330,12 @@ describe("EventsService", () => {
     });
 
     it("should throw BadRequestException if already cancelled", async () => {
-      const mockRegistration = { id: "reg-1", eventId: "event-123", userId: "user-123", status: "CANCELLED" };
+      const mockRegistration = {
+        id: "reg-1",
+        eventId: "event-123",
+        userId: "user-123",
+        status: "CANCELLED",
+      };
       mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
 
       await expect(service.cancel("event-123", "user-123")).rejects.toThrow(BadRequestException);
@@ -335,7 +355,10 @@ describe("EventsService", () => {
 
       const result = await service.submitResult(eventId, userId, resultData);
 
-      expect(mockEventRegistrationRepository.findRegistration).toHaveBeenCalledWith(eventId, userId);
+      expect(mockEventRegistrationRepository.findRegistration).toHaveBeenCalledWith(
+        eventId,
+        userId,
+      );
       expect(mockEventRegistrationRepository.updateResult).toHaveBeenCalledWith(eventId, userId, {
         resultTime: 12600,
         resultRank: 42,
@@ -349,7 +372,7 @@ describe("EventsService", () => {
       mockEventRegistrationRepository.findRegistration.mockResolvedValue(null);
 
       await expect(
-        service.submitResult("event-123", "user-123", { resultTime: 12600, status: "COMPLETED" })
+        service.submitResult("event-123", "user-123", { resultTime: 12600, status: "COMPLETED" }),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -368,7 +391,10 @@ describe("EventsService", () => {
 
       const result = await service.getResults(eventId, "resultTime");
 
-      expect(mockEventRegistrationRepository.findByEventWithResults).toHaveBeenCalledWith(eventId, "resultTime");
+      expect(mockEventRegistrationRepository.findByEventWithResults).toHaveBeenCalledWith(
+        eventId,
+        "resultTime",
+      );
       expect(result).toEqual(mockResults);
     });
 
@@ -383,7 +409,13 @@ describe("EventsService", () => {
     it("should return my registration with result", async () => {
       const eventId = "event-123";
       const userId = "user-123";
-      const mockRegistration = { id: "reg-1", eventId, userId, resultTime: 12600, status: "COMPLETED" };
+      const mockRegistration = {
+        id: "reg-1",
+        eventId,
+        userId,
+        resultTime: 12600,
+        status: "COMPLETED",
+      };
 
       mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
 
@@ -415,14 +447,21 @@ describe("EventsService", () => {
       const result = await service.linkWorkout(eventId, userId, workoutId);
 
       expect(mockWorkoutRepository.findByIdWithUser).toHaveBeenCalledWith(workoutId);
-      expect(mockEventRegistrationRepository.linkWorkout).toHaveBeenCalledWith(eventId, userId, workoutId, 12600);
+      expect(mockEventRegistrationRepository.linkWorkout).toHaveBeenCalledWith(
+        eventId,
+        userId,
+        workoutId,
+        12600,
+      );
       expect(result).toEqual(mockLinked);
     });
 
     it("should throw NotFoundException if not registered", async () => {
       mockEventRegistrationRepository.findRegistration.mockResolvedValue(null);
 
-      await expect(service.linkWorkout("event-123", "user-123", "workout-456")).rejects.toThrow(NotFoundException);
+      await expect(service.linkWorkout("event-123", "user-123", "workout-456")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw NotFoundException if workout not found", async () => {
@@ -430,7 +469,9 @@ describe("EventsService", () => {
       mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
       mockWorkoutRepository.findByIdWithUser.mockResolvedValue(null);
 
-      await expect(service.linkWorkout("event-123", "user-123", "workout-456")).rejects.toThrow(NotFoundException);
+      await expect(service.linkWorkout("event-123", "user-123", "workout-456")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if workout belongs to another user", async () => {
@@ -439,14 +480,18 @@ describe("EventsService", () => {
       mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
       mockWorkoutRepository.findByIdWithUser.mockResolvedValue(mockWorkout);
 
-      await expect(service.linkWorkout("event-123", "user-123", "workout-456")).rejects.toThrow(ForbiddenException);
+      await expect(service.linkWorkout("event-123", "user-123", "workout-456")).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it("should throw BadRequestException if workout already linked", async () => {
       const mockRegistration = { id: "reg-1", workoutId: "existing-workout" };
       mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
 
-      await expect(service.linkWorkout("event-123", "user-123", "workout-456")).rejects.toThrow(BadRequestException);
+      await expect(service.linkWorkout("event-123", "user-123", "workout-456")).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -469,14 +514,18 @@ describe("EventsService", () => {
     it("should throw NotFoundException if not registered", async () => {
       mockEventRegistrationRepository.findRegistration.mockResolvedValue(null);
 
-      await expect(service.unlinkWorkout("event-123", "user-123")).rejects.toThrow(NotFoundException);
+      await expect(service.unlinkWorkout("event-123", "user-123")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw BadRequestException if no workout linked", async () => {
       const mockRegistration = { id: "reg-1", workoutId: null };
       mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
 
-      await expect(service.unlinkWorkout("event-123", "user-123")).rejects.toThrow(BadRequestException);
+      await expect(service.unlinkWorkout("event-123", "user-123")).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

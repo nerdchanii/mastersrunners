@@ -1,6 +1,7 @@
 import type { INestApplication } from "@nestjs/common";
-import { createTestApp, closeTestApp, cleanDatabase } from "./setup";
-import { createTestUser, authRequest } from "./helpers/auth.helper";
+
+import { authRequest, createTestUser } from "./helpers/auth.helper";
+import { cleanDatabase, closeTestApp, createTestApp } from "./setup";
 
 describe("Feed (E2E)", () => {
   let app: INestApplication;
@@ -27,8 +28,7 @@ describe("Feed (E2E)", () => {
       stranger = await createTestUser(app, { email: "feed-stranger@test.local", name: "Stranger" });
 
       // Viewer follows poster
-      await authRequest(app, viewer.accessToken)
-        .post(`/api/v1/follow/${poster.userId}`);
+      await authRequest(app, viewer.accessToken).post(`/api/v1/follow/${poster.userId}`);
 
       // Poster creates public posts
       await authRequest(app, poster.accessToken)
@@ -46,9 +46,7 @@ describe("Feed (E2E)", () => {
     });
 
     it("GET /api/v1/feed/posts - should return followed users' posts", async () => {
-      const res = await authRequest(app, viewer.accessToken)
-        .get("/api/v1/feed/posts")
-        .expect(200);
+      const res = await authRequest(app, viewer.accessToken).get("/api/v1/feed/posts").expect(200);
 
       expect(res.body).toHaveProperty("items");
       expect(Array.isArray(res.body.items)).toBe(true);
@@ -69,9 +67,7 @@ describe("Feed (E2E)", () => {
         .post("/api/v1/posts")
         .send({ content: "Viewer's own post", visibility: "PUBLIC" });
 
-      const res = await authRequest(app, viewer.accessToken)
-        .get("/api/v1/feed/posts")
-        .expect(200);
+      const res = await authRequest(app, viewer.accessToken).get("/api/v1/feed/posts").expect(200);
 
       const ownPosts = res.body.items.filter((p: any) => p.userId === viewer.userId);
       expect(ownPosts.length).toBeGreaterThanOrEqual(1);
@@ -97,19 +93,16 @@ describe("Feed (E2E)", () => {
       runner = await createTestUser(app, { email: "feed-wk-runner@test.local", name: "WK Runner" });
 
       // Viewer follows runner
-      await authRequest(app, viewer.accessToken)
-        .post(`/api/v1/follow/${runner.userId}`);
+      await authRequest(app, viewer.accessToken).post(`/api/v1/follow/${runner.userId}`);
 
       // Runner creates workouts
-      await authRequest(app, runner.accessToken)
-        .post("/api/v1/workouts")
-        .send({
-          distance: 5000,
-          duration: 1800,
-          date: "2025-06-15T09:00:00.000Z",
-          title: "Runner's morning run",
-          visibility: "PUBLIC",
-        });
+      await authRequest(app, runner.accessToken).post("/api/v1/workouts").send({
+        distance: 5000,
+        duration: 1800,
+        date: "2025-06-15T09:00:00.000Z",
+        title: "Runner's morning run",
+        visibility: "PUBLIC",
+      });
     });
 
     it("GET /api/v1/feed/workouts - should return followed users' workouts", async () => {
@@ -132,12 +125,17 @@ describe("Feed (E2E)", () => {
     beforeAll(async () => {
       await cleanDatabase();
 
-      viewer = await createTestUser(app, { email: "feed-block-viewer@test.local", name: "Block Viewer" });
-      blockedUser = await createTestUser(app, { email: "feed-block-target@test.local", name: "Blocked User" });
+      viewer = await createTestUser(app, {
+        email: "feed-block-viewer@test.local",
+        name: "Block Viewer",
+      });
+      blockedUser = await createTestUser(app, {
+        email: "feed-block-target@test.local",
+        name: "Blocked User",
+      });
 
       // Viewer follows blockedUser
-      await authRequest(app, viewer.accessToken)
-        .post(`/api/v1/follow/${blockedUser.userId}`);
+      await authRequest(app, viewer.accessToken).post(`/api/v1/follow/${blockedUser.userId}`);
 
       // Blocked user creates a post
       await authRequest(app, blockedUser.accessToken)
@@ -145,15 +143,13 @@ describe("Feed (E2E)", () => {
         .send({ content: "Post from blocked user", visibility: "PUBLIC" });
 
       // Blocked user creates a workout
-      await authRequest(app, blockedUser.accessToken)
-        .post("/api/v1/workouts")
-        .send({
-          distance: 3000,
-          duration: 1200,
-          date: "2025-06-15T09:00:00.000Z",
-          title: "Blocked user workout",
-          visibility: "PUBLIC",
-        });
+      await authRequest(app, blockedUser.accessToken).post("/api/v1/workouts").send({
+        distance: 3000,
+        duration: 1200,
+        date: "2025-06-15T09:00:00.000Z",
+        title: "Blocked user workout",
+        visibility: "PUBLIC",
+      });
     });
 
     it("should show followed user's content before blocking", async () => {

@@ -1,20 +1,15 @@
+import { Check, QrCode } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useState, useEffect, useCallback } from "react";
-import { QrCode, Check } from "lucide-react";
+
+import { EmptyState } from "@/components/common/EmptyState";
+import { TimeAgo } from "@/components/common/TimeAgo";
+import { UserAvatar } from "@/components/common/UserAvatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/common/EmptyState";
-import { UserAvatar } from "@/components/common/UserAvatar";
-import { TimeAgo } from "@/components/common/TimeAgo";
 
 interface Attendee {
   id: string;
@@ -71,9 +66,7 @@ export default function CrewAttendance({
       });
       await fetchAttendees();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "출석 체크에 실패했습니다.",
-      );
+      toast.error(err instanceof Error ? err.message : "출석 체크에 실패했습니다.");
     } finally {
       setIsCheckingIn(false);
     }
@@ -105,9 +98,7 @@ export default function CrewAttendance({
               <QrCode className="w-5 h-5" />
               출석 QR 코드
             </CardTitle>
-            <CardDescription>
-              멤버들에게 이 QR 코드를 스캔하도록 안내하세요
-            </CardDescription>
+            <CardDescription>멤버들에게 이 QR 코드를 스캔하도록 안내하세요</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center">
             {/* QR code placeholder - in production, use a QR code library */}
@@ -134,9 +125,7 @@ export default function CrewAttendance({
             <Button
               size="lg"
               onClick={handleCheckIn}
-              disabled={
-                isCheckingIn || attendees.some((a) => a.userId === user?.id)
-              }
+              disabled={isCheckingIn || attendees.some((a) => a.userId === user?.id)}
               className="w-full max-w-sm"
             >
               <Check className="w-5 h-5 mr-2" />
@@ -162,15 +151,9 @@ export default function CrewAttendance({
                   className="flex items-center justify-between p-3 rounded-lg border"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <UserAvatar
-                      user={attendee.user}
-                      size="default"
-                      linkToProfile
-                    />
+                    <UserAvatar user={attendee.user} size="default" linkToProfile />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {attendee.user.name}
-                      </p>
+                      <p className="text-sm font-medium truncate">{attendee.user.name}</p>
                       <TimeAgo date={attendee.checkedInAt} />
                     </div>
                   </div>

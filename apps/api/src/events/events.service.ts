@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from "@nestjs/common";
-import { EventRepository } from "./repositories/event.repository.js";
-import { EventRegistrationRepository } from "./repositories/event-registration.repository.js";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+
 import { WorkoutRepository } from "../workouts/repositories/workout.repository.js";
+
 import type { CreateEventDto } from "./dto/create-event.dto.js";
 import type { UpdateEventDto } from "./dto/update-event.dto.js";
+import { EventRepository } from "./repositories/event.repository.js";
+import { EventRegistrationRepository } from "./repositories/event-registration.repository.js";
 
 @Injectable()
 export class EventsService {
@@ -45,7 +52,8 @@ export class EventsService {
   async update(id: string, userId: string, dto: UpdateEventDto) {
     const event = await this.eventRepo.findById(id);
     if (!event) throw new NotFoundException("이벤트를 찾을 수 없습니다.");
-    if (event.organizerId !== userId) throw new ForbiddenException("이벤트 생성자만 수정할 수 있습니다.");
+    if (event.organizerId !== userId)
+      throw new ForbiddenException("이벤트 생성자만 수정할 수 있습니다.");
 
     const updateData: {
       title?: string;
@@ -74,7 +82,8 @@ export class EventsService {
   async remove(id: string, userId: string) {
     const event = await this.eventRepo.findById(id);
     if (!event) throw new NotFoundException("이벤트를 찾을 수 없습니다.");
-    if (event.organizerId !== userId) throw new ForbiddenException("이벤트 생성자만 삭제할 수 있습니다.");
+    if (event.organizerId !== userId)
+      throw new ForbiddenException("이벤트 생성자만 삭제할 수 있습니다.");
 
     return this.eventRepo.remove(id);
   }
@@ -111,12 +120,16 @@ export class EventsService {
 
   // ============ Result Methods ============
 
-  async submitResult(eventId: string, userId: string, data: {
-    resultTime: number;
-    resultRank?: number;
-    bibNumber?: string;
-    status: "COMPLETED" | "DNS" | "DNF";
-  }) {
+  async submitResult(
+    eventId: string,
+    userId: string,
+    data: {
+      resultTime: number;
+      resultRank?: number;
+      bibNumber?: string;
+      status: "COMPLETED" | "DNS" | "DNF";
+    },
+  ) {
     const registration = await this.registrationRepo.findRegistration(eventId, userId);
     if (!registration) throw new NotFoundException("등록하지 않은 이벤트입니다.");
 
@@ -154,7 +167,8 @@ export class EventsService {
 
     const workout = await this.workoutRepo.findByIdWithUser(workoutId);
     if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
-    if (workout.userId !== userId) throw new ForbiddenException("본인의 워크아웃만 연결할 수 있습니다.");
+    if (workout.userId !== userId)
+      throw new ForbiddenException("본인의 워크아웃만 연결할 수 있습니다.");
 
     return this.registrationRepo.linkWorkout(eventId, userId, workoutId, workout.duration);
   }

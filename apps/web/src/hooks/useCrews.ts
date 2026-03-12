@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { api } from "@/lib/api-client";
 
 export interface Crew {
@@ -63,8 +64,7 @@ export function useCrew(id: string) {
 export function useJoinCrew() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (crewId: string) =>
-      api.fetch(`/crews/${crewId}/join`, { method: "POST" }),
+    mutationFn: (crewId: string) => api.fetch(`/crews/${crewId}/join`, { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: crewKeys.all });
     },
@@ -74,8 +74,7 @@ export function useJoinCrew() {
 export function useLeaveCrew() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (crewId: string) =>
-      api.fetch(`/crews/${crewId}/leave`, { method: "DELETE" }),
+    mutationFn: (crewId: string) => api.fetch(`/crews/${crewId}/leave`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: crewKeys.all });
     },

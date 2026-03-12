@@ -1,7 +1,8 @@
-import { Link } from "react-router-dom";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { MapPin, Users } from "lucide-react";
+import { Link } from "react-router-dom";
+
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface EventCardProps {
@@ -61,10 +62,7 @@ export default function EventCard({ event }: EventCardProps) {
                   {event.title}
                 </h3>
               </div>
-              <Badge
-                variant={isPast ? "secondary" : "default"}
-                className="text-xs"
-              >
+              <Badge variant={isPast ? "secondary" : "default"} className="text-xs">
                 {isPast ? "종료" : "예정"}
               </Badge>
             </div>
@@ -73,9 +71,7 @@ export default function EventCard({ event }: EventCardProps) {
 
         <CardContent className="space-y-2">
           {event.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {event.description}
-            </p>
+            <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
           )}
 
           <div className="space-y-1.5 text-sm text-muted-foreground pt-2">

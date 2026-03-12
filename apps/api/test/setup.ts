@@ -1,7 +1,6 @@
 // Set test DATABASE_URL BEFORE anything else loads (Prisma singleton reads it on first import)
 process.env.DATABASE_URL =
-  process.env.TEST_DATABASE_URL ||
-  "postgresql://test:test@localhost:5433/masters_runners_test";
+  process.env.TEST_DATABASE_URL || "postgresql://test:test@localhost:5433/masters_runners_test";
 process.env.NODE_ENV = "test";
 // Provide JWT_SECRET for auth module
 process.env.JWT_SECRET = process.env.JWT_SECRET || "e2e-test-jwt-secret";
@@ -9,11 +8,13 @@ process.env.JWT_ACCESS_TTL = process.env.JWT_ACCESS_TTL || "900";
 process.env.JWT_REFRESH_TTL = process.env.JWT_REFRESH_TTL || "604800";
 
 import "reflect-metadata";
+
+import { type INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import { ValidationPipe, type INestApplication } from "@nestjs/common";
+
 import { AppModule } from "../src/app.module";
-import { DatabaseService } from "../src/database/database.service";
 import { AllExceptionsFilter } from "../src/common/filters/http-exception.filter";
+import { DatabaseService } from "../src/database/database.service";
 
 let app: INestApplication;
 let dbService: DatabaseService;

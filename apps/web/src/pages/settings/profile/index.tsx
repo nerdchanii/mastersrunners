@@ -1,14 +1,10 @@
+import { AlertTriangle, ArrowLeft, Camera, Loader2, Monitor, Moon, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, Loader2, Sun, Moon, Monitor, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-context";
-import { useTheme } from "@/lib/theme-context";
-import { useDeleteAccount } from "@/hooks/useAccount";
-import { api } from "@/lib/api-client";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -17,12 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from "@/components/ui/avatar";
+import { Textarea } from "@/components/ui/textarea";
+import { useDeleteAccount } from "@/hooks/useAccount";
+import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
+import { useTheme } from "@/lib/theme-context";
 
 interface ProfileForm {
   name: string;
@@ -171,9 +168,7 @@ export default function EditProfilePage() {
       toast.success("프로필이 수정되었습니다.");
       navigate("/profile");
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "프로필 수정에 실패했습니다."
-      );
+      toast.error(err instanceof Error ? err.message : "프로필 수정에 실패했습니다.");
     } finally {
       setIsSaving(false);
     }
@@ -251,9 +246,7 @@ export default function EditProfilePage() {
                 disabled={isUploadingProfile}
               >
                 <Avatar className="size-24 sm:size-28 ring-4 ring-card">
-                  {form.profileImage && (
-                    <AvatarImage src={form.profileImage} alt={form.name} />
-                  )}
+                  {form.profileImage && <AvatarImage src={form.profileImage} alt={form.name} />}
                   <AvatarFallback className="text-3xl sm:text-4xl bg-muted">
                     {initials}
                   </AvatarFallback>
@@ -292,14 +285,8 @@ export default function EditProfilePage() {
               maxLength={50}
             />
             <div className="flex justify-between">
-              {errors.name ? (
-                <p className="text-xs text-destructive">{errors.name}</p>
-              ) : (
-                <span />
-              )}
-              <p className="text-xs text-muted-foreground">
-                {form.name.length}/50
-              </p>
+              {errors.name ? <p className="text-xs text-destructive">{errors.name}</p> : <span />}
+              <p className="text-xs text-muted-foreground">{form.name.length}/50</p>
             </div>
           </div>
 
@@ -317,14 +304,8 @@ export default function EditProfilePage() {
               maxLength={300}
             />
             <div className="flex justify-between">
-              {errors.bio ? (
-                <p className="text-xs text-destructive">{errors.bio}</p>
-              ) : (
-                <span />
-              )}
-              <p className="text-xs text-muted-foreground">
-                {form.bio.length}/300
-              </p>
+              {errors.bio ? <p className="text-xs text-destructive">{errors.bio}</p> : <span />}
+              <p className="text-xs text-muted-foreground">{form.bio.length}/300</p>
             </div>
           </div>
         </div>
@@ -336,11 +317,11 @@ export default function EditProfilePage() {
             <p className="text-xs text-muted-foreground mt-0.5">앱 외관 테마를 선택하세요.</p>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {([
+            {[
               { value: "light" as const, label: "라이트", Icon: Sun },
               { value: "dark" as const, label: "다크", Icon: Moon },
               { value: "system" as const, label: "시스템", Icon: Monitor },
-            ]).map(({ value, label, Icon }) => (
+            ].map(({ value, label, Icon }) => (
               <button
                 key={value}
                 type="button"
@@ -360,12 +341,7 @@ export default function EditProfilePage() {
 
         {/* Submit */}
         <div className="flex gap-3 justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate(-1)}
-            disabled={isSaving}
-          >
+          <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={isSaving}>
             취소
           </Button>
           <Button type="submit" disabled={isSaving || isUploading}>
@@ -388,17 +364,12 @@ export default function EditProfilePage() {
           <div className="flex-1">
             <h2 className="text-sm font-semibold text-destructive">계정 삭제</h2>
             <p className="text-xs text-muted-foreground mt-1">
-              계정을 삭제하면 모든 데이터(워크아웃, 포스트, 팔로우, 크루 등)가 영구적으로 삭제됩니다.
-              이 작업은 되돌릴 수 없습니다.
+              계정을 삭제하면 모든 데이터(워크아웃, 포스트, 팔로우, 크루 등)가 영구적으로
+              삭제됩니다. 이 작업은 되돌릴 수 없습니다.
             </p>
           </div>
         </div>
-        <Button
-          type="button"
-          variant="destructive"
-          size="sm"
-          onClick={() => setDeleteStep(1)}
-        >
+        <Button type="button" variant="destructive" size="sm" onClick={() => setDeleteStep(1)}>
           계정 삭제
         </Button>
       </div>
@@ -409,7 +380,9 @@ export default function EditProfilePage() {
           <DialogHeader>
             <DialogTitle className="text-destructive">정말 탈퇴하시겠습니까?</DialogTitle>
             <DialogDescription className="space-y-2 pt-1">
-              <span className="block">계정을 삭제하면 다음 데이터가 <strong>영구적으로 삭제</strong>됩니다:</span>
+              <span className="block">
+                계정을 삭제하면 다음 데이터가 <strong>영구적으로 삭제</strong>됩니다:
+              </span>
               <ul className="list-disc list-inside text-sm space-y-0.5 mt-2">
                 <li>모든 워크아웃 기록</li>
                 <li>모든 게시글 및 댓글</li>
@@ -417,7 +390,9 @@ export default function EditProfilePage() {
                 <li>크루 및 챌린지 참여 내역</li>
                 <li>메시지 및 알림</li>
               </ul>
-              <span className="block mt-2 font-medium text-destructive">이 작업은 되돌릴 수 없습니다.</span>
+              <span className="block mt-2 font-medium text-destructive">
+                이 작업은 되돌릴 수 없습니다.
+              </span>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">

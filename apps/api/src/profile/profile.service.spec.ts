@@ -1,11 +1,13 @@
-import { Test } from "@nestjs/testing";
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
-import { ProfileService } from "./profile.service";
+import { Test } from "@nestjs/testing";
+
 import { UserRepository } from "../auth/repositories/user.repository";
-import { WorkoutRepository } from "../workouts/repositories/workout.repository";
 import { BlockRepository } from "../block/repositories/block.repository";
-import { FollowRepository } from "../follow/repositories/follow.repository";
 import { DatabaseService } from "../database/database.service";
+import { FollowRepository } from "../follow/repositories/follow.repository";
+import { WorkoutRepository } from "../workouts/repositories/workout.repository";
+
+import { ProfileService } from "./profile.service";
 
 const mockUserRepo = {
   findById: jest.fn(),
@@ -65,7 +67,13 @@ describe("ProfileService", () => {
 
   describe("getProfile", () => {
     it("should return user with stats and follow counts", async () => {
-      const mockUser = { id: "u1", email: "t@t.com", name: "Test", profileImage: null, createdAt: new Date() };
+      const mockUser = {
+        id: "u1",
+        email: "t@t.com",
+        name: "Test",
+        profileImage: null,
+        createdAt: new Date(),
+      };
       mockUserRepo.findByIdBasicSelect.mockResolvedValue(mockUser);
       mockWorkoutRepo.aggregateByUser.mockResolvedValue({
         _count: 10,
@@ -122,7 +130,9 @@ describe("ProfileService", () => {
       const currentUserId = "me";
       mockBlockRepository.isBlocked.mockResolvedValue(true);
 
-      await expect(service.getProfile(targetUserId, currentUserId)).rejects.toThrow(ForbiddenException);
+      await expect(service.getProfile(targetUserId, currentUserId)).rejects.toThrow(
+        ForbiddenException,
+      );
       expect(mockBlockRepository.isBlocked).toHaveBeenCalledWith(currentUserId, targetUserId);
     });
 
@@ -188,7 +198,14 @@ describe("ProfileService", () => {
     it("should update user name", async () => {
       const userId = "u1";
       const dto = { name: "New Name" };
-      const updatedUser = { id: userId, email: "t@t.com", name: "New Name", profileImage: null, bio: null, backgroundImage: null };
+      const updatedUser = {
+        id: userId,
+        email: "t@t.com",
+        name: "New Name",
+        profileImage: null,
+        bio: null,
+        backgroundImage: null,
+      };
 
       mockUserRepo.findById.mockResolvedValue({ id: userId });
       mockUserRepo.update.mockResolvedValue(updatedUser);
@@ -234,12 +251,18 @@ describe("ProfileService", () => {
     it("should throw NotFoundException when user not found", async () => {
       mockUserRepo.findById.mockResolvedValue(null);
 
-      await expect(service.updateProfile("unknown", { name: "Test" })).rejects.toThrow(NotFoundException);
+      await expect(service.updateProfile("unknown", { name: "Test" })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should update multiple fields at once", async () => {
       const userId = "u1";
-      const dto = { name: "Updated", bio: "New bio", backgroundImage: "https://example.com/bg.jpg" };
+      const dto = {
+        name: "Updated",
+        bio: "New bio",
+        backgroundImage: "https://example.com/bg.jpg",
+      };
       const updatedUser = { id: userId, ...dto };
 
       mockUserRepo.findById.mockResolvedValue({ id: userId });

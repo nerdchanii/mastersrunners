@@ -1,9 +1,5 @@
-import {
-  useQuery,
-  useMutation,
-  useInfiniteQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { api } from "@/lib/api-client";
 
 interface PostImage {
@@ -50,8 +46,7 @@ interface CreatePostDto {
 
 export const postKeys = {
   all: ["posts"] as const,
-  list: (params?: Record<string, string>) =>
-    [...postKeys.all, "list", params] as const,
+  list: (params?: Record<string, string>) => [...postKeys.all, "list", params] as const,
   detail: (id: string) => [...postKeys.all, "detail", id] as const,
   feed: () => [...postKeys.all, "feed"] as const,
 };
@@ -68,9 +63,7 @@ export function usePosts(params?: Record<string, string>) {
   return useQuery({
     queryKey: postKeys.list(params),
     queryFn: () => {
-      const qs = params
-        ? "?" + new URLSearchParams(params).toString()
-        : "";
+      const qs = params ? "?" + new URLSearchParams(params).toString() : "";
       return api.fetch<Post[]>(`/posts${qs}`);
     },
     select: (data) => (Array.isArray(data) ? data : []),
@@ -86,8 +79,7 @@ export function usePostFeed() {
       return api.fetch<FeedResponse<Post>>(path);
     },
     initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) =>
-      lastPage?.hasMore ? lastPage.nextCursor : undefined,
+    getNextPageParam: (lastPage) => (lastPage?.hasMore ? lastPage.nextCursor : undefined),
   });
 }
 
@@ -122,8 +114,7 @@ export function useUpdatePost(id: string) {
 export function useDeletePost() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      api.fetch(`/posts/${id}`, { method: "DELETE" }),
+    mutationFn: (id: string) => api.fetch(`/posts/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: postKeys.all });
     },

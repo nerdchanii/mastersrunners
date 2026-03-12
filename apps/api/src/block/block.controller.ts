@@ -1,6 +1,7 @@
-import { Controller, Post, Delete, Get, Param, Req } from "@nestjs/common";
+import { Controller, Delete, Get, Param, Post, Req } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
+
 import { BlockService } from "./block.service.js";
 
 @ApiTags("Block")

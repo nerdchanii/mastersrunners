@@ -1,5 +1,9 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { NotificationRepository, type CreateNotificationData } from "./repositories/notification.repository.js";
+
+import {
+  type CreateNotificationData,
+  NotificationRepository,
+} from "./repositories/notification.repository.js";
 import { NotificationsSseService } from "./notifications-sse.service.js";
 
 @Injectable()

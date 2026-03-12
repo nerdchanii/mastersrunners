@@ -1,8 +1,15 @@
-import { Injectable, ConflictException, NotFoundException, ForbiddenException } from "@nestjs/common";
-import { WorkoutSocialRepository } from "./repositories/workout-social.repository.js";
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+
 import { BlockRepository } from "../block/repositories/block.repository.js";
 import { WorkoutRepository } from "../workouts/repositories/workout.repository.js";
+
 import type { CreateWorkoutCommentDto } from "./dto/create-workout-comment.dto.js";
+import { WorkoutSocialRepository } from "./repositories/workout-social.repository.js";
 
 @Injectable()
 export class WorkoutSocialService {

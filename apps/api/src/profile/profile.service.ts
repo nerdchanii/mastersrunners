@@ -1,9 +1,11 @@
-import { Injectable, ForbiddenException, NotFoundException } from "@nestjs/common";
+import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+
 import { UserRepository } from "../auth/repositories/user.repository.js";
-import { WorkoutRepository } from "../workouts/repositories/workout.repository.js";
 import { BlockRepository } from "../block/repositories/block.repository.js";
-import { FollowRepository } from "../follow/repositories/follow.repository.js";
 import { DatabaseService } from "../database/database.service.js";
+import { FollowRepository } from "../follow/repositories/follow.repository.js";
+import { WorkoutRepository } from "../workouts/repositories/workout.repository.js";
+
 import type { UpdateProfileDto } from "./dto/update-profile.dto.js";
 
 @Injectable()

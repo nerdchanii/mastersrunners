@@ -1,16 +1,17 @@
-import { toast } from "sonner";
+import { ArrowLeft, Edit } from "lucide-react";
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/auth-context";
-import { usePost, useDeletePost } from "@/hooks/usePosts";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
+
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { LoadingPage } from "@/components/common/LoadingPage";
-import { formatDistance, formatDuration, formatPace } from "@/lib/format";
-import { PostCard } from "@/components/post/PostCard";
 import { CommentSection } from "@/components/post/CommentSection";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PostCard } from "@/components/post/PostCard";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDeletePost, usePost } from "@/hooks/usePosts";
+import { useAuth } from "@/lib/auth-context";
+import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -69,7 +70,21 @@ export default function PostDetailPage() {
   }
 
   const isOwner = user?.id === post.user.id;
-  const flatWorkouts = post.workouts?.map((pw: { workout: { id: string; distance: number; duration: number; pace: number; date: string; workoutType?: { name: string } } }) => pw.workout).filter(Boolean) ?? [];
+  const flatWorkouts =
+    post.workouts
+      ?.map(
+        (pw: {
+          workout: {
+            id: string;
+            distance: number;
+            duration: number;
+            pace: number;
+            date: string;
+            workoutType?: { name: string };
+          };
+        }) => pw.workout,
+      )
+      .filter(Boolean) ?? [];
   const likesCount = post._count?.likes ?? 0;
   const commentsCount = post._count?.comments ?? 0;
 
@@ -94,11 +109,7 @@ export default function PostDetailPage() {
         </Button>
         {isOwner && (
           <div className="flex gap-2">
-            <Button
-              onClick={() => navigate(`/posts/${postId}/edit`)}
-              variant="outline"
-              size="sm"
-            >
+            <Button onClick={() => navigate(`/posts/${postId}/edit`)} variant="outline" size="sm">
               <Edit className="size-4" />
               수정
             </Button>
@@ -131,40 +142,49 @@ export default function PostDetailPage() {
             <CardTitle className="text-base">첨부된 훈련 기록</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {flatWorkouts.map((workout: { id: string; distance: number; duration: number; pace: number; date: string; workoutType?: { name: string } }) => (
-              <div
-                key={workout.id}
-                className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">{workout.workoutType?.name || "런닝"}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(workout.date).toLocaleDateString("ko-KR")}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 text-sm text-right">
+            {flatWorkouts.map(
+              (workout: {
+                id: string;
+                distance: number;
+                duration: number;
+                pace: number;
+                date: string;
+                workoutType?: { name: string };
+              }) => (
+                <div
+                  key={workout.id}
+                  className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-muted-foreground text-xs">거리</p>
-                      <p className="font-medium">{formatDistance(workout.distance)} km</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs">시간</p>
-                      <p className="font-medium">{formatDuration(workout.duration)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs">페이스</p>
-                      <p className="font-medium">
-                        {workout.distance > 0
-                          ? formatPace(workout.duration / (workout.distance / 1000))
-                          : "-"}{" "}
-                        /km
+                      <p className="text-sm font-medium">{workout.workoutType?.name || "런닝"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(workout.date).toLocaleDateString("ko-KR")}
                       </p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 text-sm text-right">
+                      <div>
+                        <p className="text-muted-foreground text-xs">거리</p>
+                        <p className="font-medium">{formatDistance(workout.distance)} km</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">시간</p>
+                        <p className="font-medium">{formatDuration(workout.duration)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">페이스</p>
+                        <p className="font-medium">
+                          {workout.distance > 0
+                            ? formatPace(workout.duration / (workout.distance / 1000))
+                            : "-"}{" "}
+                          /km
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ),
+            )}
           </CardContent>
         </Card>
       )}

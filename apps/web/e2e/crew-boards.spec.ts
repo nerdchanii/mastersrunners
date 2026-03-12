@@ -1,5 +1,6 @@
-import { test, expect } from "@playwright/test";
-import { setupAuth, mockUser } from "./helpers/mock-auth";
+import { expect, test } from "@playwright/test";
+
+import { mockUser, setupAuth } from "./helpers/mock-auth";
 
 const API_BASE = "http://localhost:4000/api/v1";
 
@@ -199,16 +200,13 @@ test.describe("크루 게시판", () => {
     });
 
     test("게시판 클릭 시 글 목록이 표시된다", async ({ page }) => {
-      await page.route(
-        `${API_BASE}/crews/${mockCrewId}/boards/board-2/posts*`,
-        (route) => {
-          route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify(mockPosts),
-          });
-        },
-      );
+      await page.route(`${API_BASE}/crews/${mockCrewId}/boards/board-2/posts*`, (route) => {
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(mockPosts),
+        });
+      });
 
       await page.goto(`/crews/${mockCrewId}`);
 
@@ -224,16 +222,13 @@ test.describe("크루 게시판", () => {
     test.beforeEach(async ({ page }) => {
       await setupAuth(page);
       await setupBaseRoutes(page);
-      await page.route(
-        `${API_BASE}/crews/${mockCrewId}/boards/board-2/posts*`,
-        (route) => {
-          route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify(mockPosts),
-          });
-        },
-      );
+      await page.route(`${API_BASE}/crews/${mockCrewId}/boards/board-2/posts*`, (route) => {
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(mockPosts),
+        });
+      });
     });
 
     test("글쓰기 버튼이 표시된다 (ALL_MEMBERS 권한)", async ({ page }) => {
@@ -246,16 +241,13 @@ test.describe("크루 게시판", () => {
     });
 
     test("글 클릭 시 상세가 표시된다", async ({ page }) => {
-      await page.route(
-        `${API_BASE}/crews/${mockCrewId}/boards/board-2/posts/post-1`,
-        (route) => {
-          route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify(mockPostDetail),
-          });
-        },
-      );
+      await page.route(`${API_BASE}/crews/${mockCrewId}/boards/board-2/posts/post-1`, (route) => {
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(mockPostDetail),
+        });
+      });
 
       await page.goto(`/crews/${mockCrewId}`);
 
@@ -272,27 +264,21 @@ test.describe("크루 게시판", () => {
     test.beforeEach(async ({ page }) => {
       await setupAuth(page);
       await setupBaseRoutes(page);
-      await page.route(
-        `${API_BASE}/crews/${mockCrewId}/boards/board-2/posts/**`,
-        (route) => {
-          route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify(mockPostDetail),
-          });
-        },
-      );
-      await page.route(
-        `${API_BASE}/crews/${mockCrewId}/boards/board-2/posts`,
-        (route) => {
-          if (route.request().url().includes("/posts/")) return route.fallback();
-          route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify(mockPosts),
-          });
-        },
-      );
+      await page.route(`${API_BASE}/crews/${mockCrewId}/boards/board-2/posts/**`, (route) => {
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(mockPostDetail),
+        });
+      });
+      await page.route(`${API_BASE}/crews/${mockCrewId}/boards/board-2/posts`, (route) => {
+        if (route.request().url().includes("/posts/")) return route.fallback();
+        route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(mockPosts),
+        });
+      });
     });
 
     test("댓글과 대댓글이 표시된다", async ({ page }) => {

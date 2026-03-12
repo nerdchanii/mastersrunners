@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { WorkoutRepository } from "./workout.repository";
+
 import { DatabaseService } from "../../database/database.service";
+
+import { WorkoutRepository } from "./workout.repository";
 
 const mockPrisma = {
   workout: {
@@ -49,7 +51,7 @@ describe("WorkoutRepository", () => {
       const mockData = {
         id: "w1",
         user: { id: "u1", name: "Test", profileImage: null },
-        workoutType: { id: "wt1", category: "LONG_RUN", name: "Long Run" }
+        workoutType: { id: "wt1", category: "LONG_RUN", name: "Long Run" },
       };
       mockPrisma.workout.findFirst.mockResolvedValue(mockData);
 

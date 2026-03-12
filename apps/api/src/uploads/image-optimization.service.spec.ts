@@ -1,4 +1,5 @@
 import { Test } from "@nestjs/testing";
+
 import { ImageOptimizationService } from "./image-optimization.service";
 
 // Mock sharp module

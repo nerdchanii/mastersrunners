@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
 import { Trophy, Users } from "lucide-react";
-import { api } from "@/lib/api-client";
+import { useCallback, useEffect, useState } from "react";
+
 import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
 interface TeamLeaderboardEntry {
@@ -77,15 +78,11 @@ export default function TeamLeaderboard({ challengeId }: TeamLeaderboardProps) {
           >
             <div className="w-8 text-center flex-shrink-0">
               {isTop3 ? (
-                <span
-                  className={cn("text-lg font-bold", medalColors[entry.rank])}
-                >
+                <span className={cn("text-lg font-bold", medalColors[entry.rank])}>
                   {entry.rank}
                 </span>
               ) : (
-                <span className="text-sm font-medium text-muted-foreground">
-                  {entry.rank}
-                </span>
+                <span className="text-sm font-medium text-muted-foreground">{entry.rank}</span>
               )}
             </div>
 
@@ -94,12 +91,8 @@ export default function TeamLeaderboard({ challengeId }: TeamLeaderboardProps) {
                 <Users className="size-5 text-primary" />
               </div>
               <div className="min-w-0 flex-1">
-                <h4 className="font-semibold text-sm truncate">
-                  {entry.teamName}
-                </h4>
-                <p className="text-xs text-muted-foreground">
-                  {entry.memberCount}명
-                </p>
+                <h4 className="font-semibold text-sm truncate">{entry.teamName}</h4>
+                <p className="text-xs text-muted-foreground">{entry.memberCount}명</p>
               </div>
             </div>
 

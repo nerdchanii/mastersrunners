@@ -1,4 +1,5 @@
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { api } from "@/lib/api-client";
 
 export interface Challenge {
@@ -36,8 +37,7 @@ interface ChallengeListResponse {
 
 export const challengeKeys = {
   all: ["challenges"] as const,
-  list: (params?: Record<string, string>) =>
-    [...challengeKeys.all, "list", params] as const,
+  list: (params?: Record<string, string>) => [...challengeKeys.all, "list", params] as const,
   detail: (id: string) => [...challengeKeys.all, "detail", id] as const,
   my: () => [...challengeKeys.all, "my"] as const,
 };
@@ -62,8 +62,7 @@ export function useInfiniteChallenges(joined = false) {
       return api.fetch<ChallengeListResponse>(path);
     },
     initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) =>
-      lastPage?.hasMore ? lastPage.nextCursor : undefined,
+    getNextPageParam: (lastPage) => (lastPage?.hasMore ? lastPage.nextCursor : undefined),
   });
 }
 

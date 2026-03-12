@@ -1,26 +1,28 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
   Body,
+  Controller,
+  Delete,
+  Get,
+  MessageEvent,
   Param,
+  Patch,
+  Post,
   Query,
-  UseGuards,
   Req,
   Sse,
-  MessageEvent,
+  UseGuards,
 } from "@nestjs/common";
 import { SkipThrottle } from "@nestjs/throttler";
 import { Observable } from "rxjs";
+
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard.js";
 import { JwtSseGuard } from "../auth/guards/jwt-sse.guard.js";
-import { ConversationsService } from "./conversations.service.js";
-import { ConversationsSseService } from "./conversations-sse.service.js";
+import { Public } from "../common/decorators/public.decorator.js";
+
 import { CreateConversationDto } from "./dto/create-conversation.dto.js";
 import { SendMessageDto } from "./dto/send-message.dto.js";
-import { Public } from "../common/decorators/public.decorator.js";
+import { ConversationsService } from "./conversations.service.js";
+import { ConversationsSseService } from "./conversations-sse.service.js";
 
 @Controller("conversations")
 @UseGuards(JwtAuthGuard)
@@ -45,11 +47,7 @@ export class ConversationsController {
     @Query("limit") limit?: string,
   ) {
     const parsedLimit = limit ? Math.min(Math.max(1, parseInt(limit, 10) || 20), 50) : 20;
-    return this.conversationsService.getConversations(
-      req.user.userId,
-      cursor,
-      parsedLimit,
-    );
+    return this.conversationsService.getConversations(req.user.userId, cursor, parsedLimit);
   }
 
   @Sse("sse")
@@ -68,12 +66,7 @@ export class ConversationsController {
     @Query("limit") limit?: string,
   ) {
     const parsedLimit = limit ? Math.min(Math.max(1, parseInt(limit, 10) || 50), 100) : 50;
-    return this.conversationsService.getConversation(
-      id,
-      req.user.userId,
-      cursor,
-      parsedLimit,
-    );
+    return this.conversationsService.getConversation(id, req.user.userId, cursor, parsedLimit);
   }
 
   @Post(":id/messages")
@@ -91,10 +84,7 @@ export class ConversationsController {
   }
 
   @Delete("messages/:id")
-  async deleteMessage(
-    @Req() req: { user: { userId: string } },
-    @Param("id") id: string,
-  ) {
+  async deleteMessage(@Req() req: { user: { userId: string } }, @Param("id") id: string) {
     return this.conversationsService.deleteMessage(id, req.user.userId);
   }
 }

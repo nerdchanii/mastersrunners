@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { api } from "@/lib/api-client";
-import { UserAvatar } from "@/components/common/UserAvatar";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+
 import { LoadingPage } from "@/components/common/LoadingPage";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 
 interface FollowUser {
@@ -36,9 +37,9 @@ export default function FollowersPage() {
     const fetchFollowers = async () => {
       try {
         const data = await api.fetch<FollowersResponse | FollowUser[]>(
-          `/follow/followers/${userId}`
+          `/follow/followers/${userId}`,
         );
-        const items = Array.isArray(data) ? data : (data as FollowersResponse).items ?? [];
+        const items = Array.isArray(data) ? data : ((data as FollowersResponse).items ?? []);
         setFollowers(items);
         const states: Record<string, boolean> = {};
         items.forEach((u) => {
@@ -99,7 +100,10 @@ export default function FollowersPage() {
               key={follower.id}
               className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent/50 transition-colors"
             >
-              <Link to={`/profile/${follower.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+              <Link
+                to={`/profile/${follower.id}`}
+                className="flex items-center gap-3 flex-1 min-w-0"
+              >
                 <UserAvatar user={follower} size="default" />
                 <div className="min-w-0">
                   <p className="font-medium text-sm truncate">{follower.name}</p>

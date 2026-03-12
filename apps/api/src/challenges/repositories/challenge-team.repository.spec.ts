@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { ChallengeTeamRepository } from "./challenge-team.repository.js";
+
 import { DatabaseService } from "../../database/database.service.js";
+
+import { ChallengeTeamRepository } from "./challenge-team.repository.js";
 
 describe("ChallengeTeamRepository", () => {
   let repository: ChallengeTeamRepository;
@@ -21,10 +23,7 @@ describe("ChallengeTeamRepository", () => {
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      providers: [
-        ChallengeTeamRepository,
-        { provide: DatabaseService, useValue: mockDb },
-      ],
+      providers: [ChallengeTeamRepository, { provide: DatabaseService, useValue: mockDb }],
     }).compile();
 
     repository = module.get(ChallengeTeamRepository);
@@ -178,9 +177,7 @@ describe("ChallengeTeamRepository", () => {
         { id: "team-2", name: "Team Beta" },
       ];
 
-      mockDb.prisma.challengeParticipant.groupBy.mockResolvedValue(
-        mockAggregated,
-      );
+      mockDb.prisma.challengeParticipant.groupBy.mockResolvedValue(mockAggregated);
       mockDb.prisma.challengeTeam.findMany.mockResolvedValue(mockTeams);
 
       const result = await repository.getTeamLeaderboard(challengeId);

@@ -1,9 +1,22 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Query, ForbiddenException, NotFoundException } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  NotFoundException,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+} from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
-import { PostsService } from "./posts.service.js";
+
 import { CreatePostDto } from "./dto/create-post.dto.js";
 import { UpdatePostDto } from "./dto/update-post.dto.js";
+import { PostsService } from "./posts.service.js";
 
 @ApiTags("Posts")
 @Controller("posts")

@@ -1,7 +1,8 @@
 import { Module } from "@nestjs/common";
+
+import { ShoeRepository } from "./repositories/shoe.repository.js";
 import { ShoesController } from "./shoes.controller.js";
 import { ShoesService } from "./shoes.service.js";
-import { ShoeRepository } from "./repositories/shoe.repository.js";
 
 @Module({
   controllers: [ShoesController],

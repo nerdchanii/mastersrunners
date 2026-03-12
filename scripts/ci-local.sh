@@ -39,6 +39,8 @@ else
   printf 'Skipping dependency install. Set CI_LOCAL_INSTALL=1 to include it.\n'
 fi
 
+run_step "Run format check" pnpm format:check
+
 run_step "Run lint" pnpm lint
 
 run_step "Check harness structure" bash -c '
@@ -53,15 +55,17 @@ run_step "Check harness structure" bash -c '
   test ! -d packages/database/generated
 '
 
+run_step "Check dependency boundaries and cycles" pnpm depcruise
+
 run_step "Build packages" pnpm -r run build
 
-run_step "Run API tests" env \
+run_step "Run API coverage" env \
   DATABASE_URL="$DATABASE_URL" \
   JWT_SECRET="$JWT_SECRET" \
   JWT_ACCESS_TTL="$JWT_ACCESS_TTL" \
   JWT_REFRESH_TTL="$JWT_REFRESH_TTL" \
   REDIS_URL="$REDIS_URL" \
-  pnpm --filter @masters/api test
+  pnpm --filter @masters/api test:cov
 
 run_step "Build web" env \
   VITE_API_URL="$VITE_API_URL" \

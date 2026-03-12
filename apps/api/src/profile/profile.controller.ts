@@ -1,8 +1,20 @@
-import { Controller, Get, Patch, Delete, Param, Body, Req, Query, HttpCode, HttpStatus } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Query,
+  Req,
+} from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
-import { ProfileService } from "./profile.service.js";
+
 import { UpdateProfileDto } from "./dto/update-profile.dto.js";
+import { ProfileService } from "./profile.service.js";
 
 @ApiTags("Profile")
 @Controller("profile")

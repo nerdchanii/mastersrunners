@@ -1,8 +1,10 @@
+import { ConflictException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import { PostSocialService } from "./post-social.service";
-import { PostSocialRepository } from "./repositories/post-social.repository";
+
 import { BlockRepository } from "../block/repositories/block.repository";
-import { NotFoundException, ForbiddenException, ConflictException } from "@nestjs/common";
+
+import { PostSocialRepository } from "./repositories/post-social.repository";
+import { PostSocialService } from "./post-social.service";
 
 const mockPostSocialRepository = {
   likePost: jest.fn(),
@@ -53,7 +55,7 @@ describe("PostSocialService", () => {
       mockPostSocialRepository.likePost.mockRejectedValue(error);
 
       await expect(service.likePost("user-123", "post-456")).rejects.toThrow(
-        new ConflictException("이미 좋아요한 게시글입니다.")
+        new ConflictException("이미 좋아요한 게시글입니다."),
       );
     });
 
@@ -83,7 +85,7 @@ describe("PostSocialService", () => {
       mockPostSocialRepository.unlikePost.mockRejectedValue(error);
 
       await expect(service.unlikePost("user-123", "post-456")).rejects.toThrow(
-        new NotFoundException("좋아요 기록을 찾을 수 없습니다.")
+        new NotFoundException("좋아요 기록을 찾을 수 없습니다."),
       );
     });
   });
@@ -206,7 +208,7 @@ describe("PostSocialService", () => {
       mockPostSocialRepository.findCommentById.mockResolvedValue(null);
 
       await expect(service.deleteComment("comment-123", "user-123")).rejects.toThrow(
-        new NotFoundException("댓글을 찾을 수 없습니다.")
+        new NotFoundException("댓글을 찾을 수 없습니다."),
       );
       expect(mockPostSocialRepository.deleteComment).not.toHaveBeenCalled();
     });
@@ -223,7 +225,7 @@ describe("PostSocialService", () => {
       mockPostSocialRepository.findCommentById.mockResolvedValue(mockComment);
 
       await expect(service.deleteComment(commentId, "user-123")).rejects.toThrow(
-        new ForbiddenException("본인의 댓글만 삭제할 수 있습니다.")
+        new ForbiddenException("본인의 댓글만 삭제할 수 있습니다."),
       );
       expect(mockPostSocialRepository.deleteComment).not.toHaveBeenCalled();
     });
@@ -241,7 +243,7 @@ describe("PostSocialService", () => {
       mockPostSocialRepository.findCommentById.mockResolvedValue(mockComment);
 
       await expect(service.deleteComment(commentId, userId)).rejects.toThrow(
-        new ConflictException("이미 삭제된 댓글입니다.")
+        new ConflictException("이미 삭제된 댓글입니다."),
       );
       expect(mockPostSocialRepository.deleteComment).not.toHaveBeenCalled();
     });
@@ -280,7 +282,12 @@ describe("PostSocialService", () => {
 
       await service.getComments(postId);
 
-      expect(mockPostSocialRepository.getComments).toHaveBeenCalledWith(postId, undefined, undefined, []);
+      expect(mockPostSocialRepository.getComments).toHaveBeenCalledWith(
+        postId,
+        undefined,
+        undefined,
+        [],
+      );
     });
 
     it("should pass blocked user IDs to repo as excludeUserIds", async () => {
@@ -294,7 +301,10 @@ describe("PostSocialService", () => {
 
       expect(mockBlockRepository.getBlockedUserIds).toHaveBeenCalledWith(currentUserId);
       expect(mockPostSocialRepository.getComments).toHaveBeenCalledWith(
-        postId, undefined, undefined, blockedIds,
+        postId,
+        undefined,
+        undefined,
+        blockedIds,
       );
     });
 
@@ -305,7 +315,12 @@ describe("PostSocialService", () => {
       await service.getComments(postId);
 
       expect(mockBlockRepository.getBlockedUserIds).not.toHaveBeenCalled();
-      expect(mockPostSocialRepository.getComments).toHaveBeenCalledWith(postId, undefined, undefined, []);
+      expect(mockPostSocialRepository.getComments).toHaveBeenCalledWith(
+        postId,
+        undefined,
+        undefined,
+        [],
+      );
     });
   });
 });

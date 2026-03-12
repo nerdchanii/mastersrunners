@@ -1,5 +1,6 @@
-import { Injectable } from "@nestjs/common";
 import type { TransactionClient } from "@masters/database";
+import { Injectable } from "@nestjs/common";
+
 import { DatabaseService } from "../../database/database.service.js";
 
 @Injectable()
@@ -213,7 +214,10 @@ export class ConversationsRepository {
     });
   }
 
-  async createGroupConversation(type: "CREW" | "ACTIVITY", opts?: { name?: string; crewId?: string; activityId?: string }) {
+  async createGroupConversation(
+    type: "CREW" | "ACTIVITY",
+    opts?: { name?: string; crewId?: string; activityId?: string },
+  ) {
     return this.db.prisma.conversation.create({
       data: {
         type,

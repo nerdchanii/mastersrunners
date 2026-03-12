@@ -1,7 +1,8 @@
-import { Test } from "@nestjs/testing";
 import { NotFoundException } from "@nestjs/common";
-import { NotificationsService } from "./notifications.service.js";
+import { Test } from "@nestjs/testing";
+
 import { NotificationRepository } from "./repositories/notification.repository.js";
+import { NotificationsService } from "./notifications.service.js";
 import { NotificationsSseService } from "./notifications-sse.service.js";
 
 const mockRepo = {

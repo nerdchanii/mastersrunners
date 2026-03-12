@@ -1,15 +1,21 @@
+import { useQuery } from "@tanstack/react-query";
+import { MapPin, Plus, Users } from "lucide-react";
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Users, Plus, MapPin } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useAuth } from "@/lib/auth-context";
-import { useCrewExplore, useCrewRecommend, useRegions, useSubRegions } from "@/hooks/useCrewExplore";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  useCrewExplore,
+  useCrewRecommend,
+  useRegions,
+  useSubRegions,
+} from "@/hooks/useCrewExplore";
 import { api } from "@/lib/api-client";
-import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth-context";
 
 // My crews query
 function useMyCrews() {
@@ -21,9 +27,23 @@ function useMyCrews() {
 
 // Korean regions data
 const KOREA_REGIONS = [
-  "서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시",
-  "대전광역시", "울산광역시", "세종특별자치시", "경기도", "강원특별자치도",
-  "충청북도", "충청남도", "전북특별자치도", "전라남도", "경상북도", "경상남도", "제주특별자치도"
+  "서울특별시",
+  "부산광역시",
+  "대구광역시",
+  "인천광역시",
+  "광주광역시",
+  "대전광역시",
+  "울산광역시",
+  "세종특별자치시",
+  "경기도",
+  "강원특별자치도",
+  "충청북도",
+  "충청남도",
+  "전북특별자치도",
+  "전라남도",
+  "경상북도",
+  "경상남도",
+  "제주특별자치도",
 ];
 
 export default function CrewsPage() {
@@ -91,7 +111,11 @@ function MyCrewsList() {
             <CardContent className="py-4 flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 {crew.imageUrl ? (
-                  <img src={crew.imageUrl} alt={crew.name} className="w-12 h-12 rounded-lg object-cover" />
+                  <img
+                    src={crew.imageUrl}
+                    alt={crew.name}
+                    className="w-12 h-12 rounded-lg object-cover"
+                  />
                 ) : (
                   <Users className="w-6 h-6 text-primary" />
                 )}
@@ -143,7 +167,10 @@ function CrewExplore() {
           <Badge
             variant={!selectedRegion ? "default" : "outline"}
             className="cursor-pointer"
-            onClick={() => { setSelectedRegion(undefined); setSelectedSubRegion(undefined); }}
+            onClick={() => {
+              setSelectedRegion(undefined);
+              setSelectedSubRegion(undefined);
+            }}
           >
             전체
           </Badge>
@@ -154,9 +181,13 @@ function CrewExplore() {
                 key={r}
                 variant={selectedRegion === r ? "default" : "outline"}
                 className="cursor-pointer"
-                onClick={() => { setSelectedRegion(r); setSelectedSubRegion(undefined); }}
+                onClick={() => {
+                  setSelectedRegion(r);
+                  setSelectedSubRegion(undefined);
+                }}
               >
-                {r.replace(/(특별시|광역시|특별자치시|특별자치도|도)$/, "")}{regionData ? ` (${regionData.crewCount})` : ""}
+                {r.replace(/(특별시|광역시|특별자치시|특별자치도|도)$/, "")}
+                {regionData ? ` (${regionData.crewCount})` : ""}
               </Badge>
             );
           })}
@@ -214,7 +245,9 @@ function CrewExplore() {
       ) : !crews?.items?.length ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            {selectedRegion ? `${selectedRegion}에 등록된 크루가 없습니다.` : "등록된 크루가 없습니다."}
+            {selectedRegion
+              ? `${selectedRegion}에 등록된 크루가 없습니다.`
+              : "등록된 크루가 없습니다."}
           </CardContent>
         </Card>
       ) : (
@@ -235,7 +268,11 @@ function CrewCard({ crew }: { crew: any }) {
         <CardContent className="py-4 flex items-center gap-4">
           <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
             {crew.imageUrl ? (
-              <img src={crew.imageUrl} alt={crew.name} className="w-12 h-12 rounded-lg object-cover" />
+              <img
+                src={crew.imageUrl}
+                alt={crew.name}
+                className="w-12 h-12 rounded-lg object-cover"
+              />
             ) : (
               <Users className="w-6 h-6 text-primary" />
             )}

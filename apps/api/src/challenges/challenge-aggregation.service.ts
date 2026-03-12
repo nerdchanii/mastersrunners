@@ -1,17 +1,18 @@
 import { Injectable } from "@nestjs/common";
-import { ChallengeParticipantRepository } from "./repositories/challenge-participant.repository.js";
+
 import { ChallengeRepository } from "./repositories/challenge.repository.js";
+import { ChallengeParticipantRepository } from "./repositories/challenge-participant.repository.js";
 
 @Injectable()
 export class ChallengeAggregationService {
   constructor(
     private readonly participantRepo: ChallengeParticipantRepository,
-    private readonly challengeRepo: ChallengeRepository
+    private readonly challengeRepo: ChallengeRepository,
   ) {}
 
   async onWorkoutCreated(
     userId: string,
-    workout: { distance: number; duration: number; pace: number; date: Date }
+    workout: { distance: number; duration: number; pace: number; date: Date },
   ): Promise<void> {
     const participations = await this.participantRepo.findActiveByUser(userId);
 

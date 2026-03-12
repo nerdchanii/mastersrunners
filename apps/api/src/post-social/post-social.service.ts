@@ -1,7 +1,15 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException, Optional } from "@nestjs/common";
-import { PostSocialRepository } from "./repositories/post-social.repository.js";
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  Optional,
+} from "@nestjs/common";
+
 import { BlockRepository } from "../block/repositories/block.repository.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
+
+import { PostSocialRepository } from "./repositories/post-social.repository.js";
 
 @Injectable()
 export class PostSocialService {
@@ -19,14 +27,16 @@ export class PostSocialService {
       if (this.notificationsService) {
         const post = await this.postSocialRepo.findPostById(postId);
         if (post && post.userId !== userId) {
-          this.notificationsService.createNotification({
-            userId: post.userId,
-            actorId: userId,
-            type: "LIKE",
-            referenceType: "POST",
-            referenceId: postId,
-            message: "회원님의 게시글을 좋아합니다.",
-          }).catch(() => {});
+          this.notificationsService
+            .createNotification({
+              userId: post.userId,
+              actorId: userId,
+              type: "LIKE",
+              referenceType: "POST",
+              referenceId: postId,
+              message: "회원님의 게시글을 좋아합니다.",
+            })
+            .catch(() => {});
         }
       }
 
@@ -58,7 +68,13 @@ export class PostSocialService {
     return this.postSocialRepo.getLikeCount(postId);
   }
 
-  async addComment(userId: string, postId: string, content: string, parentId?: string, mentionedUserId?: string) {
+  async addComment(
+    userId: string,
+    postId: string,
+    content: string,
+    parentId?: string,
+    mentionedUserId?: string,
+  ) {
     const comment = await this.postSocialRepo.addComment({
       userId,
       postId,
@@ -71,14 +87,18 @@ export class PostSocialService {
     if (this.notificationsService) {
       const post = await this.postSocialRepo.findPostById(postId);
       if (post && post.userId !== userId) {
-        this.notificationsService.createNotification({
-          userId: post.userId,
-          actorId: userId,
-          type: parentId ? "COMMENT_REPLY" : "COMMENT",
-          referenceType: "POST",
-          referenceId: postId,
-          message: parentId ? "회원님의 댓글에 답글을 달았습니다." : "회원님의 게시글에 댓글을 달았습니다.",
-        }).catch(() => {});
+        this.notificationsService
+          .createNotification({
+            userId: post.userId,
+            actorId: userId,
+            type: parentId ? "COMMENT_REPLY" : "COMMENT",
+            referenceType: "POST",
+            referenceId: postId,
+            message: parentId
+              ? "회원님의 댓글에 답글을 달았습니다."
+              : "회원님의 게시글에 댓글을 달았습니다.",
+          })
+          .catch(() => {});
       }
     }
 

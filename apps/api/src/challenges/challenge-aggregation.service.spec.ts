@@ -1,7 +1,8 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { ChallengeAggregationService } from "./challenge-aggregation.service.js";
-import { ChallengeParticipantRepository } from "./repositories/challenge-participant.repository.js";
+
 import { ChallengeRepository } from "./repositories/challenge.repository.js";
+import { ChallengeParticipantRepository } from "./repositories/challenge-participant.repository.js";
+import { ChallengeAggregationService } from "./challenge-aggregation.service.js";
 
 describe("ChallengeAggregationService", () => {
   let service: ChallengeAggregationService;
@@ -25,12 +26,8 @@ describe("ChallengeAggregationService", () => {
       ],
     }).compile();
 
-    service = module.get<ChallengeAggregationService>(
-      ChallengeAggregationService,
-    );
-    participantRepo = module.get<ChallengeParticipantRepository>(
-      ChallengeParticipantRepository,
-    );
+    service = module.get<ChallengeAggregationService>(ChallengeAggregationService);
+    participantRepo = module.get<ChallengeParticipantRepository>(ChallengeParticipantRepository);
   });
 
   describe("onWorkoutCreated", () => {
@@ -56,12 +53,8 @@ describe("ChallengeAggregationService", () => {
         },
       };
 
-      jest
-        .spyOn(participantRepo, "findActiveByUser")
-        .mockResolvedValue([participation]);
-      jest
-        .spyOn(participantRepo, "updateProgress")
-        .mockResolvedValue(participation as any);
+      jest.spyOn(participantRepo, "findActiveByUser").mockResolvedValue([participation]);
+      jest.spyOn(participantRepo, "updateProgress").mockResolvedValue(participation as any);
 
       await service.onWorkoutCreated(userId, workout);
 
@@ -87,12 +80,8 @@ describe("ChallengeAggregationService", () => {
         },
       };
 
-      jest
-        .spyOn(participantRepo, "findActiveByUser")
-        .mockResolvedValue([participation]);
-      jest
-        .spyOn(participantRepo, "updateProgress")
-        .mockResolvedValue(participation as any);
+      jest.spyOn(participantRepo, "findActiveByUser").mockResolvedValue([participation]);
+      jest.spyOn(participantRepo, "updateProgress").mockResolvedValue(participation as any);
 
       await service.onWorkoutCreated(userId, workout);
 
@@ -134,9 +123,7 @@ describe("ChallengeAggregationService", () => {
       jest
         .spyOn(participantRepo, "findActiveByUser")
         .mockResolvedValue([streakParticipation, paceParticipation]);
-      jest
-        .spyOn(participantRepo, "updateProgress")
-        .mockResolvedValue({} as any);
+      jest.spyOn(participantRepo, "updateProgress").mockResolvedValue({} as any);
 
       await service.onWorkoutCreated(userId, workout);
 
@@ -157,12 +144,8 @@ describe("ChallengeAggregationService", () => {
         },
       };
 
-      jest
-        .spyOn(participantRepo, "findActiveByUser")
-        .mockResolvedValue([participation]);
-      jest
-        .spyOn(participantRepo, "updateProgress")
-        .mockResolvedValue(participation as any);
+      jest.spyOn(participantRepo, "findActiveByUser").mockResolvedValue([participation]);
+      jest.spyOn(participantRepo, "updateProgress").mockResolvedValue(participation as any);
 
       await service.onWorkoutCreated(userId, workout);
 
@@ -188,12 +171,8 @@ describe("ChallengeAggregationService", () => {
         },
       };
 
-      jest
-        .spyOn(participantRepo, "findActiveByUser")
-        .mockResolvedValue([participation]);
-      jest
-        .spyOn(participantRepo, "updateProgress")
-        .mockResolvedValue(participation as any);
+      jest.spyOn(participantRepo, "findActiveByUser").mockResolvedValue([participation]);
+      jest.spyOn(participantRepo, "updateProgress").mockResolvedValue(participation as any);
 
       await service.onWorkoutCreated(userId, workout);
 
@@ -202,9 +181,7 @@ describe("ChallengeAggregationService", () => {
 
     it("should NOT update if no active participations", async () => {
       jest.spyOn(participantRepo, "findActiveByUser").mockResolvedValue([]);
-      jest
-        .spyOn(participantRepo, "updateProgress")
-        .mockResolvedValue({} as any);
+      jest.spyOn(participantRepo, "updateProgress").mockResolvedValue({} as any);
 
       await service.onWorkoutCreated(userId, workout);
 
@@ -241,25 +218,13 @@ describe("ChallengeAggregationService", () => {
       jest
         .spyOn(participantRepo, "findActiveByUser")
         .mockResolvedValue([distanceParticipation, frequencyParticipation]);
-      jest
-        .spyOn(participantRepo, "updateProgress")
-        .mockResolvedValue({} as any);
+      jest.spyOn(participantRepo, "updateProgress").mockResolvedValue({} as any);
 
       await service.onWorkoutCreated(userId, workout);
 
       expect(participantRepo.updateProgress).toHaveBeenCalledTimes(2);
-      expect(participantRepo.updateProgress).toHaveBeenCalledWith(
-        "challenge7",
-        userId,
-        15,
-        false,
-      );
-      expect(participantRepo.updateProgress).toHaveBeenCalledWith(
-        "challenge8",
-        userId,
-        4,
-        false,
-      );
+      expect(participantRepo.updateProgress).toHaveBeenCalledWith("challenge7", userId, 15, false);
+      expect(participantRepo.updateProgress).toHaveBeenCalledWith("challenge8", userId, 4, false);
     });
   });
 });

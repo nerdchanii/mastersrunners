@@ -1,7 +1,13 @@
-import { Injectable } from "@nestjs/common";
 import { promises as fs } from "node:fs";
-import { join, dirname } from "node:path";
-import type { StorageAdapter, UploadUrlResult, DownloadResult } from "./storage-adapter.interface.js";
+import { dirname, join } from "node:path";
+
+import { Injectable } from "@nestjs/common";
+
+import type {
+  DownloadResult,
+  StorageAdapter,
+  UploadUrlResult,
+} from "./storage-adapter.interface.js";
 
 @Injectable()
 export class DiskStorageAdapter implements StorageAdapter {
@@ -20,7 +26,11 @@ export class DiskStorageAdapter implements StorageAdapter {
     this.baseUrl = `${publicUrl}/api/v1`;
   }
 
-  async getUploadUrl(key: string, _contentType: string, _expiresIn?: number): Promise<UploadUrlResult> {
+  async getUploadUrl(
+    key: string,
+    _contentType: string,
+    _expiresIn?: number,
+  ): Promise<UploadUrlResult> {
     return {
       uploadUrl: `${this.baseUrl}/uploads/disk/${key}`,
       key,

@@ -1,19 +1,26 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { api } from "@/lib/api-client";
-import { useAuth } from "@/lib/auth-context";
-import { useUpdatePost } from "@/hooks/usePosts";
-import { formatDistance, formatDuration, formatPace } from "@/lib/format";
+
 import { LoadingPage } from "@/components/common/LoadingPage";
 import { PageHeader } from "@/components/common/PageHeader";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useUpdatePost } from "@/hooks/usePosts";
+import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
+import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 
 interface User {
   id: string;
@@ -70,7 +77,10 @@ export default function EditPostPage() {
   const charsLeft = maxChars - content.length;
 
   const parseHashtags = (input: string): string[] =>
-    input.split(",").map((tag) => tag.trim()).filter((tag) => tag.length > 0);
+    input
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
 
   const hashtags = parseHashtags(hashtagsInput);
   const flatWorkouts = post?.workouts?.map((pw) => pw.workout).filter(Boolean) ?? [];
@@ -154,10 +164,7 @@ export default function EditPostPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <PageHeader
-        title="게시글 수정"
-        description="게시글 내용과 설정을 변경할 수 있습니다."
-      />
+      <PageHeader title="게시글 수정" description="게시글 내용과 설정을 변경할 수 있습니다." />
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Card>
@@ -195,7 +202,9 @@ export default function EditPostPage() {
               {hashtags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {hashtags.map((tag, index) => (
-                    <Badge key={index} variant="secondary">#{tag}</Badge>
+                    <Badge key={index} variant="secondary">
+                      #{tag}
+                    </Badge>
                   ))}
                 </div>
               )}
@@ -293,10 +302,7 @@ export default function EditPostPage() {
           >
             취소
           </Button>
-          <Button
-            type="submit"
-            disabled={updatePost.isPending || !content.trim()}
-          >
+          <Button type="submit" disabled={updatePost.isPending || !content.trim()}>
             {updatePost.isPending ? "저장 중..." : "저장"}
           </Button>
         </div>

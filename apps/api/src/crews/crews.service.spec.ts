@@ -1,16 +1,23 @@
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import { ForbiddenException, NotFoundException, BadRequestException, ConflictException } from "@nestjs/common";
-import { CrewsService } from "./crews.service.js";
-import { CrewRepository } from "./repositories/crew.repository.js";
-import { CrewMemberRepository } from "./repositories/crew-member.repository.js";
-import { CrewTagRepository } from "./repositories/crew-tag.repository.js";
-import { CrewActivityRepository } from "./repositories/crew-activity.repository.js";
-import { CrewBanRepository } from "./repositories/crew-ban.repository.js";
-import { DatabaseService } from "../database/database.service.js";
+
 import { ConversationsRepository } from "../conversations/repositories/conversations.repository.js";
 import { CrewBoardsService } from "../crew-boards/crew-boards.service.js";
+import { DatabaseService } from "../database/database.service.js";
+
 import type { CreateCrewDto } from "./dto/create-crew.dto.js";
 import type { UpdateCrewDto } from "./dto/update-crew.dto.js";
+import { CrewRepository } from "./repositories/crew.repository.js";
+import { CrewActivityRepository } from "./repositories/crew-activity.repository.js";
+import { CrewBanRepository } from "./repositories/crew-ban.repository.js";
+import { CrewMemberRepository } from "./repositories/crew-member.repository.js";
+import { CrewTagRepository } from "./repositories/crew-tag.repository.js";
+import { CrewsService } from "./crews.service.js";
 
 const mockCrewRepository = {
   create: jest.fn(),
@@ -140,7 +147,12 @@ describe("CrewsService", () => {
         region: null,
         subRegion: null,
       });
-      expect(mockCrewMemberRepository.addMember).toHaveBeenCalledWith("crew-new", userId, "OWNER", "ACTIVE");
+      expect(mockCrewMemberRepository.addMember).toHaveBeenCalledWith(
+        "crew-new",
+        userId,
+        "OWNER",
+        "ACTIVE",
+      );
       expect(result).toEqual(mockCrew);
     });
 
@@ -263,7 +275,9 @@ describe("CrewsService", () => {
     it("should throw NotFoundException if crew not found", async () => {
       mockCrewRepository.findById.mockResolvedValue(null);
 
-      await expect(service.update("non-existent", "user-123", {})).rejects.toThrow(NotFoundException);
+      await expect(service.update("non-existent", "user-123", {})).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if user is not OWNER or ADMIN", async () => {
@@ -331,7 +345,12 @@ describe("CrewsService", () => {
 
       const result = await service.join(crewId, userId);
 
-      expect(mockCrewMemberRepository.addMember).toHaveBeenCalledWith(crewId, userId, "MEMBER", "ACTIVE");
+      expect(mockCrewMemberRepository.addMember).toHaveBeenCalledWith(
+        crewId,
+        userId,
+        "MEMBER",
+        "ACTIVE",
+      );
       expect(result).toEqual(mockMembership);
     });
 
@@ -339,7 +358,13 @@ describe("CrewsService", () => {
       const crewId = "crew-123";
       const userId = "user-new";
       const mockCrew = { id: crewId, maxMembers: 50, isPublic: false };
-      const mockMembership = { id: "member-new", crewId, userId, role: "MEMBER", status: "PENDING" };
+      const mockMembership = {
+        id: "member-new",
+        crewId,
+        userId,
+        role: "MEMBER",
+        status: "PENDING",
+      };
 
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockDatabaseService.prisma.crewBan.findUnique.mockResolvedValue(null);
@@ -348,7 +373,12 @@ describe("CrewsService", () => {
 
       const result = await service.join(crewId, userId);
 
-      expect(mockCrewMemberRepository.addMember).toHaveBeenCalledWith(crewId, userId, "MEMBER", "PENDING");
+      expect(mockCrewMemberRepository.addMember).toHaveBeenCalledWith(
+        crewId,
+        userId,
+        "MEMBER",
+        "PENDING",
+      );
       expect(result).toEqual(mockMembership);
     });
 
@@ -523,7 +553,9 @@ describe("CrewsService", () => {
     it("should throw NotFoundException if crew not found", async () => {
       mockCrewRepository.findById.mockResolvedValue(null);
 
-      await expect(service.kickMember("non-existent", "user-1", "user-2")).rejects.toThrow(NotFoundException);
+      await expect(service.kickMember("non-existent", "user-1", "user-2")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if requester is not OWNER or ADMIN", async () => {
@@ -536,7 +568,9 @@ describe("CrewsService", () => {
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
 
-      await expect(service.kickMember(crewId, userId, targetUserId)).rejects.toThrow(ForbiddenException);
+      await expect(service.kickMember(crewId, userId, targetUserId)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it("should throw BadRequestException if target is not a member", async () => {
@@ -550,7 +584,9 @@ describe("CrewsService", () => {
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(mockAdmin);
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(null);
 
-      await expect(service.kickMember(crewId, adminUserId, targetUserId)).rejects.toThrow(BadRequestException);
+      await expect(service.kickMember(crewId, adminUserId, targetUserId)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it("should throw ForbiddenException if trying to kick OWNER", async () => {
@@ -565,7 +601,9 @@ describe("CrewsService", () => {
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(mockAdmin);
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(mockOwner);
 
-      await expect(service.kickMember(crewId, adminUserId, ownerUserId)).rejects.toThrow(ForbiddenException);
+      await expect(service.kickMember(crewId, adminUserId, ownerUserId)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -586,14 +624,20 @@ describe("CrewsService", () => {
 
       const result = await service.promoteToAdmin(crewId, ownerId, targetUserId);
 
-      expect(mockCrewMemberRepository.updateRole).toHaveBeenCalledWith(crewId, targetUserId, "ADMIN");
+      expect(mockCrewMemberRepository.updateRole).toHaveBeenCalledWith(
+        crewId,
+        targetUserId,
+        "ADMIN",
+      );
       expect(result).toEqual(mockUpdated);
     });
 
     it("should throw NotFoundException if crew not found", async () => {
       mockCrewRepository.findById.mockResolvedValue(null);
 
-      await expect(service.promoteToAdmin("non-existent", "user-1", "user-2")).rejects.toThrow(NotFoundException);
+      await expect(service.promoteToAdmin("non-existent", "user-1", "user-2")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if requester is not OWNER", async () => {
@@ -606,7 +650,9 @@ describe("CrewsService", () => {
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockAdmin);
 
-      await expect(service.promoteToAdmin(crewId, userId, targetUserId)).rejects.toThrow(ForbiddenException);
+      await expect(service.promoteToAdmin(crewId, userId, targetUserId)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it("should throw BadRequestException if target is not a member", async () => {
@@ -620,7 +666,9 @@ describe("CrewsService", () => {
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(mockOwner);
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(null);
 
-      await expect(service.promoteToAdmin(crewId, ownerId, targetUserId)).rejects.toThrow(BadRequestException);
+      await expect(service.promoteToAdmin(crewId, ownerId, targetUserId)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -641,14 +689,20 @@ describe("CrewsService", () => {
 
       const result = await service.demoteToMember(crewId, ownerId, targetUserId);
 
-      expect(mockCrewMemberRepository.updateRole).toHaveBeenCalledWith(crewId, targetUserId, "MEMBER");
+      expect(mockCrewMemberRepository.updateRole).toHaveBeenCalledWith(
+        crewId,
+        targetUserId,
+        "MEMBER",
+      );
       expect(result).toEqual(mockUpdated);
     });
 
     it("should throw NotFoundException if crew not found", async () => {
       mockCrewRepository.findById.mockResolvedValue(null);
 
-      await expect(service.demoteToMember("non-existent", "user-1", "user-2")).rejects.toThrow(NotFoundException);
+      await expect(service.demoteToMember("non-existent", "user-1", "user-2")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if requester is not OWNER", async () => {
@@ -661,7 +715,9 @@ describe("CrewsService", () => {
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockAdmin);
 
-      await expect(service.demoteToMember(crewId, userId, targetUserId)).rejects.toThrow(ForbiddenException);
+      await expect(service.demoteToMember(crewId, userId, targetUserId)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it("should throw BadRequestException if target is not a member", async () => {
@@ -675,7 +731,9 @@ describe("CrewsService", () => {
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(mockOwner);
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(null);
 
-      await expect(service.demoteToMember(crewId, ownerId, targetUserId)).rejects.toThrow(BadRequestException);
+      await expect(service.demoteToMember(crewId, ownerId, targetUserId)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -696,7 +754,11 @@ describe("CrewsService", () => {
 
       const result = await service.approveMember(crewId, adminUserId, targetUserId);
 
-      expect(mockCrewMemberRepository.updateStatus).toHaveBeenCalledWith(crewId, targetUserId, "ACTIVE");
+      expect(mockCrewMemberRepository.updateStatus).toHaveBeenCalledWith(
+        crewId,
+        targetUserId,
+        "ACTIVE",
+      );
       expect(result).toEqual(mockUpdated);
     });
 
@@ -716,14 +778,20 @@ describe("CrewsService", () => {
 
       const result = await service.approveMember(crewId, adminUserId, targetUserId);
 
-      expect(mockCrewMemberRepository.updateStatus).toHaveBeenCalledWith(crewId, targetUserId, "ACTIVE");
+      expect(mockCrewMemberRepository.updateStatus).toHaveBeenCalledWith(
+        crewId,
+        targetUserId,
+        "ACTIVE",
+      );
       expect(result).toEqual(mockUpdated);
     });
 
     it("should throw NotFoundException if crew not found", async () => {
       mockCrewRepository.findById.mockResolvedValue(null);
 
-      await expect(service.approveMember("non-existent", "user-1", "user-2")).rejects.toThrow(NotFoundException);
+      await expect(service.approveMember("non-existent", "user-1", "user-2")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if requester is not OWNER or ADMIN", async () => {
@@ -736,7 +804,9 @@ describe("CrewsService", () => {
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
 
-      await expect(service.approveMember(crewId, userId, targetUserId)).rejects.toThrow(ForbiddenException);
+      await expect(service.approveMember(crewId, userId, targetUserId)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it("should throw BadRequestException if target is not a member", async () => {
@@ -750,7 +820,9 @@ describe("CrewsService", () => {
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(mockAdmin);
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(null);
 
-      await expect(service.approveMember(crewId, adminUserId, targetUserId)).rejects.toThrow(BadRequestException);
+      await expect(service.approveMember(crewId, adminUserId, targetUserId)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it("should throw BadRequestException if target is not PENDING", async () => {
@@ -765,7 +837,9 @@ describe("CrewsService", () => {
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(mockAdmin);
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(mockTarget);
 
-      await expect(service.approveMember(crewId, adminUserId, targetUserId)).rejects.toThrow("가입 요청 중인 사용자가 아닙니다.");
+      await expect(service.approveMember(crewId, adminUserId, targetUserId)).rejects.toThrow(
+        "가입 요청 중인 사용자가 아닙니다.",
+      );
     });
 
     it("should check maxMembers capacity before approving", async () => {
@@ -781,7 +855,9 @@ describe("CrewsService", () => {
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(mockTarget);
       mockCrewMemberRepository.countMembers.mockResolvedValue(50);
 
-      await expect(service.approveMember(crewId, adminUserId, targetUserId)).rejects.toThrow("크루 정원이 가득 찼습니다.");
+      await expect(service.approveMember(crewId, adminUserId, targetUserId)).rejects.toThrow(
+        "크루 정원이 가득 찼습니다.",
+      );
     });
   });
 
@@ -829,7 +905,9 @@ describe("CrewsService", () => {
     it("should throw NotFoundException if crew not found", async () => {
       mockCrewRepository.findById.mockResolvedValue(null);
 
-      await expect(service.rejectMember("non-existent", "user-1", "user-2")).rejects.toThrow(NotFoundException);
+      await expect(service.rejectMember("non-existent", "user-1", "user-2")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if requester is not OWNER or ADMIN", async () => {
@@ -842,7 +920,9 @@ describe("CrewsService", () => {
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
 
-      await expect(service.rejectMember(crewId, userId, targetUserId)).rejects.toThrow(ForbiddenException);
+      await expect(service.rejectMember(crewId, userId, targetUserId)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it("should throw BadRequestException if target is not a member", async () => {
@@ -856,7 +936,9 @@ describe("CrewsService", () => {
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(mockAdmin);
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(null);
 
-      await expect(service.rejectMember(crewId, adminUserId, targetUserId)).rejects.toThrow(BadRequestException);
+      await expect(service.rejectMember(crewId, adminUserId, targetUserId)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it("should throw BadRequestException if target is not PENDING", async () => {
@@ -871,7 +953,9 @@ describe("CrewsService", () => {
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(mockAdmin);
       mockCrewMemberRepository.findMember.mockResolvedValueOnce(mockTarget);
 
-      await expect(service.rejectMember(crewId, adminUserId, targetUserId)).rejects.toThrow("가입 요청 중인 사용자가 아닙니다.");
+      await expect(service.rejectMember(crewId, adminUserId, targetUserId)).rejects.toThrow(
+        "가입 요청 중인 사용자가 아닙니다.",
+      );
     });
   });
 
@@ -901,9 +985,7 @@ describe("CrewsService", () => {
       const userId = "user-admin";
       const mockCrew = { id: crewId };
       const mockMember = { role: "ADMIN" };
-      const mockPendingMembers = [
-        { id: "member-1", userId: "user-1", status: "PENDING" },
-      ];
+      const mockPendingMembers = [{ id: "member-1", userId: "user-1", status: "PENDING" }];
 
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
@@ -917,7 +999,9 @@ describe("CrewsService", () => {
     it("should throw NotFoundException if crew not found", async () => {
       mockCrewRepository.findById.mockResolvedValue(null);
 
-      await expect(service.getPendingMembers("non-existent", "user-123")).rejects.toThrow(NotFoundException);
+      await expect(service.getPendingMembers("non-existent", "user-123")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if user is not OWNER or ADMIN", async () => {
@@ -972,7 +1056,9 @@ describe("CrewsService", () => {
     it("should throw NotFoundException if crew not found", async () => {
       mockCrewRepository.findById.mockResolvedValue(null);
 
-      await expect(service.createTag("non-existent", "user-1", "Tag")).rejects.toThrow(NotFoundException);
+      await expect(service.createTag("non-existent", "user-1", "Tag")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if user is not OWNER or ADMIN", async () => {
@@ -1026,9 +1112,15 @@ describe("CrewsService", () => {
       mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
       mockCrewTagRepository.update.mockResolvedValue(mockUpdated);
 
-      const result = await service.updateTag(tagId, crewId, userId, { name: "Updated", color: "#0000FF" });
+      const result = await service.updateTag(tagId, crewId, userId, {
+        name: "Updated",
+        color: "#0000FF",
+      });
 
-      expect(mockCrewTagRepository.update).toHaveBeenCalledWith(tagId, { name: "Updated", color: "#0000FF" });
+      expect(mockCrewTagRepository.update).toHaveBeenCalledWith(tagId, {
+        name: "Updated",
+        color: "#0000FF",
+      });
       expect(result).toEqual(mockUpdated);
     });
 
@@ -1041,7 +1133,9 @@ describe("CrewsService", () => {
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
 
-      await expect(service.updateTag("tag-1", crewId, userId, { name: "X" })).rejects.toThrow(ForbiddenException);
+      await expect(service.updateTag("tag-1", crewId, userId, { name: "X" })).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -1103,7 +1197,9 @@ describe("CrewsService", () => {
       mockDatabaseService.prisma.crewMember.findUnique.mockResolvedValue(mockTargetMember);
       mockDatabaseService.prisma.crewMemberTag.findUnique.mockResolvedValue(existing);
 
-      await expect(service.assignTagToMember(crewId, adminUserId, memberId, tagId)).rejects.toThrow(ConflictException);
+      await expect(service.assignTagToMember(crewId, adminUserId, memberId, tagId)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it("should throw BadRequestException if member not in crew", async () => {
@@ -1119,7 +1215,9 @@ describe("CrewsService", () => {
       mockCrewMemberRepository.findMember.mockResolvedValue(mockAdmin);
       mockDatabaseService.prisma.crewMember.findUnique.mockResolvedValue(mockTargetMember);
 
-      await expect(service.assignTagToMember(crewId, adminUserId, memberId, tagId)).rejects.toThrow(BadRequestException);
+      await expect(service.assignTagToMember(crewId, adminUserId, memberId, tagId)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -1160,21 +1258,31 @@ describe("CrewsService", () => {
         latitude: 37.5326,
         longitude: 127.024612,
       };
-      const mockActivity = { id: "activity-1", crewId, ...activityData, createdBy: userId, qrCode: expect.any(String) };
-
-      mockCrewRepository.findById.mockResolvedValue(mockCrew);
-      mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
-      mockCrewActivityRepository.create.mockResolvedValue(mockActivity);
-      mockConversationsRepository.createGroupConversation.mockResolvedValue({ id: "activity-chat-1" });
-
-      const result = await service.createActivity(crewId, userId, activityData);
-
-      expect(mockCrewActivityRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+      const mockActivity = {
+        id: "activity-1",
         crewId,
         ...activityData,
         createdBy: userId,
         qrCode: expect.any(String),
-      }));
+      };
+
+      mockCrewRepository.findById.mockResolvedValue(mockCrew);
+      mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
+      mockCrewActivityRepository.create.mockResolvedValue(mockActivity);
+      mockConversationsRepository.createGroupConversation.mockResolvedValue({
+        id: "activity-chat-1",
+      });
+
+      const result = await service.createActivity(crewId, userId, activityData);
+
+      expect(mockCrewActivityRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          crewId,
+          ...activityData,
+          createdBy: userId,
+          qrCode: expect.any(String),
+        }),
+      );
       expect(result).toEqual(mockActivity);
     });
 
@@ -1187,10 +1295,12 @@ describe("CrewsService", () => {
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
 
-      await expect(service.createActivity(crewId, userId, {
-        title: "Run",
-        activityDate: new Date(),
-      })).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.createActivity(crewId, userId, {
+          title: "Run",
+          activityDate: new Date(),
+        }),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -1208,7 +1318,10 @@ describe("CrewsService", () => {
 
       const result = await service.getActivities(crewId, { cursor: undefined, limit: 20 });
 
-      expect(mockCrewActivityRepository.findByCrewId).toHaveBeenCalledWith(crewId, { cursor: undefined, limit: 20 });
+      expect(mockCrewActivityRepository.findByCrewId).toHaveBeenCalledWith(crewId, {
+        cursor: undefined,
+        limit: 20,
+      });
       expect(result).toEqual({ items: mockActivities, nextCursor: null });
     });
 
@@ -1226,7 +1339,10 @@ describe("CrewsService", () => {
 
       const result = await service.getActivities(crewId, { cursor: undefined, limit: 2 });
 
-      expect(mockCrewActivityRepository.findByCrewId).toHaveBeenCalledWith(crewId, { cursor: undefined, limit: 2 });
+      expect(mockCrewActivityRepository.findByCrewId).toHaveBeenCalledWith(crewId, {
+        cursor: undefined,
+        limit: 2,
+      });
       expect(result).toEqual({
         items: [mockActivities[0], mockActivities[1]],
         nextCursor: "activity-2",
@@ -1392,7 +1508,9 @@ describe("CrewsService", () => {
     it("should throw NotFoundException if crew not found", async () => {
       mockCrewRepository.findById.mockResolvedValue(null);
 
-      await expect(service.unbanMember("non-existent", "user-1", "user-2")).rejects.toThrow(NotFoundException);
+      await expect(service.unbanMember("non-existent", "user-1", "user-2")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if requester is not OWNER or ADMIN", async () => {
@@ -1404,7 +1522,9 @@ describe("CrewsService", () => {
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
 
-      await expect(service.unbanMember(crewId, userId, "user-banned")).rejects.toThrow(ForbiddenException);
+      await expect(service.unbanMember(crewId, userId, "user-banned")).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it("should throw NotFoundException if user is not banned", async () => {
@@ -1417,7 +1537,9 @@ describe("CrewsService", () => {
       mockCrewMemberRepository.findMember.mockResolvedValue(mockAdmin);
       mockCrewBanRepository.findByCrewAndUser.mockResolvedValue(null);
 
-      await expect(service.unbanMember(crewId, adminUserId, "user-not-banned")).rejects.toThrow(NotFoundException);
+      await expect(service.unbanMember(crewId, adminUserId, "user-not-banned")).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -1445,7 +1567,9 @@ describe("CrewsService", () => {
     it("should throw NotFoundException if crew not found", async () => {
       mockCrewRepository.findById.mockResolvedValue(null);
 
-      await expect(service.getBannedMembers("non-existent", "user-1")).rejects.toThrow(NotFoundException);
+      await expect(service.getBannedMembers("non-existent", "user-1")).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it("should throw ForbiddenException if requester is not OWNER or ADMIN", async () => {

@@ -1,8 +1,10 @@
 import { Module } from "@nestjs/common";
+
 import { DatabaseModule } from "../database/database.module.js";
+
+import { CrewBoardsController } from "./crew-boards.controller.js";
 import { CrewBoardsRepository } from "./crew-boards.repository.js";
 import { CrewBoardsService } from "./crew-boards.service.js";
-import { CrewBoardsController } from "./crew-boards.controller.js";
 
 @Module({
   imports: [DatabaseModule],

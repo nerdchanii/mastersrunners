@@ -1,15 +1,19 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+
 import GroupChat from "@/components/crew/GroupChat";
-import { useActivityChat } from "@/hooks/useGroupChat";
+import { Button } from "@/components/ui/button";
 import { useCrewActivity } from "@/hooks/useCrewActivities";
+import { useActivityChat } from "@/hooks/useGroupChat";
 
 export default function ActivityChatPage() {
   const { id: crewId, activityId } = useParams<{ id: string; activityId: string }>();
   const navigate = useNavigate();
 
-  const { data: chatData, isLoading: chatLoading } = useActivityChat(crewId ?? "", activityId ?? "");
+  const { data: chatData, isLoading: chatLoading } = useActivityChat(
+    crewId ?? "",
+    activityId ?? "",
+  );
   const { data: activity } = useCrewActivity(crewId ?? "", activityId ?? "");
 
   return (

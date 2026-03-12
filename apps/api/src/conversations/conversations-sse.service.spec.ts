@@ -1,6 +1,7 @@
-import { Test, TestingModule } from "@nestjs/testing";
-import { ConversationsSseService } from "./conversations-sse.service.js";
 import { MessageEvent } from "@nestjs/common";
+import { Test, TestingModule } from "@nestjs/testing";
+
+import { ConversationsSseService } from "./conversations-sse.service.js";
 
 describe("ConversationsSseService", () => {
   let service: ConversationsSseService;

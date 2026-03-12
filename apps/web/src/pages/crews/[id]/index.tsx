@@ -1,25 +1,26 @@
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Users, Lock, Settings, UserPlus, LogOut } from "lucide-react";
+import { Lock, LogOut, Settings, UserPlus, Users } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { api } from "@/lib/api-client";
-import { useAuth } from "@/lib/auth-context";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { TimeAgo } from "@/components/common/TimeAgo";
-import CrewMemberList from "@/components/crew/CrewMemberList";
 import CrewActivityList from "@/components/crew/CrewActivityList";
-import CrewTagManager from "@/components/crew/CrewTagManager";
-import PendingMemberList from "@/components/crew/PendingMemberList";
 import CrewAttendanceStats from "@/components/crew/CrewAttendanceStats";
-import GroupChat from "@/components/crew/GroupChat";
-import { useCrewChat } from "@/hooks/useGroupChat";
 import CrewBoardList from "@/components/crew/CrewBoardList";
+import CrewMemberList from "@/components/crew/CrewMemberList";
 import CrewPostList from "@/components/crew/CrewPostList";
+import CrewTagManager from "@/components/crew/CrewTagManager";
+import GroupChat from "@/components/crew/GroupChat";
+import PendingMemberList from "@/components/crew/PendingMemberList";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCrewChat } from "@/hooks/useGroupChat";
+import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 
 interface CrewMember {
   id: string;
@@ -74,9 +75,7 @@ export default function CrewDetailClient() {
       const data = await api.fetch<CrewDetail>(`/crews/${crewId}`);
       setCrew(data);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "크루를 불러올 수 없습니다."
-      );
+      setError(err instanceof Error ? err.message : "크루를 불러올 수 없습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -89,8 +88,7 @@ export default function CrewDetailClient() {
   const currentMember = crew?.members?.find((m) => m.userId === user?.id);
   const isMember = !!currentMember && currentMember.status === "ACTIVE";
   const currentUserRole = currentMember?.role ?? null;
-  const isOwnerOrAdmin =
-    currentUserRole === "OWNER" || currentUserRole === "ADMIN";
+  const isOwnerOrAdmin = currentUserRole === "OWNER" || currentUserRole === "ADMIN";
 
   const handleJoin = async () => {
     if (!crewId) return;
@@ -152,9 +150,7 @@ export default function CrewDetailClient() {
         <Card className="border-destructive">
           <CardContent className="p-6">
             <h2 className="text-lg font-semibold text-destructive mb-2">오류</h2>
-            <p className="text-muted-foreground mb-4">
-              {error || "크루를 찾을 수 없습니다."}
-            </p>
+            <p className="text-muted-foreground mb-4">{error || "크루를 찾을 수 없습니다."}</p>
             <Button variant="outline" onClick={() => navigate("/crews")}>
               크루 목록으로
             </Button>
@@ -188,15 +184,12 @@ export default function CrewDetailClient() {
                 <h1 className="text-2xl font-bold truncate">{crew.name}</h1>
                 {!crew.isPublic && <Lock className="w-5 h-5 text-muted-foreground" />}
               </div>
-              <p className="text-sm text-muted-foreground">
-                만든이: {crew.creator.name}
-              </p>
+              <p className="text-sm text-muted-foreground">만든이: {crew.creator.name}</p>
               <div className="flex items-center gap-3 mt-2">
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <Users className="w-4 h-4" />
                   <span>
-                    {crew._count.members}명
-                    {crew.maxMembers && ` / ${crew.maxMembers}명`}
+                    {crew._count.members}명{crew.maxMembers && ` / ${crew.maxMembers}명`}
                   </span>
                 </div>
                 <Badge variant={crew.isPublic ? "default" : "secondary"}>
@@ -224,20 +217,14 @@ export default function CrewDetailClient() {
               )}
 
               {isMember && currentUserRole !== "OWNER" && (
-                <Button
-                  variant="destructive"
-                  onClick={() => setShowLeaveDialog(true)}
-                >
+                <Button variant="destructive" onClick={() => setShowLeaveDialog(true)}>
                   <LogOut className="size-4 mr-2" />
                   크루 탈퇴
                 </Button>
               )}
 
               {isOwnerOrAdmin && (
-                <Button
-                  variant="outline"
-                  onClick={() => navigate(`/crews/${crewId}/settings`)}
-                >
+                <Button variant="outline" onClick={() => navigate(`/crews/${crewId}/settings`)}>
                   <Settings className="size-4 mr-2" />
                   설정
                 </Button>
@@ -263,9 +250,7 @@ export default function CrewDetailClient() {
         <TabsContent value="members" className="mt-6">
           <Card>
             <CardContent className="p-6">
-              <h2 className="text-lg font-semibold mb-4">
-                멤버 ({activeMembers.length}명)
-              </h2>
+              <h2 className="text-lg font-semibold mb-4">멤버 ({activeMembers.length}명)</h2>
               <CrewMemberList
                 crewId={crewId}
                 members={activeMembers}
@@ -278,19 +263,11 @@ export default function CrewDetailClient() {
         </TabsContent>
 
         <TabsContent value="activities" className="mt-6">
-          <CrewActivityList
-            crewId={crewId}
-            isAdmin={isOwnerOrAdmin}
-            isMember={isMember}
-          />
+          <CrewActivityList crewId={crewId} isAdmin={isOwnerOrAdmin} isMember={isMember} />
         </TabsContent>
 
         <TabsContent value="tags" className="mt-6">
-          <CrewTagManager
-            crewId={crewId}
-            isAdmin={isOwnerOrAdmin}
-            members={activeMembers}
-          />
+          <CrewTagManager crewId={crewId} isAdmin={isOwnerOrAdmin} members={activeMembers} />
         </TabsContent>
 
         <TabsContent value="stats" className="mt-6">

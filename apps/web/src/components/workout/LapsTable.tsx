@@ -1,3 +1,5 @@
+import { ListOrdered } from "lucide-react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -7,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ListOrdered } from "lucide-react";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 
 export interface WorkoutLap {
@@ -36,8 +37,7 @@ export function LapsTable({ laps, className }: LapsTableProps) {
     <Card className={className}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <ListOrdered className="size-4" />
-          랩 ({laps.length})
+          <ListOrdered className="size-4" />랩 ({laps.length})
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -55,18 +55,10 @@ export function LapsTable({ laps, className }: LapsTableProps) {
           <TableBody>
             {laps.map((lap) => (
               <TableRow key={lap.lapNumber}>
-                <TableCell className="font-medium tabular-nums">
-                  {lap.lapNumber}
-                </TableCell>
-                <TableCell className="tabular-nums">
-                  {formatDistance(lap.distance)} km
-                </TableCell>
-                <TableCell className="tabular-nums">
-                  {formatDuration(lap.duration)}
-                </TableCell>
-                <TableCell className="tabular-nums">
-                  {formatPace(lap.avgPace)}/km
-                </TableCell>
+                <TableCell className="font-medium tabular-nums">{lap.lapNumber}</TableCell>
+                <TableCell className="tabular-nums">{formatDistance(lap.distance)} km</TableCell>
+                <TableCell className="tabular-nums">{formatDuration(lap.duration)}</TableCell>
+                <TableCell className="tabular-nums">{formatPace(lap.avgPace)}/km</TableCell>
                 {hasHr && (
                   <TableCell className="tabular-nums">
                     {lap.avgHeartRate != null ? `${lap.avgHeartRate} bpm` : "-"}

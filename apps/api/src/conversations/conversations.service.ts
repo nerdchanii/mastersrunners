@@ -1,11 +1,13 @@
 import {
-  Injectable,
   BadRequestException,
   ForbiddenException,
+  Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { ConversationsRepository } from "./repositories/conversations.repository.js";
+
 import { BlockRepository } from "../block/repositories/block.repository.js";
+
+import { ConversationsRepository } from "./repositories/conversations.repository.js";
 import { ConversationsSseService } from "./conversations-sse.service.js";
 
 @Injectable()
@@ -33,11 +35,7 @@ export class ConversationsService {
   }
 
   async getConversations(userId: string, cursor?: string, limit: number = 20) {
-    const conversations = await this.conversationsRepo.findByUserId(
-      userId,
-      cursor,
-      limit,
-    );
+    const conversations = await this.conversationsRepo.findByUserId(userId, cursor, limit);
 
     // Check if there are more items
     const hasMore = conversations.length > limit;
@@ -46,10 +44,7 @@ export class ConversationsService {
     // Get unread count for each conversation
     const conversationsWithUnread = await Promise.all(
       items.map(async (conv) => {
-        const unreadCount = await this.conversationsRepo.getUnreadCount(
-          conv.id,
-          userId,
-        );
+        const unreadCount = await this.conversationsRepo.getUnreadCount(conv.id, userId);
         return {
           ...conv,
           unreadCount,
@@ -76,10 +71,7 @@ export class ConversationsService {
     }
 
     // Verify participant
-    const isParticipant = await this.conversationsRepo.isParticipant(
-      conversationId,
-      userId,
-    );
+    const isParticipant = await this.conversationsRepo.isParticipant(conversationId, userId);
     if (!isParticipant) {
       throw new ForbiddenException("이 대화에 참여할 권한이 없습니다.");
     }
@@ -94,11 +86,7 @@ export class ConversationsService {
     }
 
     // Get messages
-    const messages = await this.conversationsRepo.getMessages(
-      conversationId,
-      cursor,
-      limit,
-    );
+    const messages = await this.conversationsRepo.getMessages(conversationId, cursor, limit);
 
     // Check if there are more messages
     const hasMore = messages.length > limit;
@@ -113,10 +101,7 @@ export class ConversationsService {
 
   async sendMessage(conversationId: string, userId: string, content: string) {
     // Verify participant
-    const isParticipant = await this.conversationsRepo.isParticipant(
-      conversationId,
-      userId,
-    );
+    const isParticipant = await this.conversationsRepo.isParticipant(conversationId, userId);
     if (!isParticipant) {
       throw new ForbiddenException("이 대화에 참여할 권한이 없습니다.");
     }
@@ -149,10 +134,7 @@ export class ConversationsService {
 
   async markAsRead(conversationId: string, userId: string) {
     // Verify participant
-    const isParticipant = await this.conversationsRepo.isParticipant(
-      conversationId,
-      userId,
-    );
+    const isParticipant = await this.conversationsRepo.isParticipant(conversationId, userId);
     if (!isParticipant) {
       throw new ForbiddenException("이 대화에 참여할 권한이 없습니다.");
     }

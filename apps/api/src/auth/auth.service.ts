@@ -1,8 +1,9 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { UserRepository } from "./repositories/user.repository.js";
+
 import { AccountRepository } from "./repositories/account.repository.js";
+import { UserRepository } from "./repositories/user.repository.js";
 
 export interface OAuthProfile {
   provider: string;

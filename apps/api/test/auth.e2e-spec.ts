@@ -1,7 +1,8 @@
 import type { INestApplication } from "@nestjs/common";
 import request from "supertest";
-import { createTestApp, closeTestApp, cleanDatabase } from "./setup";
-import { loginDevUser, authRequest } from "./helpers/auth.helper";
+
+import { authRequest, loginDevUser } from "./helpers/auth.helper";
+import { cleanDatabase, closeTestApp, createTestApp } from "./setup";
 
 describe("Auth (E2E)", () => {
   let app: INestApplication;
@@ -17,9 +18,7 @@ describe("Auth (E2E)", () => {
 
   describe("POST /api/v1/auth/dev-login", () => {
     it("should return access and refresh tokens", async () => {
-      const res = await request(app.getHttpServer())
-        .post("/api/v1/auth/dev-login")
-        .expect(201);
+      const res = await request(app.getHttpServer()).post("/api/v1/auth/dev-login").expect(201);
 
       expect(res.body).toHaveProperty("accessToken");
       expect(res.body).toHaveProperty("refreshToken");
@@ -62,10 +61,7 @@ describe("Auth (E2E)", () => {
     });
 
     it("should reject missing refresh token", async () => {
-      await request(app.getHttpServer())
-        .post("/api/v1/auth/refresh")
-        .send({})
-        .expect(400);
+      await request(app.getHttpServer()).post("/api/v1/auth/refresh").send({}).expect(400);
     });
   });
 
@@ -73,9 +69,7 @@ describe("Auth (E2E)", () => {
     it("should return current user info with valid token", async () => {
       const { accessToken } = await loginDevUser(app);
 
-      const res = await authRequest(app, accessToken)
-        .get("/api/v1/auth/me")
-        .expect(200);
+      const res = await authRequest(app, accessToken).get("/api/v1/auth/me").expect(200);
 
       expect(res.body).toHaveProperty("id");
       expect(res.body).toHaveProperty("email", "dev@mastersrunners.local");
@@ -83,9 +77,7 @@ describe("Auth (E2E)", () => {
     });
 
     it("should reject unauthenticated requests", async () => {
-      await request(app.getHttpServer())
-        .get("/api/v1/auth/me")
-        .expect(401);
+      await request(app.getHttpServer()).get("/api/v1/auth/me").expect(401);
     });
 
     it("should reject requests with invalid token", async () => {

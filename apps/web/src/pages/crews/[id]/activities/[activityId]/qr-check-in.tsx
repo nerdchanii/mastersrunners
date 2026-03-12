@@ -1,18 +1,13 @@
+import { AlertTriangle, ArrowLeft, CheckCircle, Loader2, QrCode } from "lucide-react";
 import { useState } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-context";
+
+import { QrScanner } from "@/components/crew/QrScanner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  CheckCircle,
-  ArrowLeft,
-  Loader2,
-  QrCode,
-  AlertTriangle,
-} from "lucide-react";
-import { QrScanner } from "@/components/crew/QrScanner";
-import { useQrCheckIn, useCrewActivity } from "@/hooks/useCrewActivities";
+import { useCrewActivity, useQrCheckIn } from "@/hooks/useCrewActivities";
+import { useAuth } from "@/lib/auth-context";
 
 export default function QrCheckInPage() {
   const { id: crewId, activityId } = useParams<{
@@ -28,9 +23,7 @@ export default function QrCheckInPage() {
 
   const [checkInSuccess, setCheckInSuccess] = useState(false);
 
-  const myAttendance = activity?.attendances?.find(
-    (a) => a.userId === user?.id,
-  );
+  const myAttendance = activity?.attendances?.find((a) => a.userId === user?.id);
   const isAlreadyCheckedIn = myAttendance?.status === "CHECKED_IN";
 
   // Auto-submit if qrCode is in URL params
@@ -47,9 +40,7 @@ export default function QrCheckInPage() {
           toast.success("QR 체크인 완료!");
         },
         onError: (err) => {
-          toast.error(
-            err instanceof Error ? err.message : "체크인에 실패했습니다.",
-          );
+          toast.error(err instanceof Error ? err.message : "체크인에 실패했습니다.");
         },
       },
     );
@@ -80,13 +71,9 @@ export default function QrCheckInPage() {
         </div>
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold">체크인 완료!</h1>
-          <p className="text-muted-foreground">
-            {activity?.title ?? "활동"}에 체크인되었습니다.
-          </p>
+          <p className="text-muted-foreground">{activity?.title ?? "활동"}에 체크인되었습니다.</p>
         </div>
-        <Button
-          onClick={() => navigate(`/crews/${crewId}/activities/${activityId}`)}
-        >
+        <Button onClick={() => navigate(`/crews/${crewId}/activities/${activityId}`)}>
           활동으로 돌아가기
         </Button>
       </div>
@@ -141,19 +128,12 @@ export default function QrCheckInPage() {
                     ? qrCheckIn.error.message
                     : "체크인에 실패했습니다."}
                 </p>
-                <Button
-                  variant="outline"
-                  onClick={() => handleQrCheckIn(urlQrCode)}
-                >
+                <Button variant="outline" onClick={() => handleQrCheckIn(urlQrCode)}>
                   다시 시도
                 </Button>
               </>
             ) : (
-              <Button
-                onClick={() => handleQrCheckIn(urlQrCode)}
-                className="w-full"
-                size="lg"
-              >
+              <Button onClick={() => handleQrCheckIn(urlQrCode)} className="w-full" size="lg">
                 <QrCode className="size-5 mr-2" />
                 QR 코드로 체크인
               </Button>
@@ -178,14 +158,10 @@ export default function QrCheckInPage() {
       {/* 수동 체크인 fallback */}
       {!urlQrCode && (
         <div className="text-center">
-          <p className="text-sm text-muted-foreground mb-2">
-            카메라를 사용할 수 없나요?
-          </p>
+          <p className="text-sm text-muted-foreground mb-2">카메라를 사용할 수 없나요?</p>
           <Button
             variant="link"
-            onClick={() =>
-              navigate(`/crews/${crewId}/activities/${activityId}`)
-            }
+            onClick={() => navigate(`/crews/${crewId}/activities/${activityId}`)}
           >
             수동 체크인으로 이동
           </Button>

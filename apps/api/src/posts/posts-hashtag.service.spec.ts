@@ -1,7 +1,9 @@
 import { Test } from "@nestjs/testing";
-import { PostsService } from "./posts.service";
-import { PostRepository } from "./repositories/post.repository";
+
 import { BlockRepository } from "../block/repositories/block.repository";
+
+import { PostRepository } from "./repositories/post.repository";
+import { PostsService } from "./posts.service";
 
 const mockPostRepo = {
   findById: jest.fn(),
@@ -87,6 +89,7 @@ describe("PostsService - hashtag", () => {
         blockedUserIds: blockedIds,
         cursor: undefined,
         limit: undefined,
+        currentUserId,
       });
       expect(result).toEqual(mockPosts);
     });
@@ -103,6 +106,7 @@ describe("PostsService - hashtag", () => {
         blockedUserIds: [],
         cursor: "cursor-id",
         limit: 10,
+        currentUserId,
       });
     });
   });

@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
 import { formatPace } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 interface ProgressBarProps {
   current: number;
@@ -20,11 +20,16 @@ export default function ProgressBar({ current, target, unit, className }: Progre
 
   const unitLabel = (u: string): string => {
     switch (u) {
-      case "KM": return "km";
-      case "COUNT": return "회";
-      case "DAYS": return "일";
-      case "SEC_PER_KM": return "";
-      default: return u;
+      case "KM":
+        return "km";
+      case "COUNT":
+        return "회";
+      case "DAYS":
+        return "일";
+      case "SEC_PER_KM":
+        return "";
+      default:
+        return u;
     }
   };
 
@@ -34,10 +39,9 @@ export default function ProgressBar({ current, target, unit, className }: Progre
         <span className="text-sm font-medium text-foreground">
           {formatValue(current)} / {formatValue(target)} {unitLabel(unit)}
         </span>
-        <span className={cn(
-          "text-sm font-semibold",
-          isCompleted ? "text-green-600" : "text-primary"
-        )}>
+        <span
+          className={cn("text-sm font-semibold", isCompleted ? "text-green-600" : "text-primary")}
+        >
           {percentage.toFixed(0)}%
         </span>
       </div>
@@ -45,7 +49,7 @@ export default function ProgressBar({ current, target, unit, className }: Progre
         <div
           className={cn(
             "h-full rounded-full transition-all duration-300",
-            isCompleted ? "bg-green-500" : "bg-primary"
+            isCompleted ? "bg-green-500" : "bg-primary",
           )}
           style={{ width: `${percentage}%` }}
         />

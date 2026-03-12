@@ -1,9 +1,5 @@
-import {
-  useQuery,
-  useMutation,
-  useInfiniteQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { api } from "@/lib/api-client";
 
 interface Workout {
@@ -72,13 +68,11 @@ export function useWorkoutFeed() {
     queryKey: workoutKeys.feed(),
     queryFn: ({ pageParam }) => {
       let path = "/feed/workouts?limit=10&excludeLinked=true";
-      if (pageParam)
-        path += `&cursor=${encodeURIComponent(pageParam as string)}`;
+      if (pageParam) path += `&cursor=${encodeURIComponent(pageParam as string)}`;
       return api.fetch<FeedResponse<WorkoutFeedItem>>(path);
     },
     initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) =>
-      lastPage?.hasMore ? lastPage.nextCursor : undefined,
+    getNextPageParam: (lastPage) => (lastPage?.hasMore ? lastPage.nextCursor : undefined),
   });
 }
 
@@ -113,8 +107,7 @@ export function useUpdateWorkout(id: string) {
 export function useDeleteWorkout() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      api.fetch(`/workouts/${id}`, { method: "DELETE" }),
+    mutationFn: (id: string) => api.fetch(`/workouts/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: workoutKeys.all });
     },

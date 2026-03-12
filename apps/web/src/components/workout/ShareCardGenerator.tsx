@@ -1,6 +1,7 @@
-import { useRef, useState, useCallback, useEffect } from "react";
 import { Download, Share2, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
@@ -33,11 +34,7 @@ interface ShareCardGeneratorProps {
 const CARD_W = 600;
 const CARD_H = 340;
 
-function drawCard(
-  canvas: HTMLCanvasElement,
-  data: ShareCardData,
-  preset: ColorPreset
-) {
+function drawCard(canvas: HTMLCanvasElement, data: ShareCardData, preset: ColorPreset) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
@@ -228,17 +225,19 @@ export function ShareCardGenerator({ open, onOpenChange, data }: ShareCardGenera
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground shrink-0">스타일</span>
           <div className="flex gap-2">
-            {(Object.entries(PRESETS) as [ColorPreset, typeof PRESETS[ColorPreset]][]).map(([key, val]) => (
-              <button
-                key={key}
-                onClick={() => setPreset(key)}
-                className={`w-8 h-8 rounded-full border-2 transition-all ${
-                  preset === key ? "border-foreground scale-110" : "border-transparent"
-                }`}
-                style={{ background: val.bg }}
-                title={val.label}
-              />
-            ))}
+            {(Object.entries(PRESETS) as [ColorPreset, (typeof PRESETS)[ColorPreset]][]).map(
+              ([key, val]) => (
+                <button
+                  key={key}
+                  onClick={() => setPreset(key)}
+                  className={`w-8 h-8 rounded-full border-2 transition-all ${
+                    preset === key ? "border-foreground scale-110" : "border-transparent"
+                  }`}
+                  style={{ background: val.bg }}
+                  title={val.label}
+                />
+              ),
+            )}
           </div>
         </div>
 

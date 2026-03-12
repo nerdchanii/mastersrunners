@@ -1,58 +1,59 @@
+import L from "leaflet";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Calendar,
+  CheckCircle,
+  CircleX,
+  Download,
+  Loader2,
+  MapPin,
+  MessageCircle,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-context";
+
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { TimeAgo } from "@/components/common/TimeAgo";
+import { UserAvatar } from "@/components/common/UserAvatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { UserAvatar } from "@/components/common/UserAvatar";
-import { TimeAgo } from "@/components/common/TimeAgo";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Calendar,
-  MapPin,
-  Users,
-  ArrowLeft,
-  CheckCircle,
-  Loader2,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  Download,
-  UserPlus,
-  CircleX,
-  AlertTriangle,
-  MessageCircle,
-} from "lucide-react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
-import { QRCodeSVG } from "qrcode.react";
-import {
+  useAdminCheckIn,
+  useCancelActivity,
+  useCancelRsvp,
+  useCheckIn,
+  useCompleteActivity,
   useCrewActivity,
   useDeleteActivity,
-  useCheckIn,
   useRsvp,
-  useCancelRsvp,
-  useCompleteActivity,
-  useCancelActivity,
-  useAdminCheckIn,
 } from "@/hooks/useCrewActivities";
 import { useCrew } from "@/hooks/useCrews";
+import { useAuth } from "@/lib/auth-context";
+
+import "leaflet/dist/leaflet.css";
 
 // Vite Leaflet icon fix
-delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)
-  ._getIconUrl;
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
   iconUrl: markerIcon,
@@ -86,8 +87,7 @@ export default function CrewActivityDetailPage() {
   const adminCheckInMut = useAdminCheckIn();
 
   const currentMember = crew?.members?.find((m) => m.user.id === user?.id);
-  const isAdmin =
-    currentMember?.role === "OWNER" || currentMember?.role === "ADMIN";
+  const isAdmin = currentMember?.role === "OWNER" || currentMember?.role === "ADMIN";
 
   const creator = activity
     ? crew?.members?.find((m) => m.user.id === activity.createdBy)
@@ -134,9 +134,7 @@ export default function CrewActivityDetailPage() {
       link.href = canvas.toDataURL("image/png");
       link.click();
     };
-    img.src =
-      "data:image/svg+xml;base64," +
-      btoa(unescape(encodeURIComponent(svgData)));
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   if (isActivityLoading) {
@@ -166,28 +164,17 @@ export default function CrewActivityDetailPage() {
   const scheduledDate = new Date(activity.activityDate);
   const myAttendance = activity.attendances.find((a) => a.userId === user?.id);
   const myStatus = myAttendance?.status;
-  const isActivityActive =
-    activity.status === "SCHEDULED" || activity.status === "ACTIVE";
+  const isActivityActive = activity.status === "SCHEDULED" || activity.status === "ACTIVE";
   const isHost = activity.createdBy === user?.id;
   const canManage = isAdmin || (activity.activityType === "POP_UP" && isHost);
 
   // Stats
-  const rsvpCount = activity.attendances.filter(
-    (a) => a.status === "RSVP",
-  ).length;
-  const checkedInCount = activity.attendances.filter(
-    (a) => a.status === "CHECKED_IN",
-  ).length;
-  const noShowCount = activity.attendances.filter(
-    (a) => a.status === "NO_SHOW",
-  ).length;
-  const activeAttendances = activity.attendances.filter(
-    (a) => a.status !== "CANCELLED",
-  );
+  const rsvpCount = activity.attendances.filter((a) => a.status === "RSVP").length;
+  const checkedInCount = activity.attendances.filter((a) => a.status === "CHECKED_IN").length;
+  const noShowCount = activity.attendances.filter((a) => a.status === "NO_SHOW").length;
+  const activeAttendances = activity.attendances.filter((a) => a.status !== "CANCELLED");
   const totalActive = activeAttendances.length;
-  const visibleAttendances = activity.attendances.filter(
-    (a) => a.status !== "CANCELLED",
-  );
+  const visibleAttendances = activity.attendances.filter((a) => a.status !== "CANCELLED");
 
   return (
     <div className="space-y-6">
@@ -212,9 +199,7 @@ export default function CrewActivityDetailPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
-                onClick={() =>
-                  navigate(`/crews/${crewId}/activities/${activityId}/edit`)
-                }
+                onClick={() => navigate(`/crews/${crewId}/activities/${activityId}/edit`)}
               >
                 <Pencil className="size-4 mr-2" />
                 수정
@@ -260,11 +245,7 @@ export default function CrewActivityDetailPage() {
               )}
             </div>
             <div className="flex gap-2">
-              <Badge
-                variant={
-                  activity.activityType === "OFFICIAL" ? "default" : "secondary"
-                }
-              >
+              <Badge variant={activity.activityType === "OFFICIAL" ? "default" : "secondary"}>
                 {activity.activityType === "OFFICIAL" ? "공식" : "번개"}
               </Badge>
               <Badge
@@ -292,9 +273,7 @@ export default function CrewActivityDetailPage() {
 
         {activity.description && (
           <CardContent>
-            <p className="text-muted-foreground whitespace-pre-wrap">
-              {activity.description}
-            </p>
+            <p className="text-muted-foreground whitespace-pre-wrap">{activity.description}</p>
           </CardContent>
         )}
       </Card>
@@ -377,11 +356,7 @@ export default function CrewActivityDetailPage() {
                   {
                     onSuccess: () => toast.success("참석 신청 완료!"),
                     onError: (e) =>
-                      toast.error(
-                        e instanceof Error
-                          ? e.message
-                          : "참석 신청에 실패했습니다.",
-                      ),
+                      toast.error(e instanceof Error ? e.message : "참석 신청에 실패했습니다."),
                   },
                 )
               }
@@ -406,11 +381,7 @@ export default function CrewActivityDetailPage() {
                   {
                     onSuccess: () => toast.success("참석 신청 완료!"),
                     onError: (e) =>
-                      toast.error(
-                        e instanceof Error
-                          ? e.message
-                          : "참석 신청에 실패했습니다.",
-                      ),
+                      toast.error(e instanceof Error ? e.message : "참석 신청에 실패했습니다."),
                   },
                 )
               }
@@ -467,13 +438,10 @@ export default function CrewActivityDetailPage() {
               {myAttendance?.checkedAt && (
                 <span className="text-xs text-muted-foreground">
                   (
-                  {new Date(myAttendance.checkedAt).toLocaleTimeString(
-                    "ko-KR",
-                    {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    },
-                  )}
+                  {new Date(myAttendance.checkedAt).toLocaleTimeString("ko-KR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                   )
                 </span>
               )}
@@ -497,9 +465,7 @@ export default function CrewActivityDetailPage() {
             <Button
               variant="outline"
               className="w-full"
-              onClick={() =>
-                navigate(`/crews/${crewId}/activities/${activityId}/chat`)
-              }
+              onClick={() => navigate(`/crews/${crewId}/activities/${activityId}/chat`)}
             >
               <MessageCircle className="size-4 mr-2" />
               활동 채팅방
@@ -518,17 +484,10 @@ export default function CrewActivityDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowCompleteDialog(true)}
-            >
+            <Button variant="outline" onClick={() => setShowCompleteDialog(true)}>
               활동 종료
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowCancelDialog(true)}
-            >
+            <Button variant="destructive" size="sm" onClick={() => setShowCancelDialog(true)}>
               활동 취소
             </Button>
           </CardContent>
@@ -589,16 +548,11 @@ export default function CrewActivityDetailPage() {
           )}
 
           {visibleAttendances.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              아직 참석 신청한 멤버가 없습니다.
-            </p>
+            <p className="text-muted-foreground text-sm">아직 참석 신청한 멤버가 없습니다.</p>
           ) : (
             <div className="max-h-[400px] overflow-y-auto space-y-3">
               {visibleAttendances.map((attendee) => (
-                <div
-                  key={attendee.id}
-                  className="flex items-center justify-between"
-                >
+                <div key={attendee.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <UserAvatar
                       user={{
@@ -636,38 +590,31 @@ export default function CrewActivityDetailPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {canManage &&
-                      isActivityActive &&
-                      attendee.status === "RSVP" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs"
-                          onClick={() =>
-                            adminCheckInMut.mutate(
-                              {
-                                crewId: crewId!,
-                                activityId: activityId!,
-                                userId: attendee.userId,
-                              },
-                              {
-                                onSuccess: () =>
-                                  toast.success(
-                                    `${attendee.user?.name}님을 체크인했습니다.`,
-                                  ),
-                                onError: () =>
-                                  toast.error("대리 체크인에 실패했습니다."),
-                              },
-                            )
-                          }
-                          disabled={adminCheckInMut.isPending}
-                        >
-                          대리 체크인
-                        </Button>
-                      )}
-                    {attendee.checkedAt && (
-                      <TimeAgo date={attendee.checkedAt} />
+                    {canManage && isActivityActive && attendee.status === "RSVP" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() =>
+                          adminCheckInMut.mutate(
+                            {
+                              crewId: crewId!,
+                              activityId: activityId!,
+                              userId: attendee.userId,
+                            },
+                            {
+                              onSuccess: () =>
+                                toast.success(`${attendee.user?.name}님을 체크인했습니다.`),
+                              onError: () => toast.error("대리 체크인에 실패했습니다."),
+                            },
+                          )
+                        }
+                        disabled={adminCheckInMut.isPending}
+                      >
+                        대리 체크인
+                      </Button>
                     )}
+                    {attendee.checkedAt && <TimeAgo date={attendee.checkedAt} />}
                   </div>
                 </div>
               ))}

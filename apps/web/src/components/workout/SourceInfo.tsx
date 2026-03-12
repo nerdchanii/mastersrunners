@@ -1,5 +1,6 @@
-import { Badge } from "@/components/ui/badge";
 import { FileText } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
 
 export interface WorkoutFile {
   id: string;

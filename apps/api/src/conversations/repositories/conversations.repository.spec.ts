@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
-import { ConversationsRepository } from "./conversations.repository";
+
 import { DatabaseService } from "../../database/database.service";
+
+import { ConversationsRepository } from "./conversations.repository";
 
 const mockDatabaseService = {
   prisma: {
@@ -165,9 +167,7 @@ describe("ConversationsRepository", () => {
         },
       ];
 
-      mockDatabaseService.prisma.conversation.findMany.mockResolvedValue(
-        conversations,
-      );
+      mockDatabaseService.prisma.conversation.findMany.mockResolvedValue(conversations);
 
       const result = await repository.findByUserId(userId, undefined, 20);
 
@@ -230,9 +230,7 @@ describe("ConversationsRepository", () => {
         ],
       };
 
-      mockDatabaseService.prisma.conversation.findUnique.mockResolvedValue(
-        conversation,
-      );
+      mockDatabaseService.prisma.conversation.findUnique.mockResolvedValue(conversation);
 
       const result = await repository.findById(conversationId);
 
@@ -275,9 +273,7 @@ describe("ConversationsRepository", () => {
       const conversationId = "conv-1";
       const userId = "user-1";
 
-      mockDatabaseService.prisma.conversationParticipant.findFirst.mockResolvedValue(
-        null,
-      );
+      mockDatabaseService.prisma.conversationParticipant.findFirst.mockResolvedValue(null);
 
       const result = await repository.isParticipant(conversationId, userId);
 
@@ -401,9 +397,7 @@ describe("ConversationsRepository", () => {
 
       await repository.updateLastRead(conversationId, userId);
 
-      expect(
-        mockDatabaseService.prisma.conversationParticipant.update,
-      ).toHaveBeenCalledWith({
+      expect(mockDatabaseService.prisma.conversationParticipant.update).toHaveBeenCalledWith({
         where: {
           conversationId_userId: {
             conversationId,
