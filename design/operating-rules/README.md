@@ -8,6 +8,7 @@ Use this area for:
 - source-of-truth boundaries
 - exception handling rules
 - legacy-source salvage rules
+- commit and divergence policies
 
 Do not use this area for:
 
@@ -20,3 +21,4 @@ Do not use this area for:
 - `document-states.md`: what `current` and `target` mean for tracked docs
 - `exceptions.md`: out-of-repo exception register for scorecard items
 - `legacy-sources.md`: salvage policy for `docs/plans/` and `.omc`
+- `commit-conventions.md`: commit subject/trailer rules for task-based work

@@ -50,6 +50,22 @@ Read in this order:
 - Multi-scope changes need the union of the relevant specialist reviewers, not just one reviewer.
 - Review requirements live in the task file. Do not treat a task as done until review and verify are both complete.
 
+## Coding Conventions
+
+- Frontend coding conventions live in `design/frontend/conventions.md`.
+- Backend coding conventions live in `design/backend/conventions.md`.
+- Repository-wide commit conventions live in `design/operating-rules/commit-conventions.md`.
+- If those docs are stricter than current implementation, keep the design truth and track the gap with tasks instead of weakening the convention.
+- Agent self-review guidance lives in `docs/guides/agent-self-review.md`.
+- Reviewer-role guidance lives in `docs/guides/reviewer-taxonomy.md`.
+
+## Design Divergence Handling
+
+- Do not downgrade approved design or domain docs to match weak or incomplete implementation.
+- If code diverges from approved design, record the gap as a `Current Divergence` note or task note, then create a follow-up task.
+- The default resolution path is delegated agent work, not direct human patching outside the task system.
+- A commit message should describe change intent, not replace intent with a task ID. Put task tracking in trailers.
+
 ## Task Workflow
 
 Task path pattern:
@@ -68,11 +84,12 @@ Lifecycle:
 
 1. Move a task from `todo/` to `active/` when work starts
 2. Update the task notes while working
-3. Run the task's `verify` commands
-4. Get the required specialist review
-5. Get PO review
-6. Move the task from `active/` to `archive/` in the same changeset that finalizes the work
-7. Commit only after review and verify gates are satisfied
+3. Run the self-review checklist in `docs/guides/agent-self-review.md`
+4. Run the task's `verify` commands
+5. Get the required specialist review
+6. Get PO review
+7. Move the task from `active/` to `archive/` in the same changeset that finalizes the work
+8. Commit only after review and verify gates are satisfied
 
 ## Review Routing
 

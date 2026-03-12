@@ -31,4 +31,5 @@ Current docs:
 
 - `app-shell-routing.md`
 - `client-data-state.md`
+- `conventions.md`
 - `ui-system.md`

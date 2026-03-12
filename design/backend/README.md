@@ -31,5 +31,6 @@ Current docs:
 
 - `api-runtime-boundary.md`
 - `auth-session.md`
+- `conventions.md`
 - `persistence-model.md`
 - `upload-ingestion.md`

@@ -4,12 +4,15 @@ Use this guide before committing any completed task.
 
 ## Rule
 
+- Every task needs self-review before specialist review.
 - Every task needs at least one specialist review.
 - Every task needs a PO review.
 - Docs-only tasks are not exempt.
 - Multi-scope tasks need multiple specialist reviewers.
 
 ## Reviewer Roles
+
+See `docs/guides/reviewer-taxonomy.md` for the full reviewer catalog, including escalation reviewers.
 
 - `docs-reviewer`
   - checks clarity, structure, cross-reference quality, and source-of-truth alignment
@@ -44,11 +47,18 @@ Use this guide before committing any completed task.
 Before commit, the task must satisfy all of these:
 
 1. Implementation is complete for the task scope.
-2. The task `verify` commands have been run.
-3. Required specialist review has been completed.
-4. PO review has been completed.
-5. The task file has been updated with review notes.
-6. The task is moved to `archive/` in the same changeset that finalizes the work.
+2. The agent self-review checklist has been completed.
+3. The task `verify` commands have been run.
+4. Required specialist review has been completed.
+5. PO review has been completed.
+6. The task file has been updated with review notes.
+7. The task is moved to `archive/` in the same changeset that finalizes the work.
+
+## Commit Intent Rule
+
+- Commit subjects should describe intent with normal types such as `feat`, `fix`, `refactor`, `docs`, `ci`, or `test`.
+- Task IDs belong in trailers, not as the commit type.
+- If work uncovers implementation/design divergence, keep the design intact and create a follow-up task before calling the change done.
 
 ## Review Notes Convention
 

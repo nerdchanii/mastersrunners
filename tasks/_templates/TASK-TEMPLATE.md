@@ -29,6 +29,14 @@ Describe the single unit of work.
 - Constraints
 - relevant links
 
+## Self Review
+
+- Scope and intent:
+- Source of truth:
+- Design divergence:
+- Verification:
+- Review routing:
+
 ## Review Focus
 
 - Specialist reviewer should check:
@@ -37,6 +45,12 @@ Describe the single unit of work.
 ## Handoff
 
 - What the next task should know
+
+## Design Divergence
+
+- Record any gap between approved design and current implementation.
+- If a gap remains after this task, link the follow-up task here.
+- Do not rewrite approved design docs downward just to match unfinished code.
 
 ## Attempt Log
 

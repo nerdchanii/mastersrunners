@@ -25,6 +25,7 @@ Do not use this area for:
 - `backend/`: API, module boundaries, auth, storage, integration design
 - `adr/`: architecture decision records
 - `initiatives/`: large change framing and decomposition links
+- `operating-rules/`: repository-wide harness rules such as document-state, exception, and commit policies
 
 ## Relationship to Other Folders
 

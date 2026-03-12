@@ -7,4 +7,7 @@ Examples:
 - repo workflow guide
 - testing guide
 - local setup guide
+- agent self-review guide
 - review harness guide
+- reviewer taxonomy guide
+- design divergence workflow guide
