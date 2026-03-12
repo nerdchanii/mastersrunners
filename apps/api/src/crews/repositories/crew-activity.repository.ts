@@ -108,6 +108,19 @@ export class CrewActivityRepository {
     });
   }
 
+  async restoreRsvp(activityId: string, userId: string) {
+    return this.databaseService.prisma.crewAttendance.update({
+      where: { activityId_userId: { activityId, userId } },
+      data: {
+        status: "RSVP",
+        rsvpAt: new Date(),
+        method: null,
+        checkedAt: null,
+        checkedBy: null,
+      },
+    });
+  }
+
   async cancelRsvp(activityId: string, userId: string) {
     return this.databaseService.prisma.crewAttendance.update({
       where: { activityId_userId: { activityId, userId } },

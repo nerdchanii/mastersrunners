@@ -58,6 +58,7 @@ const mockCrewActivityRepository = {
   remove: jest.fn(),
   checkIn: jest.fn(),
   findAttendance: jest.fn(),
+  restoreRsvp: jest.fn(),
   getAttendees: jest.fn(),
   updateChatConversationId: jest.fn(),
 };
@@ -102,6 +103,7 @@ describe("CrewsService", () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockCrewBanRepository.isBanned.mockResolvedValue(false);
     const module = await Test.createTestingModule({
       providers: [
         CrewsService,
@@ -392,10 +394,9 @@ describe("CrewsService", () => {
       const crewId = "crew-123";
       const userId = "user-banned";
       const mockCrew = { id: crewId };
-      const mockBan = { crewId, userId, reason: "Spamming" };
 
       mockCrewRepository.findById.mockResolvedValue(mockCrew);
-      mockDatabaseService.prisma.crewBan.findUnique.mockResolvedValue(mockBan);
+      mockCrewBanRepository.isBanned.mockResolvedValue(true);
 
       await expect(service.join(crewId, userId)).rejects.toThrow(BadRequestException);
     });

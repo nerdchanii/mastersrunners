@@ -62,3 +62,4 @@ Several high-traffic files are too large and carry too much mixed responsibility
 
 - `I-0007-040` now adds a machine-checkable first-wave size-budget stop rule and scorecard-backed exception registry.
 - `I-0007-010` removed direct page-side `api.fetch` from the event, challenge, and message detail routes. `messages/[id]` is now back under the 350-line budget, while event/challenge remain tracked exceptions.
+- `I-0007-030` reduced `apps/api/src/crews/crews.service.ts` below the budget by turning it into a thin facade over internal membership, tags, activities, and read/chat responsibility services.

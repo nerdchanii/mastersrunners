@@ -1,11 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
-import { randomUUID } from "crypto";
+import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 
 import { ConversationsRepository } from "../conversations/repositories/conversations.repository.js";
 import { CrewBoardsService } from "../crew-boards/crew-boards.service.js";
@@ -13,6 +6,10 @@ import { DatabaseService } from "../database/database.service.js";
 
 import type { CreateCrewDto } from "./dto/create-crew.dto.js";
 import type { UpdateCrewDto } from "./dto/update-crew.dto.js";
+import { CrewActivitiesService } from "./internal/crew-activities.service.js";
+import { CrewMembershipService } from "./internal/crew-membership.service.js";
+import { CrewReadService } from "./internal/crew-read.service.js";
+import { CrewTagsService } from "./internal/crew-tags.service.js";
 import { CrewRepository } from "./repositories/crew.repository.js";
 import { CrewActivityRepository } from "./repositories/crew-activity.repository.js";
 import { CrewBanRepository } from "./repositories/crew-ban.repository.js";
@@ -21,6 +18,11 @@ import { CrewTagRepository } from "./repositories/crew-tag.repository.js";
 
 @Injectable()
 export class CrewsService {
+  private readonly membershipService: CrewMembershipService;
+  private readonly tagsService: CrewTagsService;
+  private readonly activitiesService: CrewActivitiesService;
+  private readonly readService: CrewReadService;
+
   constructor(
     private readonly crewRepo: CrewRepository,
     private readonly crewMemberRepo: CrewMemberRepository,
@@ -30,7 +32,22 @@ export class CrewsService {
     private readonly db: DatabaseService,
     private readonly conversationsRepo: ConversationsRepository,
     private readonly crewBoardsService: CrewBoardsService,
-  ) {}
+  ) {
+    this.membershipService = new CrewMembershipService(
+      crewRepo,
+      crewMemberRepo,
+      crewBanRepo,
+      conversationsRepo,
+    );
+    this.tagsService = new CrewTagsService(crewRepo, crewMemberRepo, crewTagRepo, db);
+    this.activitiesService = new CrewActivitiesService(
+      crewRepo,
+      crewMemberRepo,
+      crewActivityRepo,
+      conversationsRepo,
+    );
+    this.readService = new CrewReadService(crewRepo, crewMemberRepo, conversationsRepo, db);
+  }
 
   async create(userId: string, dto: CreateCrewDto) {
     const crew = await this.crewRepo.create({
@@ -47,12 +64,10 @@ export class CrewsService {
 
     await this.crewMemberRepo.addMember(crew.id, userId, "OWNER", "ACTIVE");
 
-    // Create crew-wide chat
     const chat = await this.conversationsRepo.createGroupConversation("CREW", { crewId: crew.id });
     await this.crewRepo.updateChatConversationId(crew.id, chat.id);
     await this.conversationsRepo.addParticipant(chat.id, userId);
 
-    // Create default announcement board
     await this.crewBoardsService.createDefaultBoard(crew.id);
 
     return crew;
@@ -103,238 +118,43 @@ export class CrewsService {
   }
 
   async join(crewId: string, userId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const ban = await this.db.prisma.crewBan.findUnique({
-      where: { crewId_userId: { crewId, userId } },
-    });
-    if (ban) {
-      throw new BadRequestException("차단된 사용자는 가입할 수 없습니다.");
-    }
-
-    const existingMember = await this.crewMemberRepo.findMember(crewId, userId);
-
-    if (existingMember) {
-      if (existingMember.status === "PENDING") {
-        throw new BadRequestException("이미 가입 요청 중입니다.");
-      }
-      if (existingMember.status === "LEFT") {
-        const status = crew.isPublic ? "ACTIVE" : "PENDING";
-        const result = await this.crewMemberRepo.updateStatus(crewId, userId, status);
-        // Add to crew chat if becoming ACTIVE
-        if (status === "ACTIVE" && crew.chatConversationId) {
-          await this.conversationsRepo.addParticipant(crew.chatConversationId, userId);
-        }
-        return result;
-      }
-      throw new BadRequestException("이미 가입한 크루입니다.");
-    }
-
-    if (crew.maxMembers !== null) {
-      const currentCount = await this.crewMemberRepo.countMembers(crewId);
-      if (currentCount >= crew.maxMembers) {
-        throw new BadRequestException("크루 정원이 가득 찼습니다.");
-      }
-    }
-
-    const status = crew.isPublic ? "ACTIVE" : "PENDING";
-    const member = await this.crewMemberRepo.addMember(crewId, userId, "MEMBER", status);
-    // Add to crew chat if becoming ACTIVE immediately (public crew)
-    if (status === "ACTIVE" && crew.chatConversationId) {
-      await this.conversationsRepo.addParticipant(crew.chatConversationId, userId);
-    }
-    return member;
+    return this.membershipService.join(crewId, userId);
   }
 
   async leave(crewId: string, userId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member) {
-      throw new BadRequestException("크루 멤버가 아닙니다.");
-    }
-
-    if (member.role === "OWNER") {
-      throw new ForbiddenException("크루 소유자는 탈퇴할 수 없습니다.");
-    }
-
-    await this.crewMemberRepo.removeMember(crewId, userId);
-
-    // Remove from crew chat
-    if (crew.chatConversationId) {
-      await this.conversationsRepo.removeParticipant(crew.chatConversationId, userId);
-    }
-
-    return { success: true };
+    return this.membershipService.leave(crewId, userId);
   }
 
   async kickMember(crewId: string, adminUserId: string, targetUserId: string, reason?: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const adminMember = await this.crewMemberRepo.findMember(crewId, adminUserId);
-    if (!adminMember || (adminMember.role !== "OWNER" && adminMember.role !== "ADMIN")) {
-      throw new ForbiddenException("크루 관리자만 멤버를 추방할 수 있습니다.");
-    }
-
-    const targetMember = await this.crewMemberRepo.findMember(crewId, targetUserId);
-    if (!targetMember) {
-      throw new BadRequestException("대상 사용자가 크루 멤버가 아닙니다.");
-    }
-
-    if (targetMember.role === "OWNER") {
-      throw new ForbiddenException("크루 소유자는 추방할 수 없습니다.");
-    }
-
-    await this.crewMemberRepo.removeMember(crewId, targetUserId);
-    await this.crewBanRepo.create({ crewId, userId: targetUserId, bannedBy: adminUserId, reason });
-
-    return { success: true };
+    return this.membershipService.kickMember(crewId, adminUserId, targetUserId, reason);
   }
 
   async promoteToAdmin(crewId: string, ownerId: string, targetUserId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const ownerMember = await this.crewMemberRepo.findMember(crewId, ownerId);
-    if (!ownerMember || ownerMember.role !== "OWNER") {
-      throw new ForbiddenException("크루 소유자만 관리자를 지정할 수 있습니다.");
-    }
-
-    const targetMember = await this.crewMemberRepo.findMember(crewId, targetUserId);
-    if (!targetMember) {
-      throw new BadRequestException("대상 사용자가 크루 멤버가 아닙니다.");
-    }
-
-    return this.crewMemberRepo.updateRole(crewId, targetUserId, "ADMIN");
+    return this.membershipService.promoteToAdmin(crewId, ownerId, targetUserId);
   }
 
   async demoteToMember(crewId: string, ownerId: string, targetUserId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const ownerMember = await this.crewMemberRepo.findMember(crewId, ownerId);
-    if (!ownerMember || ownerMember.role !== "OWNER") {
-      throw new ForbiddenException("크루 소유자만 관리자를 해제할 수 있습니다.");
-    }
-
-    const targetMember = await this.crewMemberRepo.findMember(crewId, targetUserId);
-    if (!targetMember) {
-      throw new BadRequestException("대상 사용자가 크루 멤버가 아닙니다.");
-    }
-
-    return this.crewMemberRepo.updateRole(crewId, targetUserId, "MEMBER");
+    return this.membershipService.demoteToMember(crewId, ownerId, targetUserId);
   }
 
   async approveMember(crewId: string, adminUserId: string, targetUserId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const adminMember = await this.crewMemberRepo.findMember(crewId, adminUserId);
-    if (!adminMember || (adminMember.role !== "OWNER" && adminMember.role !== "ADMIN")) {
-      throw new ForbiddenException("크루 관리자만 가입을 승인할 수 있습니다.");
-    }
-
-    const targetMember = await this.crewMemberRepo.findMember(crewId, targetUserId);
-    if (!targetMember) {
-      throw new BadRequestException("대상 사용자가 크루 멤버가 아닙니다.");
-    }
-
-    if (targetMember.status !== "PENDING") {
-      throw new BadRequestException("가입 요청 중인 사용자가 아닙니다.");
-    }
-
-    if (crew.maxMembers !== null) {
-      const currentCount = await this.crewMemberRepo.countMembers(crewId);
-      if (currentCount >= crew.maxMembers) {
-        throw new BadRequestException("크루 정원이 가득 찼습니다.");
-      }
-    }
-
-    const result = await this.crewMemberRepo.updateStatus(crewId, targetUserId, "ACTIVE");
-
-    // Add to crew chat
-    if (crew.chatConversationId) {
-      await this.conversationsRepo.addParticipant(crew.chatConversationId, targetUserId);
-    }
-
-    return result;
+    return this.membershipService.approveMember(crewId, adminUserId, targetUserId);
   }
 
   async rejectMember(crewId: string, adminUserId: string, targetUserId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const adminMember = await this.crewMemberRepo.findMember(crewId, adminUserId);
-    if (!adminMember || (adminMember.role !== "OWNER" && adminMember.role !== "ADMIN")) {
-      throw new ForbiddenException("크루 관리자만 가입을 거절할 수 있습니다.");
-    }
-
-    const targetMember = await this.crewMemberRepo.findMember(crewId, targetUserId);
-    if (!targetMember) {
-      throw new BadRequestException("대상 사용자가 크루 멤버가 아닙니다.");
-    }
-
-    if (targetMember.status !== "PENDING") {
-      throw new BadRequestException("가입 요청 중인 사용자가 아닙니다.");
-    }
-
-    return this.crewMemberRepo.removeMember(crewId, targetUserId);
+    return this.membershipService.rejectMember(crewId, adminUserId, targetUserId);
   }
 
   async getPendingMembers(crewId: string, userId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member || (member.role !== "OWNER" && member.role !== "ADMIN")) {
-      throw new ForbiddenException("크루 관리자만 가입 요청 목록을 조회할 수 있습니다.");
-    }
-
-    return this.crewMemberRepo.findPendingMembers(crewId);
+    return this.membershipService.getPendingMembers(crewId, userId);
   }
 
-  // ============ Tag Methods ============
-
   async createTag(crewId: string, userId: string, name: string, color?: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member || (member.role !== "OWNER" && member.role !== "ADMIN")) {
-      throw new ForbiddenException("크루 관리자만 태그를 생성할 수 있습니다.");
-    }
-
-    return this.crewTagRepo.create(crewId, name, color);
+    return this.tagsService.createTag(crewId, userId, name, color);
   }
 
   async getTags(crewId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    return this.crewTagRepo.findByCrewId(crewId);
+    return this.tagsService.getTags(crewId);
   }
 
   async updateTag(
@@ -343,83 +163,20 @@ export class CrewsService {
     userId: string,
     data: { name?: string; color?: string },
   ) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member || (member.role !== "OWNER" && member.role !== "ADMIN")) {
-      throw new ForbiddenException("크루 관리자만 태그를 수정할 수 있습니다.");
-    }
-
-    return this.crewTagRepo.update(tagId, data);
+    return this.tagsService.updateTag(tagId, crewId, userId, data);
   }
 
   async deleteTag(tagId: string, crewId: string, userId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member || (member.role !== "OWNER" && member.role !== "ADMIN")) {
-      throw new ForbiddenException("크루 관리자만 태그를 삭제할 수 있습니다.");
-    }
-
-    return this.crewTagRepo.remove(tagId);
+    return this.tagsService.deleteTag(tagId, crewId, userId);
   }
 
   async assignTagToMember(crewId: string, adminUserId: string, memberId: string, tagId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const adminMember = await this.crewMemberRepo.findMember(crewId, adminUserId);
-    if (!adminMember || (adminMember.role !== "OWNER" && adminMember.role !== "ADMIN")) {
-      throw new ForbiddenException("크루 관리자만 태그를 부여할 수 있습니다.");
-    }
-
-    // Verify member exists
-    const targetMember = await this.db.prisma.crewMember.findUnique({
-      where: { id: memberId },
-    });
-    if (!targetMember || targetMember.crewId !== crewId) {
-      throw new BadRequestException("대상 멤버가 이 크루에 속하지 않습니다.");
-    }
-
-    // Check for duplicate assignment
-    const existing = await this.db.prisma.crewMemberTag.findUnique({
-      where: {
-        crewMemberId_crewTagId: {
-          crewMemberId: memberId,
-          crewTagId: tagId,
-        },
-      },
-    });
-    if (existing) {
-      throw new ConflictException("이미 해당 태그가 부여되어 있습니다.");
-    }
-
-    return this.crewTagRepo.assignToMember(memberId, tagId);
+    return this.tagsService.assignTagToMember(crewId, adminUserId, memberId, tagId);
   }
 
   async removeTagFromMember(crewId: string, adminUserId: string, memberId: string, tagId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const adminMember = await this.crewMemberRepo.findMember(crewId, adminUserId);
-    if (!adminMember || (adminMember.role !== "OWNER" && adminMember.role !== "ADMIN")) {
-      throw new ForbiddenException("크루 관리자만 태그를 제거할 수 있습니다.");
-    }
-
-    return this.crewTagRepo.removeFromMember(memberId, tagId);
+    return this.tagsService.removeTagFromMember(crewId, adminUserId, memberId, tagId);
   }
-
-  // ============ Activity Methods ============
 
   async createActivity(
     crewId: string,
@@ -435,68 +192,18 @@ export class CrewsService {
       workoutTypeId?: string;
     },
   ) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member) throw new ForbiddenException("크루 멤버만 활동을 생성할 수 있습니다.");
-
-    const activityType = data.activityType || "OFFICIAL";
-
-    // OFFICIAL: only OWNER/ADMIN, POP_UP: any active member
-    if (activityType === "OFFICIAL") {
-      if (member.role !== "OWNER" && member.role !== "ADMIN") {
-        throw new ForbiddenException("공식 활동은 크루 관리자만 생성할 수 있습니다.");
-      }
-    }
-
-    const qrCode = randomUUID();
-    const activity = await this.crewActivityRepo.create({
-      crewId,
-      title: data.title,
-      description: data.description,
-      activityDate: data.activityDate,
-      location: data.location,
-      latitude: data.latitude,
-      longitude: data.longitude,
-      createdBy: userId,
-      qrCode,
-      activityType,
-      workoutTypeId: data.workoutTypeId,
-    });
-
-    // Create activity chat
-    const activityChat = await this.conversationsRepo.createGroupConversation("ACTIVITY", {
-      activityId: activity.id,
-      crewId,
-    });
-    await this.crewActivityRepo.updateChatConversationId(activity.id, activityChat.id);
-    await this.conversationsRepo.addParticipant(activityChat.id, userId);
-
-    return activity;
+    return this.activitiesService.createActivity(crewId, userId, data);
   }
 
   async getActivities(
     crewId: string,
     opts?: { cursor?: string; limit?: number; type?: string; status?: string },
   ) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
-
-    const limit = opts?.limit ?? 20;
-    const activities = await this.crewActivityRepo.findByCrewId(crewId, { ...opts, limit });
-    const hasMore = activities.length > limit;
-    const items = hasMore ? activities.slice(0, limit) : activities;
-    const nextCursor = hasMore ? items[items.length - 1].id : null;
-    return { items, nextCursor };
+    return this.activitiesService.getActivities(crewId, opts);
   }
 
   async getActivity(activityId: string) {
-    const activity = await this.crewActivityRepo.findById(activityId);
-    if (!activity) {
-      throw new NotFoundException("활동을 찾을 수 없습니다.");
-    }
-    return activity;
+    return this.activitiesService.getActivity(activityId);
   }
 
   async updateActivity(
@@ -512,139 +219,27 @@ export class CrewsService {
       longitude?: number;
     },
   ) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member || (member.role !== "OWNER" && member.role !== "ADMIN")) {
-      throw new ForbiddenException("크루 관리자만 활동을 수정할 수 있습니다.");
-    }
-
-    return this.crewActivityRepo.update(activityId, data);
+    return this.activitiesService.updateActivity(activityId, crewId, userId, data);
   }
 
   async deleteActivity(activityId: string, crewId: string, userId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member || (member.role !== "OWNER" && member.role !== "ADMIN")) {
-      throw new ForbiddenException("크루 관리자만 활동을 삭제할 수 있습니다.");
-    }
-
-    return this.crewActivityRepo.remove(activityId);
+    return this.activitiesService.deleteActivity(activityId, crewId, userId);
   }
 
   async rsvp(activityId: string, crewId: string, userId: string) {
-    const activity = await this.crewActivityRepo.findById(activityId);
-    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
-    if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
-
-    if (activity.status !== "SCHEDULED" && activity.status !== "ACTIVE") {
-      throw new BadRequestException("참석 신청이 불가능한 활동입니다.");
-    }
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member) throw new ForbiddenException("크루 멤버만 참석 신청할 수 있습니다.");
-
-    const existing = await this.crewActivityRepo.findAttendance(activityId, userId);
-    if (existing) {
-      if (existing.status === "CANCELLED") {
-        // Re-RSVP after cancellation - update back to RSVP
-        const result = await this.db.prisma.crewAttendance.update({
-          where: { activityId_userId: { activityId, userId } },
-          data: {
-            status: "RSVP",
-            rsvpAt: new Date(),
-            method: null,
-            checkedAt: null,
-            checkedBy: null,
-          },
-        });
-        // Re-add to activity chat
-        const activityForChat = await this.crewActivityRepo.findById(activityId);
-        if (activityForChat?.chatConversationId) {
-          await this.conversationsRepo.addParticipant(activityForChat.chatConversationId, userId);
-        }
-        return result;
-      }
-      throw new ConflictException("이미 참석 신청되었습니다.");
-    }
-
-    const rsvpResult = await this.crewActivityRepo.rsvp(activityId, userId);
-    // Add to activity chat
-    const activityForChat = await this.crewActivityRepo.findById(activityId);
-    if (activityForChat?.chatConversationId) {
-      await this.conversationsRepo.addParticipant(activityForChat.chatConversationId, userId);
-    }
-    return rsvpResult;
+    return this.activitiesService.rsvp(activityId, crewId, userId);
   }
 
   async cancelRsvp(activityId: string, crewId: string, userId: string) {
-    const activity = await this.crewActivityRepo.findById(activityId);
-    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
-    if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
-
-    const existing = await this.crewActivityRepo.findAttendance(activityId, userId);
-    if (!existing || existing.status !== "RSVP") {
-      throw new BadRequestException("취소할 참석 신청이 없습니다.");
-    }
-
-    const result = await this.crewActivityRepo.cancelRsvp(activityId, userId);
-    // Remove from activity chat
-    const activityForChat = await this.crewActivityRepo.findById(activityId);
-    if (activityForChat?.chatConversationId) {
-      await this.conversationsRepo.removeParticipant(activityForChat.chatConversationId, userId);
-    }
-    return result;
+    return this.activitiesService.cancelRsvp(activityId, crewId, userId);
   }
 
   async checkIn(activityId: string, userId: string, method: string = "MANUAL") {
-    const activity = await this.crewActivityRepo.findById(activityId);
-    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
-
-    if (activity.status !== "SCHEDULED" && activity.status !== "ACTIVE") {
-      throw new BadRequestException("체크인이 불가능한 활동입니다.");
-    }
-
-    const member = await this.crewMemberRepo.findMember(activity.crewId, userId);
-    if (!member) throw new ForbiddenException("크루 멤버만 체크인할 수 있습니다.");
-
-    const existing = await this.crewActivityRepo.findAttendance(activityId, userId);
-    if (!existing || existing.status !== "RSVP") {
-      throw new BadRequestException("먼저 참석 신청을 해주세요.");
-    }
-
-    return this.crewActivityRepo.checkIn(activityId, userId, method);
+    return this.activitiesService.checkIn(activityId, userId, method);
   }
 
   async qrCheckIn(activityId: string, crewId: string, userId: string, qrCode: string) {
-    const activity = await this.crewActivityRepo.findById(activityId);
-    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
-    if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
-
-    if (activity.status !== "SCHEDULED" && activity.status !== "ACTIVE") {
-      throw new BadRequestException("체크인이 불가능한 활동입니다.");
-    }
-
-    // Validate QR code
-    if (activity.qrCode !== qrCode) {
-      throw new BadRequestException("유효하지 않은 QR 코드입니다.");
-    }
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member) throw new ForbiddenException("크루 멤버만 체크인할 수 있습니다.");
-
-    const existing = await this.crewActivityRepo.findAttendance(activityId, userId);
-    if (!existing || existing.status !== "RSVP") {
-      throw new BadRequestException("먼저 참석 신청을 해주세요.");
-    }
-
-    return this.crewActivityRepo.checkIn(activityId, userId, "QR");
+    return this.activitiesService.qrCheckIn(activityId, crewId, userId, qrCode);
   }
 
   async adminCheckIn(
@@ -653,243 +248,74 @@ export class CrewsService {
     adminUserId: string,
     targetUserId: string,
   ) {
-    const activity = await this.crewActivityRepo.findById(activityId);
-    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
-    if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
-
-    const adminMember = await this.crewMemberRepo.findMember(crewId, adminUserId);
-    if (!adminMember) throw new ForbiddenException("권한이 없습니다.");
-
-    const isAdmin = adminMember.role === "OWNER" || adminMember.role === "ADMIN";
-    const isHost = activity.createdBy === adminUserId;
-
-    if (!isAdmin && !(activity.activityType === "POP_UP" && isHost)) {
-      throw new ForbiddenException("대리 체크인 권한이 없습니다.");
-    }
-
-    const existing = await this.crewActivityRepo.findAttendance(activityId, targetUserId);
-    if (!existing || existing.status !== "RSVP") {
-      throw new BadRequestException("RSVP 상태인 참석자만 대리 체크인할 수 있습니다.");
-    }
-
-    return this.crewActivityRepo.adminCheckIn(activityId, targetUserId, adminUserId);
+    return this.activitiesService.adminCheckIn(activityId, crewId, adminUserId, targetUserId);
   }
 
   async completeActivity(activityId: string, crewId: string, userId: string) {
-    const activity = await this.crewActivityRepo.findById(activityId);
-    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
-    if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
-
-    if (activity.status === "COMPLETED" || activity.status === "CANCELLED") {
-      throw new BadRequestException("이미 종료되거나 취소된 활동입니다.");
-    }
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member) throw new ForbiddenException("권한이 없습니다.");
-
-    const isAdmin = member.role === "OWNER" || member.role === "ADMIN";
-    const isHost = activity.createdBy === userId;
-
-    if (!isAdmin && !(activity.activityType === "POP_UP" && isHost)) {
-      throw new ForbiddenException("활동을 종료할 권한이 없습니다.");
-    }
-
-    return this.crewActivityRepo.completeActivity(activityId);
+    return this.activitiesService.completeActivity(activityId, crewId, userId);
   }
 
   async cancelActivity(activityId: string, crewId: string, userId: string) {
-    const activity = await this.crewActivityRepo.findById(activityId);
-    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
-    if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
-
-    if (activity.status === "COMPLETED" || activity.status === "CANCELLED") {
-      throw new BadRequestException("이미 종료되거나 취소된 활동입니다.");
-    }
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member) throw new ForbiddenException("권한이 없습니다.");
-
-    const isAdmin = member.role === "OWNER" || member.role === "ADMIN";
-    const isHost = activity.createdBy === userId;
-
-    if (!isAdmin && !(activity.activityType === "POP_UP" && isHost)) {
-      throw new ForbiddenException("활동을 취소할 권한이 없습니다.");
-    }
-
-    return this.crewActivityRepo.cancelActivity(activityId);
+    return this.activitiesService.cancelActivity(activityId, crewId, userId);
   }
 
   async getAttendees(activityId: string, statusFilter?: string) {
-    const activity = await this.crewActivityRepo.findById(activityId);
-    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
-    return this.crewActivityRepo.getAttendees(activityId, statusFilter);
+    return this.activitiesService.getAttendees(activityId, statusFilter);
   }
 
   async getMemberAttendanceStats(crewId: string, userId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
-    return this.crewActivityRepo.getMemberAttendanceStats(crewId, userId);
+    return this.activitiesService.getMemberAttendanceStats(crewId, userId);
   }
 
   async getCrewAttendanceStats(crewId: string, opts?: { month?: string; type?: string }) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
-    return this.crewActivityRepo.getCrewAttendanceStats(crewId, opts);
+    return this.activitiesService.getCrewAttendanceStats(crewId, opts);
   }
 
-  // ============ Explore / Recommend / Regions ============
-
   async explore(options: { region?: string; subRegion?: string; sort?: string; cursor?: string }) {
-    return this.crewRepo.explore(options);
+    return this.readService.explore(options);
   }
 
   async recommend(userId: string) {
-    const user = await this.db.prisma.user.findUnique({
-      where: { id: userId },
-      select: { region: true, subRegion: true },
-    });
-    return this.crewRepo.recommend(user?.region, user?.subRegion);
+    return this.readService.recommend(userId);
   }
 
   async getRegions() {
-    return this.crewRepo.getRegions();
+    return this.readService.getRegions();
   }
 
   async getSubRegions(region: string) {
-    return this.crewRepo.getSubRegions(region);
+    return this.readService.getSubRegions(region);
   }
 
-  // ============ Ban Methods ============
-
   async unbanMember(crewId: string, adminUserId: string, targetUserId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const adminMember = await this.crewMemberRepo.findMember(crewId, adminUserId);
-    if (!adminMember || (adminMember.role !== "OWNER" && adminMember.role !== "ADMIN")) {
-      throw new ForbiddenException("크루 관리자만 차단을 해제할 수 있습니다.");
-    }
-
-    const ban = await this.crewBanRepo.findByCrewAndUser(crewId, targetUserId);
-    if (!ban) {
-      throw new NotFoundException("차단된 사용자가 아닙니다.");
-    }
-
-    await this.crewBanRepo.remove(crewId, targetUserId);
-    return { success: true };
+    return this.membershipService.unbanMember(crewId, adminUserId, targetUserId);
   }
 
   async getBannedMembers(crewId: string, userId: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) {
-      throw new NotFoundException("크루를 찾을 수 없습니다.");
-    }
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member || (member.role !== "OWNER" && member.role !== "ADMIN")) {
-      throw new ForbiddenException("크루 관리자만 차단 목록을 조회할 수 있습니다.");
-    }
-
-    return this.crewBanRepo.findByCrewId(crewId);
+    return this.membershipService.getBannedMembers(crewId, userId);
   }
-
-  // ============ Chat Methods ============
 
   async getCrewChat(crewId: string, userId: string, cursor?: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member) throw new ForbiddenException("크루 멤버만 채팅에 참여할 수 있습니다.");
-
-    if (!crew.chatConversationId) {
-      return { conversation: null, messages: [], nextCursor: null };
-    }
-
-    const conversation = await this.conversationsRepo.findById(crew.chatConversationId);
-    const messages = await this.conversationsRepo.getMessages(crew.chatConversationId, cursor, 30);
-
-    const hasMore = messages.length > 30;
-    const items = hasMore ? messages.slice(0, 30) : messages;
-
-    // Mark as read
-    await this.conversationsRepo.updateLastRead(crew.chatConversationId, userId).catch(() => {});
-
-    return {
-      conversation,
-      messages: items,
-      nextCursor: hasMore ? items[items.length - 1].id : null,
-    };
+    return this.readService.getCrewChat(crewId, userId, cursor);
   }
-
-  // ============ Crew Profile & Posts ============
 
   async createCrewPost(
     crewId: string,
     userId: string,
     data: { content: string; visibility?: string },
   ) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
-
-    // Only OWNER can post as the crew
-    const member = crew.members.find((m) => m.userId === userId);
-    if (!member || member.role !== "OWNER") {
-      throw new ForbiddenException("크루장만 크루 게시물을 작성할 수 있습니다.");
-    }
-
-    return this.crewRepo.createCrewPost({
-      userId,
-      crewId,
-      content: data.content,
-      visibility: data.visibility,
-    });
+    return this.readService.createCrewPost(crewId, userId, data);
   }
 
   async getCrewPosts(crewId: string, cursor?: string) {
-    const crew = await this.crewRepo.findById(crewId);
-    if (!crew) throw new NotFoundException("크루를 찾을 수 없습니다.");
-    return this.crewRepo.findCrewPosts(crewId, cursor);
+    return this.readService.getCrewPosts(crewId, cursor);
   }
 
   async getCrewProfile(crewId: string) {
-    const result = await this.crewRepo.getCrewProfile(crewId);
-    if (!result) throw new NotFoundException("크루를 찾을 수 없습니다.");
-    return result;
+    return this.readService.getCrewProfile(crewId);
   }
 
   async getActivityChat(crewId: string, activityId: string, userId: string, cursor?: string) {
-    const activity = await this.crewActivityRepo.findById(activityId);
-    if (!activity) throw new NotFoundException("활동을 찾을 수 없습니다.");
-    if (activity.crewId !== crewId) throw new BadRequestException("잘못된 크루입니다.");
-
-    const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member) throw new ForbiddenException("크루 멤버만 채팅에 참여할 수 있습니다.");
-
-    if (!activity.chatConversationId) {
-      return { conversation: null, messages: [], nextCursor: null };
-    }
-
-    const conversation = await this.conversationsRepo.findById(activity.chatConversationId);
-    const messages = await this.conversationsRepo.getMessages(
-      activity.chatConversationId,
-      cursor,
-      30,
-    );
-
-    const hasMore = messages.length > 30;
-    const items = hasMore ? messages.slice(0, 30) : messages;
-
-    await this.conversationsRepo
-      .updateLastRead(activity.chatConversationId, userId)
-      .catch(() => {});
-
-    return {
-      conversation,
-      messages: items,
-      nextCursor: hasMore ? items[items.length - 1].id : null,
-    };
+    return this.activitiesService.getActivityChat(crewId, activityId, userId, cursor);
   }
 }

@@ -159,4 +159,4 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 | apps/web/src/pages/challenges/[id]/index.tsx                    |    350 | exception | RDR-BUDGET-005 | engineering | 2026-03-31   | I-0007-010  |
 | apps/web/src/pages/settings/profile/index.tsx                   |    350 | exception | RDR-BUDGET-006 | engineering | 2026-03-31   | I-0007-020  |
 | apps/web/src/pages/messages/[id]/index.tsx                      |    350 | pass      |                | engineering | 2026-03-12   | I-0007-010  |
-| apps/api/src/crews/crews.service.ts                             |    350 | exception | RDR-BUDGET-008 | engineering | 2026-03-31   | I-0007-030  |
+| apps/api/src/crews/crews.service.ts                             |    350 | pass      |                | engineering | 2026-03-12   | I-0007-030  |
