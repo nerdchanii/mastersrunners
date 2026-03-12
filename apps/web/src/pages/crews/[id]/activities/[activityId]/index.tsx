@@ -19,10 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
-import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { TimeAgo } from "@/components/common/TimeAgo";
@@ -37,18 +34,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  useAdminCheckIn,
-  useCancelActivity,
-  useCancelRsvp,
-  useCheckIn,
-  useCompleteActivity,
-  useCrewActivity,
-  useDeleteActivity,
-  useRsvp,
-} from "@/hooks/useCrewActivities";
-import { useCrew } from "@/hooks/useCrews";
-import { useAuth } from "@/lib/auth-context";
+
+import { useCrewActivityDetailViewModel } from "./use-crew-activity-detail-view-model";
 
 import "leaflet/dist/leaflet.css";
 
@@ -61,81 +48,49 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function CrewActivityDetailPage() {
-  const { id: crewId, activityId } = useParams<{
-    id: string;
-    activityId: string;
-  }>();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-
   const {
-    data: activity,
-    isLoading: isActivityLoading,
+    activity,
+    activityId,
+    adminCheckInMut,
+    canManage,
+    cancelActivityMut,
+    cancelRsvp,
+    checkedInCount,
+    checkIn,
+    completeActivity,
+    creator,
+    crewId,
+    deleteActivity,
     error,
-  } = useCrewActivity(crewId!, activityId!);
-
-  const { data: crew } = useCrew(crewId!);
-  const deleteActivity = useDeleteActivity();
-  const checkIn = useCheckIn();
-  const rsvp = useRsvp();
-  const cancelRsvp = useCancelRsvp();
-  const completeActivity = useCompleteActivity();
-  const cancelActivityMut = useCancelActivity();
-  const adminCheckInMut = useAdminCheckIn();
-
-  const currentMember = crew?.members?.find((m) => m.user.id === user?.id);
-  const isAdmin = currentMember?.role === "OWNER" || currentMember?.role === "ADMIN";
-
-  const creator = activity
-    ? crew?.members?.find((m) => m.user.id === activity.createdBy)
-    : undefined;
-
-  const handleDelete = () => {
-    deleteActivity.mutate(
-      { crewId: crewId!, activityId: activityId! },
-      {
-        onSuccess: () => {
-          toast.success("활동이 삭제되었습니다.");
-          navigate(`/crews/${crewId}`);
-        },
-        onError: () => {
-          toast.error("활동 삭제에 실패했습니다.");
-        },
-      },
-    );
-  };
-
-  const handleCheckIn = () => {
-    checkIn.mutate(
-      { crewId: crewId!, activityId: activityId!, method: "MANUAL" },
-      {
-        onSuccess: () => toast.success("체크인 완료!"),
-        onError: () => toast.error("체크인에 실패했습니다."),
-      },
-    );
-  };
-
-  const handleDownloadQR = () => {
-    const svg = document.getElementById("activity-qr-code");
-    if (!svg) return;
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx?.drawImage(img, 0, 0);
-      const link = document.createElement("a");
-      link.download = `activity-${activityId}-qr.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    };
-    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
-  };
+    goBackToCrew,
+    goToChat,
+    goToEdit,
+    handleAdminCheckIn,
+    handleCancelActivity,
+    handleCancelRsvp,
+    handleCheckIn,
+    handleCompleteActivity,
+    handleDelete,
+    handleDownloadQR,
+    handleRsvp,
+    isActivityActive,
+    isActivityLoading,
+    isAdmin,
+    myAttendance,
+    myStatus,
+    noShowCount,
+    rsvp,
+    rsvpCount,
+    scheduledDate,
+    setShowCancelDialog,
+    setShowCompleteDialog,
+    setShowDeleteDialog,
+    showCancelDialog,
+    showCompleteDialog,
+    showDeleteDialog,
+    totalActive,
+    visibleAttendances,
+  } = useCrewActivityDetailViewModel();
 
   if (isActivityLoading) {
     return (
@@ -154,38 +109,18 @@ export default function CrewActivityDetailPage() {
         <p className="text-muted-foreground">
           {error instanceof Error ? error.message : "활동을 찾을 수 없습니다."}
         </p>
-        <Button variant="outline" onClick={() => navigate(`/crews/${crewId}`)}>
+        <Button variant="outline" onClick={goBackToCrew}>
           크루로 돌아가기
         </Button>
       </div>
     );
   }
 
-  const scheduledDate = new Date(activity.activityDate);
-  const myAttendance = activity.attendances.find((a) => a.userId === user?.id);
-  const myStatus = myAttendance?.status;
-  const isActivityActive = activity.status === "SCHEDULED" || activity.status === "ACTIVE";
-  const isHost = activity.createdBy === user?.id;
-  const canManage = isAdmin || (activity.activityType === "POP_UP" && isHost);
-
-  // Stats
-  const rsvpCount = activity.attendances.filter((a) => a.status === "RSVP").length;
-  const checkedInCount = activity.attendances.filter((a) => a.status === "CHECKED_IN").length;
-  const noShowCount = activity.attendances.filter((a) => a.status === "NO_SHOW").length;
-  const activeAttendances = activity.attendances.filter((a) => a.status !== "CANCELLED");
-  const totalActive = activeAttendances.length;
-  const visibleAttendances = activity.attendances.filter((a) => a.status !== "CANCELLED");
-
   return (
     <div className="space-y-6">
       {/* 1. Back button + Admin dropdown */}
       <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate(`/crews/${crewId}`)}
-          className="gap-1.5"
-        >
+        <Button variant="ghost" size="sm" onClick={goBackToCrew} className="gap-1.5">
           <ArrowLeft className="size-4" />
           크루로 돌아가기
         </Button>
@@ -198,9 +133,7 @@ export default function CrewActivityDetailPage() {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => navigate(`/crews/${crewId}/activities/${activityId}/edit`)}
-              >
+              <DropdownMenuItem onClick={goToEdit}>
                 <Pencil className="size-4 mr-2" />
                 수정
               </DropdownMenuItem>
@@ -225,13 +158,13 @@ export default function CrewActivityDetailPage() {
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="size-4 shrink-0" />
                 <span>
-                  {scheduledDate.toLocaleDateString("ko-KR", {
+                  {scheduledDate!.toLocaleDateString("ko-KR", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
                     weekday: "short",
                   })}{" "}
-                  {scheduledDate.toLocaleTimeString("ko-KR", {
+                  {scheduledDate!.toLocaleTimeString("ko-KR", {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
@@ -349,19 +282,7 @@ export default function CrewActivityDetailPage() {
 
           {/* 참석 신청 (미신청 or 취소) */}
           {isActivityActive && !myStatus && (
-            <Button
-              onClick={() =>
-                rsvp.mutate(
-                  { crewId: crewId!, activityId: activityId! },
-                  {
-                    onSuccess: () => toast.success("참석 신청 완료!"),
-                    onError: (e) =>
-                      toast.error(e instanceof Error ? e.message : "참석 신청에 실패했습니다."),
-                  },
-                )
-              }
-              disabled={rsvp.isPending}
-            >
+            <Button onClick={() => handleRsvp()} disabled={rsvp.isPending}>
               {rsvp.isPending ? (
                 <>
                   <Loader2 className="size-4 mr-2 animate-spin" />
@@ -374,19 +295,7 @@ export default function CrewActivityDetailPage() {
           )}
 
           {isActivityActive && myStatus === "CANCELLED" && (
-            <Button
-              onClick={() =>
-                rsvp.mutate(
-                  { crewId: crewId!, activityId: activityId! },
-                  {
-                    onSuccess: () => toast.success("참석 신청 완료!"),
-                    onError: (e) =>
-                      toast.error(e instanceof Error ? e.message : "참석 신청에 실패했습니다."),
-                  },
-                )
-              }
-              disabled={rsvp.isPending}
-            >
+            <Button onClick={() => handleRsvp()} disabled={rsvp.isPending}>
               {rsvp.isPending ? (
                 <>
                   <Loader2 className="size-4 mr-2 animate-spin" />
@@ -414,15 +323,7 @@ export default function CrewActivityDetailPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  cancelRsvp.mutate(
-                    { crewId: crewId!, activityId: activityId! },
-                    {
-                      onSuccess: () => toast.success("참석이 취소되었습니다."),
-                      onError: () => toast.error("참석 취소에 실패했습니다."),
-                    },
-                  )
-                }
+                onClick={() => handleCancelRsvp()}
                 disabled={cancelRsvp.isPending}
               >
                 참석 취소
@@ -462,11 +363,7 @@ export default function CrewActivityDetailPage() {
       {(myStatus === "RSVP" || myStatus === "CHECKED_IN") && (
         <Card>
           <CardContent className="py-4">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => navigate(`/crews/${crewId}/activities/${activityId}/chat`)}
-            >
+            <Button variant="outline" className="w-full" onClick={goToChat}>
               <MessageCircle className="size-4 mr-2" />
               활동 채팅방
             </Button>
@@ -595,20 +492,7 @@ export default function CrewActivityDetailPage() {
                         variant="ghost"
                         size="sm"
                         className="text-xs"
-                        onClick={() =>
-                          adminCheckInMut.mutate(
-                            {
-                              crewId: crewId!,
-                              activityId: activityId!,
-                              userId: attendee.userId,
-                            },
-                            {
-                              onSuccess: () =>
-                                toast.success(`${attendee.user?.name}님을 체크인했습니다.`),
-                              onError: () => toast.error("대리 체크인에 실패했습니다."),
-                            },
-                          )
-                        }
+                        onClick={() => handleAdminCheckIn(attendee.userId, attendee.user?.name)}
                         disabled={adminCheckInMut.isPending}
                       >
                         대리 체크인
@@ -662,18 +546,7 @@ export default function CrewActivityDetailPage() {
         title="활동 종료"
         description="활동을 종료하면 참석 신청만 하고 체크인하지 않은 멤버는 불참(NO_SHOW) 처리됩니다."
         confirmLabel="종료"
-        onConfirm={() => {
-          completeActivity.mutate(
-            { crewId: crewId!, activityId: activityId! },
-            {
-              onSuccess: () => {
-                toast.success("활동이 종료되었습니다.");
-                setShowCompleteDialog(false);
-              },
-              onError: () => toast.error("활동 종료에 실패했습니다."),
-            },
-          );
-        }}
+        onConfirm={handleCompleteActivity}
         loading={completeActivity.isPending}
       />
 
@@ -684,18 +557,7 @@ export default function CrewActivityDetailPage() {
         description="활동을 취소하시겠습니까?"
         confirmLabel="취소"
         variant="destructive"
-        onConfirm={() => {
-          cancelActivityMut.mutate(
-            { crewId: crewId!, activityId: activityId! },
-            {
-              onSuccess: () => {
-                toast.success("활동이 취소되었습니다.");
-                setShowCancelDialog(false);
-              },
-              onError: () => toast.error("활동 취소에 실패했습니다."),
-            },
-          );
-        }}
+        onConfirm={handleCancelActivity}
         loading={cancelActivityMut.isPending}
       />
     </div>

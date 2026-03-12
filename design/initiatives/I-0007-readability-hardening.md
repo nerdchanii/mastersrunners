@@ -48,7 +48,7 @@ Several high-traffic files are too large and carry too much mixed responsibility
 ## Task Breakdown
 
 - `tasks/I-0007-readability-hardening/todo/I-0007-010-web-route-batch-a.md`
-- `tasks/I-0007-readability-hardening/todo/I-0007-020-web-route-batch-b.md`
+- `tasks/I-0007-readability-hardening/archive/I-0007-020-web-route-batch-b.md`
 - `tasks/I-0007-readability-hardening/todo/I-0007-030-api-crews-service-decomposition.md`
 - `tasks/I-0007-readability-hardening/archive/I-0007-040-meta-size-budget-stop-rule.md`
 
@@ -62,4 +62,5 @@ Several high-traffic files are too large and carry too much mixed responsibility
 
 - `I-0007-040` now adds a machine-checkable first-wave size-budget stop rule and scorecard-backed exception registry.
 - `I-0007-010` removed direct page-side `api.fetch` from the event, challenge, and message detail routes. `messages/[id]` is now back under the 350-line budget, while event/challenge remain tracked exceptions.
+- `I-0007-020` removed direct page-side `api.fetch` from the route files in batch B. `posts/new` and `settings/profile` are now below budget, while `workouts/new` and crew activity detail remain scorecard-tracked exceptions with route-local orchestration/view-model extraction in place.
 - `I-0007-030` reduced `apps/api/src/crews/crews.service.ts` below the budget by turning it into a thin facade over internal membership, tags, activities, and read/chat responsibility services.

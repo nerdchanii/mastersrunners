@@ -1,5 +1,5 @@
 import { AlertTriangle, ArrowLeft, Camera, Loader2, Monitor, Moon, Sun } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -18,161 +18,32 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useDeleteAccount } from "@/hooks/useAccount";
 import { api } from "@/lib/api-client";
-import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
 
-interface ProfileForm {
-  name: string;
-  bio: string;
-  profileImage: string | null;
-  backgroundImage: string | null;
-}
+import { useProfileEditForm } from "./use-profile-edit-form";
 
 export default function EditProfilePage() {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading, isAuthenticated, refreshUser } = useAuth();
   const { theme, setTheme } = useTheme();
   const deleteAccount = useDeleteAccount();
-
-  // 계정 삭제 다이얼로그 상태
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0); // 0=closed, 1=경고, 2=최종확인
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
-
-  const [form, setForm] = useState<ProfileForm>({
-    name: "",
-    bio: "",
-    profileImage: null,
-    backgroundImage: null,
-  });
-  const [isSaving, setIsSaving] = useState(false);
-  const [isUploadingProfile, setIsUploadingProfile] = useState(false);
-  const [isUploadingBackground, setIsUploadingBackground] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const profileInputRef = useRef<HTMLInputElement>(null);
-  const backgroundInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (!isAuthenticated) {
-      navigate("/login", { replace: true });
-      return;
-    }
-    if (user) {
-      setForm({
-        name: user.name || "",
-        bio: user.bio || "",
-        profileImage: user.profileImage || null,
-        backgroundImage: user.backgroundImage || null,
-      });
-    }
-  }, [authLoading, isAuthenticated, user, navigate]);
-
-  const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    if (form.name.length < 2) {
-      newErrors.name = "이름은 2자 이상이어야 합니다.";
-    }
-    if (form.name.length > 50) {
-      newErrors.name = "이름은 50자 이하여야 합니다.";
-    }
-    if (form.bio.length > 300) {
-      newErrors.bio = "소개는 300자 이하여야 합니다.";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const uploadImage = async (file: File, folder: string): Promise<string> => {
-    const { uploadUrl, publicUrl } = await api.fetch<{
-      uploadUrl: string;
-      key: string;
-      publicUrl: string;
-    }>("/uploads/presign", {
-      method: "POST",
-      body: JSON.stringify({
-        filename: file.name,
-        contentType: file.type,
-        folder,
-      }),
-    });
-
-    const uploadRes = await fetch(uploadUrl, {
-      method: "PUT",
-      body: file,
-      headers: { "Content-Type": file.type },
-    });
-
-    if (!uploadRes.ok) throw new Error("Upload failed");
-    return publicUrl;
-  };
-
-  const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("이미지 파일만 업로드할 수 있습니다.");
-      return;
-    }
-
-    setIsUploadingProfile(true);
-    try {
-      const publicUrl = await uploadImage(file, "profiles");
-      setForm((prev) => ({ ...prev, profileImage: publicUrl }));
-      toast.success("프로필 사진이 업로드되었습니다.");
-    } catch {
-      toast.error("프로필 사진 업로드에 실패했습니다.");
-    } finally {
-      setIsUploadingProfile(false);
-      e.target.value = "";
-    }
-  };
-
-  const handleBackgroundImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("이미지 파일만 업로드할 수 있습니다.");
-      return;
-    }
-
-    setIsUploadingBackground(true);
-    try {
-      const publicUrl = await uploadImage(file, "profiles");
-      setForm((prev) => ({ ...prev, backgroundImage: publicUrl }));
-      toast.success("배경 사진이 업로드되었습니다.");
-    } catch {
-      toast.error("배경 사진 업로드에 실패했습니다.");
-    } finally {
-      setIsUploadingBackground(false);
-      e.target.value = "";
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-
-    setIsSaving(true);
-    try {
-      await api.fetch("/profile", {
-        method: "PATCH",
-        body: JSON.stringify({
-          name: form.name,
-          bio: form.bio || null,
-          profileImage: form.profileImage,
-          backgroundImage: form.backgroundImage,
-        }),
-      });
-      await refreshUser();
-      toast.success("프로필이 수정되었습니다.");
-      navigate("/profile");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "프로필 수정에 실패했습니다.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const {
+    authLoading,
+    backgroundInputRef,
+    errors,
+    form,
+    handleBackgroundImageChange,
+    handleProfileImageChange,
+    handleSubmit,
+    isSaving,
+    isUploading,
+    isUploadingBackground,
+    isUploadingProfile,
+    profileInputRef,
+    setErrors,
+    setForm,
+  } = useProfileEditForm();
 
   const handleDeleteAccount = async () => {
     try {
@@ -188,7 +59,6 @@ export default function EditProfilePage() {
   };
 
   const initials = form.name ? form.name.charAt(0).toUpperCase() : "?";
-  const isUploading = isUploadingProfile || isUploadingBackground;
 
   if (authLoading) return null;
 

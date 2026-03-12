@@ -11,8 +11,6 @@ import {
   Route,
   Upload,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { Badge } from "@/components/ui/badge";
@@ -22,225 +20,44 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/lib/api-client";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
 
-interface ParsedWorkoutData {
-  distance: number;
-  duration: number;
-  date: string;
-  startedAt: string | null;
-  pace?: number;
-  avgHeartRate?: number | null;
-  maxHeartRate?: number | null;
-  calories?: number | null;
-  elevationGain?: number | null;
-  avgCadence?: number | null;
-  maxCadence?: number | null;
-  hasGps?: boolean;
-}
-
-interface ParseResult {
-  workout: ParsedWorkoutData | null;
-  workoutFile: unknown;
-  error?: string;
-}
+import { useWorkoutEntry } from "./use-workout-entry";
 
 export default function NewWorkoutPage() {
-  const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [activeTab, setActiveTab] = useState<"file" | "manual">("file");
-  const [date, setDate] = useState("");
-  const [distance, setDistance] = useState("");
-  const [hours, setHours] = useState("");
-  const [minutes, setMinutes] = useState("");
-  const [seconds, setSeconds] = useState("");
-  const [memo, setMemo] = useState("");
-  const [visibility, setVisibility] = useState<"PRIVATE" | "FOLLOWERS" | "PUBLIC">("FOLLOWERS");
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isParsing, setIsParsing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [parsedData, setParsedData] = useState<ParsedWorkoutData | null>(null);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [dragActive, setDragActive] = useState(false);
-  const [workoutCreated, setWorkoutCreated] = useState(false);
-
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    setDate(today);
-  }, []);
-
-  const pace = (() => {
-    const distanceNum = parseFloat(distance);
-    const hoursNum = parseInt(hours) || 0;
-    const minutesNum = parseInt(minutes) || 0;
-    const secondsNum = parseInt(seconds) || 0;
-    const totalSeconds = hoursNum * 3600 + minutesNum * 60 + secondsNum;
-    if (distanceNum > 0 && totalSeconds > 0) {
-      const secPerKm = totalSeconds / distanceNum;
-      return formatPace(secPerKm);
-    }
-    return null;
-  })();
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileUpload(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFileUpload(e.target.files[0]);
-    }
-  };
-
-  const handleFileUpload = async (file: File) => {
-    setError(null);
-    setWorkoutCreated(false);
-    const ext = file.name.split(".").pop()?.toLowerCase();
-    if (!ext || !["fit", "gpx"].includes(ext)) {
-      setError("FIT 또는 GPX 파일만 업로드 가능합니다.");
-      return;
-    }
-
-    setUploadedFile(file);
-    setIsUploading(true);
-
-    try {
-      // Step 1: Get presigned URL (FIT/GPX는 application/octet-stream으로 통일)
-      const presignData = await api.fetch<{ uploadUrl: string; key: string }>("/uploads/presign", {
-        method: "POST",
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: "application/octet-stream",
-          folder: "workouts",
-        }),
-      });
-
-      // Step 2: Upload to R2
-      const uploadRes = await fetch(presignData.uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: {
-          "Content-Type": "application/octet-stream",
-        },
-      });
-
-      if (!uploadRes.ok) {
-        throw new Error("파일 업로드에 실패했습니다.");
-      }
-
-      setIsUploading(false);
-      setIsParsing(true);
-
-      // Step 3: Parse the file and create workout
-      const fileType = ext.toUpperCase() as "FIT" | "GPX";
-      const result = await api.fetch<ParseResult>("/uploads/parse", {
-        method: "POST",
-        body: JSON.stringify({
-          fileKey: presignData.key,
-          fileType,
-          originalFileName: file.name,
-        }),
-      });
-
-      if (result.error || !result.workout) {
-        throw new Error(result.error || "파일 분석에 실패했습니다.");
-      }
-
-      const workout = result.workout;
-      setParsedData(workout);
-      setWorkoutCreated(true);
-      setIsParsing(false);
-
-      // Auto-fill form fields from parsed data
-      setDistance((workout.distance / 1000).toFixed(2));
-      const h = Math.floor(workout.duration / 3600);
-      const m = Math.floor((workout.duration % 3600) / 60);
-      const s = workout.duration % 60;
-      setHours(h > 0 ? h.toString() : "");
-      setMinutes(m > 0 ? m.toString() : "");
-      setSeconds(s > 0 ? s.toString() : "");
-      setDate(new Date(workout.startedAt ?? workout.date).toISOString().split("T")[0]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "파일 처리 중 오류가 발생했습니다.");
-      setIsUploading(false);
-      setIsParsing(false);
-    }
-  };
-
-  const validateForm = (): string | null => {
-    if (!date) return "날짜를 입력해주세요.";
-    const distanceNum = parseFloat(distance);
-    if (!distance || isNaN(distanceNum) || distanceNum <= 0)
-      return "거리는 0보다 큰 숫자여야 합니다.";
-    const hoursNum = parseInt(hours) || 0;
-    const minutesNum = parseInt(minutes) || 0;
-    const secondsNum = parseInt(seconds) || 0;
-    const totalSeconds = hoursNum * 3600 + minutesNum * 60 + secondsNum;
-    if (totalSeconds <= 0) return "시간을 입력해주세요.";
-    return null;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    // If workout was already created via file parse, go to workouts list
-    if (workoutCreated) {
-      navigate("/workouts");
-      return;
-    }
-
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      const hoursNum = parseInt(hours) || 0;
-      const minutesNum = parseInt(minutes) || 0;
-      const secondsNum = parseInt(seconds) || 0;
-      const duration = hoursNum * 3600 + minutesNum * 60 + secondsNum;
-      await api.fetch("/workouts", {
-        method: "POST",
-        body: JSON.stringify({
-          distance: parseFloat(distance),
-          duration,
-          date,
-          memo: memo.trim() || undefined,
-          visibility,
-        }),
-      });
-      navigate("/workouts");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleCancel = () => {
-    navigate(-1);
-  };
+  const {
+    activeTab,
+    date,
+    distance,
+    dragActive,
+    error,
+    fileInputRef,
+    handleCancel,
+    handleDrag,
+    handleDrop,
+    handleFileChange,
+    handleSubmit,
+    hours,
+    isParsing,
+    isSubmitting,
+    isUploading,
+    memo,
+    minutes,
+    pace,
+    parsedData,
+    seconds,
+    setActiveTab,
+    setDate,
+    setDistance,
+    setHours,
+    setMemo,
+    setMinutes,
+    setSeconds,
+    setVisibility,
+    uploadedFile,
+    visibility,
+    workoutCreated,
+  } = useWorkoutEntry();
 
   return (
     <div className="container max-w-3xl py-6">
