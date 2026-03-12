@@ -52,7 +52,7 @@ The repository has a useful harness shape, but score math, exception handling, s
 - `tasks/I-0004-truth-model-cleanup/archive/I-0004-040-meta-omc-salvage-matrix.md`
 - `tasks/I-0004-truth-model-cleanup/archive/I-0004-050-meta-exceptions-register.md`
 - `tasks/I-0004-truth-model-cleanup/archive/I-0004-060-docs-env-and-settings-index.md`
-- `tasks/I-0004-truth-model-cleanup/todo/I-0004-070-docs-release-history-home.md`
+- `tasks/I-0004-truth-model-cleanup/archive/I-0004-070-docs-release-history-home.md`
 
 ## Success Criteria
 
@@ -60,3 +60,7 @@ The repository has a useful harness shape, but score math, exception handling, s
 - exception handling is documented with durable IDs and external-proof rules
 - root/doc entrypoints no longer point to stale phase plans or closed tasks
 - `docs/plans/` and `.omc` are explicitly treated as legacy inputs, not source of truth
+
+## Progress Notes
+
+- `I-0004-070` now turns `docs/reports/README.md` into the durable release-history home for milestone summaries, QA reports, and future release notes.

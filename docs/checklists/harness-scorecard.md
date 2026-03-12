@@ -7,13 +7,13 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 | Category                      |   Pass |  Fail | Exception |  Total |            Score |
 | ----------------------------- | -----: | ----: | --------: | -----: | ---------------: |
 | Agent Entry Point             |     15 |     0 |         0 |     15 |             100% |
-| Document Structure            |     11 |     1 |         0 |     12 |              92% |
+| Document Structure            |     12 |     0 |         0 |     12 |             100% |
 | Invariant Enforcement         |     13 |     1 |         1 |     15 |              93% |
 | Architecture                  |     10 |     2 |         0 |     12 |              83% |
 | Repository as Source of Truth |     10 |     0 |         0 |     10 |             100% |
 | Operations and Maintenance    |      7 |     1 |         2 |     10 |              88% |
 | Agent Readability             |      7 |     3 |         0 |     10 |              70% |
-| **Total**                     | **73** | **8** |     **3** | **84** | **90% adjusted** |
+| **Total**                     | **74** | **7** |     **3** | **84** | **91% adjusted** |
 
 ## Category Targets
 
@@ -51,20 +51,20 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 
 ### Document Structure
 
-| category           | item_id | statement              | current_status | exception_id | evidence_path                                          | owner        | target_task | notes                                          |
-| ------------------ | ------- | ---------------------- | -------------- | ------------ | ------------------------------------------------------ | ------------ | ----------- | ---------------------------------------------- |
-| Document Structure | DOC-001 | docs 디렉토리 존재     | pass           |              | docs/README.md                                         | docs         |             |                                                |
-| Document Structure | DOC-002 | docs 카테고리 구조화   | pass           |              | docs/README.md                                         | docs         |             |                                                |
-| Document Structure | DOC-003 | ADR 존재               | pass           |              | design/adr/ADR-0001-repo-source-of-truth-boundaries.md | architecture | I-0005-080  | first accepted ADR pack exists                 |
-| Document Structure | DOC-004 | ADR 배경/대안 기록     | pass           |              | design/adr/ADR-0001-repo-source-of-truth-boundaries.md | architecture | I-0005-080  | accepted ADRs include context and alternatives |
-| Document Structure | DOC-005 | 개발 가이드 문서화     | pass           |              | docs/guides/review-harness.md                          | docs         |             |                                                |
-| Document Structure | DOC-006 | API 문서 존재          | pass           |              | apps/api/src/main.ts                                   | backend      |             | Swagger                                        |
-| Document Structure | DOC-007 | README 최소 정보 포함  | pass           |              | README.md                                              | docs         |             |                                                |
-| Document Structure | DOC-008 | Progressive Disclosure | pass           |              | README.md                                              | docs         |             |                                                |
-| Document Structure | DOC-009 | 상호 참조              | pass           |              | design/README.md                                       | docs         |             |                                                |
-| Document Structure | DOC-010 | 인라인 왜 문서화       | pass           |              | apps/api/src/uploads/README.md                         | backend      | I-0005-050  | code-local doc still to migrate                |
-| Document Structure | DOC-011 | CHANGELOG/릴리스 노트  | fail           |              | docs/reports/README.md                                 | docs         | I-0004-070  | release-history policy and home needed         |
-| Document Structure | DOC-012 | 실행 가능한 코드 예제  | pass           |              | docs/runbooks/deployment.md                            | docs         |             | command examples exist                         |
+| category           | item_id | statement              | current_status | exception_id | evidence_path                                          | owner        | target_task | notes                                                  |
+| ------------------ | ------- | ---------------------- | -------------- | ------------ | ------------------------------------------------------ | ------------ | ----------- | ------------------------------------------------------ |
+| Document Structure | DOC-001 | docs 디렉토리 존재     | pass           |              | docs/README.md                                         | docs         |             |                                                        |
+| Document Structure | DOC-002 | docs 카테고리 구조화   | pass           |              | docs/README.md                                         | docs         |             |                                                        |
+| Document Structure | DOC-003 | ADR 존재               | pass           |              | design/adr/ADR-0001-repo-source-of-truth-boundaries.md | architecture | I-0005-080  | first accepted ADR pack exists                         |
+| Document Structure | DOC-004 | ADR 배경/대안 기록     | pass           |              | design/adr/ADR-0001-repo-source-of-truth-boundaries.md | architecture | I-0005-080  | accepted ADRs include context and alternatives         |
+| Document Structure | DOC-005 | 개발 가이드 문서화     | pass           |              | docs/guides/review-harness.md                          | docs         |             |                                                        |
+| Document Structure | DOC-006 | API 문서 존재          | pass           |              | apps/api/src/main.ts                                   | backend      |             | Swagger                                                |
+| Document Structure | DOC-007 | README 최소 정보 포함  | pass           |              | README.md                                              | docs         |             |                                                        |
+| Document Structure | DOC-008 | Progressive Disclosure | pass           |              | README.md                                              | docs         |             |                                                        |
+| Document Structure | DOC-009 | 상호 참조              | pass           |              | design/README.md                                       | docs         |             |                                                        |
+| Document Structure | DOC-010 | 인라인 왜 문서화       | pass           |              | apps/api/src/uploads/README.md                         | backend      | I-0005-050  | code-local doc still to migrate                        |
+| Document Structure | DOC-011 | CHANGELOG/릴리스 노트  | pass           |              | docs/reports/README.md                                 | docs         | I-0004-070  | reports README is now the durable release-history home |
+| Document Structure | DOC-012 | 실행 가능한 코드 예제  | pass           |              | docs/runbooks/deployment.md                            | docs         |             | command examples exist                                 |
 
 ### Invariant Enforcement
 

@@ -1,3 +1,40 @@
 # Reports
 
-Use this folder for one-off reports, audits, migration summaries, and QA output that should remain readable but are not active design documents.
+Use this folder for release-history evidence, QA reports, migration summaries, and other report artifacts that should remain readable but are not active design documents.
+
+## Release History Home
+
+Treat this file as the repository home for milestone and release-history evidence.
+
+What belongs here:
+
+- milestone summaries that explain what landed in a delivery wave
+- QA reports and validation snapshots
+- migration or upgrade summaries that help later work understand what changed
+- flaky-test or stability ledgers that support operational follow-up
+
+What does not belong here:
+
+- active feature design
+- current execution plans
+- transient debugging scratch notes
+
+## Current Report Index
+
+| File                        | Purpose                                                            | Status     |
+| --------------------------- | ------------------------------------------------------------------ | ---------- |
+| `phase6-qa-report.md`       | phase-level QA evidence for the phase 6 release wave               | historical |
+| `pre-phase5-fixes.md`       | pre-phase fix summary captured before later harness work           | historical |
+| `masters-upgrade-report.md` | upgrade and implementation summary for the Masters product refresh | historical |
+| `flaky-tests.md`            | active ledger for advisory or quarantined test instability         | live       |
+
+## How to Extend This Folder
+
+- Add new milestone summaries or release notes here instead of reviving archived phase plans as current references.
+- Keep durable technical design in `design/` and business truth in `docs/domain/`.
+- When a task or scorecard row needs release-history evidence, point it at this folder home or a specific report file here.
+
+## Relationship to `docs/plans/`
+
+- `docs/plans/` is legacy or transitional planning input.
+- `docs/reports/` is the durable home for shipped milestone evidence and release-history snapshots.
