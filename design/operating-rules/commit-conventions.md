@@ -77,6 +77,18 @@ Reviewers: harness-reviewer, po-reviewer
 Verify: bash scripts/check-size-budgets.sh
 ```
 
+## Enforcement
+
+- Repository automation validates commit subjects in the `commit-msg` hook.
+- `pre-commit` is for file-content checks. Commit message validation belongs in `commit-msg`.
+- The enforced rules currently cover:
+  - allowed commit `type`
+  - required non-empty `scope`
+  - required non-empty `subject`
+  - header length
+  - scope must not be a task ID
+- Trailer structure is still documented policy first. It is not fully machine-enforced yet.
+
 ## Notes
 
 - Historical commits may predate this policy. Do not rewrite existing history just to match the convention.

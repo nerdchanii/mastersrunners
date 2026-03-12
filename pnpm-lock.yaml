@@ -7,6 +7,12 @@ settings:
 importers:
   .:
     devDependencies:
+      "@commitlint/cli":
+        specifier: ^20.4.3
+        version: 20.4.3(@types/node@20.19.33)(typescript@5.9.3)
+      "@commitlint/config-conventional":
+        specifier: ^20.4.3
+        version: 20.4.3
       "@eslint/js":
         specifier: ^9.39.2
         version: 9.39.2
@@ -14,7 +20,7 @@ importers:
         specifier: ^1.58.2
         version: 1.58.2
       dependency-cruiser:
-        specifier: ^17.2.0
+        specifier: ^17.3.8
         version: 17.3.8
       eslint:
         specifier: ^9.39.2
@@ -1107,6 +1113,126 @@ packages:
         integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==,
       }
     engines: { node: ">=0.1.90" }
+
+  "@commitlint/cli@20.4.3":
+    resolution:
+      {
+        integrity: sha512-Z37EMoDT7+Upg500vlr/vZrgRsb6Xc5JAA3Tv7BYbobnN/ZpqUeZnSLggBg2+1O+NptRDtyujr2DD1CPV2qwhA==,
+      }
+    engines: { node: ">=v18" }
+    hasBin: true
+
+  "@commitlint/config-conventional@20.4.3":
+    resolution:
+      {
+        integrity: sha512-9RtLySbYQAs8yEqWEqhSZo9nYhbm57jx7qHXtgRmv/nmeQIjjMcwf6Dl+y5UZcGWgWx435TAYBURONaJIuCjWg==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/config-validator@20.4.3":
+    resolution:
+      {
+        integrity: sha512-jCZpZFkcSL3ZEdL5zgUzFRdytv3xPo8iukTe9VA+QGus/BGhpp1xXSVu2B006GLLb2gYUAEGEqv64kTlpZNgmA==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/ensure@20.4.3":
+    resolution:
+      {
+        integrity: sha512-WcXGKBNn0wBKpX8VlXgxqedyrLxedIlLBCMvdamLnJFEbUGJ9JZmBVx4vhLV3ZyA8uONGOb+CzW0Y9HDbQ+ONQ==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/execute-rule@20.0.0":
+    resolution:
+      {
+        integrity: sha512-xyCoOShoPuPL44gVa+5EdZsBVao/pNzpQhkzq3RdtlFdKZtjWcLlUFQHSWBuhk5utKYykeJPSz2i8ABHQA+ZZw==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/format@20.4.3":
+    resolution:
+      {
+        integrity: sha512-UDJVErjLbNghop6j111rsHJYGw6MjCKAi95K0GT2yf4eeiDHy3JDRLWYWEjIaFgO+r+dQSkuqgJ1CdMTtrvHsA==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/is-ignored@20.4.3":
+    resolution:
+      {
+        integrity: sha512-W5VQKZ7fdJ1X3Tko+h87YZaqRMGN1KvQKXyCM8xFdxzMIf1KCZgN4uLz3osLB1zsFcVS4ZswHY64LI26/9ACag==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/lint@20.4.3":
+    resolution:
+      {
+        integrity: sha512-CYOXL23e+nRKij81+d0+dymtIi7Owl9QzvblJYbEfInON/4MaETNSLFDI74LDu+YJ0ML5HZyw9Vhp9QpckwQ0A==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/load@20.4.3":
+    resolution:
+      {
+        integrity: sha512-3cdJOUVP+VcgHa7bhJoWS+Z8mBNXB5aLWMBu7Q7uX8PSeWDzdbrBlR33J1MGGf7r1PZDp+mPPiFktk031PgdRw==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/message@20.4.3":
+    resolution:
+      {
+        integrity: sha512-6akwCYrzcrFcTYz9GyUaWlhisY4lmQ3KvrnabmhoeAV8nRH4dXJAh4+EUQ3uArtxxKQkvxJS78hNX2EU3USgxQ==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/parse@20.4.3":
+    resolution:
+      {
+        integrity: sha512-hzC3JCo3zs3VkQ833KnGVuWjWIzR72BWZWjQM7tY/7dfKreKAm7fEsy71tIFCRtxf2RtMP2d3RLF1U9yhFSccA==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/read@20.4.3":
+    resolution:
+      {
+        integrity: sha512-j42OWv3L31WfnP8WquVjHZRt03w50Y/gEE8FAyih7GQTrIv2+pZ6VZ6pWLD/ml/3PO+RV2SPtRtTp/MvlTb8rQ==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/resolve-extends@20.4.3":
+    resolution:
+      {
+        integrity: sha512-QucxcOy+00FhS9s4Uy0OyS5HeUV+hbC6OLqkTSIm6fwMdKva+OEavaCDuLtgd9akZZlsUo//XzSmPP3sLKBPog==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/rules@20.4.3":
+    resolution:
+      {
+        integrity: sha512-Yuosd7Grn5qiT7FovngXLyRXTMUbj9PYiSkvUgWK1B5a7+ZvrbWDS7epeUapYNYatCy/KTpPFPbgLUdE+MUrBg==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/to-lines@20.0.0":
+    resolution:
+      {
+        integrity: sha512-2l9gmwiCRqZNWgV+pX1X7z4yP0b3ex/86UmUFgoRt672Ez6cAM2lOQeHFRUTuE6sPpi8XBCGnd8Kh3bMoyHwJw==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/top-level@20.4.3":
+    resolution:
+      {
+        integrity: sha512-qD9xfP6dFg5jQ3NMrOhG0/w5y3bBUsVGyJvXxdWEwBm8hyx4WOk3kKXw28T5czBYvyeCVJgJJ6aoJZUWDpaacQ==,
+      }
+    engines: { node: ">=v18" }
+
+  "@commitlint/types@20.4.3":
+    resolution:
+      {
+        integrity: sha512-51OWa1Gi6ODOasPmfJPq6js4pZoomima4XLZZCrkldaH2V5Nb3bVhNXPeT6XV0gubbainSpTw4zi68NqAeCNCg==,
+      }
+    engines: { node: ">=v18" }
 
   "@dotenvx/dotenvx@1.52.0":
     resolution:
@@ -4188,6 +4314,13 @@ packages:
         integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==,
       }
 
+  "@simple-libs/stream-utils@1.2.0":
+    resolution:
+      {
+        integrity: sha512-KxXvfapcixpz6rVEB6HPjOUZT22yN6v0vI0urQSk1L8MlEWPDFCZkhw2xmkyoTGYeFw7tWTZd7e3lVzRZRN/EA==,
+      }
+    engines: { node: ">=18" }
+
   "@sinclair/typebox@0.34.48":
     resolution:
       {
@@ -5945,6 +6078,12 @@ packages:
       }
     engines: { node: ">=10" }
 
+  array-ify@1.0.0:
+    resolution:
+      {
+        integrity: sha512-c5AMf34bKdvPhQ7tBGhqkgKNUzMr4WUs+WDtC2ZUGOUncbxKMTvqxYctiseW3+L4bA8ec+GcZ6/A/FW4m8ukng==,
+      }
+
   array-timsort@1.0.3:
     resolution:
       {
@@ -6524,6 +6663,12 @@ packages:
       }
     engines: { node: ">= 6" }
 
+  compare-func@2.0.0:
+    resolution:
+      {
+        integrity: sha512-zHig5N+tPWARooBnb0Zx1MFcdfpyJrfTJ3Y5L+IFvUm8rM74hHz66z0gw0x4tijh5CorKkKUCnW82R2vmpeCRA==,
+      }
+
   component-emitter@1.3.1:
     resolution:
       {
@@ -6583,6 +6728,28 @@ packages:
       }
     engines: { node: ">= 0.6" }
 
+  conventional-changelog-angular@8.3.0:
+    resolution:
+      {
+        integrity: sha512-DOuBwYSqWzfwuRByY9O4oOIvDlkUCTDzfbOgcSbkY+imXXj+4tmrEFao3K+FxemClYfYnZzsvudbwrhje9VHDA==,
+      }
+    engines: { node: ">=18" }
+
+  conventional-changelog-conventionalcommits@9.3.0:
+    resolution:
+      {
+        integrity: sha512-kYFx6gAyjSIMwNtASkI3ZE99U1fuVDJr0yTYgVy+I2QG46zNZfl2her+0+eoviG82c5WQvW1jMt1eOQTeJLodA==,
+      }
+    engines: { node: ">=18" }
+
+  conventional-commits-parser@6.3.0:
+    resolution:
+      {
+        integrity: sha512-RfOq/Cqy9xV9bOA8N+ZH6DlrDR+5S3Mi0B5kACEjESpE+AviIpAptx9a9cFpWCCvgRtWT+0BbUw+e1BZfts9jg==,
+      }
+    engines: { node: ">=18" }
+    hasBin: true
+
   convert-source-map@2.0.0:
     resolution:
       {
@@ -6629,6 +6796,17 @@ packages:
       }
     engines: { node: ">= 0.10" }
 
+  cosmiconfig-typescript-loader@6.2.0:
+    resolution:
+      {
+        integrity: sha512-GEN39v7TgdxgIoNcdkRE3uiAzQt3UXLyHbRHD6YoL048XAeOomyxaP+Hh/+2C6C2wYjxJ2onhJcsQp+L4YEkVQ==,
+      }
+    engines: { node: ">=v18" }
+    peerDependencies:
+      "@types/node": "*"
+      cosmiconfig: ">=9"
+      typescript: ">=5"
+
   cosmiconfig@8.3.6:
     resolution:
       {
@@ -6645,6 +6823,18 @@ packages:
     resolution:
       {
         integrity: sha512-itvL5h8RETACmOTFc4UfIyB2RfEHi71Ax6E/PivVxq9NseKbOWpeyHEOIbmAw1rs8Ak0VursQNww7lf7YtUwzg==,
+      }
+    engines: { node: ">=14" }
+    peerDependencies:
+      typescript: ">=4.9.5"
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  cosmiconfig@9.0.1:
+    resolution:
+      {
+        integrity: sha512-hr4ihw+DBqcvrsEDioRO31Z17x71pUYoNe/4h6Z0wB72p7MU7/9gH8Q3s12NFhHPfYBBOV3qyfUxmr/Yn3shnQ==,
       }
     engines: { node: ">=14" }
     peerDependencies:
@@ -6748,6 +6938,13 @@ packages:
     resolution:
       {
         integrity: sha512-ndfJ/JxxMd3nw31uyKoY2naivF+r29V+Lc0svZxe1JvvIRmi8hUsrMvdOwgS1o6uBHmiz91geQ0ylPP0aj1VUA==,
+      }
+    engines: { node: ">=12" }
+
+  dargs@8.1.0:
+    resolution:
+      {
+        integrity: sha512-wAV9QHOsNbwnWdNW2FYvE1P56wtgSbM+3SZcdGiWQILwVjACCXDCI3Ai8QlCjMDB8YK5zySiXZYBiwGmNY3lnw==,
       }
     engines: { node: ">=12" }
 
@@ -6928,6 +7125,13 @@ packages:
         integrity: sha512-qejHi7bcSD4hQAZE0tNAawRK1ZtafHDmMTMkrrIGgSLl7hTnQHmKCeB45xAcbfTqK2zowkM3j3bHt/4b/ARbYQ==,
       }
     engines: { node: ">=0.3.1" }
+
+  dot-prop@5.3.0:
+    resolution:
+      {
+        integrity: sha512-QM8q3zDe58hqUqjraQOmzZ1LIH9SWQJTlEKCH4kJ2oQvLZk7RbQXvtDM2XEq3fwkV9CCvvH4LA0AV+ogFsBM2Q==,
+      }
+    engines: { node: ">=8" }
 
   dotenv-expand@12.0.3:
     resolution:
@@ -7766,6 +7970,15 @@ packages:
       }
     hasBin: true
 
+  git-raw-commits@4.0.0:
+    resolution:
+      {
+        integrity: sha512-ICsMM1Wk8xSGMowkOmPrzo2Fgmfo4bMHLNX6ytHjajRJUqvHOw/TFapQ+QG75c3X/tTDDhOSRPGC52dDbNM8FQ==,
+      }
+    engines: { node: ">=16" }
+    deprecated: This package is no longer maintained. For the JavaScript API, please use @conventional-changelog/git-client instead.
+    hasBin: true
+
   glob-parent@5.1.2:
     resolution:
       {
@@ -8042,6 +8255,12 @@ packages:
     engines: { node: ">=8" }
     hasBin: true
 
+  import-meta-resolve@4.2.0:
+    resolution:
+      {
+        integrity: sha512-Iqv2fzaTQN28s/FwZAoFq0ZSs/7hMAHJVX+w8PZl3cY19Pxk6jFFalxQoIfW2826i/fDLXv8IiEZRIT0lDuWcg==,
+      }
+
   imurmurhash@0.1.4:
     resolution:
       {
@@ -8207,6 +8426,13 @@ packages:
         integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==,
       }
     engines: { node: ">=0.12.0" }
+
+  is-obj@2.0.0:
+    resolution:
+      {
+        integrity: sha512-drqDG3cbczxxEJRoOXcOjtdp1J/lyp1mNn0xaznRs8+muBhgQcrnbspox5X5fOw0HnMnbfDzvnEMEtqDEJEo8w==,
+      }
+    engines: { node: ">=8" }
 
   is-obj@3.0.0:
     resolution:
@@ -8909,6 +9135,12 @@ packages:
       }
     engines: { node: ">=10" }
 
+  lodash.camelcase@4.3.0:
+    resolution:
+      {
+        integrity: sha512-TwuEnCnxbc3rAvhf/LbG7tJUDzhqXyFnv3dtzLOPgCG/hODL7WFnsbwktkD7yUV0RrreP/l1PALq/YSg6VvjlA==,
+      }
+
   lodash.defaults@4.2.0:
     resolution:
       {
@@ -8957,16 +9189,46 @@ packages:
         integrity: sha512-0wJxfxH1wgO3GrbuP+dTTk7op+6L41QCXbGINEmD+ny/G/eCqGzxyCsh7159S+mgDDcoarnBw6PC1PS5+wUGgw==,
       }
 
+  lodash.kebabcase@4.1.1:
+    resolution:
+      {
+        integrity: sha512-N8XRTIMMqqDgSy4VLKPnJ/+hpGZN+PHQiJnSenYqPaVV/NCqEogTnAdZLQiGKhxX+JCs8waWq2t1XHWKOmlY8g==,
+      }
+
   lodash.merge@4.6.2:
     resolution:
       {
         integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==,
       }
 
+  lodash.mergewith@4.6.2:
+    resolution:
+      {
+        integrity: sha512-GK3g5RPZWTRSeLSpgP8Xhra+pnjBC56q9FZYe1d5RN3TJ35dbkGy3YqBSMbyCrlbi+CM9Z3Jk5yTL7RCsqboyQ==,
+      }
+
   lodash.once@4.1.1:
     resolution:
       {
         integrity: sha512-Sb487aTOCr9drQVL8pIxOzVhafOjZN9UU54hiN8PU3uAiSV7lx1yYNpbNmex2PK6dSJoNTSJUUswT651yww3Mg==,
+      }
+
+  lodash.snakecase@4.1.1:
+    resolution:
+      {
+        integrity: sha512-QZ1d4xoBHYUeuouhEq3lk3Uq7ldgyFXGBhg04+oRLnIz8o9T65Eh+8YdroUwn846zchkA9yDsDl5CVVaV2nqYw==,
+      }
+
+  lodash.startcase@4.4.0:
+    resolution:
+      {
+        integrity: sha512-+WKqsK294HMSc2jEbNgpHpd0JfIBhp7rEV4aqXWqFr6AlXov+SlcgB1Fv01y2kGe3Gc8nMW7VA0SrGuSkRfIEg==,
+      }
+
+  lodash.upperfirst@4.3.1:
+    resolution:
+      {
+        integrity: sha512-sReKOYJIJf74dhJONhU4e0/shzi1trVbSWDOhKYE5XV2O+H7Sb2Dihwuc7xWxVl+DgFPyTqIN3zMfT9cq5iWDg==,
       }
 
   lodash@4.17.21:
@@ -9094,6 +9356,20 @@ packages:
         integrity: sha512-UERzLsxzllchadvbPs5aolHh65ISpKpM+ccLbOJ8/vvpBKmAWf+la7dXFy7Mr0ySHbdHrFv5kGFCUHHe6GFEmw==,
       }
     engines: { node: ">= 4.0.0" }
+
+  meow@12.1.1:
+    resolution:
+      {
+        integrity: sha512-BhXM0Au22RwUneMPwSCnyhTOizdWoIEPU9sp0Aqa1PnDMR5Wv2FGXYDjuzJEIX+Eo2Rb8xuYe5jrnm5QowQFkw==,
+      }
+    engines: { node: ">=16.10" }
+
+  meow@13.2.0:
+    resolution:
+      {
+        integrity: sha512-pxQJQzB6djGPXh08dacEloMFopsOqGVRKFPYvPOt9XDZ1HasbgDZA74CJGreSU4G3Ak7EFJGoiH2auq+yXISgA==,
+      }
+    engines: { node: ">=18" }
 
   merge-descriptors@2.0.0:
     resolution:
@@ -12688,6 +12964,115 @@ snapshots:
   "@colors/colors@1.5.0":
     optional: true
 
+  "@commitlint/cli@20.4.3(@types/node@20.19.33)(typescript@5.9.3)":
+    dependencies:
+      "@commitlint/format": 20.4.3
+      "@commitlint/lint": 20.4.3
+      "@commitlint/load": 20.4.3(@types/node@20.19.33)(typescript@5.9.3)
+      "@commitlint/read": 20.4.3
+      "@commitlint/types": 20.4.3
+      tinyexec: 1.0.2
+      yargs: 17.7.2
+    transitivePeerDependencies:
+      - "@types/node"
+      - typescript
+
+  "@commitlint/config-conventional@20.4.3":
+    dependencies:
+      "@commitlint/types": 20.4.3
+      conventional-changelog-conventionalcommits: 9.3.0
+
+  "@commitlint/config-validator@20.4.3":
+    dependencies:
+      "@commitlint/types": 20.4.3
+      ajv: 8.17.1
+
+  "@commitlint/ensure@20.4.3":
+    dependencies:
+      "@commitlint/types": 20.4.3
+      lodash.camelcase: 4.3.0
+      lodash.kebabcase: 4.1.1
+      lodash.snakecase: 4.1.1
+      lodash.startcase: 4.4.0
+      lodash.upperfirst: 4.3.1
+
+  "@commitlint/execute-rule@20.0.0": {}
+
+  "@commitlint/format@20.4.3":
+    dependencies:
+      "@commitlint/types": 20.4.3
+      picocolors: 1.1.1
+
+  "@commitlint/is-ignored@20.4.3":
+    dependencies:
+      "@commitlint/types": 20.4.3
+      semver: 7.7.4
+
+  "@commitlint/lint@20.4.3":
+    dependencies:
+      "@commitlint/is-ignored": 20.4.3
+      "@commitlint/parse": 20.4.3
+      "@commitlint/rules": 20.4.3
+      "@commitlint/types": 20.4.3
+
+  "@commitlint/load@20.4.3(@types/node@20.19.33)(typescript@5.9.3)":
+    dependencies:
+      "@commitlint/config-validator": 20.4.3
+      "@commitlint/execute-rule": 20.0.0
+      "@commitlint/resolve-extends": 20.4.3
+      "@commitlint/types": 20.4.3
+      cosmiconfig: 9.0.1(typescript@5.9.3)
+      cosmiconfig-typescript-loader: 6.2.0(@types/node@20.19.33)(cosmiconfig@9.0.1(typescript@5.9.3))(typescript@5.9.3)
+      is-plain-obj: 4.1.0
+      lodash.mergewith: 4.6.2
+      picocolors: 1.1.1
+    transitivePeerDependencies:
+      - "@types/node"
+      - typescript
+
+  "@commitlint/message@20.4.3": {}
+
+  "@commitlint/parse@20.4.3":
+    dependencies:
+      "@commitlint/types": 20.4.3
+      conventional-changelog-angular: 8.3.0
+      conventional-commits-parser: 6.3.0
+
+  "@commitlint/read@20.4.3":
+    dependencies:
+      "@commitlint/top-level": 20.4.3
+      "@commitlint/types": 20.4.3
+      git-raw-commits: 4.0.0
+      minimist: 1.2.8
+      tinyexec: 1.0.2
+
+  "@commitlint/resolve-extends@20.4.3":
+    dependencies:
+      "@commitlint/config-validator": 20.4.3
+      "@commitlint/types": 20.4.3
+      global-directory: 4.0.1
+      import-meta-resolve: 4.2.0
+      lodash.mergewith: 4.6.2
+      resolve-from: 5.0.0
+
+  "@commitlint/rules@20.4.3":
+    dependencies:
+      "@commitlint/ensure": 20.4.3
+      "@commitlint/message": 20.4.3
+      "@commitlint/to-lines": 20.0.0
+      "@commitlint/types": 20.4.3
+
+  "@commitlint/to-lines@20.0.0": {}
+
+  "@commitlint/top-level@20.4.3":
+    dependencies:
+      escalade: 3.2.0
+
+  "@commitlint/types@20.4.3":
+    dependencies:
+      conventional-commits-parser: 6.3.0
+      picocolors: 1.1.1
+
   "@dotenvx/dotenvx@1.52.0":
     dependencies:
       commander: 11.1.0
@@ -14697,6 +15082,8 @@ snapshots:
 
   "@sec-ant/readable-stream@0.4.1": {}
 
+  "@simple-libs/stream-utils@1.2.0": {}
+
   "@sinclair/typebox@0.34.48": {}
 
   "@sindresorhus/is@5.6.0": {}
@@ -15891,6 +16278,8 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
+  array-ify@1.0.0: {}
+
   array-timsort@1.0.3: {}
 
   asap@2.0.6: {}
@@ -16223,6 +16612,11 @@ snapshots:
       core-util-is: 1.0.3
       esprima: 4.0.1
 
+  compare-func@2.0.0:
+    dependencies:
+      array-ify: 1.0.0
+      dot-prop: 5.3.0
+
   component-emitter@1.3.1: {}
 
   concat-map@0.0.1: {}
@@ -16248,6 +16642,19 @@ snapshots:
 
   content-type@1.0.5: {}
 
+  conventional-changelog-angular@8.3.0:
+    dependencies:
+      compare-func: 2.0.0
+
+  conventional-changelog-conventionalcommits@9.3.0:
+    dependencies:
+      compare-func: 2.0.0
+
+  conventional-commits-parser@6.3.0:
+    dependencies:
+      "@simple-libs/stream-utils": 1.2.0
+      meow: 13.2.0
+
   convert-source-map@2.0.0: {}
 
   cookie-signature@1.2.2: {}
@@ -16265,6 +16672,13 @@ snapshots:
       object-assign: 4.1.1
       vary: 1.1.2
 
+  cosmiconfig-typescript-loader@6.2.0(@types/node@20.19.33)(cosmiconfig@9.0.1(typescript@5.9.3))(typescript@5.9.3):
+    dependencies:
+      "@types/node": 20.19.33
+      cosmiconfig: 9.0.1(typescript@5.9.3)
+      jiti: 2.6.1
+      typescript: 5.9.3
+
   cosmiconfig@8.3.6(typescript@5.9.3):
     dependencies:
       import-fresh: 3.3.1
@@ -16275,6 +16689,15 @@ snapshots:
       typescript: 5.9.3
 
   cosmiconfig@9.0.0(typescript@5.9.3):
+    dependencies:
+      env-paths: 2.2.1
+      import-fresh: 3.3.1
+      js-yaml: 4.1.1
+      parse-json: 5.2.0
+    optionalDependencies:
+      typescript: 5.9.3
+
+  cosmiconfig@9.0.1(typescript@5.9.3):
     dependencies:
       env-paths: 2.2.1
       import-fresh: 3.3.1
@@ -16330,6 +16753,8 @@ snapshots:
       d3-array: 3.2.4
 
   d3-timer@3.0.1: {}
+
+  dargs@8.1.0: {}
 
   data-uri-to-buffer@4.0.1: {}
 
@@ -16411,6 +16836,10 @@ snapshots:
       wrappy: 1.0.2
 
   diff@8.0.3: {}
+
+  dot-prop@5.3.0:
+    dependencies:
+      is-obj: 2.0.0
 
   dotenv-expand@12.0.3:
     dependencies:
@@ -17008,6 +17437,12 @@ snapshots:
       nypm: 0.6.5
       pathe: 2.0.3
 
+  git-raw-commits@4.0.0:
+    dependencies:
+      dargs: 8.1.0
+      meow: 12.1.1
+      split2: 4.2.0
+
   glob-parent@5.1.2:
     dependencies:
       is-glob: 4.0.3
@@ -17154,6 +17589,8 @@ snapshots:
       pkg-dir: 4.2.0
       resolve-cwd: 3.0.0
 
+  import-meta-resolve@4.2.0: {}
+
   imurmurhash@0.1.4: {}
 
   inflight@1.0.6:
@@ -17227,6 +17664,8 @@ snapshots:
   is-node-process@1.2.0: {}
 
   is-number@7.0.0: {}
+
+  is-obj@2.0.0: {}
 
   is-obj@3.0.0: {}
 
@@ -17771,6 +18210,8 @@ snapshots:
     dependencies:
       p-locate: 5.0.0
 
+  lodash.camelcase@4.3.0: {}
+
   lodash.defaults@4.2.0: {}
 
   lodash.includes@4.3.0: {}
@@ -17787,9 +18228,19 @@ snapshots:
 
   lodash.isstring@4.0.1: {}
 
+  lodash.kebabcase@4.1.1: {}
+
   lodash.merge@4.6.2: {}
 
+  lodash.mergewith@4.6.2: {}
+
   lodash.once@4.1.1: {}
+
+  lodash.snakecase@4.1.1: {}
+
+  lodash.startcase@4.4.0: {}
+
+  lodash.upperfirst@4.3.1: {}
 
   lodash@4.17.21: {}
 
@@ -17848,6 +18299,10 @@ snapshots:
   memfs@3.5.3:
     dependencies:
       fs-monkey: 1.1.0
+
+  meow@12.1.1: {}
+
+  meow@13.2.0: {}
 
   merge-descriptors@2.0.0: {}
 

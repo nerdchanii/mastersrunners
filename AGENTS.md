@@ -58,6 +58,7 @@ Read in this order:
 - If those docs are stricter than current implementation, keep the design truth and track the gap with tasks instead of weakening the convention.
 - Agent self-review guidance lives in `docs/guides/agent-self-review.md`.
 - Reviewer-role guidance lives in `docs/guides/reviewer-taxonomy.md`.
+- Commit message subjects are validated in the `commit-msg` hook, not the `pre-commit` hook.
 
 ## Design Divergence Handling
 

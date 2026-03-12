@@ -58,6 +58,7 @@ Before commit, the task must satisfy all of these:
 
 - Commit subjects should describe intent with normal types such as `feat`, `fix`, `refactor`, `docs`, `ci`, or `test`.
 - Task IDs belong in trailers, not as the commit type.
+- Commit subject validation runs in the `commit-msg` hook via commitlint, not in `pre-commit`.
 - If work uncovers implementation/design divergence, keep the design intact and create a follow-up task before calling the change done.
 
 ## Review Notes Convention

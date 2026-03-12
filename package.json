@@ -9,6 +9,7 @@
     "format": "prettier . --write",
     "format:check": "prettier --check --ignore-unknown AGENTS.md README.md DEPLOYMENT.md design docs/checklists docs/README.md docs/guides docs/runbooks docs/reports/README.md docs/plans/README.md tasks scripts .github package.json",
     "precommit": "bash scripts/pre-commit.sh",
+    "commitmsg:check": "commitlint",
     "prepare": "husky",
     "ci:local": "bash scripts/ci-local.sh",
     "depcruise": "dependency-cruiser --config .dependency-cruiser.cjs apps packages",
@@ -20,6 +21,8 @@
     "clean": "pnpm -r run clean"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.4.3",
+    "@commitlint/config-conventional": "^20.4.3",
     "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.58.2",
     "dependency-cruiser": "^17.3.8",
