@@ -1,7 +1,6 @@
 import { Calendar, Edit, LogOut, Target, Trash2, User, UserPlus, Users } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
 
 import ChallengeTeams from "@/components/challenge/ChallengeTeams";
 import LeaderboardTable from "@/components/challenge/LeaderboardTable";
@@ -14,37 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 
-interface ChallengeUser {
-  id: string;
-  name: string;
-  profileImage: string | null;
-}
-
-interface ChallengeDetail {
-  id: string;
-  title: string;
-  description: string | null;
-  type: string;
-  targetValue: number;
-  targetUnit: string;
-  startDate: string;
-  endDate: string;
-  isPublic: boolean;
-  creatorId: string;
-  creator?: ChallengeUser;
-  _count?: { participants: number };
-  isJoined?: boolean;
-  myProgress?: number | null;
-}
-
-interface LeaderboardEntry {
-  rank: number;
-  progress: number;
-  user: ChallengeUser;
-}
+import { useChallengeDetailPage } from "./useChallengeDetailPage";
 
 function goalTypeLabel(type: string): string {
   switch (type) {
@@ -99,109 +70,45 @@ export default function ChallengeDetailPage() {
   const { user } = useAuth();
   const challengeId = params.id as string;
 
-  const [challenge, setChallenge] = useState<ChallengeDetail | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [activeTab, setActiveTab] = useState<DetailTab>("info");
-  const [isLoading, setIsLoading] = useState(true);
-  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
   const [showProgressForm, setShowProgressForm] = useState(false);
   const [progressValue, setProgressValue] = useState("");
   const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const {
+    actionLoading,
+    challenge,
+    error,
+    isLoading,
+    leaderboard,
+    leaderboardLoading,
+    deleteChallenge,
+    joinChallenge,
+    leaveChallenge,
+    updateProgress,
+  } = useChallengeDetailPage(challengeId, activeTab, () => navigate("/challenges"));
 
-  const fetchChallenge = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const data = await api.fetch<ChallengeDetail>(`/challenges/${challengeId}`);
-      setChallenge(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "챌린지 정보를 불러올 수 없습니다.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [challengeId]);
-
-  const fetchLeaderboard = useCallback(async () => {
-    try {
-      setLeaderboardLoading(true);
-      const data = await api.fetch<LeaderboardEntry[]>(
-        `/challenges/${challengeId}/leaderboard?limit=50`,
-      );
-      setLeaderboard(Array.isArray(data) ? data : []);
-    } catch {
-      // silently fail
-    } finally {
-      setLeaderboardLoading(false);
-    }
-  }, [challengeId]);
-
-  useEffect(() => {
-    if (!challengeId || challengeId === "_") return;
-    void fetchChallenge();
-  }, [challengeId, fetchChallenge]);
-
-  useEffect(() => {
-    if (activeTab === "leaderboard" && challengeId && challengeId !== "_") {
-      void fetchLeaderboard();
-    }
-  }, [activeTab, challengeId, fetchLeaderboard]);
-
-  const handleJoin = async () => {
-    setActionLoading(true);
-    try {
-      await api.fetch(`/challenges/${challengeId}/join`, { method: "POST" });
-      await fetchChallenge();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "참가에 실패했습니다.");
-    } finally {
-      setActionLoading(false);
+  const handleUpdateProgress = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!progressValue || Number(progressValue) < 0) return;
+    const ok = await updateProgress(Number(progressValue));
+    if (ok) {
+      setShowProgressForm(false);
+      setProgressValue("");
     }
   };
 
   const handleLeave = async () => {
-    setActionLoading(true);
-    try {
-      await api.fetch(`/challenges/${challengeId}/leave`, { method: "DELETE" });
-      await fetchChallenge();
-      toast.success("챌린지에서 나갔습니다.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "챌린지 나가기에 실패했습니다.");
-    } finally {
-      setActionLoading(false);
+    const ok = await leaveChallenge();
+    if (ok) {
       setConfirmLeaveOpen(false);
     }
   };
 
   const handleDeleteChallenge = async () => {
-    try {
-      await api.fetch(`/challenges/${challengeId}`, { method: "DELETE" });
-      toast.success("챌린지가 삭제되었습니다.");
-      navigate("/challenges");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "삭제에 실패했습니다.");
-    }
-    setConfirmDeleteOpen(false);
-  };
-
-  const handleUpdateProgress = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!progressValue || Number(progressValue) < 0) return;
-    setActionLoading(true);
-    try {
-      await api.fetch(`/challenges/${challengeId}/progress`, {
-        method: "PATCH",
-        body: JSON.stringify({ currentValue: Number(progressValue) }),
-      });
-      setShowProgressForm(false);
-      setProgressValue("");
-      await fetchChallenge();
-      if (activeTab === "leaderboard") await fetchLeaderboard();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "진행도 업데이트에 실패했습니다.");
-    } finally {
-      setActionLoading(false);
+    const ok = await deleteChallenge();
+    if (ok) {
+      setConfirmDeleteOpen(false);
     }
   };
 
@@ -387,7 +294,10 @@ export default function ChallengeDetailPage() {
                   나가기
                 </Button>
               ) : (
-                <Button onClick={handleJoin} disabled={actionLoading || (!isActive && !isUpcoming)}>
+                <Button
+                  onClick={() => void joinChallenge()}
+                  disabled={actionLoading || (!isActive && !isUpcoming)}
+                >
                   <UserPlus className="mr-2 size-4" />
                   {actionLoading ? "처리중..." : "참가하기"}
                 </Button>

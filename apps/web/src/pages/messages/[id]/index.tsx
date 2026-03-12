@@ -1,5 +1,5 @@
 import { ChevronLeft } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -7,142 +7,29 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { api, API_BASE } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
-interface Message {
-  id: string;
-  conversationId: string;
-  senderId: string;
-  content: string;
-  deletedAt: string | null;
-  createdAt: string;
-  sender: { id: string; name: string; profileImage: string | null };
-}
-
-interface Conversation {
-  id: string;
-  type: "DIRECT";
-  updatedAt: string;
-  participants: Array<{
-    userId: string;
-    lastReadAt: string | null;
-    user: { id: string; name: string; profileImage: string | null };
-  }>;
-}
-
-interface ConversationDetailResponse {
-  conversation: Conversation;
-  messages: Message[];
-  nextCursor: string | null;
-}
-
-function normalizeMessages(items: Message[]) {
-  return [...items].reverse();
-}
+import { type Message, useMessageDetailPage } from "./useMessageDetailPage";
 
 export default function MessageDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const [conversation, setConversation] = useState<Conversation | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [content, setContent] = useState("");
-
-  const fetchConversation = useCallback(
-    async (cursor?: string | null) => {
-      try {
-        if (cursor) {
-          setLoadingMore(true);
-        } else {
-          setLoading(true);
-        }
-        setError(null);
-        let path = `/conversations/${id}?limit=50`;
-        if (cursor) path += `&cursor=${encodeURIComponent(cursor)}`;
-        const data = await api.fetch<ConversationDetailResponse>(path);
-        if (!data) return;
-        const normalizedMessages = normalizeMessages(data.messages ?? []);
-
-        setConversation(data.conversation);
-        if (cursor) {
-          // Prepend older messages
-          setMessages((prev) => [...normalizedMessages, ...prev]);
-        } else {
-          setMessages(normalizedMessages);
-        }
-        setNextCursor(data.nextCursor ?? null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-      }
-    },
-    [id],
-  );
-
-  const markAsRead = useCallback(async () => {
-    try {
-      await api.fetch(`/conversations/${id}/read`, { method: "PATCH" });
-    } catch (err) {
-      console.error("Failed to mark as read:", err);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    if (id) {
-      void fetchConversation();
-      void markAsRead();
-    }
-  }, [id, fetchConversation, markAsRead]);
-
-  // SSE connection for real-time messages
-  useEffect(() => {
-    if (!id) return;
-
-    const token = localStorage.getItem("accessToken");
-    if (!token) return;
-
-    const eventSource = new EventSource(
-      `${API_BASE}/conversations/sse?token=${encodeURIComponent(token)}`,
-    );
-
-    eventSource.addEventListener("new-message", (event) => {
-      try {
-        const message = JSON.parse(event.data) as Message;
-        // Only add message if it belongs to current conversation
-        if (message.conversationId === id) {
-          setMessages((prev) => {
-            // Avoid duplicates
-            if (prev.some((m) => m.id === message.id)) return prev;
-            return [...prev, message];
-          });
-          // Auto-mark as read when new message arrives
-          void markAsRead();
-        }
-      } catch (err) {
-        console.error("Failed to parse SSE message:", err);
-      }
-    });
-
-    eventSource.onerror = (err) => {
-      console.error("SSE error:", err);
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [id, markAsRead]);
+  const {
+    conversation,
+    error,
+    loading,
+    loadingMore,
+    messages,
+    nextCursor,
+    sending,
+    loadMore,
+    retry,
+    sendMessage,
+  } = useMessageDetailPage(id);
 
   useEffect(() => {
     // Scroll to bottom when messages change (but not when loading more)
@@ -156,20 +43,9 @@ export default function MessageDetailPage() {
 
     const trimmedContent = content.trim();
     setContent("");
-    setSending(true);
-
-    try {
-      const newMessage = await api.fetch<Message>(`/conversations/${id}/messages`, {
-        method: "POST",
-        body: JSON.stringify({ content: trimmedContent }),
-      });
-      setMessages((prev) => [...prev, newMessage]);
-      void markAsRead();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "메시지 전송에 실패했습니다.");
+    const ok = await sendMessage(trimmedContent);
+    if (!ok) {
       setContent(trimmedContent);
-    } finally {
-      setSending(false);
     }
   };
 
@@ -181,9 +57,7 @@ export default function MessageDetailPage() {
   };
 
   const handleLoadMore = () => {
-    if (nextCursor && !loadingMore) {
-      void fetchConversation(nextCursor);
-    }
+    loadMore();
   };
 
   const getOtherUser = () => {
@@ -242,7 +116,7 @@ export default function MessageDetailPage() {
         <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 max-w-md">
           <p className="text-destructive">{error}</p>
           <button
-            onClick={() => fetchConversation()}
+            onClick={retry}
             className="mt-2 text-destructive hover:text-destructive/80 underline text-sm"
           >
             다시 시도
@@ -289,7 +163,7 @@ export default function MessageDetailPage() {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+      <ScrollArea className="flex-1 p-4">
         {nextCursor && (
           <div className="flex justify-center mb-4">
             <Button variant="outline" size="sm" onClick={handleLoadMore} disabled={loadingMore}>

@@ -13,9 +13,8 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { UserAvatar } from "@/components/common/UserAvatar";
@@ -26,50 +25,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
-interface EventUser {
-  id: string;
-  name: string;
-  profileImage: string | null;
-}
-
-interface EventDetail {
-  id: string;
-  title: string;
-  description: string | null;
-  date: string;
-  location: string | null;
-  eventType: string | null;
-  distance: number | null;
-  maxParticipants: number | null;
-  registrationDeadline: string | null;
-  externalUrl: string | null;
-  organizerId: string;
-  creator?: EventUser;
-  _count?: { participants: number };
-  isRegistered?: boolean;
-}
-
-interface EventResult {
-  resultRank: number | null;
-  bibNumber: string | null;
-  resultTime: number | null;
-  status: string;
-  user: EventUser;
-  workoutId?: string | null;
-}
-
-interface MyResult {
-  resultRank: number | null;
-  bibNumber: string | null;
-  resultTime: number | null;
-  status: string;
-  workoutId: string | null;
-  goalTime?: number | null;
-}
+import { useEventDetailPage } from "./useEventDetailPage";
 
 type DetailTab = "info" | "results";
 
@@ -113,15 +72,7 @@ export default function EventDetailPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const eventId = params.id as string;
-
-  const [event, setEvent] = useState<EventDetail | null>(null);
-  const [results, setResults] = useState<EventResult[]>([]);
-  const [myResult, setMyResult] = useState<MyResult | null>(null);
   const [activeTab, setActiveTab] = useState<DetailTab>("info");
-  const [isLoading, setIsLoading] = useState(true);
-  const [resultsLoading, setResultsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
 
   // Dialogs
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -137,139 +88,63 @@ export default function EventDetailPage() {
   // Workout link state
   const [showWorkoutLink, setShowWorkoutLink] = useState(false);
   const [workoutId, setWorkoutId] = useState("");
-
-  const fetchEvent = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const data = await api.fetch<EventDetail>(`/events/${eventId}`);
-      setEvent(data);
-
-      // Fetch my result
-      try {
-        const my = await api.fetch<MyResult>(`/events/${eventId}/results/me`);
-        setMyResult(my);
-      } catch {
-        // No result yet
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "대회 정보를 불러올 수 없습니다.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [eventId]);
-
-  const fetchResults = useCallback(async () => {
-    try {
-      setResultsLoading(true);
-      const data = await api.fetch<EventResult[]>(`/events/${eventId}/results`);
-      setResults(Array.isArray(data) ? data : []);
-    } catch {
-      // silently fail
-    } finally {
-      setResultsLoading(false);
-    }
-  }, [eventId]);
-
-  useEffect(() => {
-    if (!eventId || eventId === "_") return;
-    void fetchEvent();
-  }, [eventId, fetchEvent]);
-
-  useEffect(() => {
-    if (activeTab === "results" && eventId && eventId !== "_") {
-      void fetchResults();
-    }
-  }, [activeTab, eventId, fetchResults]);
-
-  const handleRegister = async () => {
-    setActionLoading(true);
-    try {
-      await api.fetch(`/events/${eventId}/register`, { method: "POST" });
-      await fetchEvent();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "참가 등록에 실패했습니다.");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleCancel = async () => {
-    setActionLoading(true);
-    try {
-      await api.fetch(`/events/${eventId}/cancel`, { method: "DELETE" });
-      await fetchEvent();
-      setMyResult(null);
-      setShowCancelDialog(false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "참가 취소에 실패했습니다.");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleDeleteEvent = async () => {
-    try {
-      await api.fetch(`/events/${eventId}`, { method: "DELETE" });
-      navigate("/events");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "삭제에 실패했습니다.");
-    }
-  };
+  const {
+    actionLoading,
+    error,
+    event,
+    isLoading,
+    myResult,
+    results,
+    resultsLoading,
+    cancelRegistration,
+    deleteEvent,
+    linkWorkout,
+    registerEvent,
+    submitResult,
+    unlinkWorkout,
+  } = useEventDetailPage(eventId, activeTab, () => navigate("/events"));
 
   const handleSubmitResult = async (e: React.FormEvent) => {
     e.preventDefault();
-    setActionLoading(true);
-    try {
-      const body: Record<string, unknown> = { status: resultStatus };
-      if (resultTime) {
-        const seconds = parseTimeInput(resultTime);
-        if (seconds !== null) body.resultTime = seconds;
-      }
-      if (resultRank) body.resultRank = Number(resultRank);
-      if (resultBib) body.bibNumber = resultBib;
+    const body: Record<string, unknown> = { status: resultStatus };
+    if (resultTime) {
+      const seconds = parseTimeInput(resultTime);
+      if (seconds !== null) body.resultTime = seconds;
+    }
+    if (resultRank) body.resultRank = Number(resultRank);
+    if (resultBib) body.bibNumber = resultBib;
 
-      await api.fetch(`/events/${eventId}/results`, {
-        method: "PUT",
-        body: JSON.stringify(body),
-      });
+    const ok = await submitResult(body);
+    if (ok) {
       setShowResultForm(false);
-      await fetchEvent();
-      if (activeTab === "results") await fetchResults();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "결과 등록에 실패했습니다.");
-    } finally {
-      setActionLoading(false);
     }
   };
 
   const handleLinkWorkout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!workoutId.trim()) return;
-    setActionLoading(true);
-    try {
-      await api.fetch(`/events/${eventId}/link-workout`, {
-        method: "POST",
-        body: JSON.stringify({ workoutId: workoutId.trim() }),
-      });
+    const ok = await linkWorkout(workoutId.trim());
+    if (ok) {
       setShowWorkoutLink(false);
       setWorkoutId("");
-      await fetchEvent();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "워크아웃 연결에 실패했습니다.");
-    } finally {
-      setActionLoading(false);
     }
   };
 
   const handleUnlinkWorkout = async () => {
-    setActionLoading(true);
-    try {
-      await api.fetch(`/events/${eventId}/link-workout`, { method: "DELETE" });
-      await fetchEvent();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "워크아웃 연결 해제에 실패했습니다.");
-    } finally {
-      setActionLoading(false);
+    await unlinkWorkout();
+  };
+
+  const handleCancel = async () => {
+    const ok = await cancelRegistration();
+    if (ok) {
+      setShowCancelDialog(false);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    const ok = await deleteEvent();
+    if (ok) {
+      setShowDeleteDialog(false);
     }
   };
 
@@ -546,7 +421,10 @@ export default function EventDetailPage() {
                   참가 취소
                 </Button>
               ) : (
-                <Button onClick={handleRegister} disabled={actionLoading || isPast || isFull}>
+                <Button
+                  onClick={() => void registerEvent()}
+                  disabled={actionLoading || isPast || isFull}
+                >
                   {actionLoading ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
