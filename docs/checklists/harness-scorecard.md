@@ -11,9 +11,9 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 | Invariant Enforcement         |     13 |      1 |         1 |     15 |              93% |
 | Architecture                  |     10 |      2 |         0 |     12 |              83% |
 | Repository as Source of Truth |      8 |      2 |         0 |     10 |              80% |
-| Operations and Maintenance    |      5 |      3 |         2 |     10 |              63% |
+| Operations and Maintenance    |      7 |      1 |         2 |     10 |              88% |
 | Agent Readability             |      7 |      3 |         0 |     10 |              70% |
-| **Total**                     | **69** | **12** |     **3** | **84** | **85% adjusted** |
+| **Total**                     | **71** | **10** |     **3** | **84** | **88% adjusted** |
 
 ## Category Targets
 
@@ -122,8 +122,8 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 
 | category                   | item_id | statement               | current_status | exception_id | evidence_path                            | owner   | target_task | notes                                                                 |
 | -------------------------- | ------- | ----------------------- | -------------- | ------------ | ---------------------------------------- | ------- | ----------- | --------------------------------------------------------------------- |
-| Operations and Maintenance | OPS-001 | dead code 도구 설정     | fail           |              | package.json                             | harness | I-0006-050  | pending knip                                                          |
-| Operations and Maintenance | OPS-002 | dead code 주기 제거     | fail           |              | docs/reports/                            | harness | I-0006-050  | no process yet                                                        |
+| Operations and Maintenance | OPS-001 | dead code 도구 설정     | pass           |              | knip.json                                | harness | I-0006-050  | blocking `pnpm knip` now runs in CI and local CI                      |
+| Operations and Maintenance | OPS-002 | dead code 주기 제거     | pass           |              | docs/guides/dead-code-policy.md          | harness | I-0006-050  | explicit baseline + cleanup cadence committed                         |
 | Operations and Maintenance | OPS-003 | 의존성 주기 업데이트    | pass           |              | .github/dependabot.yml                   | harness | I-0006-040  | Dependabot manages weekly npm and GitHub Actions updates              |
 | Operations and Maintenance | OPS-004 | stale dependency 식별   | pass           |              | .github/workflows/dependency-review.yml  | harness | I-0006-040  | dependency review plus Dependabot make stale dependency drift visible |
 | Operations and Maintenance | OPS-005 | 구조화된 로깅           | fail           |              | apps/api/src/main.ts                     | backend | I-0006-070  | scaffold pending                                                      |

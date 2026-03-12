@@ -59,6 +59,8 @@ run_step "Check harness structure" bash -c '
 
 run_step "Check dependency boundaries and cycles" pnpm depcruise
 
+run_step "Check dead code baseline" pnpm knip
+
 run_step "Build packages" pnpm -r run build
 
 run_step "Run API coverage" env \

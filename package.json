@@ -7,6 +7,7 @@
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm --filter @masters/types exec tsc -p tsconfig.json --noEmit && pnpm --filter @masters/web exec tsc -p tsconfig.json --noEmit",
+    "knip": "bash scripts/run-knip.sh",
     "format": "prettier . --write",
     "format:check": "prettier --check --ignore-unknown AGENTS.md README.md DEPLOYMENT.md design docs/checklists docs/README.md docs/guides docs/runbooks docs/reports/README.md docs/plans/README.md tasks scripts .github package.json",
     "precommit": "bash scripts/pre-commit.sh",
@@ -32,6 +33,7 @@
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "globals": "^17.4.0",
     "husky": "^9.1.7",
+    "knip": "^5.86.0",
     "prettier": "^3.8.1",
     "typescript": "^5",
     "typescript-eslint": "^8.57.0"

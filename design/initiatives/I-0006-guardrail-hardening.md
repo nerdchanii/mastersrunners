@@ -47,7 +47,7 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `tasks/I-0006-guardrail-hardening/archive/I-0006-020-meta-boundary-cycle-enforcement.md`
 - `tasks/I-0006-guardrail-hardening/archive/I-0006-030-ci-api-coverage-gate.md`
 - `tasks/I-0006-guardrail-hardening/archive/I-0006-040-meta-dependency-security-automation.md`
-- `tasks/I-0006-guardrail-hardening/todo/I-0006-050-meta-dead-code-guard.md`
+- `tasks/I-0006-guardrail-hardening/archive/I-0006-050-meta-dead-code-guard.md`
 - `tasks/I-0006-guardrail-hardening/todo/I-0006-060-meta-pr-template-test-stability.md`
 - `tasks/I-0006-guardrail-hardening/todo/I-0006-070-api-logging-monitoring-scaffold.md`
 - `tasks/I-0006-guardrail-hardening/archive/I-0006-080-ci-explicit-typecheck-guard.md`
@@ -65,5 +65,6 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 
 - `I-0006-010`, `I-0006-020`, and `I-0006-030` now have passing verification and closed review notes.
 - `I-0006-040` now adds Dependabot plus in-repo CodeQL and dependency-review automation with closed review notes.
+- `I-0006-050` now adds a blocking `knip` baseline plus dead-code maintenance policy for CI and local CI.
 - `I-0006-080` adds an explicit `pnpm typecheck` CI/local gate for the currently supported packages and tracks API/database rollout separately in `I-0006-090`.
-- The remaining work is the operations lane: dependency/security automation, dead-code guardrails, PR/test-stability policy, and logging/monitoring scaffolding.
+- The remaining work is the operations lane: PR/test-stability policy and logging/monitoring scaffolding.
