@@ -12,3 +12,5 @@ Examples:
 - reviewer taxonomy guide
 - design divergence workflow guide
 - parallel worktree workflow guide
+- dead code policy guide
+- TODO/FIXME policy guide

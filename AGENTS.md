@@ -25,6 +25,7 @@ Read in this order:
 - Large change framing: `design/initiatives/`
 - Execution state: `tasks/`
 - Operational guidance: `docs/runbooks/`
+- Runtime environment and settings index: `docs/runbooks/environment-and-settings.md`
 - Executable deployment/test automation: `.github/workflows/`, `scripts/`
 
 ## Repo Summary
@@ -49,6 +50,7 @@ Read in this order:
 - Every task also needs a PO review before commit, including docs-only work.
 - Multi-scope changes need the union of the relevant specialist reviewers, not just one reviewer.
 - Review requirements live in the task file. Do not treat a task as done until review and verify are both complete.
+- Do not commit free-floating `TODO` or `FIXME` markers. Link them to a task as described in `docs/guides/todo-fixme-policy.md`.
 
 ## Coding Conventions
 
@@ -109,6 +111,7 @@ Lifecycle:
 - Run dev: `pnpm dev`
 - Build workspace: `pnpm build`
 - Run workspace lint: `pnpm lint`
+- Run explicit workspace typecheck: `pnpm typecheck`
 - Run local CI approximation: `pnpm ci:local`
 - Run API tests: `pnpm --filter @masters/api test`
 - Run API e2e tests: `pnpm --filter @masters/api test:e2e`
@@ -121,6 +124,7 @@ Lifecycle:
 - Frontend is a SPA, not an active Next.js app, even though old `.next` artifacts exist.
 - Canonical workout units are meters, seconds, and seconds per kilometer.
 - Public health endpoint is `GET /health`, not `/api/v1/health`.
+- Start env/config lookup at `docs/runbooks/environment-and-settings.md`, then follow the linked runbooks and example env files instead of searching old plans.
 - Generated or build output must not be treated as editable source:
   - `apps/web/dist`
   - `apps/web/out`

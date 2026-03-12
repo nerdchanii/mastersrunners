@@ -49,6 +49,9 @@ jobs:
       - name: Run lint
         run: pnpm lint
 
+      - name: Run explicit typecheck
+        run: pnpm typecheck
+
       - name: Check task review metadata for active and todo tasks
         run: bash scripts/check-task-review-metadata.sh
 
@@ -65,6 +68,9 @@ jobs:
 
       - name: Check dependency boundaries and cycles
         run: pnpm depcruise
+
+      - name: Check dead code baseline
+        run: pnpm knip
 
       - name: Build packages
         run: pnpm -r run build

@@ -43,6 +43,8 @@ run_step "Run format check" pnpm format:check
 
 run_step "Run lint" pnpm lint
 
+run_step "Run explicit typecheck" pnpm typecheck
+
 run_step "Check harness structure" bash -c '
   set -euo pipefail
   test -f AGENTS.md
@@ -56,6 +58,8 @@ run_step "Check harness structure" bash -c '
 '
 
 run_step "Check dependency boundaries and cycles" pnpm depcruise
+
+run_step "Check dead code baseline" pnpm knip
 
 run_step "Build packages" pnpm -r run build
 

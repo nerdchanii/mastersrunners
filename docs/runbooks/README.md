@@ -4,6 +4,7 @@ Runbooks describe operational procedures.
 
 Current runbooks:
 
+- `environment-and-settings.md`
 - `deployment.md`
 - `rollback.md`
 
