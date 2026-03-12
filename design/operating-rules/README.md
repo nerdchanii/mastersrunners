@@ -22,3 +22,4 @@ Do not use this area for:
 - `exceptions.md`: out-of-repo exception register for scorecard items
 - `legacy-sources.md`: salvage policy for `docs/plans/` and `.omc`
 - `commit-conventions.md`: commit subject/trailer rules for task-based work
+- `parallel-worktree-lifecycle.md`: how parallel agent branches split and integrate through worktrees

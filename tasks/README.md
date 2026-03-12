@@ -52,6 +52,12 @@ I-0002-010-meta-eslint-repair.md
 - Approved design stays authoritative even when implementation falls behind.
 - Unresolved divergence should be recorded in the task and delegated through a follow-up task.
 
+## Parallel Work Rule
+
+- If the current worktree already contains unrelated dirty changes, do not build new parallel work on top of it.
+- Create a dedicated git worktree for each parallel task and integrate reviewed commits back by merge or cherry-pick.
+- Preserve explicit task history during integration.
+
 ## Templates
 
 - `tasks/_templates/TASK-TEMPLATE.md`
@@ -59,5 +65,6 @@ I-0002-010-meta-eslint-repair.md
 ## Guides
 
 - `docs/guides/agent-self-review.md`
+- `docs/guides/parallel-worktree-workflow.md`
 - `docs/guides/reviewer-taxonomy.md`
 - `docs/guides/review-harness.md`

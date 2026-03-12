@@ -26,6 +26,7 @@ The repository now has task and verification harnesses, but it does not yet defi
 - `AGENTS.md`
 - `docs/guides/review-harness.md`
 - `docs/guides/agent-self-review.md`
+- `docs/guides/parallel-worktree-workflow.md`
 - `docs/guides/reviewer-taxonomy.md`
 - `docs/guides/design-divergence-workflow.md`
 - `tasks/README.md`
@@ -33,6 +34,7 @@ The repository now has task and verification harnesses, but it does not yet defi
 - `design/initiatives/INITIATIVE-TEMPLATE.md`
 - `design/operating-rules/commit-conventions.md`
 - `design/operating-rules/document-states.md`
+- `design/operating-rules/parallel-worktree-lifecycle.md`
 - `design/frontend/conventions.md`
 - `design/backend/conventions.md`
 
@@ -54,6 +56,7 @@ The repository now has task and verification harnesses, but it does not yet defi
 - `tasks/I-0003-review-harness/archive/I-0003-030-meta-divergence-and-conventions.md`
 - `tasks/I-0003-review-harness/archive/I-0003-040-meta-agent-self-review-and-reviewer-taxonomy.md`
 - `tasks/I-0003-review-harness/archive/I-0003-050-meta-commit-message-lint.md`
+- `tasks/I-0003-review-harness/archive/I-0003-060-meta-parallel-worktree-lifecycle.md`
 
 ## Success Criteria
 
@@ -64,3 +67,4 @@ The repository now has task and verification harnesses, but it does not yet defi
 - commit subjects explain intent while task linkage lives in trailers
 - every task has one consistent self-review step before specialist review
 - commit subjects are enforced by repository automation
+- parallel task execution has an explicit split and integration rule

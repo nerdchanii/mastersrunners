@@ -59,6 +59,7 @@ Read in this order:
 - Agent self-review guidance lives in `docs/guides/agent-self-review.md`.
 - Reviewer-role guidance lives in `docs/guides/reviewer-taxonomy.md`.
 - Commit message subjects are validated in the `commit-msg` hook, not the `pre-commit` hook.
+- Parallel split and merge workflow lives in `design/operating-rules/parallel-worktree-lifecycle.md` and `docs/guides/parallel-worktree-workflow.md`.
 
 ## Design Divergence Handling
 
@@ -66,6 +67,7 @@ Read in this order:
 - If code diverges from approved design, record the gap as a `Current Divergence` note or task note, then create a follow-up task.
 - The default resolution path is delegated agent work, not direct human patching outside the task system.
 - A commit message should describe change intent, not replace intent with a task ID. Put task tracking in trailers.
+- If the current worktree already has unrelated dirty changes, preserve them and run new parallel work in dedicated git worktrees.
 
 ## Task Workflow
 
