@@ -8,14 +8,14 @@
 
 ### Workout 삭제 시 연쇄 효과
 
-| 대상                   | 동작                               |
-| ---------------------- | ---------------------------------- |
-| UserShoe.totalDistance | 해당 거리만큼 차감                 |
-| Challenge progress     | 해당 기록만큼 차감                 |
-| PostWorkout 연결       | 연결 해제 (Post는 유지)            |
-| WorkoutLike            | 숨김 처리 (삭제된 워크아웃과 연결) |
-| WorkoutComment         | 숨김 처리 (삭제된 워크아웃과 연결) |
-| EventParticipant 연결  | 연결 해제 (OfficialResult는 유지)  |
+| 대상                  | 동작                                               |
+| --------------------- | -------------------------------------------------- |
+| Shoe.totalDistance    | 해당 거리만큼 차감                                 |
+| Challenge progress    | 해당 기록만큼 차감                                 |
+| PostWorkout 연결      | 연결 해제 (Post는 유지)                            |
+| WorkoutLike           | 숨김 처리 (삭제된 워크아웃과 연결)                 |
+| WorkoutComment        | 숨김 처리 (삭제된 워크아웃과 연결)                 |
+| EventParticipant 연결 | 연결 해제 (참가 결과 값은 별도 자동 복원하지 않음) |
 
 ### Workout 복원 시
 
@@ -87,12 +87,12 @@
 | ------- | ---------- |
 | content | 최대 500자 |
 
-### ShoeReview
+### Shoe
 
-| 필드    | 규칙         |
-| ------- | ------------ |
-| rating  | 1 ~ 5 (정수) |
-| content | 최대 2,000자 |
+| 필드          | 규칙                            |
+| ------------- | ------------------------------- |
+| totalDistance | 누적 거리, meters 기준으로 관리 |
+| maxDistance   | 선택 입력, 교체 기준 거리       |
 
 ## 공개 범위 (Visibility)
 

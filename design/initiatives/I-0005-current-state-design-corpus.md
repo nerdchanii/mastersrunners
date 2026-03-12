@@ -45,11 +45,11 @@ Most durable design knowledge still lives in transitional phase plans, `.omc` no
 
 - `tasks/I-0005-current-state-design-corpus/archive/I-0005-010-architecture-repo-runtime-foundation.md`
 - `tasks/I-0005-current-state-design-corpus/archive/I-0005-020-web-frontend-foundation.md`
-- `tasks/I-0005-current-state-design-corpus/todo/I-0005-030-web-social-workout-design.md`
-- `tasks/I-0005-current-state-design-corpus/todo/I-0005-040-web-crew-events-design.md`
+- `tasks/I-0005-current-state-design-corpus/archive/I-0005-030-web-social-workout-design.md`
+- `tasks/I-0005-current-state-design-corpus/archive/I-0005-040-web-crew-events-design.md`
 - `tasks/I-0005-current-state-design-corpus/archive/I-0005-050-api-backend-foundation.md`
 - `tasks/I-0005-current-state-design-corpus/archive/I-0005-060-api-domain-feature-design.md`
-- `tasks/I-0005-current-state-design-corpus/todo/I-0005-070-docs-domain-sync-pack.md`
+- `tasks/I-0005-current-state-design-corpus/archive/I-0005-070-docs-domain-sync-pack.md`
 - `tasks/I-0005-current-state-design-corpus/archive/I-0005-080-meta-adr-seed-pack.md`
 
 ## Success Criteria
@@ -61,5 +61,8 @@ Most durable design knowledge still lives in transitional phase plans, `.omc` no
 ## Progress Notes
 
 - `I-0005-010`, `I-0005-020`, and `I-0005-050` established the architecture, frontend, and backend foundation docs.
+- `I-0005-030` and `I-0005-040` now complete the current-state frontend corpus for social/profile, workouts, crews, events, and challenges.
 - `I-0005-060` now adds backend feature-boundary docs for social/feed, messaging, crews, and events/challenges, and expands the backend boundary index.
+- `I-0005-070` now syncs canonical domain docs to the current schema and design corpus, removing stale phase-era model names.
 - `I-0005-080` seeded the first accepted ADR pack.
+- `I-0005` is now landed; `design/` and `docs/domain/` should be the primary durable references instead of `.omc` or archived plans.

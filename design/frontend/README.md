@@ -32,4 +32,8 @@ Current docs:
 - `app-shell-routing.md`
 - `client-data-state.md`
 - `conventions.md`
+- `crew-experience.md`
+- `events-challenges.md`
+- `social-profile.md`
 - `ui-system.md`
+- `workout-experience.md`

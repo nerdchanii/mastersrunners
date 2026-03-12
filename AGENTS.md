@@ -148,5 +148,4 @@ Lifecycle:
 
 ## Current Limitation
 
-- The repository still relies on transitional plan and `.omc` material for some durable design knowledge until `I-0005` lands.
-- Guardrail and readability scores are still below the 90% target. Track progress in `docs/checklists/harness-scorecard.md`.
+- A few guardrail and readability items still rely on exceptions or follow-up tasks. Track progress in `docs/checklists/harness-scorecard.md`.

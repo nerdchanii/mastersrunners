@@ -1,58 +1,52 @@
-# DM (Direct Message)
+# 메시지와 대화 (Messaging)
 
 ## 정의
 
-1:1 개인 메시지. 유저 프로필에서 대화를 시작하거나, 멘션 클릭으로 진입한다.
+메시징은 `Conversation`, `ConversationParticipant`, `Message`를 중심으로 동작한다. 현재 canonical 모델은 DM 전용이 아니라 direct, crew, activity 대화를 모두 포함한다.
 
-## 엔티티 구조
+## 핵심 모델
 
-### Conversation (대화방)
+### Conversation
 
-| 필드      | 타입     | 설명                               |
-| --------- | -------- | ---------------------------------- |
-| id        | UUID     | PK                                 |
-| type      | enum     | DIRECT (1:1). 향후 GROUP 확장 가능 |
-| createdAt | datetime | 생성 시각                          |
-| updatedAt | datetime | 마지막 메시지 시각                 |
+- `type`
+  - `DIRECT`
+  - `CREW`
+  - `ACTIVITY`
+- `name`
+- `crewId`
+- `activityId`
+- `createdAt`
+- `updatedAt`
 
-### ConversationParticipant (대화 참여자)
+### ConversationParticipant
 
-| 필드           | 타입      | 설명                               |
-| -------------- | --------- | ---------------------------------- |
-| conversationId | UUID      | FK → Conversation                  |
-| userId         | UUID      | FK → User                          |
-| lastReadAt     | datetime? | 마지막 읽은 시각 (안읽음 카운트용) |
-| joinedAt       | datetime  | 참여 시각                          |
+- `conversationId`
+- `userId`
+- `lastReadAt`
+- `joinedAt`
 
-### Message (메시지)
+### Message
 
-| 필드           | 타입      | 설명                      |
-| -------------- | --------- | ------------------------- |
-| id             | UUID      | PK                        |
-| conversationId | UUID      | FK → Conversation         |
-| senderId       | UUID      | FK → User                 |
-| content        | string    | 메시지 내용 (최대 2000자) |
-| deletedAt      | datetime? | Soft delete               |
-| createdAt      | datetime  | 전송 시각                 |
+- `conversationId`
+- `senderId`
+- `content`
+- `isDeleted`
+- `createdAt`
+- `updatedAt`
 
-## 비즈니스 규칙
+## 현재 동작
 
-- **차단 관계**: DM 전송 불가. 기존 대화방은 유지되나 새 메시지 전송 차단
-- **비공개 계정**: 팔로워만 DM 가능 (또는 유저 설정으로 제어)
-- **대화방 유일성**: 두 유저 간 1:1 대화방은 하나만 존재
-- **정렬**: 대화 목록은 마지막 메시지 시각(updatedAt) 기준 내림차순
-- **안읽음**: lastReadAt 이후 도착한 메시지 수를 안읽음 카운트로 표시
+- 프로필에서 direct conversation을 시작할 수 있다.
+- 크루 전체 채팅과 활동 채팅도 같은 conversation 모델을 쓴다.
+- direct message detail은 SSE 기반 실시간 수신을 사용한다.
+- 일부 그룹 채팅 흐름은 polling 기반이다.
 
-## 접근 경로
+## 읽음 상태
 
-| 경로                         | 동작                                 |
-| ---------------------------- | ------------------------------------ |
-| 프로필 → "메시지" 버튼       | 기존 대화방 있으면 열기, 없으면 생성 |
-| 댓글의 @멘션 클릭 (데스크탑) | 해당 유저 DM으로 이동                |
-| 댓글의 @멘션 탭 (모바일)     | 해당 유저 프로필로 이동              |
-| Header 메시지 아이콘         | 대화 목록 페이지                     |
+- 안읽음 계산은 `lastReadAt` 기반이다.
+- 헤더와 메시지 화면에서 unread 상태를 별도로 소비한다.
 
-## 실시간 알림 (Phase 5)
+## 현재 제약
 
-- Phase 4: 폴링 기반 (주기적 조회)
-- Phase 5: WebSocket 도입 시 실시간 메시지 수신 + 타이핑 인디케이터
+- 과거 문서의 “DM은 DIRECT만 가진다” 설명은 더 이상 충분하지 않다.
+- direct와 group 대화의 실시간 전달 방식이 아직 완전히 통일되지 않았다.

@@ -2,60 +2,28 @@
 
 ## 정의
 
-러닝화 관리 시스템. 공유 제품 정보(ShoeModel)와 개인 소유 신발(UserShoe), 커뮤니티 리뷰(ShoeReview)로 구성된다.
+현재 저장소의 신발 모델은 공유 카탈로그와 개인 보유 모델을 분리하지 않는다. canonical 엔티티는 단일 `Shoe`다.
 
-## 엔티티 구조
+## 핵심 모델
 
-### ShoeModel (신발 모델 — 공유)
+### Shoe
 
-커뮤니티 전체가 공유하는 제품 정보.
-
-| 필드        | 타입    | 설명                                 |
-| ----------- | ------- | ------------------------------------ |
-| id          | UUID    | PK                                   |
-| brand       | string  | 브랜드 (Nike, adidas, ASICS 등)      |
-| modelName   | string  | 모델명                               |
-| category    | string? | 카테고리 (레이싱, 데일리, 트레일 등) |
-| imageUrl    | string? | 제품 이미지                          |
-| releaseYear | int?    | 출시 연도                            |
-
-### UserShoe (내 신발)
-
-유저가 소유한 개별 신발 인스턴스.
-
-| 필드          | 타입     | 설명                                       |
-| ------------- | -------- | ------------------------------------------ |
-| id            | UUID     | PK                                         |
-| userId        | UUID     | FK → User                                  |
-| shoeModelId   | UUID     | FK → ShoeModel                             |
-| nickname      | string?  | 유저가 붙인 별명 (예: "대회용 빨간 빠빠")  |
-| totalDistance | float    | 누적 거리 (meters, 워크아웃에서 자동 합산) |
-| isRetired     | boolean  | 은퇴 여부 (기본: false)                    |
-| purchasedAt   | date?    | 구매일                                     |
-| createdAt     | datetime | 등록 시각                                  |
-
-### ShoeReview (신발 리뷰 — 커뮤니티)
-
-ShoeModel에 대한 커뮤니티 리뷰.
-
-| 필드                  | 타입     | 설명                            |
-| --------------------- | -------- | ------------------------------- |
-| id                    | UUID     | PK                              |
-| userId                | UUID     | FK → User                       |
-| shoeModelId           | UUID     | FK → ShoeModel                  |
-| rating                | int      | 평점 (1~5)                      |
-| content               | string   | 리뷰 내용                       |
-| purpose               | enum     | RACE / TRAINING / DAILY / TRAIL |
-| totalDistanceAtReview | float?   | 리뷰 시점 누적 거리             |
-| createdAt             | datetime | 작성 시각                       |
+- `userId`
+- `brand`
+- `model`
+- `nickname`
+- `imageUrl`
+- `totalDistance` (meters)
+- `maxDistance` (meters)
+- `isRetired`
+- `createdAt`
 
 ## 워크아웃 연결
 
-- Workout에 `userShoeId` (optional FK)
-- 워크아웃 등록 시 착용 신발 선택 가능
-- 워크아웃의 거리가 UserShoe.totalDistance에 자동 합산
+- 워크아웃은 `shoeId`로 신발에 연결된다.
+- 누적 거리는 신발별 러닝 이력 요약에 사용된다.
 
-## 삭제 시 동작
+## 현재 제약
 
-- Workout 삭제 시: 해당 워크아웃의 거리만큼 UserShoe.totalDistance에서 차감
-- UserShoe 삭제: Workout과의 연결만 해제 (워크아웃은 유지)
+- 과거 문서의 다중 신발 모델 분리 구조는 현재 스키마와 맞지 않는다.
+- 현재 저장소에서 신발은 개인 소유 레코드 단일 모델로 읽는 것이 맞다.
