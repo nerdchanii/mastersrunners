@@ -6,14 +6,14 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 
 | Category                      |   Pass |   Fail | Exception |  Total |            Score |
 | ----------------------------- | -----: | -----: | --------: | -----: | ---------------: |
-| Agent Entry Point             |     14 |      1 |         0 |     15 |              93% |
+| Agent Entry Point             |     15 |      0 |         0 |     15 |             100% |
 | Document Structure            |     11 |      1 |         0 |     12 |              92% |
 | Invariant Enforcement         |     13 |      1 |         1 |     15 |              93% |
 | Architecture                  |     10 |      2 |         0 |     12 |              83% |
 | Repository as Source of Truth |      8 |      2 |         0 |     10 |              80% |
 | Operations and Maintenance    |      5 |      3 |         2 |     10 |              63% |
 | Agent Readability             |      7 |      3 |         0 |     10 |              70% |
-| **Total**                     | **68** | **13** |     **3** | **84** | **84% adjusted** |
+| **Total**                     | **69** | **12** |     **3** | **84** | **85% adjusted** |
 
 ## Category Targets
 
@@ -31,23 +31,23 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 
 ### Agent Entry Point
 
-| category          | item_id | statement                    | current_status | exception_id | evidence_path | owner   | target_task | notes                                                        |
-| ----------------- | ------- | ---------------------------- | -------------- | ------------ | ------------- | ------- | ----------- | ------------------------------------------------------------ |
-| Agent Entry Point | AEP-001 | 루트에 AGENTS/CLAUDE가 있다  | pass           |              | AGENTS.md     | harness |             |                                                              |
-| Agent Entry Point | AEP-002 | 프로젝트 한 줄 요약          | pass           |              | README.md     | docs    |             |                                                              |
-| Agent Entry Point | AEP-003 | 기술 스택 명시               | pass           |              | AGENTS.md     | docs    |             |                                                              |
-| Agent Entry Point | AEP-004 | 아키텍처 요약                | pass           |              | README.md     | docs    | I-0005-010  | design corpus 후 더 강해짐                                   |
-| Agent Entry Point | AEP-005 | 빌드 명령어                  | pass           |              | AGENTS.md     | harness |             |                                                              |
-| Agent Entry Point | AEP-006 | 실행 명령어                  | pass           |              | AGENTS.md     | harness |             |                                                              |
-| Agent Entry Point | AEP-007 | 테스트 명령어                | pass           |              | AGENTS.md     | harness |             |                                                              |
-| Agent Entry Point | AEP-008 | 단일 파일/모듈 테스트 명령어 | pass           |              | AGENTS.md     | harness |             | API 단일 spec 기준                                           |
-| Agent Entry Point | AEP-009 | 디렉토리 구조 설명           | pass           |              | README.md     | docs    |             |                                                              |
-| Agent Entry Point | AEP-010 | 코딩 컨벤션                  | pass           |              | AGENTS.md     | docs    | I-0003-030  | AGENTS now routes to frontend/backend/commit convention docs |
-| Agent Entry Point | AEP-011 | 흔한 실수/주의사항           | pass           |              | AGENTS.md     | harness |             |                                                              |
-| Agent Entry Point | AEP-012 | 관련 문서 링크               | pass           |              | README.md     | docs    |             |                                                              |
-| Agent Entry Point | AEP-013 | 환경 변수 및 설정 안내       | fail           |              | README.md     | docs    | I-0004-060  | runbook/env index 강화 필요                                  |
-| Agent Entry Point | AEP-014 | 의존성 설치 방법             | pass           |              | README.md     | docs    |             |                                                              |
-| Agent Entry Point | AEP-015 | 최근 코드 변경 반영          | pass           |              | AGENTS.md     | harness |             | stale refs removed in I-0004                                 |
+| category          | item_id | statement                    | current_status | exception_id | evidence_path | owner   | target_task | notes                                                                    |
+| ----------------- | ------- | ---------------------------- | -------------- | ------------ | ------------- | ------- | ----------- | ------------------------------------------------------------------------ |
+| Agent Entry Point | AEP-001 | 루트에 AGENTS/CLAUDE가 있다  | pass           |              | AGENTS.md     | harness |             |                                                                          |
+| Agent Entry Point | AEP-002 | 프로젝트 한 줄 요약          | pass           |              | README.md     | docs    |             |                                                                          |
+| Agent Entry Point | AEP-003 | 기술 스택 명시               | pass           |              | AGENTS.md     | docs    |             |                                                                          |
+| Agent Entry Point | AEP-004 | 아키텍처 요약                | pass           |              | README.md     | docs    | I-0005-010  | design corpus 후 더 강해짐                                               |
+| Agent Entry Point | AEP-005 | 빌드 명령어                  | pass           |              | AGENTS.md     | harness |             |                                                                          |
+| Agent Entry Point | AEP-006 | 실행 명령어                  | pass           |              | AGENTS.md     | harness |             |                                                                          |
+| Agent Entry Point | AEP-007 | 테스트 명령어                | pass           |              | AGENTS.md     | harness |             |                                                                          |
+| Agent Entry Point | AEP-008 | 단일 파일/모듈 테스트 명령어 | pass           |              | AGENTS.md     | harness |             | API 단일 spec 기준                                                       |
+| Agent Entry Point | AEP-009 | 디렉토리 구조 설명           | pass           |              | README.md     | docs    |             |                                                                          |
+| Agent Entry Point | AEP-010 | 코딩 컨벤션                  | pass           |              | AGENTS.md     | docs    | I-0003-030  | AGENTS now routes to frontend/backend/commit convention docs             |
+| Agent Entry Point | AEP-011 | 흔한 실수/주의사항           | pass           |              | AGENTS.md     | harness |             |                                                                          |
+| Agent Entry Point | AEP-012 | 관련 문서 링크               | pass           |              | README.md     | docs    |             |                                                                          |
+| Agent Entry Point | AEP-013 | 환경 변수 및 설정 안내       | pass           |              | README.md     | docs    | I-0004-060  | README and AGENTS now route to docs/runbooks/environment-and-settings.md |
+| Agent Entry Point | AEP-014 | 의존성 설치 방법             | pass           |              | README.md     | docs    |             |                                                                          |
+| Agent Entry Point | AEP-015 | 최근 코드 변경 반영          | pass           |              | AGENTS.md     | harness |             | stale refs removed in I-0004                                             |
 
 ### Document Structure
 

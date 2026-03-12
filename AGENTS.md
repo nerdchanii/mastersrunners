@@ -25,6 +25,7 @@ Read in this order:
 - Large change framing: `design/initiatives/`
 - Execution state: `tasks/`
 - Operational guidance: `docs/runbooks/`
+- Runtime environment and settings index: `docs/runbooks/environment-and-settings.md`
 - Executable deployment/test automation: `.github/workflows/`, `scripts/`
 
 ## Repo Summary
@@ -122,6 +123,7 @@ Lifecycle:
 - Frontend is a SPA, not an active Next.js app, even though old `.next` artifacts exist.
 - Canonical workout units are meters, seconds, and seconds per kilometer.
 - Public health endpoint is `GET /health`, not `/api/v1/health`.
+- Start env/config lookup at `docs/runbooks/environment-and-settings.md`, then follow the linked runbooks and example env files instead of searching old plans.
 - Generated or build output must not be treated as editable source:
   - `apps/web/dist`
   - `apps/web/out`

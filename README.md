@@ -99,6 +99,7 @@ pnpm deploy:verify -- http://localhost:4000
 - [design/README.md](./design/README.md): 설계 문서 경계
 - [docs/README.md](./docs/README.md): 문서 구조 설명
 - [docs/domain/README.md](./docs/domain/README.md): 도메인 문서 인덱스
+- [docs/runbooks/environment-and-settings.md](./docs/runbooks/environment-and-settings.md): 환경 변수와 런타임 설정의 첫 진입점
 - [docs/runbooks/deployment.md](./docs/runbooks/deployment.md): 배포 runbook
 - [design/initiatives/I-0004-truth-model-cleanup.md](./design/initiatives/I-0004-truth-model-cleanup.md): truth-model cleanup
 - [design/initiatives/I-0005-current-state-design-corpus.md](./design/initiatives/I-0005-current-state-design-corpus.md): current-state design corpus
@@ -110,6 +111,12 @@ pnpm deploy:verify -- http://localhost:4000
 - 프론트엔드는 현재 SPA이며, 저장소에 남아 있는 `.next` 산출물은 source of truth가 아닙니다.
 - 워크아웃 canonical unit은 `meters`, `seconds`, `seconds per kilometer`입니다.
 - 공개 health endpoint는 `GET /health`입니다.
+
+## 환경과 설정
+
+- 환경 변수와 런타임 설정은 [docs/runbooks/environment-and-settings.md](./docs/runbooks/environment-and-settings.md)에서 먼저 찾습니다.
+- production-like 예제 값은 [`.env.production.example`](./.env.production.example)에 있습니다.
+- 배포/런타임 계약은 [docs/runbooks/deployment.md](./docs/runbooks/deployment.md)의 `Environment Contract`를 기준으로 봅니다.
 
 ## 문의
 

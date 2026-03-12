@@ -51,7 +51,7 @@ The repository has a useful harness shape, but score math, exception handling, s
 - `tasks/I-0004-truth-model-cleanup/archive/I-0004-030-meta-plans-archive-split.md`
 - `tasks/I-0004-truth-model-cleanup/archive/I-0004-040-meta-omc-salvage-matrix.md`
 - `tasks/I-0004-truth-model-cleanup/archive/I-0004-050-meta-exceptions-register.md`
-- `tasks/I-0004-truth-model-cleanup/todo/I-0004-060-docs-env-and-settings-index.md`
+- `tasks/I-0004-truth-model-cleanup/archive/I-0004-060-docs-env-and-settings-index.md`
 - `tasks/I-0004-truth-model-cleanup/todo/I-0004-070-docs-release-history-home.md`
 
 ## Success Criteria
