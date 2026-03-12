@@ -14,7 +14,7 @@
 - 메시지/대화, 알림
 - 파일 업로드와 스토리지 연동
 
-최신 큰 기능 이정표는 `docs/plans/phase7-plan.md`에 정리된 크루 시스템 고도화입니다.
+현재 하네스 기준의 진행 상황과 점수는 `docs/checklists/harness-scorecard.md`에서 관리합니다.
 
 ## 기술 스택
 
@@ -35,7 +35,7 @@ packages/
   database/   # Prisma schema and database package
   types/      # Shared TypeScript types
 design/       # Technical design, architecture, ADR, initiatives
-docs/         # Domain docs, runbooks, reports, guides
+docs/         # Domain docs, runbooks, reports, checklists, guides
 tasks/        # Initiative-scoped execution queue
 scripts/      # Executable helper scripts
 ```
@@ -78,27 +78,32 @@ pnpm deploy:verify -- http://localhost:4000
 이 저장소는 에이전트 친화적인 하네스로 정리 중입니다. 문서를 읽을 때는 아래 순서를 권장합니다.
 
 1. [AGENTS.md](./AGENTS.md)
-2. [tasks/](./tasks)
-3. [design/](./design)
-4. [docs/domain/](./docs/domain)
-5. [docs/runbooks/](./docs/runbooks)
+2. [docs/checklists/README.md](./docs/checklists/README.md)
+3. [tasks/](./tasks)
+4. [design/](./design)
+5. [docs/domain/](./docs/domain)
+6. [docs/runbooks/](./docs/runbooks)
 
 역할은 다음처럼 나뉩니다.
 
 - `design/`: 프론트엔드, 백엔드, 아키텍처, ADR, initiative
-- `docs/`: 도메인 규칙, 운영 가이드, 보고서, 일반 가이드
+- `docs/`: 도메인 규칙, 운영 가이드, 체크리스트, 보고서, 일반 가이드
 - `tasks/`: 실제 실행 상태
 - `.github/workflows/`, `scripts/`: 실행 가능한 자동화
 
 ## 주요 문서
 
 - [AGENTS.md](./AGENTS.md): 표준 에이전트 진입점
+- [docs/checklists/README.md](./docs/checklists/README.md): 하네스 체크리스트 정의
+- [docs/checklists/harness-scorecard.md](./docs/checklists/harness-scorecard.md): 현재 점수와 예외 포함 상태 스냅샷
 - [design/README.md](./design/README.md): 설계 문서 경계
 - [docs/README.md](./docs/README.md): 문서 구조 설명
 - [docs/domain/README.md](./docs/domain/README.md): 도메인 문서 인덱스
 - [docs/runbooks/deployment.md](./docs/runbooks/deployment.md): 배포 runbook
-- [design/initiatives/I-0001-harness-foundation.md](./design/initiatives/I-0001-harness-foundation.md): 하네스 기반 작업
-- [design/initiatives/I-0002-harness-verification.md](./design/initiatives/I-0002-harness-verification.md): 검증 하네스 작업
+- [design/initiatives/I-0004-truth-model-cleanup.md](./design/initiatives/I-0004-truth-model-cleanup.md): truth-model cleanup
+- [design/initiatives/I-0005-current-state-design-corpus.md](./design/initiatives/I-0005-current-state-design-corpus.md): current-state design corpus
+- [design/initiatives/I-0006-guardrail-hardening.md](./design/initiatives/I-0006-guardrail-hardening.md): guardrail hardening
+- [design/initiatives/I-0007-readability-hardening.md](./design/initiatives/I-0007-readability-hardening.md): readability hardening
 
 ## 주의사항
 

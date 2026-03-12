@@ -1,8 +1,12 @@
 # 크루 시스템 V2 - 전체 설계 문서
 
+> 레거시 마이그레이션 입력 문서: 현재 source of truth가 아닙니다.
+> 현재 구현과 신규 설계는 `design/` 및 `docs/domain/`으로 단계적으로 이관합니다.
+> 이 문서는 `I-0005-current-state-design-corpus`에서 사실 추출용으로만 유지합니다.
+
 > 작성일: 2026-02-19
 > 최종 수정: 2026-02-19 (채널 시스템 + 크루 탐색 + 알림 규칙 반영)
-> 상태: 설계 단계 (구현 전)
+> 상태: 레거시 설계 입력 (원문 보존)
 > 선행 조건: Phase 6 완료 후 진행
 
 ---
@@ -12,6 +16,7 @@
 크루 시스템을 러닝 커뮤니티 운영에 필요한 수준으로 고도화한다.
 
 ### 현재 상태 (Phase 6 기준)
+
 - Crew CRUD + 멤버 관리 (OWNER/ADMIN/MEMBER) + 승인제 가입
 - 활동(Activity) 생성 + 단순 체크인 (QR/MANUAL 메서드만 기록)
 - 태그 시스템 (멤버 그룹핑)
@@ -20,6 +25,7 @@
 - `isPublic` 필드 존재 (검색/노출 여부)
 
 ### 목표 상태
+
 - **활동 2가지 타입**: 공식 모임(OFFICIAL) + 번개(POP_UP), 러닝 타입 선택 가능(optional)
 - **출석 3단계**: 참석 신청(RSVP) → 체크인 → 불참(NO_SHOW) 트래킹
 - **활동 종료 워크플로우**: 운영진/호스트가 수동으로 활동 종료 → RSVP 잔여자 NO_SHOW 처리
@@ -40,16 +46,16 @@
 > **OFFICIAL**: 크루가 공식적으로 주최하는 모임. 꼭 러닝이 아닐 수 있음 (회식, 총회, 워크숍 등 포함).
 > **POP_UP**: 크루원이 자발적/즉흥적으로 만드는 모임. 국제적으로 "pop-up event"로 통용.
 
-| 구분 | 공식 모임 (OFFICIAL) | 번개 (POP_UP) |
-|------|---------------------|---------------|
-| 생성 권한 | OWNER/ADMIN만 | 크루원 누구나 |
-| 관리 권한 | OWNER/ADMIN (운영진) | 생성자 (호스트) |
-| RSVP/체크인 관리 | 운영진 | 호스트 |
-| 수동 체크인 | 운영진이 대리 가능 | 호스트가 대리 가능 |
-| 활동 종료 | 운영진이 종료 | 호스트가 종료 |
-| 출석 통계 | OFFICIAL 출석률로 집계 | POP_UP 출석률로 **별도** 집계 |
-| NO_SHOW 트래킹 | OFFICIAL NO_SHOW로 집계 | POP_UP NO_SHOW로 **별도** 집계 |
-| 러닝 타입 | 선택 가능 (optional) | 선택 가능 (optional) |
+| 구분             | 공식 모임 (OFFICIAL)    | 번개 (POP_UP)                  |
+| ---------------- | ----------------------- | ------------------------------ |
+| 생성 권한        | OWNER/ADMIN만           | 크루원 누구나                  |
+| 관리 권한        | OWNER/ADMIN (운영진)    | 생성자 (호스트)                |
+| RSVP/체크인 관리 | 운영진                  | 호스트                         |
+| 수동 체크인      | 운영진이 대리 가능      | 호스트가 대리 가능             |
+| 활동 종료        | 운영진이 종료           | 호스트가 종료                  |
+| 출석 통계        | OFFICIAL 출석률로 집계  | POP_UP 출석률로 **별도** 집계  |
+| NO_SHOW 트래킹   | OFFICIAL NO_SHOW로 집계 | POP_UP NO_SHOW로 **별도** 집계 |
+| 러닝 타입        | 선택 가능 (optional)    | 선택 가능 (optional)           |
 
 ### 2-0-1. 러닝 타입 (optional)
 
@@ -57,6 +63,7 @@
 러닝이 아닌 모임(회식, 총회 등)은 러닝 타입을 지정하지 않는다.
 
 **기존 WorkoutType categories** (13 types, 7 categories):
+
 - LONG_RUN (장거리)
 - SPEED (스피드)
 - THRESHOLD (역치)
@@ -83,6 +90,7 @@ SCHEDULED (예정)
 ```
 
 **상태 전이 규칙**:
+
 - `SCHEDULED → ACTIVE`: 활동 시작 시간 이후 (UI에서 자동 표시 or 운영진 수동)
 - `ACTIVE → COMPLETED`: 운영진/호스트가 "활동 종료" 버튼 클릭
   - **이 시점에 RSVP 상태로 남아있는 참석자 → NO_SHOW로 일괄 전환**
@@ -103,16 +111,16 @@ SCHEDULED (예정)
 
 ### 2-3. 권한 모델 (활동 관리)
 
-| 액션 | OFFICIAL: OWNER/ADMIN | OFFICIAL: MEMBER | POP_UP: 호스트 | POP_UP: 기타 멤버 |
-|------|-------------------|---------------|-------------|---------------|
-| 활동 생성 | O | X | O (누구나) | O (누구나) |
-| 활동 수정 | O | X | O | X |
-| 활동 삭제/취소 | O | X | O | X |
-| 활동 종료 | O | X | O | X |
-| RSVP 신청 | O | O | O | O |
-| 본인 체크인 | O | O | O | O |
-| **대리 체크인** | **O** | X | **O** | X |
-| 불참 일괄 처리 | O (종료 시 자동) | X | O (종료 시 자동) | X |
+| 액션            | OFFICIAL: OWNER/ADMIN | OFFICIAL: MEMBER | POP_UP: 호스트   | POP_UP: 기타 멤버 |
+| --------------- | --------------------- | ---------------- | ---------------- | ----------------- |
+| 활동 생성       | O                     | X                | O (누구나)       | O (누구나)        |
+| 활동 수정       | O                     | X                | O                | X                 |
+| 활동 삭제/취소  | O                     | X                | O                | X                 |
+| 활동 종료       | O                     | X                | O                | X                 |
+| RSVP 신청       | O                     | O                | O                | O                 |
+| 본인 체크인     | O                     | O                | O                | O                 |
+| **대리 체크인** | **O**                 | X                | **O**            | X                 |
+| 불참 일괄 처리  | O (종료 시 자동)      | X                | O (종료 시 자동) | X                 |
 
 ---
 
@@ -121,6 +129,7 @@ SCHEDULED (예정)
 ### 3-A. CrewActivity 확장 (활동 타입 + 상태)
 
 **현재**:
+
 ```prisma
 model CrewActivity {
   id           String   @id @default(cuid())
@@ -140,6 +149,7 @@ model CrewActivity {
 ```
 
 **변경 후**:
+
 ```prisma
 model CrewActivity {
   id           String   @id @default(cuid())
@@ -173,6 +183,7 @@ model CrewActivity {
 ```
 
 **마이그레이션**:
+
 - 기존 데이터: `activityType = "OFFICIAL"`, `status = "COMPLETED"` (과거 활동은 종료 처리)
 - `activityDate < now()` 인 활동 → `status = "COMPLETED"`, `completedAt = activityDate`
 - `activityDate >= now()` 인 활동 → `status = "SCHEDULED"`
@@ -182,6 +193,7 @@ model CrewActivity {
 ### 3-B. CrewAttendance 확장 (출석 3단계)
 
 **변경 후**:
+
 ```prisma
 model CrewAttendance {
   id         String       @id @default(cuid())
@@ -203,11 +215,13 @@ model CrewAttendance {
 ```
 
 **`method` 값**:
+
 - `QR`: 본인 QR 스캔 체크인
 - `MANUAL`: 본인 수동 체크인 (버튼 클릭)
 - `ADMIN_MANUAL`: 운영진/호스트 대리 체크인 (checkedBy에 대리인 기록)
 
 **마이그레이션**:
+
 - 기존 데이터: `status = "CHECKED_IN"`, `rsvpAt = checkedAt` (RSVP 없이 바로 체크인했으므로)
 - `checkedAt` nullable로 변경
 - `method` nullable로 변경
@@ -218,6 +232,7 @@ model CrewAttendance {
 ### 3-C. Conversation 확장 (그룹 채팅)
 
 **변경 후**:
+
 ```prisma
 model Conversation {
   id         String   @id @default(cuid())
@@ -252,6 +267,7 @@ model CrewActivity {
 > 서비스 레이어에서 생성 시 자동 연결.
 
 **그룹 채팅 동작**:
+
 - 크루 생성 시 → 크루 전체 채팅방 자동 생성 (type: "CREW")
 - 활동 생성 시 → 활동 채팅방 자동 생성 (type: "ACTIVITY")
 - 크루 가입 승인 시 → 크루 채팅방에 participant 추가
@@ -341,6 +357,7 @@ model CrewBoardPostLike {
 ```
 
 **서비스 로직**:
+
 - 크루 생성 시 기본 공지 채널 자동 생성 (`type: "ANNOUNCEMENT"`, `writePermission: "ADMIN_ONLY"`)
 - 기본 채널은 삭제 불가
 - 채널별 글쓰기 권한 검증 (`ADMIN_ONLY` → OWNER/ADMIN만, `ALL_MEMBERS` → 모든 멤버)
@@ -362,6 +379,7 @@ model Post {
 ```
 
 **크루 게시물 가시성**:
+
 - 기존 Post의 `visibility` 필드를 그대로 활용 (포스팅 단위 제어)
   - `PUBLIC`: 누구나 볼 수 있음
   - `FOLLOWERS_ONLY`: 크루 멤버만 (크루 맥락에서 followers = 멤버)
@@ -559,6 +577,7 @@ GET    /crews/:id/profile
 ```
 
 **알림 규칙 (크루 프로필 게시물)**:
+
 - **크루 게시물 작성** → 모든 크루원에게 알림
 - **크루 게시물 댓글** → 운영진(ADMIN) + 크루장(OWNER)에게 알림
 
@@ -593,6 +612,7 @@ GET    /crews/regions/:region
 **경로**: `/crews/:id/activities/:activityId`
 
 **섹션 구성**:
+
 1. 헤더 (제목 + 타입 뱃지[OFFICIAL/POP_UP] + 날짜 + 장소 + 상태 + Admin/호스트 메뉴)
 2. 지도 (Leaflet 마커, lat/lng 있을 때)
 3. QR 코드 (Admin/호스트: QR 이미지 / Member: QR 스캐너 버튼)
@@ -611,6 +631,7 @@ GET    /crews/regions/:region
 **경로**: `/crews/:id`
 
 **탭**:
+
 1. **홈** — 고정 글(채널) + 최근 크루 게시물 + 다가오는 활동
 2. **게시물** — 크루 게시물 피드
 3. **활동** — OFFICIAL/POP_UP 탭 필터, RSVP 현황 표시
@@ -625,6 +646,7 @@ GET    /crews/regions/:region
 **위치**: 크루 상세 > 통계 탭
 
 **표시 항목**:
+
 - 토글: OFFICIAL / POP_UP / 전체
 - 크루 전체 출석률 (이번 달)
 - 멤버별 출석 카드:
@@ -638,6 +660,7 @@ GET    /crews/regions/:region
 **위치**: 크루 탭 재구성 (내 크루 / 크루 찾기 세그먼트)
 
 **크루 찾기 UI**:
+
 1. **SVG 한국 지도 컴포넌트** — 17개 시/도 인터랙티브
    - 각 시/도 영역 클릭 가능
    - 크루 수에 따라 색상 농도 표시 (히트맵)
@@ -647,6 +670,7 @@ GET    /crews/regions/:region
 4. **추천 섹션** — 사용자 지역 기반 추천 크루
 
 **추가 UI 변경**:
+
 - 크루 생성 폼에 지역(region/subRegion) 선택 추가
 - 온보딩/프로필 설정에 사용자 지역 선택 추가
 
@@ -659,6 +683,7 @@ GET    /crews/regions/:region
 **범위**: 현재 활동 상세 페이지를 프로덕션 수준으로 완성 (현재 스키마 기준)
 
 **작업**:
+
 - [ ] Admin 편집/삭제 UI (DropdownMenu + Dialog + ConfirmDialog)
 - [ ] QR 코드 이미지 표시 (`qrcode.react`, admin 전용)
 - [ ] Leaflet 지도 표시 (OpenStreetMap, Marker + icon fix)
@@ -672,6 +697,7 @@ GET    /crews/regions/:region
 **규모**: S (프론트엔드 전용)
 
 **핵심 파일**:
+
 - `apps/web/src/pages/crews/[id]/activities/[activityId]/index.tsx`
 - `apps/web/src/hooks/useCrews.ts`
 
@@ -682,6 +708,7 @@ GET    /crews/regions/:region
 **범위**: OFFICIAL/POP_UP 분리 + RSVP → 체크인 → 불참 플로우
 
 **스키마 변경**:
+
 ```prisma
 // CrewActivity 추가 필드
 activityType  String   @default("OFFICIAL")  // OFFICIAL, POP_UP
@@ -698,6 +725,7 @@ checkedBy String?                      // 대리 체크인 시
 ```
 
 **API**:
+
 - POST /crews/:id/activities (타입별 권한 분기)
 - POST /crews/:id/activities/:activityId/complete (종료 → NO_SHOW 일괄)
 - POST /crews/:id/activities/:activityId/cancel
@@ -708,6 +736,7 @@ checkedBy String?                      // 대리 체크인 시
 - GET /crews/:id/activities/:activityId/attendees?status=
 
 **프론트엔드**:
+
 - 활동 생성 폼에 타입 선택 (POP_UP는 모든 멤버 가능)
 - 활동 목록 타입/상태 필터
 - 활동 상세 RSVP/체크인 UI 리팩터링
@@ -719,6 +748,7 @@ checkedBy String?                      // 대리 체크인 시
 **규모**: L (스키마 + API + 프론트 전면 수정)
 
 **핵심 파일**:
+
 - `packages/database/prisma/schema.prisma`
 - `apps/api/src/crews/` (service, repository, controller, DTOs)
 - `apps/web/src/pages/crews/[id]/activities/`
@@ -731,6 +761,7 @@ checkedBy String?                      // 대리 체크인 시
 **범위**: QR 스캔으로 자동 체크인
 
 **작업**:
+
 - [ ] **프론트엔드**: `html5-qrcode` 추가
 - [ ] **QR 스캐너 컴포넌트**: 카메라 → QR 인식 → API 호출
 - [ ] **API**: `qr-check-in` 엔드포인트 (qrCode 매칭 검증)
@@ -741,6 +772,7 @@ checkedBy String?                      // 대리 체크인 시
 **규모**: S
 
 **핵심 파일**:
+
 - `apps/web/src/components/crew/QrScanner.tsx` (신규)
 - `apps/api/src/crews/crews.controller.ts`
 - `apps/api/src/crews/crews.service.ts`
@@ -752,6 +784,7 @@ checkedBy String?                      // 대리 체크인 시
 **범위**: 크루 전체 채팅 + 활동별 채팅
 
 **스키마 변경**:
+
 ```prisma
 // Conversation 확장
 type       String  @default("DIRECT")  // DIRECT, CREW, ACTIVITY
@@ -763,11 +796,13 @@ activityId String?
 ```
 
 **API**:
+
 - GET /crews/:id/chat (크루 채팅방)
 - GET /crews/:id/activities/:activityId/chat (활동 채팅방)
 - 메시지 전송/SSE는 기존 패턴 재사용
 
 **서비스 로직**:
+
 - 크루 생성 시 채팅방 자동 생성
 - 활동 생성 시 채팅방 자동 생성
 - 가입 승인/탈퇴/RSVP 시 participant 동기화
@@ -776,6 +811,7 @@ activityId String?
 **규모**: L
 
 **핵심 파일**:
+
 - `packages/database/prisma/schema.prisma`
 - `apps/api/src/conversations/`
 - `apps/api/src/crews/crews.service.ts`
@@ -788,6 +824,7 @@ activityId String?
 **범위**: 다중 게시판 + 글 + 댓글 + 좋아요
 
 **신규 모델 5개**:
+
 - `CrewBoard` (게시판 정의 — type, writePermission, sortOrder)
 - `CrewBoardPost` (글 — title, content, isPinned, deletedAt)
 - `CrewBoardPostImage` (이미지 — url, order)
@@ -795,6 +832,7 @@ activityId String?
 - `CrewBoardPostLike` (좋아요 — unique[postId, userId])
 
 **API 14개**:
+
 ```
 Board:   POST/GET/PATCH/DELETE /crews/:id/boards (4)
 Post:    POST/GET/GET:id/PATCH/DELETE /crews/:id/boards/:boardId/posts (5)
@@ -804,12 +842,14 @@ Like:    POST/DELETE (2)
 ```
 
 **서비스 로직**:
+
 - 크루 생성 시 기본 공지 채널 자동 생성 (type: ANNOUNCEMENT, ADMIN_ONLY)
 - 채널별 글쓰기 권한 검증
 - 기본 채널 삭제 불가
 - 새 글 → 모든 크루원 알림
 
 **프론트엔드**:
+
 - 크루 상세 내 채널 목록/탭
 - 글 목록 (cursor pagination)
 - 글 상세 + 댓글
@@ -819,6 +859,7 @@ Like:    POST/DELETE (2)
 **규모**: L
 
 **핵심 파일**:
+
 - `packages/database/prisma/schema.prisma`
 - `apps/api/src/crew-boards/` (신규 모듈)
 - `apps/web/src/pages/crews/[id]/boards/` (신규)
@@ -830,6 +871,7 @@ Like:    POST/DELETE (2)
 **범위**: 크루 이름으로 게시물 + 프로필 페이지
 
 **스키마 변경**:
+
 ```prisma
 // Post.crewId 추가
 crewId String?
@@ -840,15 +882,18 @@ location      String?
 ```
 
 **API**:
+
 - POST /crews/:id/posts (OWNER만)
 - GET /crews/:id/posts
 - GET /crews/:id/profile (통합 정보)
 
 **알림 규칙**:
+
 - 크루 게시물 작성 → 모든 크루원 알림
 - 크루 게시물 댓글 → 운영진(ADMIN) + 크루장(OWNER) 알림
 
 **프론트엔드**:
+
 - 크루 상세 탭 재구성 (홈/게시물/활동/채널/멤버/통계/채팅/설정)
 - 크루 프로필 페이지
 - 피드에서 크루 게시물 표시 (크루 아이콘 + 이름)
@@ -857,6 +902,7 @@ location      String?
 **규모**: L
 
 **핵심 파일**:
+
 - `packages/database/prisma/schema.prisma`
 - `apps/api/src/crews/` 또는 `apps/api/src/posts/`
 - `apps/web/src/pages/crews/[id]/`
@@ -868,16 +914,19 @@ location      String?
 **범위**: OFFICIAL/POP_UP 분리된 출석 통계
 
 **API**:
+
 - GET /crews/:id/members/:userId/attendance-stats
 - GET /crews/:id/attendance-stats?month=&type=
 
 **표시 항목**:
+
 - OFFICIAL/POP_UP 토글
 - 크루 전체 출석률
 - 멤버별: 총 활동/참석/출석률/NO_SHOW/연속출석
 - 월별 추이 차트
 
 **프론트엔드**:
+
 - 크루 상세 > 통계 탭
 - 차트 라이브러리 (recharts 또는 chart.js)
 
@@ -885,6 +934,7 @@ location      String?
 **규모**: M
 
 **핵심 파일**:
+
 - `apps/api/src/crews/` (통계 API)
 - `apps/web/src/pages/crews/[id]/stats/` (신규)
 
@@ -895,6 +945,7 @@ location      String?
 **범위**: 지역 기반 크루 탐색
 
 **스키마 변경**:
+
 ```prisma
 // Crew
 region    String?   // 시/도
@@ -906,12 +957,14 @@ subRegion String?
 ```
 
 **API**:
+
 - GET /crews/explore?region=&subRegion=&sort=activity
 - GET /crews/recommend (사용자 지역 + 활동량)
 - GET /crews/regions (시/도 목록 + 크루 수)
 - GET /crews/regions/:region (구/군 목록 + 크루 수)
 
 **프론트엔드**:
+
 - SVG 한국 지도 컴포넌트 (17개 시/도 인터랙티브)
 - 시/도 클릭 → 구/군 드롭다운
 - 크루 탭 재구성 (내 크루 / 크루 찾기 세그먼트)
@@ -919,6 +972,7 @@ subRegion String?
 - 온보딩/프로필에 사용자 지역 설정
 
 **데이터**:
+
 - 한국 17개 시/도 + 구/군 데이터 (JSON or DB seed)
 - 카테고리/태그 없음
 
@@ -926,6 +980,7 @@ subRegion String?
 **규모**: M
 
 **핵심 파일**:
+
 - `packages/database/prisma/schema.prisma`
 - `apps/api/src/crews/` (탐색 API)
 - `apps/web/src/components/crew/KoreaMap.tsx` (신규 SVG)
@@ -957,6 +1012,7 @@ subRegion String?
 ```
 
 **병렬 실행 그룹**:
+
 1. **즉시 시작** (4세션 병렬): 7-01, 7-04, 7-05, 7-08
 2. **7-01 완료 후**: 7-02
 3. **7-02 완료 후**: 7-03, 7-07 (병렬)
@@ -967,30 +1023,36 @@ subRegion String?
 ## 8. 기술 결정 사항
 
 ### QR 코드
+
 - **표시**: `qrcode.react` (~8KB gzipped)
 - **스캔**: `html5-qrcode` (~40KB gzipped) — Phase 7-03
 - **검증**: 서버에서 `activity.qrCode` 필드 매칭
 - **QR 데이터**: `{origin}/crews/{crewId}/activities/{activityId}/qr-check-in?code={qrCode}`
 
 ### 지도
+
 - **Leaflet + OpenStreetMap** (무료, react-leaflet 이미 설치됨)
 - `RouteMap.tsx`는 Polyline 전용 — Marker는 별도 구현 + Vite icon fix 필요
 
 ### 채팅
+
 - 기존 `Conversation` + `Message` + SSE 패턴 확장
 - `chatConversationId` FK로 1:1 보장 (Prisma 조건부 unique 미지원 우회)
 
 ### 채널 시스템
+
 - 별도 모듈 `crew-boards/`로 분리 (크루 모듈 비대화 방지)
 - CrewBoard type: `ANNOUNCEMENT` (공지), `GENERAL` (일반), `FREE` (자유)
 - 기본 공지 채널 자동 생성, 삭제 불가
 
 ### 크루 탐색
+
 - SVG 한국 지도: 17개 시/도 Path 데이터 (정적 파일)
 - 카테고리/태그 없이 지역만으로 탐색
 - 추천 알고리즘: 같은 지역 + 최근 활동량(30일 내 활동 수) 기반 정렬
 
 ### 차트
+
 - Phase 7-07에서 결정
 - 후보: `recharts` (React 친화, 선언적), `chart.js` + `react-chartjs-2`
 
@@ -998,50 +1060,50 @@ subRegion String?
 
 ## 9. 리스크 및 고려사항
 
-| 리스크 | 영향 | 대응 |
-|--------|------|------|
-| CrewAttendance 마이그레이션 데이터 변환 | 높음 | 기존 → CHECKED_IN, rsvpAt=checkedAt |
-| Conversation 확장이 DM에 영향 | 높음 | nullable 필드만 추가, DIRECT 타입 동작 불변 |
-| 번개(POP_UP) 호스트 권한 vs 운영진 권한 겹침 | 중간 | 서비스 레이어에서 activityType 기반 분기 |
-| html5-qrcode 모바일 카메라 권한 | 중간 | HTTPS 필수, 수동 체크인 fallback |
-| Leaflet Marker + Vite 번들링 | 중간 | 명시적 icon import |
-| 활동 종료 시 NO_SHOW 일괄 처리 성능 | 낮음 | 활동당 참석자 수 제한적, 단순 UPDATE |
-| 크루 게시물 + 개인 게시물 피드 혼합 | 중간 | 피드 쿼리 인덱스 추가, UI 구분 표시 |
-| 채널 시스템 5개 모델 복잡도 | 중간 | 별도 모듈 분리, 기존 패턴(PostComment/PostLike) 재활용 |
-| SVG 지도 컴포넌트 크기 | 낮음 | 정적 SVG + lazy loading |
+| 리스크                                       | 영향 | 대응                                                   |
+| -------------------------------------------- | ---- | ------------------------------------------------------ |
+| CrewAttendance 마이그레이션 데이터 변환      | 높음 | 기존 → CHECKED_IN, rsvpAt=checkedAt                    |
+| Conversation 확장이 DM에 영향                | 높음 | nullable 필드만 추가, DIRECT 타입 동작 불변            |
+| 번개(POP_UP) 호스트 권한 vs 운영진 권한 겹침 | 중간 | 서비스 레이어에서 activityType 기반 분기               |
+| html5-qrcode 모바일 카메라 권한              | 중간 | HTTPS 필수, 수동 체크인 fallback                       |
+| Leaflet Marker + Vite 번들링                 | 중간 | 명시적 icon import                                     |
+| 활동 종료 시 NO_SHOW 일괄 처리 성능          | 낮음 | 활동당 참석자 수 제한적, 단순 UPDATE                   |
+| 크루 게시물 + 개인 게시물 피드 혼합          | 중간 | 피드 쿼리 인덱스 추가, UI 구분 표시                    |
+| 채널 시스템 5개 모델 복잡도                  | 중간 | 별도 모듈 분리, 기존 패턴(PostComment/PostLike) 재활용 |
+| SVG 지도 컴포넌트 크기                       | 낮음 | 정적 SVG + lazy loading                                |
 
 ---
 
 ## 10. 결정 완료 사항 (이전 보류 → 확정)
 
-| 항목 | 결정 |
-|------|------|
-| 크루 게시물 가시성 | **포스팅 단위 제어** (기존 Post.visibility 필드 활용) |
-| 활동 NO_SHOW 처리 | **운영진/호스트가 수동으로 활동 종료 → RSVP 잔여자 일괄 NO_SHOW** (cron 아님) |
-| 운영진 수동 체크인 | **대리 체크인 가능** (method: ADMIN_MANUAL, checkedBy 기록) |
-| 활동 타입 | **공식 모임(OFFICIAL) / 번개(POP_UP)** 2가지, 통계 분리 |
-| 번개(POP_UP) 권한 | **호스트(생성자)가 운영진과 동일한 활동 관리 권한** |
-| 비공개 크루 | **isPublic 필드 이미 존재** (검색/노출 여부 제어) |
-| 공지 → 채널 | **다중 게시판(채널) 시스템** 채택, 기본 공지 채널 자동 생성 |
-| 크루 프로필 게시물 권한 | **OWNER만** 크루 이름으로 게시 가능 (ADMIN 불가) |
-| 크루 프로필 알림 | 게시물 → 전원 알림, 댓글 → 운영진+크루장 알림 |
-| 크루 탐색 | **지역(region/subRegion) 기반**, 카테고리/태그 없음 |
-| SVG 지도 | **17개 시/도 인터랙티브 SVG** 컴포넌트 |
+| 항목                    | 결정                                                                          |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| 크루 게시물 가시성      | **포스팅 단위 제어** (기존 Post.visibility 필드 활용)                         |
+| 활동 NO_SHOW 처리       | **운영진/호스트가 수동으로 활동 종료 → RSVP 잔여자 일괄 NO_SHOW** (cron 아님) |
+| 운영진 수동 체크인      | **대리 체크인 가능** (method: ADMIN_MANUAL, checkedBy 기록)                   |
+| 활동 타입               | **공식 모임(OFFICIAL) / 번개(POP_UP)** 2가지, 통계 분리                       |
+| 번개(POP_UP) 권한       | **호스트(생성자)가 운영진과 동일한 활동 관리 권한**                           |
+| 비공개 크루             | **isPublic 필드 이미 존재** (검색/노출 여부 제어)                             |
+| 공지 → 채널             | **다중 게시판(채널) 시스템** 채택, 기본 공지 채널 자동 생성                   |
+| 크루 프로필 게시물 권한 | **OWNER만** 크루 이름으로 게시 가능 (ADMIN 불가)                              |
+| 크루 프로필 알림        | 게시물 → 전원 알림, 댓글 → 운영진+크루장 알림                                 |
+| 크루 탐색               | **지역(region/subRegion) 기반**, 카테고리/태그 없음                           |
+| SVG 지도                | **17개 시/도 인터랙티브 SVG** 컴포넌트                                        |
 
 ---
 
 ## 11. 요약
 
-| Phase | 작업 | 의존성 | 규모 |
-|-------|------|--------|------|
-| 7-01 | 활동 상세 페이지 완성 | 없음 | S |
-| 7-02 | 활동 타입 + 출석 3단계 | 7-01 | L |
-| 7-03 | QR 카메라 스캔 | 7-02 | S |
-| 7-04 | 그룹 채팅 | 없음 | L |
-| 7-05 | 채널(게시판) 시스템 | 없음 | L |
-| 7-06 | 크루 프로필 + 게시물 | 7-05 | L |
-| 7-07 | 출석 대시보드 | 7-02 | M |
-| 7-08 | 크루 탐색 & 추천 | 없음 | M |
+| Phase | 작업                   | 의존성 | 규모 |
+| ----- | ---------------------- | ------ | ---- |
+| 7-01  | 활동 상세 페이지 완성  | 없음   | S    |
+| 7-02  | 활동 타입 + 출석 3단계 | 7-01   | L    |
+| 7-03  | QR 카메라 스캔         | 7-02   | S    |
+| 7-04  | 그룹 채팅              | 없음   | L    |
+| 7-05  | 채널(게시판) 시스템    | 없음   | L    |
+| 7-06  | 크루 프로필 + 게시물   | 7-05   | L    |
+| 7-07  | 출석 대시보드          | 7-02   | M    |
+| 7-08  | 크루 탐색 & 추천       | 없음   | M    |
 
 Phase 7은 크루 시스템을 **실제 러닝 크루 운영 도구** 수준으로 끌어올리는 것을 목표로 한다.
 OFFICIAL과 POP_UP를 명확히 분리하고, 참석 신청 → 체크인 → 불참의 완전한 생애주기를 관리하며,

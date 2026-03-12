@@ -3,6 +3,7 @@
 ## Context
 
 Phase 3까지 완료 후 추가 마이그레이션 작업 수행:
+
 - Next.js → Vite + React Router v7 전환 완료
 - Turborepo 제거 → pnpm 네이티브 워크스페이스 전환 완료
 - API 안정화 (22개 누락 엔드포인트 + DTO 검증) 완료
@@ -19,15 +20,15 @@ Phase 3 → 4 사이에 발견된 API 스키마 계약 위반 문제. Phase 4 �
 
 ### API 스키마 계약 수정 (7건)
 
-| # | 심각도 | 도메인 | 문제 | 상태 |
-|---|--------|--------|------|------|
-| 1 | CRITICAL | Challenge | `findAll` raw 배열 반환 → `{ items, nextCursor, hasMore }` 필요 | 🔧 |
-| 2 | CRITICAL | Challenge | `findAll`에 `_count.participants` include 누락 | 🔧 |
-| 3 | CRITICAL | Challenge | 필드명 불일치: FE `name`/`goalType`/`goalValue` vs DB `title`/`type`/`targetValue` | 🔧 |
-| 4 | CRITICAL | Feed | workout `_count` 필드명: `workoutLikes`→`likes`, `workoutComments`→`comments` 매핑 필요 | 🔧 |
-| 5 | MODERATE | Crew | `findById`에 `creator` + `_count` include 누락 → 상세 페이지 크래시 | 🔧 |
-| 6 | MODERATE | Crew | `findByCrewId` (ban)에 `user` include 누락 → 설정 페이지 크래시 | 🔧 |
-| 7 | MODERATE | Challenge | 리더보드에 `rank`/`progress` 필드 누락 (raw `currentValue` 반환) | 🔧 |
+| #   | 심각도   | 도메인    | 문제                                                                                    | 상태 |
+| --- | -------- | --------- | --------------------------------------------------------------------------------------- | ---- |
+| 1   | CRITICAL | Challenge | `findAll` raw 배열 반환 → `{ items, nextCursor, hasMore }` 필요                         | 🔧   |
+| 2   | CRITICAL | Challenge | `findAll`에 `_count.participants` include 누락                                          | 🔧   |
+| 3   | CRITICAL | Challenge | 필드명 불일치: FE `name`/`goalType`/`goalValue` vs DB `title`/`type`/`targetValue`      | 🔧   |
+| 4   | CRITICAL | Feed      | workout `_count` 필드명: `workoutLikes`→`likes`, `workoutComments`→`comments` 매핑 필요 | 🔧   |
+| 5   | MODERATE | Crew      | `findById`에 `creator` + `_count` include 누락 → 상세 페이지 크래시                     | 🔧   |
+| 6   | MODERATE | Crew      | `findByCrewId` (ban)에 `user` include 누락 → 설정 페이지 크래시                         | 🔧   |
+| 7   | MODERATE | Challenge | 리더보드에 `rank`/`progress` 필드 누락 (raw `currentValue` 반환)                        | 🔧   |
 
 **근본 원인**: 서비스 레이어에 응답 변환(serialization) 없이 Prisma raw 객체를 그대로 전달.
 **수정 원칙**: 리포지토리는 최소 수정(include 추가), 매핑은 서비스 레이어에서 수행.
@@ -41,6 +42,7 @@ Phase 3 → 4 사이에 발견된 API 스키마 계약 위반 문제. Phase 4 �
 - Swagger UI: `http://localhost:3000/api-docs`
 
 ### 완료 기준
+
 - [x] 7건 API 계약 위반 모두 수정
 - [x] Swagger UI에서 전체 API 확인 가능
 - [x] `pnpm --filter api test` 전체 통과 (42 suites, 565 tests)
@@ -51,10 +53,15 @@ Phase 3 → 4 사이에 발견된 API 스키마 계약 위반 문제. Phase 4 �
 ## 작업 영역 (6개)
 
 ### A. 프론트엔드 기능 구현 (worktree)
+
 ### B. DM (Direct Message) 시스템 (worktree)
+
 ### C. 멘션 자동완성 시스템 (worktree)
+
 ### D. OAuth 실제 연동 (main branch — 유저 직접 작업)
+
 ### E. 배포 파이프라인 (worktree)
+
 ### F. 성능/UX 분석 + 개선 (현재 브랜치에서 분석 → worktree에서 구현)
 
 ---
@@ -72,6 +79,7 @@ Phase 3 → 4 사이에 발견된 API 스키마 계약 위반 문제. Phase 4 �
 ### 작업 목록
 
 #### A-1. Crew 페이지 강화 (H)
+
 - 대기 멤버 관리 UI (승인/거절)
 - 태그 관리 CRUD UI
 - 멤버별 태그 할당/해제
@@ -80,39 +88,44 @@ Phase 3 → 4 사이에 발견된 API 스키마 계약 위반 문제. Phase 4 �
 - 출석자 목록
 
 #### A-2. Challenge 페이지 강화 (H)
+
 - 팀 생성/참여/탈퇴 UI
 - 팀 리더보드
 - 팀 상세 (멤버 목록)
 
 #### A-3. Events 페이지 강화 (M)
+
 - 이벤트 목록/상세 완성
 - 참가 등록 플로우
 - 결과 제출/리더보드 표시
 - 워크아웃 연동 표시
 
 #### A-4. 전체 UI/UX 갈아엎기 (1차) (H)
+
 - 디자인 시스템 정립 (컬러, 타이포, 스페이싱)
 - 공통 컴포넌트 라이브러리 (Button, Card, Modal, Input, Badge 등)
 - 반응형 레이아웃 재설계
 - 로딩/에러 상태 표준화
 
 #### A-5. 전체 UI/UX 갈아엎기 (2차) (M)
+
 - 인터랙션/애니메이션 개선
 - 접근성(a11y) 보강
 - 다크모드 지원 (선택)
 
 ### 팀 구성
+
 - **designer** (Sonnet) × 1: UI/UX 설계
 - **executor** (Sonnet) × 2~3: 페이지별 구현 (파일 소유권 분리)
 - 총 2~3회 이터레이션 예상
 
 ### 결정 완료
 
-| 항목 | 결정 |
-|------|------|
-| **디자인 시스템** | shadcn/UI (Tailwind v4 + Radix UI) |
-| **QR 체크인** | 고정 QR 단순 스캔 (활동별 고정 QR 코드 → 스캔 시 출석 체크) |
-| **반응형** | 모바일 + 데스크탑 둘 다 지원 |
+| 항목              | 결정                                                        |
+| ----------------- | ----------------------------------------------------------- |
+| **디자인 시스템** | shadcn/UI (Tailwind v4 + Radix UI)                          |
+| **QR 체크인**     | 고정 QR 단순 스캔 (활동별 고정 QR 코드 → 스캔 시 출석 체크) |
+| **반응형**        | 모바일 + 데스크탑 둘 다 지원                                |
 
 | **UI 재작성 범위** | 완전 재작성 — Instagram + Strava 참고 |
 | **UI 재작성 순서** | Feed → Profile → Crew → Challenge → Events |
@@ -129,34 +142,34 @@ Phase 3 → 4 사이에 발견된 API 스키마 계약 위반 문제. Phase 4 �
 
 #### Conversation (대화방)
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| id | UUID | PK |
-| type | enum | DIRECT (1:1) |
-| createdAt | datetime | 생성 시각 |
+| 필드      | 타입     | 설명               |
+| --------- | -------- | ------------------ |
+| id        | UUID     | PK                 |
+| type      | enum     | DIRECT (1:1)       |
+| createdAt | datetime | 생성 시각          |
 | updatedAt | datetime | 마지막 메시지 시각 |
 
 > 향후 GROUP 타입 확장 가능. 현재는 1:1만 지원.
 
 #### ConversationParticipant (대화 참여자)
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| conversationId | UUID | FK → Conversation |
-| userId | UUID | FK → User |
-| lastReadAt | datetime? | 마지막 읽은 시각 (안읽음 카운트용) |
-| joinedAt | datetime | 참여 시각 |
+| 필드           | 타입      | 설명                               |
+| -------------- | --------- | ---------------------------------- |
+| conversationId | UUID      | FK → Conversation                  |
+| userId         | UUID      | FK → User                          |
+| lastReadAt     | datetime? | 마지막 읽은 시각 (안읽음 카운트용) |
+| joinedAt       | datetime  | 참여 시각                          |
 
 #### Message (메시지)
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| id | UUID | PK |
-| conversationId | UUID | FK → Conversation |
-| senderId | UUID | FK → User |
-| content | string | 메시지 내용 (최대 2000자) |
-| deletedAt | datetime? | Soft delete |
-| createdAt | datetime | 전송 시각 |
+| 필드           | 타입      | 설명                      |
+| -------------- | --------- | ------------------------- |
+| id             | UUID      | PK                        |
+| conversationId | UUID      | FK → Conversation         |
+| senderId       | UUID      | FK → User                 |
+| content        | string    | 메시지 내용 (최대 2000자) |
+| deletedAt      | datetime? | Soft delete               |
+| createdAt      | datetime  | 전송 시각                 |
 
 ### 비즈니스 규칙
 
@@ -186,27 +199,29 @@ DELETE /messages/:id           → 메시지 삭제 (soft delete)
 - Header에 안읽음 메시지 뱃지
 
 ### 팀 구성
+
 - **executor** (Sonnet) × 1: DB 스키마 + API 모듈
 - **executor** (Sonnet) × 1: 프론트엔드 DM 페이지
 
 ### 결정 완료
 
-| 항목 | 결정 |
-|------|------|
-| **실시간 전송** | SSE (Server-Sent Events) — 폴링 대신 서버 푸시 |
-| **이미지/파일 첨부** | Phase 4 텍스트만, 이미지 첨부는 Phase 5 |
+| 항목                 | 결정                                           |
+| -------------------- | ---------------------------------------------- |
+| **실시간 전송**      | SSE (Server-Sent Events) — 폴링 대신 서버 푸시 |
+| **이미지/파일 첨부** | Phase 4 텍스트만, 이미지 첨부는 Phase 5        |
 
 ### 참고사항
+
 - SSE로 실시간 메시지 수신 구현
 - 실시간 알림은 Phase 5에서 WebSocket 도입 시 함께 확장
 
 ### ⚠️ AMBIGUOUS — 미결정
 
-| 항목 | 설명 | 필요 시점 |
-|------|------|-----------|
+| 항목                         | 설명                                                       | 필요 시점        |
+| ---------------------------- | ---------------------------------------------------------- | ---------------- |
 | **비공개 계정 DM 정책 상세** | "팔로워만 DM 가능 (또는 설정으로 제어)" — 구체적 옵션 미정 | B 프론트 구현 시 |
-| **대화방 삭제/나가기** | 대화방 자체를 삭제하거나 나가는 기능 필요 여부 미정 | B 후반 |
-| **메시지 최대 로드 수** | 대화 상세에서 한 번에 로드하는 메시지 수, 무한스크롤 방향 | B 프론트 구현 시 |
+| **대화방 삭제/나가기**       | 대화방 자체를 삭제하거나 나가는 기능 필요 여부 미정        | B 후반           |
+| **메시지 최대 로드 수**      | 대화 상세에서 한 번에 로드하는 메시지 수, 무한스크롤 방향  | B 프론트 구현 시 |
 
 ---
 
@@ -231,6 +246,7 @@ DELETE /messages/:id           → 메시지 삭제 (soft delete)
 ### 저장 방식
 
 별도 `Mention` 테이블 — 정규화된 관계:
+
 ```
 Mention: id, commentId, mentionedUserId, createdAt
 ```
@@ -241,20 +257,22 @@ Mention: id, commentId, mentionedUserId, createdAt
 - `MentionLink` — 렌더링 시 `@유저이름`을 클릭 가능한 링크로 변환 (프로필 이동)
 
 ### 팀 구성
+
 - **executor** (Sonnet) × 1: API + 프론트엔드
 
 ### 의존성
+
 - DM 기능(B) 완성 후 연동
 
 ### 결정 완료
 
-| 항목 | 결정 |
-|------|------|
-| **멘션 저장 방식** | 별도 테이블 (Mention) |
-| **멘션 UX** | Instagram 스타일 — 답글달기 버튼으로만 멘션, @검색 자동완성 없음 |
-| **멘션 대상 범위** | 팔로잉 + 크루 멤버 + 스레드 참여자 |
-| **멘션 알림** | Phase 5 (알림 시스템과 함께) |
-| **MentionInput 라이브러리** | 불필요 — 답글달기 버튼 방식이므로 자체 구현 |
+| 항목                        | 결정                                                             |
+| --------------------------- | ---------------------------------------------------------------- |
+| **멘션 저장 방식**          | 별도 테이블 (Mention)                                            |
+| **멘션 UX**                 | Instagram 스타일 — 답글달기 버튼으로만 멘션, @검색 자동완성 없음 |
+| **멘션 대상 범위**          | 팔로잉 + 크루 멤버 + 스레드 참여자                               |
+| **멘션 알림**               | Phase 5 (알림 시스템과 함께)                                     |
+| **MentionInput 라이브러리** | 불필요 — 답글달기 버튼 방식이므로 자체 구현                      |
 
 ---
 
@@ -266,6 +284,7 @@ Mention: id, commentId, mentionedUserId, createdAt
 ### 작업
 
 유저가 직접 수행:
+
 1. 카카오 개발자 콘솔에서 앱 등록 + Redirect URI 설정
 2. 구글 Cloud Console에서 OAuth 클라이언트 생성
 3. 네이버 개발자 센터에서 앱 등록
@@ -273,17 +292,18 @@ Mention: id, commentId, mentionedUserId, createdAt
 5. 실제 로그인 플로우 테스트
 
 ### 참고
+
 - NestJS Passport strategy는 이미 구현됨 (mock/dev 상태)
 - `.env` 값만 설정하면 동작해야 함
 - 문제 발생 시 strategy 코드 디버깅 필요
 
 ### ⚠️ AMBIGUOUS — 결정 필요
 
-| 항목 | 설명 | 필요 시점 |
-|------|------|-----------|
-| **OAuth 우선순위** | 카카오/구글/네이버 중 어떤 것부터 연동할지 | D 시작 시 |
-| **회원가입 플로우** | 최초 OAuth 로그인 시 프로필 설정 화면(이름, 프로필 사진 등) 필요 여부 | D 연동 시 |
-| **계정 연동** | 이미 카카오로 가입한 유저가 구글로도 로그인하면? 동일 이메일 기반 자동 연동? | D 후반 |
+| 항목                | 설명                                                                         | 필요 시점 |
+| ------------------- | ---------------------------------------------------------------------------- | --------- |
+| **OAuth 우선순위**  | 카카오/구글/네이버 중 어떤 것부터 연동할지                                   | D 시작 시 |
+| **회원가입 플로우** | 최초 OAuth 로그인 시 프로필 설정 화면(이름, 프로필 사진 등) 필요 여부        | D 연동 시 |
+| **계정 연동**       | 이미 카카오로 가입한 유저가 구글로도 로그인하면? 동일 이메일 기반 자동 연동? | D 후반    |
 
 ---
 
@@ -295,44 +315,49 @@ Mention: id, commentId, mentionedUserId, createdAt
 ### 작업 목록
 
 #### E-1. Docker 프로덕션 설정 (H)
+
 - `apps/api/Dockerfile` 작성 (multi-stage build)
 - `docker-compose.prod.yml` 작성 (API + PostgreSQL)
 - `.env.production` 템플릿
 - Health check endpoint
 
 #### E-2. Cloudflare Pages 설정 (M)
+
 - `apps/web/` 빌드 → `dist/` 배포
 - SPA fallback 설정 (`_redirects` 또는 Cloudflare 설정)
 - 환경변수 설정 (VITE_API_URL)
 - 커스텀 도메인 연결
 
 #### E-3. CI/CD (GitHub Actions) (M)
+
 - PR 시: lint + typecheck + test
 - main push 시: Docker 이미지 빌드 + 배포
 - Cloudflare Pages는 GitHub 연동 자동 배포
 
 #### E-4. 모니터링 기초 (L)
+
 - API 로깅 표준화
 - 에러 추적 (Sentry 또는 대안)
 
 ### 팀 구성
+
 - **executor** (Sonnet) × 1
 
 ### 결정 완료
 
-| 항목 | 결정 |
-|------|------|
-| **도메인** | 보유 중 (커스텀 도메인 사용) |
+| 항목                | 결정                                                |
+| ------------------- | --------------------------------------------------- |
+| **도메인**          | 보유 중 (커스텀 도메인 사용)                        |
 | **API 서버 호스팅** | GCP Cloud Run (프리 티어 $300 소진) → 이후 AWS 전환 |
-| **HTTPS/인증서** | Cloudflare Proxy (무료 SSL + DDoS 보호 + 캐싱) |
+| **HTTPS/인증서**    | Cloudflare Proxy (무료 SSL + DDoS 보호 + 캐싱)      |
 
 ### ⚠️ AMBIGUOUS — 미결정
 
-| 항목 | 설명 | 필요 시점 |
-|------|------|-----------|
-| **DB 백업 전략** | PostgreSQL 백업 주기, 복원 방법 | E-1 이후 |
+| 항목             | 설명                                    | 필요 시점   |
+| ---------------- | --------------------------------------- | ----------- |
+| **DB 백업 전략** | PostgreSQL 백업 주기, 복원 방법         | E-1 이후    |
 | **CI 러너 환경** | GitHub Actions free tier vs self-hosted | E-3 시작 시 |
-| **R2 CORS 설정** | 프로덕션 도메인 허용 정책 | E-2 시 |
+| **R2 CORS 설정** | 프로덕션 도메인 허용 정책               | E-2 시      |
 
 ---
 
@@ -351,6 +376,7 @@ Mention: id, commentId, mentionedUserId, createdAt
 ### 구현 단계 (worktree)
 
 분석 결과에 따라 worktree에서 구현:
+
 - 코드 스플리팅 (React.lazy)
 - API 요청 캐싱/deduplication
 - 스켈레톤 로딩
@@ -358,22 +384,23 @@ Mention: id, commentId, mentionedUserId, createdAt
 - 무한 스크롤 최적화
 
 ### 팀 구성
+
 - **analyst** (Opus) × 1: 분석
 - **executor** (Sonnet) × 1~2: 구현 (분석 완료 후)
 
 ### 백로그 (언젠가 할 일)
 
-| 항목 | 설명 |
-|------|------|
+| 항목                     | 설명                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **구조화된 로깅 시스템** | dev에서 모든 요청/에러 로그를 명확히 볼 수 있고, 환경별(dev/staging/prod) 로그 레벨을 플래그로 관리할 수 있는 시스템. NestJS Logger + pino/winston 도입 검토 |
 
 ### ⚠️ AMBIGUOUS — 결정 필요
 
-| 항목 | 설명 | 필요 시점 |
-|------|------|-----------|
-| **성능 목표** | LCP, FCP, TTI 등 구체적 수치 목표 미정 | F 분석 시 |
-| **UX 감사 기준** | 어떤 UX 프레임워크/체크리스트로 감사할지 (WCAG 2.1 AA? 자체 기준?) | F 분석 시 |
-| **스켈레톤 로딩 범위** | 모든 페이지? 핵심 페이지만? | F 구현 시 |
+| 항목                   | 설명                                                               | 필요 시점 |
+| ---------------------- | ------------------------------------------------------------------ | --------- |
+| **성능 목표**          | LCP, FCP, TTI 등 구체적 수치 목표 미정                             | F 분석 시 |
+| **UX 감사 기준**       | 어떤 UX 프레임워크/체크리스트로 감사할지 (WCAG 2.1 AA? 자체 기준?) | F 분석 시 |
+| **스켈레톤 로딩 범위** | 모든 페이지? 핵심 페이지만?                                        | F 구현 시 |
 
 ---
 
@@ -404,24 +431,26 @@ Phase 4 실행 순서:
 ## DB 스키마 변경 필요
 
 ### 신규 테이블 (DM)
+
 - `Conversation` — 대화방
 - `ConversationParticipant` — 대화 참여자
 - `Message` — 메시지
 
 ### 변경 없음
+
 - 기존 `PostComment.mentionedUserId`는 이미 존재
 
 ---
 
 ## Worktree 브랜치 계획
 
-| 브랜치명 | 작업 영역 | 파일 범위 |
-|---------|----------|----------|
-| `feature/frontend-v2` | A. 프론트엔드 | `apps/web/` |
-| `feature/dm` | B. DM 시스템 | `apps/api/` + `apps/web/` + `packages/database/` |
-| `feature/mention-autocomplete` | C. 멘션 | `apps/api/` + `apps/web/` |
-| `feature/deployment` | E. 배포 | 루트 + CI/CD |
-| `feature/perf-ux` | F. 성능/UX 구현 | `apps/web/` + `apps/api/` |
+| 브랜치명                       | 작업 영역       | 파일 범위                                        |
+| ------------------------------ | --------------- | ------------------------------------------------ |
+| `feature/frontend-v2`          | A. 프론트엔드   | `apps/web/`                                      |
+| `feature/dm`                   | B. DM 시스템    | `apps/api/` + `apps/web/` + `packages/database/` |
+| `feature/mention-autocomplete` | C. 멘션         | `apps/api/` + `apps/web/`                        |
+| `feature/deployment`           | E. 배포         | 루트 + CI/CD                                     |
+| `feature/perf-ux`              | F. 성능/UX 구현 | `apps/web/` + `apps/api/`                        |
 
 > B(DM)와 A(프론트)는 `apps/web/` 범위가 겹치므로, B의 프론트 작업은 별도 페이지(`/messages`)로 분리하여 충돌 최소화.
 
@@ -432,6 +461,7 @@ Phase 4 실행 순서:
 24시간 제한 가벼운 게시글. Phase 5 이후 검토.
 
 ### 예상 설계 (메모)
+
 - `Story` 테이블: userId, content, imageUrl, expiresAt, createdAt
 - 24시간 후 자동 비노출 (cron 또는 조회 시 필터)
 - 프로필 상단 원형 아이콘으로 표시
@@ -442,11 +472,13 @@ Phase 4 실행 순서:
 ## 완료 기준
 
 ### Phase 3.5 (선결 조건) ✅
+
 - [x] API 스키마 계약 7건 수정 완료
 - [x] Swagger UI 동작 확인
 - [x] 프론트엔드 주요 페이지 런타임 에러 0건
 
 ### Phase 4
+
 - [x] Crew 태그/활동/출석 UI 동작 ✅
 - [x] Challenge 팀 기능 UI 동작 ✅
 - [x] DM 1:1 대화 가능 (백엔드 + 프론트엔드 + SSE 완료) ✅
@@ -454,7 +486,7 @@ Phase 4 실행 순서:
 - [ ] OAuth 실제 로그인 동작 (카카오/구글/네이버 중 최소 1개) — 유저 직접 작업
 - [x] Docker 배포 가능 (Dockerfile + docker-compose.prod.yml) ✅
 - [ ] GCP Cloud Run 배포 — deploy.yml 준비 완료, GCP 프로젝트 설정 필요
-- [ ] Cloudflare Pages 배포 — _redirects 준비 완료, CF 연결 필요
+- [ ] Cloudflare Pages 배포 — \_redirects 준비 완료, CF 연결 필요
 - [x] CI에서 lint + test 자동 실행 (GitHub Actions) ✅
 - [x] UI/UX 완전 재작성 (shadcn/UI + Instagram/Strava 참고) ✅
 - [x] 코드 스플리팅 (React.lazy + Suspense) ✅
@@ -465,32 +497,32 @@ Phase 4 실행 순서:
 
 ## 결정 완료 총정리
 
-| 영역 | 항목 | 결정 |
-|------|------|------|
-| A | 디자인 시스템 | shadcn/UI (Tailwind v4 + Radix UI) ✅ 세팅 완료 |
-| A | QR 체크인 | 고정 QR 단순 스캔 |
-| A | 반응형 | 모바일 + 데스크탑 둘 다 |
-| A | UI 재작성 범위 | 완전 재작성 (Instagram + Strava 참고) |
-| A | UI 재작성 순서 | Feed → Profile → Crew → Challenge → Events |
-| A | 다크모드 | Phase 5로 미루기 |
-| B | 실시간 전송 | SSE ✅ 구현 완료 |
-| B | 이미지 첨부 | Phase 4 텍스트만, Phase 5에서 이미지 |
-| C | 멘션 UX | Instagram 스타일 답글달기 버튼 (@ 검색 자동완성 없음) |
-| C | 멘션 저장 | 별도 Mention 테이블 |
-| C | 멘션 대상 범위 | 팔로잉 + 크루 멤버 + 스레드 참여자 |
-| C | 멘션 알림 | Phase 5 |
-| E | API 호스팅 | GCP Cloud Run ($300 프리 티어) → AWS |
-| E | 도메인 | 보유 중 |
-| E | HTTPS | Cloudflare Proxy |
+| 영역 | 항목           | 결정                                                  |
+| ---- | -------------- | ----------------------------------------------------- |
+| A    | 디자인 시스템  | shadcn/UI (Tailwind v4 + Radix UI) ✅ 세팅 완료       |
+| A    | QR 체크인      | 고정 QR 단순 스캔                                     |
+| A    | 반응형         | 모바일 + 데스크탑 둘 다                               |
+| A    | UI 재작성 범위 | 완전 재작성 (Instagram + Strava 참고)                 |
+| A    | UI 재작성 순서 | Feed → Profile → Crew → Challenge → Events            |
+| A    | 다크모드       | Phase 5로 미루기                                      |
+| B    | 실시간 전송    | SSE ✅ 구현 완료                                      |
+| B    | 이미지 첨부    | Phase 4 텍스트만, Phase 5에서 이미지                  |
+| C    | 멘션 UX        | Instagram 스타일 답글달기 버튼 (@ 검색 자동완성 없음) |
+| C    | 멘션 저장      | 별도 Mention 테이블                                   |
+| C    | 멘션 대상 범위 | 팔로잉 + 크루 멤버 + 스레드 참여자                    |
+| C    | 멘션 알림      | Phase 5                                               |
+| E    | API 호스팅     | GCP Cloud Run ($300 프리 티어) → AWS                  |
+| E    | 도메인         | 보유 중                                               |
+| E    | HTTPS          | Cloudflare Proxy                                      |
 
 ## AMBIGUOUS 미결정 항목
 
-| 영역 | 항목 | 우선순위 |
-|------|------|----------|
-| B | 비공개 계정 DM 정책 상세 | LOW — 나중에 |
-| B | 대화방 삭제/나가기 | LOW — 나중에 |
-| D | OAuth 우선순위 (카카오/구글/네이버) | LOW — D 시작 시 |
-| D | 최초 가입 시 프로필 설정 플로우 | MEDIUM — D 연동 시 |
-| D | 동일 이메일 다중 OAuth 계정 연동 | MEDIUM — D 후반 |
-| E | DB 백업 전략 | LOW — 배포 후 |
-| F | 성능 목표 수치 | LOW — F 분석 시 |
+| 영역 | 항목                                | 우선순위           |
+| ---- | ----------------------------------- | ------------------ |
+| B    | 비공개 계정 DM 정책 상세            | LOW — 나중에       |
+| B    | 대화방 삭제/나가기                  | LOW — 나중에       |
+| D    | OAuth 우선순위 (카카오/구글/네이버) | LOW — D 시작 시    |
+| D    | 최초 가입 시 프로필 설정 플로우     | MEDIUM — D 연동 시 |
+| D    | 동일 이메일 다중 OAuth 계정 연동    | MEDIUM — D 후반    |
+| E    | DB 백업 전략                        | LOW — 배포 후      |
+| F    | 성능 목표 수치                      | LOW — F 분석 시    |

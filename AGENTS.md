@@ -7,16 +7,21 @@ This repository is being reshaped into an agent-friendly engineering harness for
 Read in this order:
 
 1. `AGENTS.md`
-2. `tasks/` for the active initiative or assigned task
-3. `design/` for technical design and architecture
-4. `docs/domain/` for business rules
-5. `docs/runbooks/` for operational procedures
+2. `docs/checklists/README.md`
+3. `docs/checklists/harness-scorecard.md`
+4. `tasks/` for the active initiative or assigned task
+5. `design/` for technical design and architecture
+6. `docs/domain/` for business rules
+7. `docs/runbooks/` for operational procedures
 
 ## Source of Truth Map
 
 - Product and business rules: `docs/domain/`
 - Technical design: `design/frontend/`, `design/backend/`, `design/architecture/`
 - Architectural decisions: `design/adr/`
+- Harness score definition: `docs/checklists/README.md`
+- Harness score snapshot: `docs/checklists/harness-scorecard.md`
+- Operating rules and exceptions: `design/operating-rules/`
 - Large change framing: `design/initiatives/`
 - Execution state: `tasks/`
 - Operational guidance: `docs/runbooks/`
@@ -33,6 +38,8 @@ Read in this order:
 ## Working Rules
 
 - Do not use `README.md` as the only source of truth for feature status. Check `design/`, `docs/domain/`, and `tasks/`.
+- Treat `docs/checklists/README.md` as the authoritative checklist-definition registry and `docs/checklists/harness-scorecard.md` as the current scored snapshot.
+- If a scorecard row is `exception`, it must point to `design/operating-rules/exceptions.md` with an `exception_id`.
 - Status lives in task folder location, not in duplicated `status:` metadata inside task files.
 - One task file should represent one executable unit of work.
 - One initiative file should represent one large change, not one commit.
@@ -110,8 +117,12 @@ Lifecycle:
 - Foundation: `design/initiatives/I-0001-harness-foundation.md`
 - Verification: `design/initiatives/I-0002-harness-verification.md`
 - Review: `design/initiatives/I-0003-review-harness.md`
+- Truth model cleanup: `design/initiatives/I-0004-truth-model-cleanup.md`
+- Current-state design corpus: `design/initiatives/I-0005-current-state-design-corpus.md`
+- Guardrail hardening: `design/initiatives/I-0006-guardrail-hardening.md`
+- Readability hardening: `design/initiatives/I-0007-readability-hardening.md`
 
 ## Current Limitation
 
-- Lint and CI hardening are not fully complete yet. Track that work in `I-0002-harness-verification`.
-- `pnpm lint` is green, but web still has tracked `react-hooks/exhaustive-deps` warnings under `I-0002-060`.
+- The repository still relies on transitional plan and `.omc` material for some durable design knowledge until `I-0005` lands.
+- Guardrail and readability scores are still below the 90% target. Track progress in `docs/checklists/harness-scorecard.md`.
