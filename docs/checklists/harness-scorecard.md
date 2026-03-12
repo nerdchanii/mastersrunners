@@ -9,11 +9,11 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 | Agent Entry Point             |     15 |     0 |         0 |     15 |             100% |
 | Document Structure            |     12 |     0 |         0 |     12 |             100% |
 | Invariant Enforcement         |     13 |     1 |         1 |     15 |              93% |
-| Architecture                  |     10 |     2 |         0 |     12 |              83% |
+| Architecture                  |     12 |     0 |         0 |     12 |             100% |
 | Repository as Source of Truth |     10 |     0 |         0 |     10 |             100% |
 | Operations and Maintenance    |      7 |     1 |         2 |     10 |              88% |
-| Agent Readability             |      7 |     3 |         0 |     10 |              70% |
-| **Total**                     | **74** | **7** |     **3** | **84** | **91% adjusted** |
+| Agent Readability             |      9 |     1 |         0 |     10 |              90% |
+| **Total**                     | **78** | **3** |     **3** | **84** | **96% adjusted** |
 
 ## Category Targets
 
@@ -88,20 +88,20 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 
 ### Architecture
 
-| category     | item_id | statement              | current_status | exception_id | evidence_path                                        | owner        | target_task | notes                                           |
-| ------------ | ------- | ---------------------- | -------------- | ------------ | ---------------------------------------------------- | ------------ | ----------- | ----------------------------------------------- |
-| Architecture | ARC-001 | 레이어 분리            | pass           |              | apps/api/src/                                        | backend      | I-0005-050  | docs still thin                                 |
-| Architecture | ARC-002 | 의존성 방향 일관성     | pass           |              | .dependency-cruiser.cjs                              | architecture | I-0006-020  | dependency-cruiser now proves direction rules   |
-| Architecture | ARC-003 | 모듈 경계 명확         | fail           |              | design/backend/README.md                             | backend      | I-0005-050  | docs placeholder only                           |
-| Architecture | ARC-004 | import 규칙 존재/강제  | pass           |              | .dependency-cruiser.cjs                              | harness      | I-0006-020  | boundary and no-cross-app rules run in CI/local |
-| Architecture | ARC-005 | API contract 명시      | pass           |              | apps/api/src/main.ts                                 | backend      | I-0005-060  | Swagger exists, corpus pending                  |
-| Architecture | ARC-006 | 설정과 코드 분리       | pass           |              | apps/api/src/main.ts                                 | backend      |             | ConfigService use                               |
-| Architecture | ARC-007 | 공통 유틸 중앙화       | pass           |              | apps/web/src/lib/utils.ts                            | frontend     |             |                                                 |
-| Architecture | ARC-008 | 에러 처리 패턴 일관    | pass           |              | apps/api/src/common/filters/http-exception.filter.ts | backend      | I-0005-050  | runtime docs pending                            |
-| Architecture | ARC-009 | 데이터 모델 한 곳 정의 | pass           |              | packages/database/prisma/schema.prisma               | backend      |             |                                                 |
-| Architecture | ARC-010 | 외부 의존성 추상화     | fail           |              | apps/api/src/uploads/storage                         | backend      | I-0005-050  | partial today                                   |
-| Architecture | ARC-011 | 테스트 구조 대칭       | pass           |              | apps/api/src/_\_/_.spec.ts                           | backend      |             | web weaker but overall partial pass             |
-| Architecture | ARC-012 | 순환 의존성 없음       | pass           |              | .github/workflows/ci.yml                             | harness      | I-0006-020  | pnpm depcruise is blocking in CI/local          |
+| category     | item_id | statement              | current_status | exception_id | evidence_path                                        | owner        | target_task | notes                                                                      |
+| ------------ | ------- | ---------------------- | -------------- | ------------ | ---------------------------------------------------- | ------------ | ----------- | -------------------------------------------------------------------------- |
+| Architecture | ARC-001 | 레이어 분리            | pass           |              | apps/api/src/                                        | backend      | I-0005-050  | docs still thin                                                            |
+| Architecture | ARC-002 | 의존성 방향 일관성     | pass           |              | .dependency-cruiser.cjs                              | architecture | I-0006-020  | dependency-cruiser now proves direction rules                              |
+| Architecture | ARC-003 | 모듈 경계 명확         | pass           |              | design/backend/README.md                             | backend      | I-0005-060  | backend README now maps public boundaries and module seams                 |
+| Architecture | ARC-004 | import 규칙 존재/강제  | pass           |              | .dependency-cruiser.cjs                              | harness      | I-0006-020  | boundary and no-cross-app rules run in CI/local                            |
+| Architecture | ARC-005 | API contract 명시      | pass           |              | apps/api/src/main.ts                                 | backend      | I-0005-060  | Swagger exists, corpus pending                                             |
+| Architecture | ARC-006 | 설정과 코드 분리       | pass           |              | apps/api/src/main.ts                                 | backend      |             | ConfigService use                                                          |
+| Architecture | ARC-007 | 공통 유틸 중앙화       | pass           |              | apps/web/src/lib/utils.ts                            | frontend     |             |                                                                            |
+| Architecture | ARC-008 | 에러 처리 패턴 일관    | pass           |              | apps/api/src/common/filters/http-exception.filter.ts | backend      | I-0005-050  | runtime docs pending                                                       |
+| Architecture | ARC-009 | 데이터 모델 한 곳 정의 | pass           |              | packages/database/prisma/schema.prisma               | backend      |             |                                                                            |
+| Architecture | ARC-010 | 외부 의존성 추상화     | pass           |              | design/backend/upload-ingestion.md                   | backend      | I-0005-060  | storage adapter and repository seams are documented as explicit boundaries |
+| Architecture | ARC-011 | 테스트 구조 대칭       | pass           |              | apps/api/src/_\_/_.spec.ts                           | backend      |             | web weaker but overall partial pass                                        |
+| Architecture | ARC-012 | 순환 의존성 없음       | pass           |              | .github/workflows/ci.yml                             | harness      | I-0006-020  | pnpm depcruise is blocking in CI/local                                     |
 
 ### Repository as Source of Truth
 
@@ -135,18 +135,18 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 
 ### Agent Readability
 
-| category          | item_id | statement                | current_status | exception_id | evidence_path                             | owner       | target_task | notes                               |
-| ----------------- | ------- | ------------------------ | -------------- | ------------ | ----------------------------------------- | ----------- | ----------- | ----------------------------------- |
-| Agent Readability | RDR-001 | 파일명과 구조 예측 가능  | pass           |              | apps/web/src/pages                        | engineering |             |                                     |
-| Agent Readability | RDR-002 | 개별 파일 크기 적절      | fail           |              | docs/checklists/harness-scorecard.md      | engineering | I-0007-040  | hotspot list exists                 |
-| Agent Readability | RDR-003 | 함수/메서드 크기 적절    | fail           |              | apps/api/src/crews/crews.service.ts       | engineering | I-0007-030  | hotspot exists                      |
-| Agent Readability | RDR-004 | 네이밍 일관성            | pass           |              | apps/web/src/hooks                        | engineering |             |                                     |
-| Agent Readability | RDR-005 | entry point 명확         | pass           |              | apps/web/src/router.tsx                   | frontend    |             |                                     |
-| Agent Readability | RDR-006 | public API 명확          | fail           |              | design/backend/README.md                  | engineering | I-0005-050  | docs and boundaries pending         |
-| Agent Readability | RDR-007 | 매직 넘버/문자열 추출    | pass           |              | apps/web/src/lib                          | engineering |             | partial but acceptable              |
-| Agent Readability | RDR-008 | 중첩 과도하지 않음       | pass           |              | eslint.config.mjs                         | engineering | I-0007-010  | hotspot-specific follow-up          |
-| Agent Readability | RDR-009 | 같은 유형 파일 구조 일관 | pass           |              | apps/web/src/hooks                        | frontend    | I-0005-020  | pages less consistent               |
-| Agent Readability | RDR-010 | 주석이 why 설명          | pass           |              | design/operating-rules/document-states.md | docs        | I-0005-050  | code comments mixed, docs improving |
+| category          | item_id | statement                | current_status | exception_id | evidence_path                             | owner       | target_task | notes                                                                    |
+| ----------------- | ------- | ------------------------ | -------------- | ------------ | ----------------------------------------- | ----------- | ----------- | ------------------------------------------------------------------------ |
+| Agent Readability | RDR-001 | 파일명과 구조 예측 가능  | pass           |              | apps/web/src/pages                        | engineering |             |                                                                          |
+| Agent Readability | RDR-002 | 개별 파일 크기 적절      | fail           |              | docs/checklists/harness-scorecard.md      | engineering | I-0007-040  | hotspot list exists                                                      |
+| Agent Readability | RDR-003 | 함수/메서드 크기 적절    | pass           |              | apps/api/src/crews/crews.service.ts       | engineering | I-0007-030  | crews service is now a thin facade over internal responsibility services |
+| Agent Readability | RDR-004 | 네이밍 일관성            | pass           |              | apps/web/src/hooks                        | engineering |             |                                                                          |
+| Agent Readability | RDR-005 | entry point 명확         | pass           |              | apps/web/src/router.tsx                   | frontend    |             |                                                                          |
+| Agent Readability | RDR-006 | public API 명확          | pass           |              | design/backend/README.md                  | engineering | I-0005-060  | backend boundary map now points to explicit public module docs and seams |
+| Agent Readability | RDR-007 | 매직 넘버/문자열 추출    | pass           |              | apps/web/src/lib                          | engineering |             | partial but acceptable                                                   |
+| Agent Readability | RDR-008 | 중첩 과도하지 않음       | pass           |              | eslint.config.mjs                         | engineering | I-0007-010  | hotspot-specific follow-up                                               |
+| Agent Readability | RDR-009 | 같은 유형 파일 구조 일관 | pass           |              | apps/web/src/hooks                        | frontend    | I-0005-020  | pages less consistent                                                    |
+| Agent Readability | RDR-010 | 주석이 why 설명          | pass           |              | design/operating-rules/document-states.md | docs        | I-0005-050  | code comments mixed, docs improving                                      |
 
 ## Readability Budget Registry
 

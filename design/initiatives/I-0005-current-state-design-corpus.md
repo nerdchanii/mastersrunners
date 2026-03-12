@@ -43,17 +43,23 @@ Most durable design knowledge still lives in transitional phase plans, `.omc` no
 
 ## Task Breakdown
 
-- `tasks/I-0005-current-state-design-corpus/todo/I-0005-010-architecture-repo-runtime-foundation.md`
-- `tasks/I-0005-current-state-design-corpus/todo/I-0005-020-web-frontend-foundation.md`
+- `tasks/I-0005-current-state-design-corpus/archive/I-0005-010-architecture-repo-runtime-foundation.md`
+- `tasks/I-0005-current-state-design-corpus/archive/I-0005-020-web-frontend-foundation.md`
 - `tasks/I-0005-current-state-design-corpus/todo/I-0005-030-web-social-workout-design.md`
 - `tasks/I-0005-current-state-design-corpus/todo/I-0005-040-web-crew-events-design.md`
-- `tasks/I-0005-current-state-design-corpus/todo/I-0005-050-api-backend-foundation.md`
-- `tasks/I-0005-current-state-design-corpus/todo/I-0005-060-api-domain-feature-design.md`
+- `tasks/I-0005-current-state-design-corpus/archive/I-0005-050-api-backend-foundation.md`
+- `tasks/I-0005-current-state-design-corpus/archive/I-0005-060-api-domain-feature-design.md`
 - `tasks/I-0005-current-state-design-corpus/todo/I-0005-070-docs-domain-sync-pack.md`
-- `tasks/I-0005-current-state-design-corpus/todo/I-0005-080-meta-adr-seed-pack.md`
+- `tasks/I-0005-current-state-design-corpus/archive/I-0005-080-meta-adr-seed-pack.md`
 
 ## Success Criteria
 
 - the required frontend/backend/architecture docs exist with current-state frontmatter
 - domain docs no longer contradict code/schema on the known stale concepts
 - `docs/plans/` and `.omc` stop being needed to understand current implementation shape
+
+## Progress Notes
+
+- `I-0005-010`, `I-0005-020`, and `I-0005-050` established the architecture, frontend, and backend foundation docs.
+- `I-0005-060` now adds backend feature-boundary docs for social/feed, messaging, crews, and events/challenges, and expands the backend boundary index.
+- `I-0005-080` seeded the first accepted ADR pack.
