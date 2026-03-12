@@ -7,13 +7,13 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 | Category                      |   Pass |   Fail | Exception |  Total |            Score |
 | ----------------------------- | -----: | -----: | --------: | -----: | ---------------: |
 | Agent Entry Point             |     14 |      1 |         0 |     15 |              93% |
-| Document Structure            |      9 |      3 |         0 |     12 |              75% |
+| Document Structure            |     11 |      1 |         0 |     12 |              92% |
 | Invariant Enforcement         |     13 |      1 |         1 |     15 |              93% |
 | Architecture                  |     10 |      2 |         0 |     12 |              83% |
-| Repository as Source of Truth |      6 |      4 |         0 |     10 |              60% |
+| Repository as Source of Truth |      8 |      2 |         0 |     10 |              80% |
 | Operations and Maintenance    |      5 |      3 |         2 |     10 |              63% |
 | Agent Readability             |      7 |      3 |         0 |     10 |              70% |
-| **Total**                     | **64** | **17** |     **3** | **84** | **79% adjusted** |
+| **Total**                     | **68** | **13** |     **3** | **84** | **84% adjusted** |
 
 ## Category Targets
 
@@ -51,20 +51,20 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 
 ### Document Structure
 
-| category           | item_id | statement              | current_status | exception_id | evidence_path                  | owner        | target_task | notes                                  |
-| ------------------ | ------- | ---------------------- | -------------- | ------------ | ------------------------------ | ------------ | ----------- | -------------------------------------- |
-| Document Structure | DOC-001 | docs 디렉토리 존재     | pass           |              | docs/README.md                 | docs         |             |                                        |
-| Document Structure | DOC-002 | docs 카테고리 구조화   | pass           |              | docs/README.md                 | docs         |             |                                        |
-| Document Structure | DOC-003 | ADR 존재               | fail           |              | design/adr/README.md           | architecture | I-0005-080  | template only today                    |
-| Document Structure | DOC-004 | ADR 배경/대안 기록     | fail           |              | design/adr/ADR-TEMPLATE.md     | architecture | I-0005-080  | accepted ADRs needed                   |
-| Document Structure | DOC-005 | 개발 가이드 문서화     | pass           |              | docs/guides/review-harness.md  | docs         |             |                                        |
-| Document Structure | DOC-006 | API 문서 존재          | pass           |              | apps/api/src/main.ts           | backend      |             | Swagger                                |
-| Document Structure | DOC-007 | README 최소 정보 포함  | pass           |              | README.md                      | docs         |             |                                        |
-| Document Structure | DOC-008 | Progressive Disclosure | pass           |              | README.md                      | docs         |             |                                        |
-| Document Structure | DOC-009 | 상호 참조              | pass           |              | design/README.md               | docs         |             |                                        |
-| Document Structure | DOC-010 | 인라인 왜 문서화       | pass           |              | apps/api/src/uploads/README.md | backend      | I-0005-050  | code-local doc still to migrate        |
-| Document Structure | DOC-011 | CHANGELOG/릴리스 노트  | fail           |              | docs/reports/README.md         | docs         | I-0004-070  | release-history policy and home needed |
-| Document Structure | DOC-012 | 실행 가능한 코드 예제  | pass           |              | docs/runbooks/deployment.md    | docs         |             | command examples exist                 |
+| category           | item_id | statement              | current_status | exception_id | evidence_path                                          | owner        | target_task | notes                                          |
+| ------------------ | ------- | ---------------------- | -------------- | ------------ | ------------------------------------------------------ | ------------ | ----------- | ---------------------------------------------- |
+| Document Structure | DOC-001 | docs 디렉토리 존재     | pass           |              | docs/README.md                                         | docs         |             |                                                |
+| Document Structure | DOC-002 | docs 카테고리 구조화   | pass           |              | docs/README.md                                         | docs         |             |                                                |
+| Document Structure | DOC-003 | ADR 존재               | pass           |              | design/adr/ADR-0001-repo-source-of-truth-boundaries.md | architecture | I-0005-080  | first accepted ADR pack exists                 |
+| Document Structure | DOC-004 | ADR 배경/대안 기록     | pass           |              | design/adr/ADR-0001-repo-source-of-truth-boundaries.md | architecture | I-0005-080  | accepted ADRs include context and alternatives |
+| Document Structure | DOC-005 | 개발 가이드 문서화     | pass           |              | docs/guides/review-harness.md                          | docs         |             |                                                |
+| Document Structure | DOC-006 | API 문서 존재          | pass           |              | apps/api/src/main.ts                                   | backend      |             | Swagger                                        |
+| Document Structure | DOC-007 | README 최소 정보 포함  | pass           |              | README.md                                              | docs         |             |                                                |
+| Document Structure | DOC-008 | Progressive Disclosure | pass           |              | README.md                                              | docs         |             |                                                |
+| Document Structure | DOC-009 | 상호 참조              | pass           |              | design/README.md                                       | docs         |             |                                                |
+| Document Structure | DOC-010 | 인라인 왜 문서화       | pass           |              | apps/api/src/uploads/README.md                         | backend      | I-0005-050  | code-local doc still to migrate                |
+| Document Structure | DOC-011 | CHANGELOG/릴리스 노트  | fail           |              | docs/reports/README.md                                 | docs         | I-0004-070  | release-history policy and home needed         |
+| Document Structure | DOC-012 | 실행 가능한 코드 예제  | pass           |              | docs/runbooks/deployment.md                            | docs         |             | command examples exist                         |
 
 ### Invariant Enforcement
 
@@ -105,18 +105,18 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 
 ### Repository as Source of Truth
 
-| category                      | item_id | statement                     | current_status | exception_id | evidence_path        | owner        | target_task | notes                           |
-| ----------------------------- | ------- | ----------------------------- | -------------- | ------------ | -------------------- | ------------ | ----------- | ------------------------------- |
-| Repository as Source of Truth | SOT-001 | 기술 결정이 레포 내 기록      | fail           |              | design/adr/README.md | architecture | I-0005-080  | ADRs pending                    |
-| Repository as Source of Truth | SOT-002 | 구현 배경 정보 존재           | pass           |              | tasks/               | harness      |             | task/review history exists      |
-| Repository as Source of Truth | SOT-003 | 계획/로드맵 레포 내 관리      | pass           |              | design/initiatives/  | harness      |             |                                 |
-| Repository as Source of Truth | SOT-004 | TODO/FIXME와 정리 루프        | fail           |              | tasks/               | harness      | I-0006-060  | no explicit cleanup policy yet  |
-| Repository as Source of Truth | SOT-005 | 의도 파악 가능한 naming       | pass           |              | apps/web/src/hooks   | engineering  | I-0007-040  | mostly good                     |
-| Repository as Source of Truth | SOT-006 | 온보딩 정보 레포에 존재       | pass           |              | README.md            | docs         |             |                                 |
-| Repository as Source of Truth | SOT-007 | 외부 의존성 선택 이유 기록    | fail           |              | docs/plans/archive/  | architecture | I-0005-080  | ADRs/repo-structure doc pending |
-| Repository as Source of Truth | SOT-008 | 레포만으로 처음부터 셋업 가능 | pass           |              | README.md            | docs         | I-0004-020  | baseline yes, docs can improve  |
-| Repository as Source of Truth | SOT-009 | commit 메시지 의도 설명       | pass           |              | git history          | harness      |             | task trailers used              |
-| Repository as Source of Truth | SOT-010 | PR 템플릿 존재                | fail           |              | .github/             | harness      | I-0006-060  | pending                         |
+| category                      | item_id | statement                     | current_status | exception_id | evidence_path                                          | owner        | target_task | notes                                                       |
+| ----------------------------- | ------- | ----------------------------- | -------------- | ------------ | ------------------------------------------------------ | ------------ | ----------- | ----------------------------------------------------------- |
+| Repository as Source of Truth | SOT-001 | 기술 결정이 레포 내 기록      | pass           |              | design/adr/ADR-0001-repo-source-of-truth-boundaries.md | architecture | I-0005-080  | key architectural decisions are now recorded in ADRs        |
+| Repository as Source of Truth | SOT-002 | 구현 배경 정보 존재           | pass           |              | tasks/                                                 | harness      |             | task/review history exists                                  |
+| Repository as Source of Truth | SOT-003 | 계획/로드맵 레포 내 관리      | pass           |              | design/initiatives/                                    | harness      |             |                                                             |
+| Repository as Source of Truth | SOT-004 | TODO/FIXME와 정리 루프        | fail           |              | tasks/                                                 | harness      | I-0006-060  | no explicit cleanup policy yet                              |
+| Repository as Source of Truth | SOT-005 | 의도 파악 가능한 naming       | pass           |              | apps/web/src/hooks                                     | engineering  | I-0007-040  | mostly good                                                 |
+| Repository as Source of Truth | SOT-006 | 온보딩 정보 레포에 존재       | pass           |              | README.md                                              | docs         |             |                                                             |
+| Repository as Source of Truth | SOT-007 | 외부 의존성 선택 이유 기록    | pass           |              | design/adr/ADR-0002-vite-spa-and-nest-api-split.md     | architecture | I-0005-080  | framework and transport choices now have explicit rationale |
+| Repository as Source of Truth | SOT-008 | 레포만으로 처음부터 셋업 가능 | pass           |              | README.md                                              | docs         | I-0004-020  | baseline yes, docs can improve                              |
+| Repository as Source of Truth | SOT-009 | commit 메시지 의도 설명       | pass           |              | git history                                            | harness      |             | task trailers used                                          |
+| Repository as Source of Truth | SOT-010 | PR 템플릿 존재                | fail           |              | .github/                                               | harness      | I-0006-060  | pending                                                     |
 
 ### Operations and Maintenance
 
