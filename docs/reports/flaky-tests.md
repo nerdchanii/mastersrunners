@@ -9,7 +9,7 @@ No active flaky test entries yet.
 When an entry is added, use this format:
 
 | Suite/Test | Symptom | Trigger | Status | Owner | Linked Task | Next Review |
-|------------|---------|---------|--------|-------|-------------|-------------|
+| ---------- | ------- | ------- | ------ | ----- | ----------- | ----------- |
 
 Rules:
 

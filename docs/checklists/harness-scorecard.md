@@ -4,15 +4,15 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 
 ## Current Snapshot
 
-| Category                      |   Pass |   Fail | Exception |  Total |            Score |
-| ----------------------------- | -----: | -----: | --------: | -----: | ---------------: |
-| Agent Entry Point             |     15 |      0 |         0 |     15 |             100% |
-| Document Structure            |     11 |      1 |         0 |     12 |              92% |
-| Invariant Enforcement         |     13 |      1 |         1 |     15 |              93% |
-| Architecture                  |     10 |      2 |         0 |     12 |              83% |
-| Repository as Source of Truth |     10 |      0 |         0 |     10 |             100% |
-| Operations and Maintenance    |      7 |      1 |         2 |     10 |              88% |
-| Agent Readability             |      7 |      3 |         0 |     10 |              70% |
+| Category                      |   Pass |  Fail | Exception |  Total |            Score |
+| ----------------------------- | -----: | ----: | --------: | -----: | ---------------: |
+| Agent Entry Point             |     15 |     0 |         0 |     15 |             100% |
+| Document Structure            |     11 |     1 |         0 |     12 |              92% |
+| Invariant Enforcement         |     13 |     1 |         1 |     15 |              93% |
+| Architecture                  |     10 |     2 |         0 |     12 |              83% |
+| Repository as Source of Truth |     10 |     0 |         0 |     10 |             100% |
+| Operations and Maintenance    |      7 |     1 |         2 |     10 |              88% |
+| Agent Readability             |      7 |     3 |         0 |     10 |              70% |
 | **Total**                     | **73** | **8** |     **3** | **84** | **90% adjusted** |
 
 ## Category Targets
@@ -100,7 +100,7 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 | Architecture | ARC-008 | 에러 처리 패턴 일관    | pass           |              | apps/api/src/common/filters/http-exception.filter.ts | backend      | I-0005-050  | runtime docs pending                            |
 | Architecture | ARC-009 | 데이터 모델 한 곳 정의 | pass           |              | packages/database/prisma/schema.prisma               | backend      |             |                                                 |
 | Architecture | ARC-010 | 외부 의존성 추상화     | fail           |              | apps/api/src/uploads/storage                         | backend      | I-0005-050  | partial today                                   |
-| Architecture | ARC-011 | 테스트 구조 대칭       | pass           |              | apps/api/src/*_/*.spec.ts                            | backend      |             | web weaker but overall partial pass             |
+| Architecture | ARC-011 | 테스트 구조 대칭       | pass           |              | apps/api/src/_\_/_.spec.ts                           | backend      |             | web weaker but overall partial pass             |
 | Architecture | ARC-012 | 순환 의존성 없음       | pass           |              | .github/workflows/ci.yml                             | harness      | I-0006-020  | pnpm depcruise is blocking in CI/local          |
 
 ### Repository as Source of Truth
