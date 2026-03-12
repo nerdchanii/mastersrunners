@@ -147,3 +147,16 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 | Agent Readability | RDR-008 | 중첩 과도하지 않음       | pass           |              | eslint.config.mjs                         | engineering | I-0007-010  | hotspot-specific follow-up          |
 | Agent Readability | RDR-009 | 같은 유형 파일 구조 일관 | pass           |              | apps/web/src/hooks                        | frontend    | I-0005-020  | pages less consistent               |
 | Agent Readability | RDR-010 | 주석이 why 설명          | pass           |              | design/operating-rules/document-states.md | docs        | I-0005-050  | code comments mixed, docs improving |
+
+## Readability Budget Registry
+
+| file                                                            | budget | state     | exception_id   | owner       | revisit_date | target_task |
+| --------------------------------------------------------------- | -----: | --------- | -------------- | ----------- | ------------ | ----------- |
+| apps/web/src/pages/events/[id]/index.tsx                        |    350 | exception | RDR-BUDGET-001 | engineering | 2026-03-31   | I-0007-010  |
+| apps/web/src/pages/crews/[id]/activities/[activityId]/index.tsx |    350 | exception | RDR-BUDGET-002 | engineering | 2026-03-31   | I-0007-020  |
+| apps/web/src/pages/posts/new/index.tsx                          |    350 | exception | RDR-BUDGET-003 | engineering | 2026-03-31   | I-0007-020  |
+| apps/web/src/pages/workouts/new/index.tsx                       |    350 | exception | RDR-BUDGET-004 | engineering | 2026-03-31   | I-0007-020  |
+| apps/web/src/pages/challenges/[id]/index.tsx                    |    350 | exception | RDR-BUDGET-005 | engineering | 2026-03-31   | I-0007-010  |
+| apps/web/src/pages/settings/profile/index.tsx                   |    350 | exception | RDR-BUDGET-006 | engineering | 2026-03-31   | I-0007-020  |
+| apps/web/src/pages/messages/[id]/index.tsx                      |    350 | exception | RDR-BUDGET-007 | engineering | 2026-03-31   | I-0007-010  |
+| apps/api/src/crews/crews.service.ts                             |    350 | exception | RDR-BUDGET-008 | engineering | 2026-03-31   | I-0007-030  |
