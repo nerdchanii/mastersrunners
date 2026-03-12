@@ -1,118 +1,291 @@
-name: Dev PR AI Review Gate
+name: PR AI Review Gate
 
 on:
   pull_request_target:
-    branches: [dev]
     types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  issue_comment:
+    types: [created]
 
 permissions:
+  actions: write
   contents: read
-  issues: read
-  pull-requests: read
+  issues: write
+  pull-requests: write
 
 jobs:
-  ai-review-gate:
+  gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
 
     steps:
-      - name: Check AI review state
+      - name: Derive AI review gate state
+        id: gate
         uses: actions/github-script@v7
         env:
-          AI_REVIEW_COPILOT_LOGIN: ${{ vars.AI_REVIEW_COPILOT_LOGIN }}
-          AI_REVIEW_GEMINI_LOGIN: ${{ vars.AI_REVIEW_GEMINI_LOGIN }}
-          AI_REVIEW_COPILOT_MARKER: ${{ vars.AI_REVIEW_COPILOT_MARKER }}
-          AI_REVIEW_GEMINI_MARKER: ${{ vars.AI_REVIEW_GEMINI_MARKER }}
+          COPILOT_REVIEW_LOGIN: ${{ vars.COPILOT_REVIEW_LOGIN }}
+          GEMINI_REVIEW_LOGIN: ${{ vars.GEMINI_REVIEW_LOGIN }}
+          COPILOT_REVIEW_MARKER: Copilot AI
+          GEMINI_REVIEW_MARKER: ${{ vars.GEMINI_REVIEW_MARKER }}
+          STATE_MARKER: "<!-- codex-pr-fix-state -->"
+          FIX_LABEL: ai-fix
+          MAX_ITERATIONS: "5"
         with:
           script: |
-            const pr = context.payload.pull_request;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
+            const eventName = context.eventName;
+            const fixLabel = process.env.FIX_LABEL;
+            const stateMarker = process.env.STATE_MARKER;
+            const maxIterations = Number(process.env.MAX_ITERATIONS || "5");
+            const copilotLogin = (process.env.COPILOT_REVIEW_LOGIN || "").trim().toLowerCase();
+            const geminiLogin = (process.env.GEMINI_REVIEW_LOGIN || "").trim().toLowerCase();
+            const copilotMarker = (process.env.COPILOT_REVIEW_MARKER || "").trim();
+            const geminiMarker = (process.env.GEMINI_REVIEW_MARKER || "").trim();
 
-            if (!pr) {
-              core.setFailed('This workflow only supports pull_request_target events.');
-              return;
+            function parseState(body) {
+              const empty = {
+                iteration: 0,
+                last_requested_sha: "",
+                last_result: "idle",
+                last_fix_completed_at: "",
+                last_fixed_sha: "",
+              };
+
+              if (!body || !body.includes(stateMarker)) {
+                return empty;
+              }
+
+              const match = body.match(/```json\n([\s\S]*?)\n```/);
+              if (!match) {
+                return empty;
+              }
+
+              try {
+                return { ...empty, ...JSON.parse(match[1]) };
+              } catch {
+                return empty;
+              }
             }
 
-            if (pr.draft) {
-              core.notice(`PR #${pr.number} is draft. AI review gate is waiting for the PR to leave draft state.`);
-              return;
+            function renderState(state) {
+              return [
+                stateMarker,
+                "## Codex PR Auto-Fix State",
+                "",
+                "```json",
+                JSON.stringify(state, null, 2),
+                "```",
+              ].join("\n");
             }
 
-            const normalize = (value) => (value || '').trim().toLowerCase();
-            const nonEmpty = (value) => (value || '').trim();
-            const configuredLogins = {
-              copilot: normalize(process.env.AI_REVIEW_COPILOT_LOGIN),
-              gemini: normalize(process.env.AI_REVIEW_GEMINI_LOGIN),
-            };
-            const fallbackMarkers = {
-              copilot: nonEmpty(process.env.AI_REVIEW_COPILOT_MARKER) || 'Copilot AI',
-              gemini: nonEmpty(process.env.AI_REVIEW_GEMINI_MARKER),
-            };
+            function reviewMatches(review, login, marker) {
+              const author = (review.user?.login || "").toLowerCase();
+              const body = review.body || "";
+              if (login && author === login) {
+                return true;
+              }
+              if (marker && body.includes(marker)) {
+                return true;
+              }
+              return false;
+            }
 
-            const [reviews, comments] = await Promise.all([
-              github.paginate(github.rest.pulls.listReviews, {
+            function currentHeadReviewReady(reviews, headSha, login, marker) {
+              if (!login && !marker) {
+                return false;
+              }
+
+              return reviews.some((review) => {
+                if (review.state === "DISMISSED") {
+                  return false;
+                }
+                if (review.commit_id !== headSha) {
+                  return false;
+                }
+                return reviewMatches(review, login, marker);
+              });
+            }
+
+            async function loadPullRequest() {
+              if (eventName === "issue_comment") {
+                if (!context.payload.issue?.pull_request) {
+                  return null;
+                }
+
+                const response = await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: context.payload.issue.number,
+                });
+
+                return response.data;
+              }
+
+              if (eventName === "pull_request_review") {
+                return context.payload.pull_request;
+              }
+
+              return context.payload.pull_request;
+            }
+
+            async function listIssueComments(prNumber) {
+              return github.paginate(github.rest.issues.listComments, {
                 owner,
                 repo,
-                pull_number: pr.number,
+                issue_number: prNumber,
                 per_page: 100,
-              }),
-              github.paginate(github.rest.issues.listComments, {
+              });
+            }
+
+            function latestCommand(comments) {
+              const allowedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
+              const filtered = comments
+                .filter((comment) => comment.body)
+                .filter((comment) => comment.user?.login !== "github-actions[bot]")
+                .filter((comment) => allowedAssociations.has(comment.author_association))
+                .filter((comment) => /\/codex (fix|stop)\b/.test(comment.body))
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+              const latest = filtered[0];
+              if (!latest) {
+                return "";
+              }
+
+              if (/\/codex stop\b/.test(latest.body)) {
+                return "stop";
+              }
+
+              if (/\/codex fix\b/.test(latest.body)) {
+                return "fix";
+              }
+
+              return "";
+            }
+
+            const pr = await loadPullRequest();
+
+            if (!pr) {
+              core.info("No PR context for this event.");
+              core.setOutput("dispatch", "false");
+              return;
+            }
+
+            if (pr.base.ref !== "dev") {
+              core.info(`PR #${pr.number} does not target dev.`);
+              core.setOutput("dispatch", "false");
+              return;
+            }
+
+            const issueComments = await listIssueComments(pr.number);
+            const stateComment = issueComments.find((comment) => comment.body?.includes(stateMarker));
+            const state = parseState(stateComment?.body || "");
+            const lastCommand = latestCommand(issueComments);
+            const hasFixLabel = (pr.labels || []).some((label) => label.name === fixLabel);
+            const labeledNow = eventName === "pull_request_target" && context.payload.action === "labeled" && context.payload.label?.name === fixLabel;
+            const unlabeledNow = eventName === "pull_request_target" && context.payload.action === "unlabeled" && context.payload.label?.name === fixLabel;
+            let enabled = hasFixLabel;
+            if (labeledNow) {
+              enabled = true;
+            } else if (unlabeledNow) {
+              enabled = false;
+            } else if (lastCommand === "fix") {
+              enabled = true;
+            } else if (lastCommand === "stop") {
+              enabled = false;
+            }
+            const forkBlocked = pr.head.repo.full_name !== `${owner}/${repo}`;
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner,
+              repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+
+            const geminiIdentityConfigured = Boolean(geminiLogin || geminiMarker);
+            const copilotIdentityConfigured = Boolean(copilotLogin || copilotMarker);
+            const geminiReady = currentHeadReviewReady(reviews, pr.head.sha, geminiLogin, geminiMarker);
+            const copilotReady = currentHeadReviewReady(reviews, pr.head.sha, copilotLogin, copilotMarker);
+
+            let status = "paused";
+            if (forkBlocked) {
+              status = "fork_blocked";
+            } else if (!enabled) {
+              status = "paused";
+            } else if (state.iteration >= maxIterations) {
+              status = "max_iterations_reached";
+            } else if (!geminiIdentityConfigured) {
+              status = "waiting_for_gemini_identity";
+            } else if (!geminiReady) {
+              status = "waiting_for_gemini_review";
+            } else if (!copilotReady) {
+              status = "waiting_for_copilot_review";
+            } else if (state.last_requested_sha === pr.head.sha) {
+              status = "already_requested";
+            } else {
+              status = "ready";
+            }
+
+            const nextState = {
+              ...state,
+              enabled,
+              status,
+              pr_number: pr.number,
+              base_ref: pr.base.ref,
+              head_ref: pr.head.ref,
+              head_sha: pr.head.sha,
+              max_iterations: maxIterations,
+              gemini_identity_configured: geminiIdentityConfigured,
+              gemini_review_ready: geminiReady,
+              copilot_identity_configured: copilotIdentityConfigured,
+              copilot_review_ready: copilotReady,
+              latest_command: lastCommand || "",
+              updated_at: new Date().toISOString(),
+            };
+
+            if (status === "ready") {
+              nextState.status = "queued";
+              nextState.last_requested_sha = pr.head.sha;
+              nextState.last_result = "queued";
+            }
+
+            const body = renderState(nextState);
+
+            if (stateComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: stateComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
                 owner,
                 repo,
                 issue_number: pr.number,
-                per_page: 100,
-              }),
-            ]);
-
-            const evidence = [
-              ...reviews.map((review) => ({
-                kind: 'review',
-                login: normalize(review.user?.login),
-                text: `${review.body || ''}\n${review.state || ''}`,
-              })),
-              ...comments.map((comment) => ({
-                kind: 'comment',
-                login: normalize(comment.user?.login),
-                text: comment.body || '',
-              })),
-            ];
-
-            const detection = {};
-            for (const provider of ['copilot', 'gemini']) {
-              const login = configuredLogins[provider];
-              const marker = fallbackMarkers[provider];
-
-              let matchedBy = '';
-              if (login) {
-                const loginHit = evidence.find((item) => item.login === login);
-                if (loginHit) {
-                  matchedBy = `${provider} login:${login}`;
-                }
-              }
-
-              if (!matchedBy && marker) {
-                const markerHit = evidence.find((item) => item.text.includes(marker));
-                if (markerHit) {
-                  matchedBy = `${provider} marker:${marker}`;
-                }
-              }
-
-              detection[provider] = matchedBy;
+                body,
+              });
             }
 
-            core.info(`Detection summary: ${JSON.stringify(detection)}`);
+            core.setOutput("dispatch", status === "ready" ? "true" : "false");
+            core.setOutput("pr_number", String(pr.number));
+            core.setOutput("head_ref", pr.head.ref);
+            core.setOutput("head_sha", pr.head.sha);
+            core.setOutput("status", status);
 
-            if (detection.copilot || detection.gemini) {
-              core.notice(`AI review detected for PR #${pr.number}.`);
-              return;
-            }
-
-            core.setFailed(
-              [
-                `Waiting for AI review on PR #${pr.number}.`,
-                'Detection is login-first via repository variables AI_REVIEW_COPILOT_LOGIN and AI_REVIEW_GEMINI_LOGIN.',
-                'Copilot marker fallback defaults to "Copilot AI".',
-                'Gemini marker fallback is intentionally unset; leave it that way until the real marker is known.',
-              ].join(' ')
-            );
+      - name: Dispatch Codex auto-fix workflow
+        if: steps.gate.outputs.dispatch == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: "codex-pr-fix.yml",
+              ref: "main",
+              inputs: {
+                pr_number: "${{ steps.gate.outputs.pr_number }}",
+                head_ref: "${{ steps.gate.outputs.head_ref }}",
+                head_sha: "${{ steps.gate.outputs.head_sha }}",
+              },
+            });

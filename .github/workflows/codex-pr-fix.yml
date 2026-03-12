@@ -1,206 +1,639 @@
 name: Codex PR Fix
 
 on:
-  pull_request_target:
-    branches: [dev]
-    types: [opened, reopened, synchronize, labeled, unlabeled]
-  issue_comment:
-    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull request number"
+        required: true
+        type: string
+      head_ref:
+        description: "PR head branch ref"
+        required: true
+        type: string
+      head_sha:
+        description: "PR head SHA"
+        required: true
+        type: string
 
 permissions:
-  actions: read
-  contents: read
+  actions: write
+  contents: write
   issues: write
   pull-requests: write
 
 concurrency:
-  group: codex-pr-fix-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
-  cancel-in-progress: true
+  group: codex-pr-fix-${{ inputs.pr_number }}
+  cancel-in-progress: false
 
 jobs:
-  resolve-request:
-    name: Resolve Request
+  validate-request:
     runs-on: ubuntu-latest
     outputs:
-      reason: ${{ steps.resolve.outputs.reason }}
-      pr_number: ${{ steps.resolve.outputs.pr_number }}
-      head_sha: ${{ steps.resolve.outputs.head_sha }}
-      should_run: ${{ steps.resolve.outputs.should_run }}
-      should_stop: ${{ steps.resolve.outputs.should_stop }}
+      should_run: ${{ steps.validate.outputs.should_run }}
+      pr_number: ${{ steps.validate.outputs.pr_number }}
+      head_ref: ${{ steps.validate.outputs.head_ref }}
+      head_sha: ${{ steps.validate.outputs.head_sha }}
+      reason: ${{ steps.validate.outputs.reason }}
+    env:
+      PR_NUMBER: ${{ inputs.pr_number }}
+      HEAD_REF: ${{ inputs.head_ref }}
+      HEAD_SHA: ${{ inputs.head_sha }}
+      STATE_MARKER: "<!-- codex-pr-fix-state -->"
+      COPILOT_REVIEW_LOGIN: ${{ vars.COPILOT_REVIEW_LOGIN }}
+      GEMINI_REVIEW_LOGIN: ${{ vars.GEMINI_REVIEW_LOGIN }}
+      COPILOT_REVIEW_MARKER: Copilot AI
+      GEMINI_REVIEW_MARKER: ${{ vars.GEMINI_REVIEW_MARKER }}
+      FIX_LABEL: ai-fix
+      MAX_ITERATIONS: "5"
 
     steps:
-      - name: Resolve trigger state
-        id: resolve
+      - name: Validate workflow dispatch request
+        id: validate
         uses: actions/github-script@v7
         with:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const eventName = context.eventName;
-            const action = context.payload.action || '';
+            const issueNumber = Number(process.env.PR_NUMBER);
+            const stateMarker = process.env.STATE_MARKER;
+            const fixLabel = process.env.FIX_LABEL;
+            const maxIterations = Number(process.env.MAX_ITERATIONS || "5");
+            const copilotLogin = (process.env.COPILOT_REVIEW_LOGIN || "").trim().toLowerCase();
+            const geminiLogin = (process.env.GEMINI_REVIEW_LOGIN || "").trim().toLowerCase();
+            const copilotMarker = (process.env.COPILOT_REVIEW_MARKER || "").trim();
+            const geminiMarker = (process.env.GEMINI_REVIEW_MARKER || "").trim();
 
-            const setOutputs = (values) => {
-              for (const [key, value] of Object.entries(values)) {
-                core.setOutput(key, String(value));
+            function parseState(body) {
+              const empty = {
+                iteration: 0,
+                last_requested_sha: "",
+                last_result: "idle",
+                last_fix_completed_at: "",
+                last_fixed_sha: "",
+              };
+
+              if (!body || !body.includes(stateMarker)) {
+                return empty;
               }
-            };
 
-            let pr;
-            if (eventName === 'pull_request_target') {
-              pr = context.payload.pull_request;
-            } else if (eventName === 'issue_comment' && context.payload.issue?.pull_request) {
-              const response = await github.rest.pulls.get({
-                owner,
-                repo,
-                pull_number: context.payload.issue.number,
-              });
-              pr = response.data;
+              const match = body.match(/```json\n([\s\S]*?)\n```/);
+              if (!match) {
+                return empty;
+              }
+
+              try {
+                return { ...empty, ...JSON.parse(match[1]) };
+              } catch {
+                return empty;
+              }
             }
 
-            if (!pr) {
-              core.notice('The event is not attached to a pull request.');
-              setOutputs({
-                reason: 'not-a-pr',
-                pr_number: '',
-                head_sha: '',
-                should_run: false,
-                should_stop: false,
-              });
-              return;
+            function reviewMatches(review, login, marker) {
+              const author = (review.user?.login || "").toLowerCase();
+              const body = review.body || "";
+              if (login && author === login) {
+                return true;
+              }
+              if (marker && body.includes(marker)) {
+                return true;
+              }
+              return false;
             }
 
-            if (pr.base.ref !== 'dev') {
-              core.notice(`PR #${pr.number} targets ${pr.base.ref}, not dev.`);
-              setOutputs({
-                reason: 'not-dev-pr',
-                pr_number: pr.number,
-                head_sha: pr.head.sha,
-                should_run: false,
-                should_stop: false,
+            function currentHeadReviewReady(reviews, headSha, login, marker) {
+              if (!login && !marker) {
+                return false;
+              }
+
+              return reviews.some((review) => {
+                if (review.state === "DISMISSED") {
+                  return false;
+                }
+                if (review.commit_id !== headSha) {
+                  return false;
+                }
+                return reviewMatches(review, login, marker);
               });
-              return;
             }
 
-            const iterationComments = await github.paginate(github.rest.issues.listComments, {
+            function latestCommand(comments) {
+              const allowedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
+              const filtered = comments
+                .filter((comment) => comment.body)
+                .filter((comment) => allowedAssociations.has(comment.author_association))
+                .filter((comment) => /\/codex (fix|stop)\b/.test(comment.body))
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+              const latest = filtered[0];
+              if (!latest) {
+                return "";
+              }
+
+              if (/\/codex stop\b/.test(latest.body)) {
+                return "stop";
+              }
+
+              if (/\/codex fix\b/.test(latest.body)) {
+                return "fix";
+              }
+
+              return "";
+            }
+
+            const prResponse = await github.rest.pulls.get({
               owner,
               repo,
-              issue_number: pr.number,
+              pull_number: issueNumber,
+            });
+            const pr = prResponse.data;
+            const branchResponse = await github.rest.repos.getBranch({
+              owner,
+              repo,
+              branch: pr.head.ref,
+            });
+            const headBranch = branchResponse.data;
+            const issueComments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+            const stateComment = issueComments.find((comment) => comment.body?.includes(stateMarker));
+            const state = parseState(stateComment?.body || "");
+            const lastCommand = latestCommand(issueComments);
+            const hasFixLabel = (pr.labels || []).some((label) => label.name === fixLabel);
+            let enabled = hasFixLabel;
+            if (lastCommand === "fix") {
+              enabled = true;
+            } else if (lastCommand === "stop") {
+              enabled = false;
+            }
+
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner,
+              repo,
+              pull_number: issueNumber,
               per_page: 100,
             });
 
-            const labels = (pr.labels || []).map((label) => label.name);
-            const hasAiFixLabel = labels.includes('ai-fix');
-            const commentBody = context.payload.comment?.body || '';
-            const requestedByComment = /^\/codex fix\b/i.test(commentBody.trim());
-            const stopByComment = /^\/codex stop\b/i.test(commentBody.trim());
-            const startByLabel = eventName === 'pull_request_target' && action === 'labeled' && context.payload.label?.name === 'ai-fix';
-            const stopByLabel = eventName === 'pull_request_target' && action === 'unlabeled' && context.payload.label?.name === 'ai-fix';
+            const geminiIdentityConfigured = Boolean(geminiLogin || geminiMarker);
+            const copilotReady = currentHeadReviewReady(reviews, pr.head.sha, copilotLogin, copilotMarker);
+            const geminiReady = currentHeadReviewReady(reviews, pr.head.sha, geminiLogin, geminiMarker);
 
-            const controlComments = iterationComments
-              .map((comment) => {
-                const body = (comment.body || '').trim();
-                if (/^\/codex fix\b/i.test(body)) {
-                  return { createdAt: comment.created_at, type: 'fix' };
-                }
-                if (/^\/codex stop\b/i.test(body)) {
-                  return { createdAt: comment.created_at, type: 'stop' };
-                }
-                return null;
-              })
-              .filter(Boolean)
-              .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt));
-
-            const latestControl = controlComments[0] || null;
-            const stopPersists = latestControl?.type === 'stop';
-            const rerunBySync =
-              eventName === 'pull_request_target' &&
-              hasAiFixLabel &&
-              !stopPersists &&
-              ['opened', 'reopened', 'synchronize'].includes(action);
-
-            const shouldStop = stopByComment || stopByLabel;
-            let shouldRun = !shouldStop && (startByLabel || requestedByComment || rerunBySync);
-            let reason = shouldRun ? 'run-requested' : shouldStop ? 'stop-requested' : stopPersists ? 'stopped' : 'no-op';
-
-            const iterationPattern = /<!-- codex-pr-fix:iteration:(\d+) -->/;
-            let currentIteration = 0;
-            for (const comment of iterationComments) {
-              const match = comment.body && comment.body.match(iterationPattern);
-              if (match) {
-                currentIteration = Math.max(currentIteration, Number(match[1]));
-              }
-            }
-
-            const nextIteration = currentIteration + 1;
-            if (shouldRun && nextIteration > 5) {
+            let reason = "ready";
+            let shouldRun = true;
+            if (pr.base.ref !== "dev") {
               shouldRun = false;
-              reason = 'max-iterations-reached';
-            }
-
-            if (shouldRun && pr.head.repo.fork) {
+              reason = "not_dev";
+            } else if (pr.head.repo.full_name !== `${owner}/${repo}`) {
               shouldRun = false;
-              reason = 'fork-pr-blocked';
+              reason = "fork_blocked";
+            } else if (["main", "dev"].includes(pr.head.ref) || headBranch.protected) {
+              shouldRun = false;
+              reason = "protected_or_shared_head_branch";
+            } else if (pr.head.ref !== process.env.HEAD_REF || pr.head.sha !== process.env.HEAD_SHA) {
+              shouldRun = false;
+              reason = "stale_head";
+            } else if (!enabled) {
+              shouldRun = false;
+              reason = "not_enabled";
+            } else if (state.iteration >= maxIterations) {
+              shouldRun = false;
+              reason = "max_iterations_reached";
+            } else if (!geminiIdentityConfigured) {
+              shouldRun = false;
+              reason = "waiting_for_gemini_identity";
+            } else if (!geminiReady) {
+              shouldRun = false;
+              reason = "waiting_for_gemini_review";
+            } else if (!copilotReady) {
+              shouldRun = false;
+              reason = "waiting_for_copilot_review";
+            } else if (state.last_requested_sha !== pr.head.sha) {
+              shouldRun = false;
+              reason = "request_not_queued";
             }
 
-            if (shouldRun) {
-              const trigger = startByLabel
-                ? 'label ai-fix'
-                : requestedByComment
-                  ? '/codex fix comment'
-                  : `pull_request_target:${action}`;
+            core.setOutput("should_run", String(shouldRun));
+            core.setOutput("pr_number", String(pr.number));
+            core.setOutput("head_ref", pr.head.ref);
+            core.setOutput("head_sha", pr.head.sha);
+            core.setOutput("reason", reason);
 
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: pr.number,
-                body: [
-                  `<!-- codex-pr-fix:iteration:${nextIteration} -->`,
-                  `Codex PR fix iteration ${nextIteration}/5 queued.`,
-                  `Trigger: ${trigger}.`,
-                ].join('\n'),
-              });
-            }
-
-            core.info(
-              JSON.stringify({
-                pr: pr.number,
-                shouldRun,
-                shouldStop,
-                reason,
-                nextIteration,
-                fork: pr.head.repo.fork,
-              })
-            );
-
-            setOutputs({
-              reason,
-              pr_number: pr.number,
-              head_sha: pr.head.sha,
-              should_run: shouldRun,
-              should_stop: shouldStop,
-            });
-
-  codex-fix:
-    name: Codex Fix Skeleton
-    needs: resolve-request
-    if: needs.resolve-request.outputs.should_run == 'true'
+  fix:
+    needs: validate-request
+    if: needs.validate-request.outputs.should_run == 'true'
     runs-on: [self-hosted, macos, codex-runner]
-    timeout-minutes: 30
-
-    permissions:
-      contents: read
-      pull-requests: write
+    timeout-minutes: 45
+    env:
+      PR_NUMBER: ${{ needs.validate-request.outputs.pr_number }}
+      HEAD_REF: ${{ needs.validate-request.outputs.head_ref }}
+      HEAD_SHA: ${{ needs.validate-request.outputs.head_sha }}
+      STATE_MARKER: "<!-- codex-pr-fix-state -->"
+      COPILOT_REVIEW_LOGIN: ${{ vars.COPILOT_REVIEW_LOGIN }}
+      GEMINI_REVIEW_LOGIN: ${{ vars.GEMINI_REVIEW_LOGIN }}
+      COPILOT_REVIEW_MARKER: Copilot AI
+      GEMINI_REVIEW_MARKER: ${{ vars.GEMINI_REVIEW_MARKER }}
 
     steps:
       - name: Checkout PR head
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.resolve-request.outputs.head_sha }}
+          ref: ${{ env.HEAD_SHA }}
           fetch-depth: 0
 
-      - name: Skeleton execution placeholder
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Mark state as running
+        id: state-start
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = Number(process.env.PR_NUMBER);
+            const stateMarker = process.env.STATE_MARKER;
+
+            function parseState(body) {
+              const empty = {
+                iteration: 0,
+                last_requested_sha: "",
+                last_result: "idle",
+                last_fix_completed_at: "",
+                last_fixed_sha: "",
+              };
+
+              if (!body || !body.includes(stateMarker)) {
+                return empty;
+              }
+
+              const match = body.match(/```json\n([\s\S]*?)\n```/);
+              if (!match) {
+                return empty;
+              }
+
+              try {
+                return { ...empty, ...JSON.parse(match[1]) };
+              } catch {
+                return empty;
+              }
+            }
+
+            function renderState(state) {
+              return [
+                stateMarker,
+                "## Codex PR Auto-Fix State",
+                "",
+                "```json",
+                JSON.stringify(state, null, 2),
+                "```",
+              ].join("\n");
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+            const stateComment = comments.find((comment) => comment.body?.includes(stateMarker));
+            const previousState = parseState(stateComment?.body || "");
+            const nextState = {
+              ...previousState,
+              iteration: Number(previousState.iteration || 0) + 1,
+              status: "running",
+              last_requested_sha: process.env.HEAD_SHA,
+              last_result: "running",
+              updated_at: new Date().toISOString(),
+            };
+
+            const body = renderState(nextState);
+            if (stateComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: stateComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body,
+              });
+            }
+
+            core.setOutput("iteration", String(nextState.iteration));
+
+      - name: Collect AI review feedback
+        id: feedback
+        uses: actions/github-script@v7
+        env:
+          FEEDBACK_PATH: ${{ runner.temp }}/ai-review-feedback.md
+        with:
+          script: |
+            const fs = require("fs");
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = Number(process.env.PR_NUMBER);
+            const headSha = process.env.HEAD_SHA;
+            const copilotLogin = (process.env.COPILOT_REVIEW_LOGIN || "").trim().toLowerCase();
+            const geminiLogin = (process.env.GEMINI_REVIEW_LOGIN || "").trim().toLowerCase();
+            const copilotMarker = (process.env.COPILOT_REVIEW_MARKER || "").trim();
+            const geminiMarker = (process.env.GEMINI_REVIEW_MARKER || "").trim();
+            const feedbackPath = process.env.FEEDBACK_PATH;
+
+            function matches(body, userLogin, login, marker) {
+              const author = (userLogin || "").toLowerCase();
+              if (login && author === login) {
+                return true;
+              }
+              if (marker && (body || "").includes(marker)) {
+                return true;
+              }
+              return false;
+            }
+
+            const prResponse = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: issueNumber,
+            });
+            const pr = prResponse.data;
+
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner,
+              repo,
+              pull_number: issueNumber,
+              per_page: 100,
+            });
+            const reviewComments = await github.paginate(github.rest.pulls.listReviewComments, {
+              owner,
+              repo,
+              pull_number: issueNumber,
+              per_page: 100,
+            });
+
+            const filteredReviews = reviews.filter((review) => {
+              if (review.state === "DISMISSED") {
+                return false;
+              }
+              if (review.commit_id !== headSha) {
+                return false;
+              }
+              return (
+                matches(review.body, review.user?.login, copilotLogin, copilotMarker) ||
+                matches(review.body, review.user?.login, geminiLogin, geminiMarker)
+              );
+            });
+
+            const filteredComments = reviewComments.filter((comment) => {
+              if (comment.commit_id !== headSha && comment.original_commit_id !== headSha) {
+                return false;
+              }
+              return (
+                matches(comment.body, comment.user?.login, copilotLogin, copilotMarker) ||
+                matches(comment.body, comment.user?.login, geminiLogin, geminiMarker)
+              );
+            });
+
+            const sections = [];
+            if (filteredReviews.length > 0) {
+              sections.push("## Review Summaries");
+              for (const review of filteredReviews) {
+                sections.push(`- ${review.user?.login || "unknown"} (${review.state}): ${review.body || "(no body)"}`);
+              }
+            }
+
+            if (filteredComments.length > 0) {
+              sections.push("", "## Review Comments");
+              for (const comment of filteredComments) {
+                sections.push(`- ${comment.user?.login || "unknown"} on ${comment.path || "unknown"}: ${comment.body || "(no body)"}`);
+              }
+            }
+
+            const body = [
+              `# PR #${pr.number}: ${pr.title}`,
+              "",
+              "Address the AI review findings below for the current PR head commit.",
+              "Follow AGENTS.md, keep changes on the checked-out PR branch, and do not weaken approved design docs.",
+              "",
+              ...sections,
+              "",
+            ].join("\n");
+
+            fs.writeFileSync(feedbackPath, body, "utf8");
+            core.setOutput("has_feedback", sections.length > 0 ? "true" : "false");
+
+      - name: Build Codex prompt
+        if: steps.feedback.outputs.has_feedback == 'true'
         run: |
-          echo "Codex autofix harness skeleton"
-          echo "PR #${{ needs.resolve-request.outputs.pr_number }}"
-          echo "Reason: ${{ needs.resolve-request.outputs.reason }}"
-          echo "No branch mutation is implemented in this skeleton."
+          cat > "$RUNNER_TEMP/codex-pr-fix-prompt.md" <<'EOF'
+          You are fixing AI review feedback for the checked-out pull request branch in the mastersrunners repository.
+
+          Requirements:
+          - Follow AGENTS.md and the repository harness rules.
+          - Work only within the current PR branch.
+          - Do not change protected branch policy or bypass review requirements.
+          - Keep approved design and domain docs intact. If the code diverges from approved design and you cannot resolve it within this changeset, surface it in your final message instead of weakening the docs.
+          - Apply the AI review findings from the attached feedback file.
+          - After changes, run the repository verification steps requested by the workflow.
+          - If no code changes are needed, say so clearly in the final message.
+          EOF
+
+      - name: Run Codex auto-fix
+        id: codex
+        if: steps.feedback.outputs.has_feedback == 'true'
+        continue-on-error: true
+        run: |
+          cat "$RUNNER_TEMP/ai-review-feedback.md" >> "$RUNNER_TEMP/codex-pr-fix-prompt.md"
+          codex -a never -s workspace-write exec -C "$GITHUB_WORKSPACE" --output-last-message "$RUNNER_TEMP/codex-last-message.txt" - < "$RUNNER_TEMP/codex-pr-fix-prompt.md"
+
+      - name: Run lint
+        id: lint
+        if: steps.feedback.outputs.has_feedback == 'true'
+        continue-on-error: true
+        run: pnpm lint
+
+      - name: Run explicit typecheck
+        id: typecheck
+        if: steps.feedback.outputs.has_feedback == 'true'
+        continue-on-error: true
+        run: pnpm typecheck
+
+      - name: Detect code changes
+        id: diff
+        run: |
+          if [ -n "$(git status --short)" ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify PR branch head is unchanged
+        id: branch-head
+        if: steps.feedback.outputs.has_feedback == 'true' && steps.codex.outcome == 'success' && steps.lint.outcome == 'success' && steps.typecheck.outcome == 'success'
+        run: |
+          REMOTE_SHA="$(git ls-remote origin "refs/heads/${HEAD_REF}" | awk '{print $1}')"
+          if [ -z "$REMOTE_SHA" ]; then
+            echo "Expected remote branch ${HEAD_REF} to exist." >&2
+            exit 1
+          fi
+          if [ "$REMOTE_SHA" != "$HEAD_SHA" ]; then
+            echo "PR head moved from ${HEAD_SHA} to ${REMOTE_SHA}; refusing to push stale autofix." >&2
+            exit 1
+          fi
+          echo "remote_sha=$REMOTE_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push PR autofix
+        id: push
+        if: steps.feedback.outputs.has_feedback == 'true' && steps.codex.outcome == 'success' && steps.lint.outcome == 'success' && steps.typecheck.outcome == 'success' && steps.diff.outputs.has_changes == 'true' && steps.branch-head.outcome == 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(repo): address AI PR review feedback" \
+            -m "PR: #${PR_NUMBER}" \
+            -m "Autofix-Iteration: ${{ steps.state-start.outputs.iteration }}"
+          REMOTE_SHA="$(git ls-remote origin "refs/heads/${HEAD_REF}" | awk '{print $1}')"
+          if [ "$REMOTE_SHA" != "$HEAD_SHA" ]; then
+            echo "PR head moved from ${HEAD_SHA} to ${REMOTE_SHA}; aborting push." >&2
+            exit 1
+          fi
+          git push origin "HEAD:${HEAD_REF}"
+          echo "pushed_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Finalize PR state
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = Number(process.env.PR_NUMBER);
+            const stateMarker = process.env.STATE_MARKER;
+
+            function parseState(body) {
+              const empty = {
+                iteration: 0,
+                last_requested_sha: "",
+                last_result: "idle",
+                last_fix_completed_at: "",
+                last_fixed_sha: "",
+              };
+
+              if (!body || !body.includes(stateMarker)) {
+                return empty;
+              }
+
+              const match = body.match(/```json\n([\s\S]*?)\n```/);
+              if (!match) {
+                return empty;
+              }
+
+              try {
+                return { ...empty, ...JSON.parse(match[1]) };
+              } catch {
+                return empty;
+              }
+            }
+
+            function renderState(state) {
+              return [
+                stateMarker,
+                "## Codex PR Auto-Fix State",
+                "",
+                "```json",
+                JSON.stringify(state, null, 2),
+                "```",
+              ].join("\n");
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+            const stateComment = comments.find((comment) => comment.body?.includes(stateMarker));
+            const previousState = parseState(stateComment?.body || "");
+
+            let status = "no_changes";
+            let lastResult = "no_changes";
+            if ("${{ steps.feedback.outputs.has_feedback }}" !== "true") {
+              status = "no_changes";
+              lastResult = "no_feedback";
+            } else if ("${{ steps.codex.outcome }}" !== "success") {
+              status = "failed";
+              lastResult = "codex_failed";
+            } else if ("${{ steps.lint.outcome }}" !== "success") {
+              status = "failed";
+              lastResult = "lint_failed";
+            } else if ("${{ steps.typecheck.outcome }}" !== "success") {
+              status = "failed";
+              lastResult = "typecheck_failed";
+            } else if ("${{ steps.diff.outputs.has_changes }}" !== "true") {
+              status = "no_changes";
+              lastResult = "no_changes";
+            } else if ("${{ steps.push.outcome }}" !== "success") {
+              status = "failed";
+              lastResult = "push_failed";
+            } else {
+              status = "succeeded";
+              lastResult = "succeeded";
+            }
+
+            const nextState = {
+              ...previousState,
+              status,
+              last_result: lastResult,
+              last_fix_completed_at: new Date().toISOString(),
+              last_fixed_sha: "${{ steps.push.outputs.pushed_sha || env.HEAD_SHA }}",
+              updated_at: new Date().toISOString(),
+            };
+
+            const body = renderState(nextState);
+            if (stateComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: stateComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body,
+              });
+            }
+
+      - name: Refresh status workflow
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: "codex-pr-fix-status.yml",
+              ref: "main",
+              inputs: {
+                pr_number: process.env.PR_NUMBER,
+              },
+            });

@@ -1,69 +1,121 @@
-name: Codex PR Fix Status
+name: Codex PR Auto-Fix Status
 
 on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  issue_comment:
+    types: [created]
   workflow_run:
     workflows: ["Codex PR Fix"]
     types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to refresh"
+        required: true
+        type: string
 
 permissions:
-  actions: read
+  checks: write
   contents: read
   issues: write
   pull-requests: write
 
 jobs:
-  publish-status:
+  status:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
 
     steps:
-      - name: Publish PR status comment
+      - name: Refresh PR auto-fix status check
         uses: actions/github-script@v7
+        env:
+          STATE_MARKER: "<!-- codex-pr-fix-state -->"
         with:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const run = context.payload.workflow_run;
+            const stateMarker = process.env.STATE_MARKER;
 
-            let pr = (run.pull_requests || []).find((item) => item.base?.ref === 'dev');
+            async function loadPullRequest() {
+              if (context.eventName === "workflow_run") {
+                const prs = context.payload.workflow_run.pull_requests || [];
+                const target = prs.find((pullRequest) => pullRequest.base?.ref === "dev") || prs[0];
+                if (!target) {
+                  return null;
+                }
 
-            if (!pr && run.head_sha) {
-              const associated = await github.rest.repos.listPullRequestsAssociatedWithCommit({
-                owner,
-                repo,
-                commit_sha: run.head_sha,
-              });
-              pr = associated.data.find((item) => item.base.ref === 'dev');
+                const response = await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: target.number,
+                });
+                return response.data;
+              }
+
+              if (context.eventName === "workflow_dispatch") {
+                const prNumber = Number(core.getInput("pr_number"));
+                const response = await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: prNumber,
+                });
+                return response.data;
+              }
+
+              if (context.eventName === "issue_comment") {
+                if (!context.payload.issue?.pull_request) {
+                  return null;
+                }
+
+                const response = await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: context.payload.issue.number,
+                });
+                return response.data;
+              }
+
+              if (context.eventName === "pull_request_review") {
+                return context.payload.pull_request;
+              }
+
+              return context.payload.pull_request;
             }
 
-            if (!pr) {
-              core.notice('No associated dev PR was found for this workflow run.');
+            function parseState(body) {
+              const empty = {
+                status: "unknown",
+                iteration: 0,
+                max_iterations: 5,
+                head_sha: "",
+                last_result: "idle",
+                gemini_review_ready: false,
+                copilot_review_ready: false,
+              };
+
+              if (!body || !body.includes(stateMarker)) {
+                return empty;
+              }
+
+              const match = body.match(/```json\n([\s\S]*?)\n```/);
+              if (!match) {
+                return empty;
+              }
+
+              try {
+                return { ...empty, ...JSON.parse(match[1]) };
+              } catch {
+                return empty;
+              }
+            }
+
+            const pr = await loadPullRequest();
+            if (!pr || pr.base.ref !== "dev") {
+              core.info("No dev PR context for status refresh.");
               return;
             }
-
-            const jobsResponse = await github.rest.actions.listJobsForWorkflowRun({
-              owner,
-              repo,
-              run_id: run.id,
-            });
-            const jobs = jobsResponse.data.jobs || [];
-            const fixJob = jobs.find((job) => job.name === 'Codex Fix Skeleton');
-            const resolveJob = jobs.find((job) => job.name === 'Resolve Request');
-
-            let detail = 'No self-hosted fix job executed.';
-            if (fixJob) {
-              detail = `Self-hosted fix job conclusion: ${fixJob.conclusion || fixJob.status}.`;
-            } else if (resolveJob) {
-              detail = `Controller job conclusion: ${resolveJob.conclusion || resolveJob.status}.`;
-            }
-
-            const marker = '<!-- codex-pr-fix:status -->';
-            const body = [
-              marker,
-              `Codex PR fix workflow ${run.conclusion || 'completed'}.`,
-              detail,
-              `Run: ${run.html_url}`,
-            ].join('\n');
 
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner,
@@ -71,26 +123,43 @@ jobs:
               issue_number: pr.number,
               per_page: 100,
             });
-            const existing = comments.find(
-              (comment) =>
-                comment.user?.login === 'github-actions[bot]' &&
-                typeof comment.body === 'string' &&
-                comment.body.includes(marker)
-            );
+            const stateComment = comments.find((comment) => comment.body?.includes(stateMarker));
+            const state = parseState(stateComment?.body || "");
 
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existing.id,
-                body,
-              });
-              return;
-            }
+            const statusMap = {
+              ready: "success",
+              queued: "in_progress",
+              running: "in_progress",
+              succeeded: "success",
+              no_changes: "success",
+              paused: "neutral",
+              waiting_for_gemini_identity: "neutral",
+              waiting_for_gemini_review: "neutral",
+              waiting_for_copilot_review: "neutral",
+              already_requested: "neutral",
+              max_iterations_reached: "failure",
+              fork_blocked: "neutral",
+              failed: "failure",
+              unknown: "neutral",
+            };
 
-            await github.rest.issues.createComment({
+            const summaryLines = [
+              `Status: ${state.status || "unknown"}`,
+              `Iteration: ${state.iteration || 0} / ${state.max_iterations || 5}`,
+              `Gemini ready: ${state.gemini_review_ready ? "yes" : "no"}`,
+              `Copilot ready: ${state.copilot_review_ready ? "yes" : "no"}`,
+              `Last result: ${state.last_result || "idle"}`,
+            ];
+
+            await github.rest.checks.create({
               owner,
               repo,
-              issue_number: pr.number,
-              body,
+              name: "Codex PR Auto-Fix Status",
+              head_sha: pr.head.sha,
+              status: "completed",
+              conclusion: statusMap[state.status || "unknown"],
+              output: {
+                title: "Codex PR Auto-Fix",
+                summary: summaryLines.join("\n"),
+              },
             });

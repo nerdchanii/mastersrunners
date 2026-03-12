@@ -24,11 +24,16 @@ The repository now has task and verification harnesses, but it does not yet defi
 ## Scope
 
 - `AGENTS.md`
+- `.github/workflows/pr-ai-review-gate.yml`
+- `.github/workflows/codex-pr-fix.yml`
+- `.github/workflows/codex-pr-fix-status.yml`
 - `docs/guides/review-harness.md`
+- `docs/guides/ai-pr-review-workflow.md`
 - `docs/guides/agent-self-review.md`
 - `docs/guides/parallel-worktree-workflow.md`
 - `docs/guides/reviewer-taxonomy.md`
 - `docs/guides/design-divergence-workflow.md`
+- `docs/runbooks/self-hosted-runner-macos.md`
 - `tasks/README.md`
 - `tasks/_templates/TASK-TEMPLATE.md`
 - `design/initiatives/INITIATIVE-TEMPLATE.md`
@@ -57,6 +62,7 @@ The repository now has task and verification harnesses, but it does not yet defi
 - `tasks/I-0003-review-harness/archive/I-0003-040-meta-agent-self-review-and-reviewer-taxonomy.md`
 - `tasks/I-0003-review-harness/archive/I-0003-050-meta-commit-message-lint.md`
 - `tasks/I-0003-review-harness/archive/I-0003-060-meta-parallel-worktree-lifecycle.md`
+- `tasks/I-0003-review-harness/archive/I-0003-070-meta-ai-pr-review-autofix.md`
 
 ## Success Criteria
 
@@ -68,3 +74,4 @@ The repository now has task and verification harnesses, but it does not yet defi
 - every task has one consistent self-review step before specialist review
 - commit subjects are enforced by repository automation
 - parallel task execution has an explicit split and integration rule
+- dev-targeted PRs can wait for Gemini and Copilot review before an explicitly requested Codex auto-fix loop runs on the self-hosted runner
