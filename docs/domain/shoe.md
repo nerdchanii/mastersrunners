@@ -10,44 +10,44 @@
 
 커뮤니티 전체가 공유하는 제품 정보.
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| id | UUID | PK |
-| brand | string | 브랜드 (Nike, adidas, ASICS 등) |
-| modelName | string | 모델명 |
-| category | string? | 카테고리 (레이싱, 데일리, 트레일 등) |
-| imageUrl | string? | 제품 이미지 |
-| releaseYear | int? | 출시 연도 |
+| 필드        | 타입    | 설명                                 |
+| ----------- | ------- | ------------------------------------ |
+| id          | UUID    | PK                                   |
+| brand       | string  | 브랜드 (Nike, adidas, ASICS 등)      |
+| modelName   | string  | 모델명                               |
+| category    | string? | 카테고리 (레이싱, 데일리, 트레일 등) |
+| imageUrl    | string? | 제품 이미지                          |
+| releaseYear | int?    | 출시 연도                            |
 
 ### UserShoe (내 신발)
 
 유저가 소유한 개별 신발 인스턴스.
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| id | UUID | PK |
-| userId | UUID | FK → User |
-| shoeModelId | UUID | FK → ShoeModel |
-| nickname | string? | 유저가 붙인 별명 (예: "대회용 빨간 빠빠") |
-| totalDistance | float | 누적 거리 (meters, 워크아웃에서 자동 합산) |
-| isRetired | boolean | 은퇴 여부 (기본: false) |
-| purchasedAt | date? | 구매일 |
-| createdAt | datetime | 등록 시각 |
+| 필드          | 타입     | 설명                                       |
+| ------------- | -------- | ------------------------------------------ |
+| id            | UUID     | PK                                         |
+| userId        | UUID     | FK → User                                  |
+| shoeModelId   | UUID     | FK → ShoeModel                             |
+| nickname      | string?  | 유저가 붙인 별명 (예: "대회용 빨간 빠빠")  |
+| totalDistance | float    | 누적 거리 (meters, 워크아웃에서 자동 합산) |
+| isRetired     | boolean  | 은퇴 여부 (기본: false)                    |
+| purchasedAt   | date?    | 구매일                                     |
+| createdAt     | datetime | 등록 시각                                  |
 
 ### ShoeReview (신발 리뷰 — 커뮤니티)
 
 ShoeModel에 대한 커뮤니티 리뷰.
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| id | UUID | PK |
-| userId | UUID | FK → User |
-| shoeModelId | UUID | FK → ShoeModel |
-| rating | int | 평점 (1~5) |
-| content | string | 리뷰 내용 |
-| purpose | enum | RACE / TRAINING / DAILY / TRAIL |
-| totalDistanceAtReview | float? | 리뷰 시점 누적 거리 |
-| createdAt | datetime | 작성 시각 |
+| 필드                  | 타입     | 설명                            |
+| --------------------- | -------- | ------------------------------- |
+| id                    | UUID     | PK                              |
+| userId                | UUID     | FK → User                       |
+| shoeModelId           | UUID     | FK → ShoeModel                  |
+| rating                | int      | 평점 (1~5)                      |
+| content               | string   | 리뷰 내용                       |
+| purpose               | enum     | RACE / TRAINING / DAILY / TRAIL |
+| totalDistanceAtReview | float?   | 리뷰 시점 누적 거리             |
+| createdAt             | datetime | 작성 시각                       |
 
 ## 워크아웃 연결
 

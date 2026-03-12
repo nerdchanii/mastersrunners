@@ -2,12 +2,12 @@
 
 ## 연동 우선순위
 
-| 순위 | 플랫폼 | 방식 | 사유 |
-|------|--------|------|------|
-| 1 | FIT/GPX 수동 업로드 | 파일 파싱 | API 승인 불필요, 모든 GPS 워치 지원 |
-| 2 | Garmin Connect | OAuth + API | 한국 GPS 워치 점유율 1위 |
-| 3 | Coros | OAuth + API | 국내 사용자 증가 추세 |
-| 4 | Strava | OAuth + API | 한국 철수로 우선순위 낮음, 기존 사용자 선택적 지원 |
+| 순위 | 플랫폼              | 방식        | 사유                                               |
+| ---- | ------------------- | ----------- | -------------------------------------------------- |
+| 1    | FIT/GPX 수동 업로드 | 파일 파싱   | API 승인 불필요, 모든 GPS 워치 지원                |
+| 2    | Garmin Connect      | OAuth + API | 한국 GPS 워치 점유율 1위                           |
+| 3    | Coros               | OAuth + API | 국내 사용자 증가 추세                              |
+| 4    | Strava              | OAuth + API | 한국 철수로 우선순위 낮음, 기존 사용자 선택적 지원 |
 
 ## FIT/GPX 파일 업로드
 
@@ -65,13 +65,13 @@
 
 ## ConnectedPlatform (연결 플랫폼)
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| userId | UUID | FK → User |
-| platform | enum | GARMIN / COROS / STRAVA |
-| accessToken | string | 암호화 저장 필수 |
-| refreshToken | string | 암호화 저장 필수 |
-| expiresAt | datetime | 토큰 만료 시각 |
-| connectedAt | datetime | 연결 시각 |
+| 필드         | 타입     | 설명                    |
+| ------------ | -------- | ----------------------- |
+| userId       | UUID     | FK → User               |
+| platform     | enum     | GARMIN / COROS / STRAVA |
+| accessToken  | string   | 암호화 저장 필수        |
+| refreshToken | string   | 암호화 저장 필수        |
+| expiresAt    | datetime | 토큰 만료 시각          |
+| connectedAt  | datetime | 연결 시각               |
 
 > 토큰은 반드시 암호화하여 저장. 평문 저장 금지.

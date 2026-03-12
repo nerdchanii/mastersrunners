@@ -8,32 +8,32 @@
 
 ### Conversation (대화방)
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| id | UUID | PK |
-| type | enum | DIRECT (1:1). 향후 GROUP 확장 가능 |
-| createdAt | datetime | 생성 시각 |
-| updatedAt | datetime | 마지막 메시지 시각 |
+| 필드      | 타입     | 설명                               |
+| --------- | -------- | ---------------------------------- |
+| id        | UUID     | PK                                 |
+| type      | enum     | DIRECT (1:1). 향후 GROUP 확장 가능 |
+| createdAt | datetime | 생성 시각                          |
+| updatedAt | datetime | 마지막 메시지 시각                 |
 
 ### ConversationParticipant (대화 참여자)
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| conversationId | UUID | FK → Conversation |
-| userId | UUID | FK → User |
-| lastReadAt | datetime? | 마지막 읽은 시각 (안읽음 카운트용) |
-| joinedAt | datetime | 참여 시각 |
+| 필드           | 타입      | 설명                               |
+| -------------- | --------- | ---------------------------------- |
+| conversationId | UUID      | FK → Conversation                  |
+| userId         | UUID      | FK → User                          |
+| lastReadAt     | datetime? | 마지막 읽은 시각 (안읽음 카운트용) |
+| joinedAt       | datetime  | 참여 시각                          |
 
 ### Message (메시지)
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| id | UUID | PK |
-| conversationId | UUID | FK → Conversation |
-| senderId | UUID | FK → User |
-| content | string | 메시지 내용 (최대 2000자) |
-| deletedAt | datetime? | Soft delete |
-| createdAt | datetime | 전송 시각 |
+| 필드           | 타입      | 설명                      |
+| -------------- | --------- | ------------------------- |
+| id             | UUID      | PK                        |
+| conversationId | UUID      | FK → Conversation         |
+| senderId       | UUID      | FK → User                 |
+| content        | string    | 메시지 내용 (최대 2000자) |
+| deletedAt      | datetime? | Soft delete               |
+| createdAt      | datetime  | 전송 시각                 |
 
 ## 비즈니스 규칙
 
@@ -45,12 +45,12 @@
 
 ## 접근 경로
 
-| 경로 | 동작 |
-|------|------|
-| 프로필 → "메시지" 버튼 | 기존 대화방 있으면 열기, 없으면 생성 |
-| 댓글의 @멘션 클릭 (데스크탑) | 해당 유저 DM으로 이동 |
-| 댓글의 @멘션 탭 (모바일) | 해당 유저 프로필로 이동 |
-| Header 메시지 아이콘 | 대화 목록 페이지 |
+| 경로                         | 동작                                 |
+| ---------------------------- | ------------------------------------ |
+| 프로필 → "메시지" 버튼       | 기존 대화방 있으면 열기, 없으면 생성 |
+| 댓글의 @멘션 클릭 (데스크탑) | 해당 유저 DM으로 이동                |
+| 댓글의 @멘션 탭 (모바일)     | 해당 유저 프로필로 이동              |
+| Header 메시지 아이콘         | 대화 목록 페이지                     |
 
 ## 실시간 알림 (Phase 5)
 

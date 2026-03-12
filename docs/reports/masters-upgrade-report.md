@@ -9,11 +9,11 @@
 
 사용자 요청 3가지를 팀모드로 동시 수행:
 
-| 영역 | 내용 | 상태 |
-|------|------|------|
+| 영역                       | 내용                                                  | 상태    |
+| -------------------------- | ----------------------------------------------------- | ------- |
 | A. Instagram-style Profile | 커버 이미지 + 프로필 사진 겹침 레이아웃 + 수정 페이지 | ✅ 완료 |
-| B. FIT/GPX 데이터 뷰어 | GPS 지도 + 차트 + 랩 테이블 + 메트릭 카드 | ✅ 완료 |
-| C. UI/UX 품질 | frontend-ui-ux 스킬 활용 | ✅ 완료 |
+| B. FIT/GPX 데이터 뷰어     | GPS 지도 + 차트 + 랩 테이블 + 메트릭 카드             | ✅ 완료 |
+| C. UI/UX 품질              | frontend-ui-ux 스킬 활용                              | ✅ 완료 |
 
 ---
 
@@ -21,33 +21,34 @@
 
 ### Backend (backend-engineer)
 
-| # | 태스크 | 세부 내용 |
-|---|--------|----------|
-| 1 | DB 스키마 변경 | User 모델에 `backgroundImage String?` 추가 + Prisma migration |
-| 2 | FIT 파서 보강 | 랩 데이터 추출 + per-point elevation/HR/cadence + ParsedWorkoutData 확장 |
-| 4 | Profile PATCH API | `PATCH /profile` 엔드포인트 + UpdateProfileDto (name 2-50자, bio 0-300자) |
-| 5 | Workout API 확장 | `GET /workouts/:id`에 workoutRoutes, workoutFiles, workoutLaps include |
+| #   | 태스크            | 세부 내용                                                                 |
+| --- | ----------------- | ------------------------------------------------------------------------- |
+| 1   | DB 스키마 변경    | User 모델에 `backgroundImage String?` 추가 + Prisma migration             |
+| 2   | FIT 파서 보강     | 랩 데이터 추출 + per-point elevation/HR/cadence + ParsedWorkoutData 확장  |
+| 4   | Profile PATCH API | `PATCH /profile` 엔드포인트 + UpdateProfileDto (name 2-50자, bio 0-300자) |
+| 5   | Workout API 확장  | `GET /workouts/:id`에 workoutRoutes, workoutFiles, workoutLaps include    |
 
 ### Frontend - Profile (frontend-profile)
 
-| # | 태스크 | 세부 내용 |
-|---|--------|----------|
-| 6 | ProfileHeader 리디자인 | 커버 이미지(3:1) + 프로필 사진 겹침(ring-4) + 팔로워/팔로잉 통합 |
-| 7 | 프로필 수정 페이지 | `/settings/profile` + R2 사진 업로드 + 이름/bio 폼 + validation |
+| #   | 태스크                 | 세부 내용                                                        |
+| --- | ---------------------- | ---------------------------------------------------------------- |
+| 6   | ProfileHeader 리디자인 | 커버 이미지(3:1) + 프로필 사진 겹침(ring-4) + 팔로워/팔로잉 통합 |
+| 7   | 프로필 수정 페이지     | `/settings/profile` + R2 사진 업로드 + 이름/bio 폼 + validation  |
 
 ### Frontend - Workout (frontend-workout)
 
-| # | 태스크 | 세부 내용 |
-|---|--------|----------|
-| 3 | 의존성 설치 | react-leaflet, leaflet, recharts, @types/leaflet |
-| 8 | 워크아웃 상세 리디자인 | RouteMap + ElevationChart + HeartRateChart + LapsTable + WorkoutMetrics + SourceInfo |
-| 9 | 업로드 미리보기 강화 | 심박수/칼로리/고도/케이던스/GPS 유무 카드 그리드 |
+| #   | 태스크                 | 세부 내용                                                                            |
+| --- | ---------------------- | ------------------------------------------------------------------------------------ |
+| 3   | 의존성 설치            | react-leaflet, leaflet, recharts, @types/leaflet                                     |
+| 8   | 워크아웃 상세 리디자인 | RouteMap + ElevationChart + HeartRateChart + LapsTable + WorkoutMetrics + SourceInfo |
+| 9   | 업로드 미리보기 강화   | 심박수/칼로리/고도/케이던스/GPS 유무 카드 그리드                                     |
 
 ---
 
 ## 3. 변경 파일 목록 (27 수정 + 15 신규 = 42 파일)
 
 ### 수정된 파일 (27개)
+
 ```
 packages/database/prisma/schema.prisma          -- backgroundImage 필드 추가
 apps/api/src/auth/repositories/user.repository.ts -- update() 메서드 추가, findByIdBasicSelect 확장
@@ -79,6 +80,7 @@ pnpm-lock.yaml                                   -- 의존성 업데이트
 ```
 
 ### 신규 파일 (15개)
+
 ```
 packages/database/prisma/migrations/20260217000000_add_background_image/migration.sql
 apps/api/src/profile/dto/update-profile.dto.ts
@@ -102,6 +104,7 @@ apps/web/e2e/upload-preview.spec.ts
 ## 4. 테스트 결과
 
 ### API 단위 테스트
+
 ```
 Test Suites: 45 passed, 45 total
 Tests:       619 passed, 619 total
@@ -109,16 +112,19 @@ Time:        4.065s
 ```
 
 ### Frontend 타입 체크
+
 ```
 tsc --noEmit: 통과 (에러 0개)
 ```
 
 ### Frontend 빌드
+
 ```
 vite build: 성공 (4.74s)
 ```
 
 ### Playwright E2E 테스트
+
 ```
 Test Suites: 5 files
 Tests:       26 passed, 26 total
@@ -137,19 +143,23 @@ Time:        12.5s
 ## 4-1. 후속 수정 — 프로필 API 엔드포인트 불일치 버그
 
 ### 문제
+
 프론트엔드 프로필 페이지에서 **존재하지 않는 API 엔드포인트**를 호출하고 있었음:
+
 - `GET /profile/${userId}/stats` → **404 Not Found** (이 엔드포인트는 API에 없음)
 
 E2E 테스트는 `page.route()`로 모든 API를 모킹하기 때문에 이 불일치를 감지하지 못함.
 
 ### 수정 내용
-| 파일 | 변경 |
-|------|------|
-| `apps/web/src/pages/profile/index.tsx` | `GET /profile/${user.id}/stats` → `GET /profile` |
+
+| 파일                                        | 변경                                                      |
+| ------------------------------------------- | --------------------------------------------------------- |
+| `apps/web/src/pages/profile/index.tsx`      | `GET /profile/${user.id}/stats` → `GET /profile`          |
 | `apps/web/src/pages/profile/[id]/index.tsx` | `GET /profile/${userId}/stats` → `GET /profile/${userId}` |
-| `apps/web/e2e/profile.spec.ts` | Mock 데이터 구조를 실제 API 응답과 일치하도록 수정 |
+| `apps/web/e2e/profile.spec.ts`              | Mock 데이터 구조를 실제 API 응답과 일치하도록 수정        |
 
 ### 핵심 변경
+
 ```typescript
 // Before (버그):
 const statsData = await api.fetch<ProfileStats>(`/profile/${user.id}/stats`);
@@ -167,6 +177,7 @@ setProfileStats({
 API 응답 `{ user, stats, followersCount, followingCount }` 구조를 프론트엔드 `ProfileStats` 인터페이스로 매핑.
 
 ### 교훈
+
 - E2E 모킹 테스트만으로는 프론트엔드-API 간 **계약 불일치**를 잡을 수 없음
 - 실제 API 서버와의 통합 테스트 또는 API contract testing (예: OpenAPI 스키마 기반) 필요
 

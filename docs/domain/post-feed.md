@@ -12,31 +12,31 @@
 
 ## Post (포스트)
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| id | UUID | PK |
-| userId | UUID | FK → User |
-| content | string | 본문 (최대 2000자) |
-| visibility | enum | PRIVATE / FOLLOWERS / PUBLIC (기본: FOLLOWERS) |
-| hashtags | string[] | 해시태그 목록 |
-| deletedAt | datetime? | Soft delete |
-| createdAt | datetime | 생성 시각 |
+| 필드       | 타입      | 설명                                           |
+| ---------- | --------- | ---------------------------------------------- |
+| id         | UUID      | PK                                             |
+| userId     | UUID      | FK → User                                      |
+| content    | string    | 본문 (최대 2000자)                             |
+| visibility | enum      | PRIVATE / FOLLOWERS / PUBLIC (기본: FOLLOWERS) |
+| hashtags   | string[]  | 해시태그 목록                                  |
+| deletedAt  | datetime? | Soft delete                                    |
+| createdAt  | datetime  | 생성 시각                                      |
 
 ### PostImage (포스트 이미지)
 
-| 필드 | 설명 |
-|------|------|
-| postId | FK → Post |
-| imageUrl | R2 저장 URL |
-| sortOrder | 정렬 순서 |
+| 필드      | 설명        |
+| --------- | ----------- |
+| postId    | FK → Post   |
+| imageUrl  | R2 저장 URL |
+| sortOrder | 정렬 순서   |
 
 이미지 개수 제한 없음.
 
 ### PostWorkout (포스트-워크아웃 연결)
 
-| 필드 | 설명 |
-|------|------|
-| postId | FK → Post |
+| 필드      | 설명         |
+| --------- | ------------ |
+| postId    | FK → Post    |
 | workoutId | FK → Workout |
 
 - 하나의 포스트에 0~N개 워크아웃 첨부 가능
@@ -86,16 +86,16 @@ Post
 │   └── Reply (2단계 — 대댓글에 대한 답글, @멘션으로 표시)
 ```
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| id | UUID | PK |
-| postId | UUID | FK → Post |
-| userId | UUID | FK → User (작성자) |
-| parentId | UUID? | FK → PostComment (self-reference, 1단계 댓글 ID) |
-| mentionedUserId | UUID? | FK → User (대댓글의 답글 대상) |
-| content | string | 댓글 내용 (최대 500자) |
-| deletedAt | datetime? | Soft delete |
-| createdAt | datetime | 생성 시각 |
+| 필드            | 타입      | 설명                                             |
+| --------------- | --------- | ------------------------------------------------ |
+| id              | UUID      | PK                                               |
+| postId          | UUID      | FK → Post                                        |
+| userId          | UUID      | FK → User (작성자)                               |
+| parentId        | UUID?     | FK → PostComment (self-reference, 1단계 댓글 ID) |
+| mentionedUserId | UUID?     | FK → User (대댓글의 답글 대상)                   |
+| content         | string    | 댓글 내용 (최대 500자)                           |
+| deletedAt       | datetime? | Soft delete                                      |
+| createdAt       | datetime  | 생성 시각                                        |
 
 ### 규칙
 
@@ -109,14 +109,14 @@ Post
 
 ### Flat 구조 (1단계만)
 
-| 필드 | 타입 | 설명 |
-|------|------|------|
-| id | UUID | PK |
-| workoutId | UUID | FK → Workout |
-| userId | UUID | FK → User (작성자) |
-| content | string | 댓글 내용 (최대 500자) |
-| deletedAt | datetime? | Soft delete |
-| createdAt | datetime | 생성 시각 |
+| 필드      | 타입      | 설명                   |
+| --------- | --------- | ---------------------- |
+| id        | UUID      | PK                     |
+| workoutId | UUID      | FK → Workout           |
+| userId    | UUID      | FK → User (작성자)     |
+| content   | string    | 댓글 내용 (최대 500자) |
+| deletedAt | datetime? | Soft delete            |
+| createdAt | datetime  | 생성 시각              |
 
 ### 규칙
 
@@ -125,20 +125,20 @@ Post
 
 ## PostLike (포스트 좋아요)
 
-| 필드 | 설명 |
-|------|------|
-| userId | FK → User |
-| postId | FK → Post |
-| createdAt | datetime |
+| 필드      | 설명      |
+| --------- | --------- |
+| userId    | FK → User |
+| postId    | FK → Post |
+| createdAt | datetime  |
 
 유저당 포스트 하나에 한 번만 가능.
 
 ## WorkoutLike (워크아웃 좋아요)
 
-| 필드 | 설명 |
-|------|------|
-| userId | FK → User |
+| 필드      | 설명         |
+| --------- | ------------ |
+| userId    | FK → User    |
 | workoutId | FK → Workout |
-| createdAt | datetime |
+| createdAt | datetime     |
 
 유저당 워크아웃 하나에 한 번만 가능.

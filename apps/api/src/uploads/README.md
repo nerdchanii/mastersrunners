@@ -35,6 +35,7 @@ R2_SECRET_ACCESS_KEY=your-secret-access-key
 ### Upload Flow
 
 1. **Client requests presigned URL**:
+
    ```
    POST /api/v1/uploads/presign
    {
@@ -45,6 +46,7 @@ R2_SECRET_ACCESS_KEY=your-secret-access-key
    ```
 
 2. **Server responds with presigned URL**:
+
    ```json
    {
      "uploadUrl": "https://...",
@@ -84,12 +86,14 @@ uploads/
 ## Allowed File Types
 
 ### Images (folder: "images")
+
 - image/jpeg
 - image/png
 - image/webp
 - image/gif
 
 ### Files (folder: "files")
+
 - All image types above
 - application/octet-stream (for FIT/GPX files)
 
@@ -173,7 +177,7 @@ To enable FIT parsing, install a FIT parser package and implement the `parse()` 
 To use this module in other modules:
 
 ```typescript
-import { UploadsModule } from '../uploads/uploads.module.js';
+import { UploadsModule } from "../uploads/uploads.module.js";
 
 @Module({
   imports: [UploadsModule],
@@ -185,8 +189,8 @@ export class MyModule {}
 Then inject services:
 
 ```typescript
-import { UploadsService } from '../uploads/uploads.service.js';
-import { GpxParserService } from '../uploads/parsers/gpx-parser.service.js';
+import { UploadsService } from "../uploads/uploads.service.js";
+import { GpxParserService } from "../uploads/parsers/gpx-parser.service.js";
 
 @Injectable()
 export class MyService {
