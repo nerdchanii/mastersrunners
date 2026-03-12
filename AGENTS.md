@@ -109,6 +109,7 @@ Lifecycle:
 - Run dev: `pnpm dev`
 - Build workspace: `pnpm build`
 - Run workspace lint: `pnpm lint`
+- Run explicit workspace typecheck: `pnpm typecheck`
 - Run local CI approximation: `pnpm ci:local`
 - Run API tests: `pnpm --filter @masters/api test`
 - Run API e2e tests: `pnpm --filter @masters/api test:e2e`
