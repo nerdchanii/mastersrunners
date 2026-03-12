@@ -10,10 +10,10 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 | Document Structure            |     11 |      1 |         0 |     12 |              92% |
 | Invariant Enforcement         |     13 |      1 |         1 |     15 |              93% |
 | Architecture                  |     10 |      2 |         0 |     12 |              83% |
-| Repository as Source of Truth |      8 |      2 |         0 |     10 |              80% |
+| Repository as Source of Truth |     10 |      0 |         0 |     10 |             100% |
 | Operations and Maintenance    |      7 |      1 |         2 |     10 |              88% |
 | Agent Readability             |      7 |      3 |         0 |     10 |              70% |
-| **Total**                     | **71** | **10** |     **3** | **84** | **88% adjusted** |
+| **Total**                     | **73** | **8** |     **3** | **84** | **90% adjusted** |
 
 ## Category Targets
 
@@ -100,23 +100,23 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 | Architecture | ARC-008 | 에러 처리 패턴 일관    | pass           |              | apps/api/src/common/filters/http-exception.filter.ts | backend      | I-0005-050  | runtime docs pending                            |
 | Architecture | ARC-009 | 데이터 모델 한 곳 정의 | pass           |              | packages/database/prisma/schema.prisma               | backend      |             |                                                 |
 | Architecture | ARC-010 | 외부 의존성 추상화     | fail           |              | apps/api/src/uploads/storage                         | backend      | I-0005-050  | partial today                                   |
-| Architecture | ARC-011 | 테스트 구조 대칭       | pass           |              | apps/api/src/\*_/_.spec.ts                           | backend      |             | web weaker but overall partial pass             |
+| Architecture | ARC-011 | 테스트 구조 대칭       | pass           |              | apps/api/src/*_/*.spec.ts                            | backend      |             | web weaker but overall partial pass             |
 | Architecture | ARC-012 | 순환 의존성 없음       | pass           |              | .github/workflows/ci.yml                             | harness      | I-0006-020  | pnpm depcruise is blocking in CI/local          |
 
 ### Repository as Source of Truth
 
-| category                      | item_id | statement                     | current_status | exception_id | evidence_path                                          | owner        | target_task | notes                                                       |
-| ----------------------------- | ------- | ----------------------------- | -------------- | ------------ | ------------------------------------------------------ | ------------ | ----------- | ----------------------------------------------------------- |
-| Repository as Source of Truth | SOT-001 | 기술 결정이 레포 내 기록      | pass           |              | design/adr/ADR-0001-repo-source-of-truth-boundaries.md | architecture | I-0005-080  | key architectural decisions are now recorded in ADRs        |
-| Repository as Source of Truth | SOT-002 | 구현 배경 정보 존재           | pass           |              | tasks/                                                 | harness      |             | task/review history exists                                  |
-| Repository as Source of Truth | SOT-003 | 계획/로드맵 레포 내 관리      | pass           |              | design/initiatives/                                    | harness      |             |                                                             |
-| Repository as Source of Truth | SOT-004 | TODO/FIXME와 정리 루프        | fail           |              | tasks/                                                 | harness      | I-0006-060  | no explicit cleanup policy yet                              |
-| Repository as Source of Truth | SOT-005 | 의도 파악 가능한 naming       | pass           |              | apps/web/src/hooks                                     | engineering  | I-0007-040  | mostly good                                                 |
-| Repository as Source of Truth | SOT-006 | 온보딩 정보 레포에 존재       | pass           |              | README.md                                              | docs         |             |                                                             |
-| Repository as Source of Truth | SOT-007 | 외부 의존성 선택 이유 기록    | pass           |              | design/adr/ADR-0002-vite-spa-and-nest-api-split.md     | architecture | I-0005-080  | framework and transport choices now have explicit rationale |
-| Repository as Source of Truth | SOT-008 | 레포만으로 처음부터 셋업 가능 | pass           |              | README.md                                              | docs         | I-0004-020  | baseline yes, docs can improve                              |
-| Repository as Source of Truth | SOT-009 | commit 메시지 의도 설명       | pass           |              | git history                                            | harness      |             | task trailers used                                          |
-| Repository as Source of Truth | SOT-010 | PR 템플릿 존재                | fail           |              | .github/                                               | harness      | I-0006-060  | pending                                                     |
+| category                      | item_id | statement                     | current_status | exception_id | evidence_path                                          | owner        | target_task | notes                                                                 |
+| ----------------------------- | ------- | ----------------------------- | -------------- | ------------ | ------------------------------------------------------ | ------------ | ----------- | --------------------------------------------------------------------- |
+| Repository as Source of Truth | SOT-001 | 기술 결정이 레포 내 기록      | pass           |              | design/adr/ADR-0001-repo-source-of-truth-boundaries.md | architecture | I-0005-080  | key architectural decisions are now recorded in ADRs                  |
+| Repository as Source of Truth | SOT-002 | 구현 배경 정보 존재           | pass           |              | tasks/                                                 | harness      |             | task/review history exists                                            |
+| Repository as Source of Truth | SOT-003 | 계획/로드맵 레포 내 관리      | pass           |              | design/initiatives/                                    | harness      |             |                                                                       |
+| Repository as Source of Truth | SOT-004 | TODO/FIXME와 정리 루프        | pass           |              | docs/guides/todo-fixme-policy.md                       | harness      | I-0006-060  | TODO/FIXME markers must now link to an existing or newly created task |
+| Repository as Source of Truth | SOT-005 | 의도 파악 가능한 naming       | pass           |              | apps/web/src/hooks                                     | engineering  | I-0007-040  | mostly good                                                           |
+| Repository as Source of Truth | SOT-006 | 온보딩 정보 레포에 존재       | pass           |              | README.md                                              | docs         |             |                                                                       |
+| Repository as Source of Truth | SOT-007 | 외부 의존성 선택 이유 기록    | pass           |              | design/adr/ADR-0002-vite-spa-and-nest-api-split.md     | architecture | I-0005-080  | framework and transport choices now have explicit rationale           |
+| Repository as Source of Truth | SOT-008 | 레포만으로 처음부터 셋업 가능 | pass           |              | README.md                                              | docs         |             |                                                                       |
+| Repository as Source of Truth | SOT-009 | commit 메시지 의도 설명       | pass           |              | git history                                            | harness      |             | task trailers used                                                    |
+| Repository as Source of Truth | SOT-010 | PR 템플릿 존재                | pass           |              | .github/PULL_REQUEST_TEMPLATE.md                       | harness      | I-0006-060  | PR template now records task linkage, verify, and review routing      |
 
 ### Operations and Maintenance
 
@@ -131,7 +131,7 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 | Operations and Maintenance | OPS-007 | health check 엔드포인트 | pass           |              | apps/api/src/health/health.controller.ts | backend |             |                                                                       |
 | Operations and Maintenance | OPS-008 | 불필요한 설정 정리      | pass           |              | .gitignore                               | harness | I-0004-030  | generated output rules exist                                          |
 | Operations and Maintenance | OPS-009 | Docker 이미지 최적화    | pass           |              | apps/api/Dockerfile                      | backend |             | multi-stage                                                           |
-| Operations and Maintenance | OPS-010 | flaky test 관리         | exception      | EX-0003      | design/operating-rules/exceptions.md     | harness | I-0006-060  | policy/report pending, routing proof external today                   |
+| Operations and Maintenance | OPS-010 | flaky test 관리         | exception      | EX-0003      | design/operating-rules/exceptions.md     | harness | I-0006-060  | policy/report now exist in-repo; external routing proof still pending |
 
 ### Agent Readability
 

@@ -50,6 +50,7 @@ Read in this order:
 - Every task also needs a PO review before commit, including docs-only work.
 - Multi-scope changes need the union of the relevant specialist reviewers, not just one reviewer.
 - Review requirements live in the task file. Do not treat a task as done until review and verify are both complete.
+- Do not commit free-floating `TODO` or `FIXME` markers. Link them to a task as described in `docs/guides/todo-fixme-policy.md`.
 
 ## Coding Conventions
 
