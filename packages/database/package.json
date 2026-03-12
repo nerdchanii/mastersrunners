@@ -20,14 +20,14 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.3.0",
-    "@prisma/client": "^7.3.0",
-    "dotenv": "^17.2.3",
-    "pg": "^8.16.0"
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
+    "dotenv": "^17.3.1",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "prisma": "^7.3.0",
+    "@types/node": "^25",
+    "prisma": "^7.5.0",
     "tsup": "^8.5.1",
     "typescript": "^5"
   }
