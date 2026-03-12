@@ -1,0 +1,59 @@
+# I-0005: Current-State Design Corpus
+
+## Summary
+
+Populate `design/frontend`, `design/backend`, and `design/architecture` with current-state technical design docs grounded in code, then sync conflicting `docs/domain` material.
+
+## Problem
+
+Most durable design knowledge still lives in transitional phase plans, `.omc` notes, or code only. That keeps documentation, source-of-truth, and architecture scores below target.
+
+## Goals
+
+- create a current-state design corpus for frontend, backend, and architecture
+- sync stale `docs/domain` documents against code and schema
+- seed the first real ADRs required by the new scoring model
+
+## Non-Goals
+
+- introducing new product features
+- complete readability refactors
+- full operational hardening
+
+## Scope
+
+- `design/frontend/`
+- `design/backend/`
+- `design/architecture/`
+- `design/adr/`
+- `docs/domain/`
+
+## Design References
+
+- `design/operating-rules/document-states.md`
+- `docs/plans/archive/`
+- `.omc/` legacy sources (salvage-only)
+
+## Review Plan
+
+- frontend docs: `frontend-reviewer`
+- backend/runtime docs: `backend-reviewer`
+- cross-cutting architecture/doc-boundary changes: `harness-reviewer`
+- PO review checks whether the design corpus reflects the implemented product rather than aspirational future scope
+
+## Task Breakdown
+
+- `tasks/I-0005-current-state-design-corpus/todo/I-0005-010-architecture-repo-runtime-foundation.md`
+- `tasks/I-0005-current-state-design-corpus/todo/I-0005-020-web-frontend-foundation.md`
+- `tasks/I-0005-current-state-design-corpus/todo/I-0005-030-web-social-workout-design.md`
+- `tasks/I-0005-current-state-design-corpus/todo/I-0005-040-web-crew-events-design.md`
+- `tasks/I-0005-current-state-design-corpus/todo/I-0005-050-api-backend-foundation.md`
+- `tasks/I-0005-current-state-design-corpus/todo/I-0005-060-api-domain-feature-design.md`
+- `tasks/I-0005-current-state-design-corpus/todo/I-0005-070-docs-domain-sync-pack.md`
+- `tasks/I-0005-current-state-design-corpus/todo/I-0005-080-meta-adr-seed-pack.md`
+
+## Success Criteria
+
+- the required frontend/backend/architecture docs exist with current-state frontmatter
+- domain docs no longer contradict code/schema on the known stale concepts
+- `docs/plans/` and `.omc` stop being needed to understand current implementation shape

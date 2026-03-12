@@ -1,14 +1,27 @@
+---
+doc_state: current
+owner: architecture
+last_verified: 2026-03-12
+sources:
+  - .github/workflows/deploy.yml
+  - scripts/verify-deployment.sh
+  - docker-compose.prod.yml
+  - apps/api/Dockerfile
+  - apps/api/src/main.ts
+  - apps/web/package.json
+---
+
 # Deployment Architecture
 
 This document defines the intended deployment shape for the repository. Runbooks explain operations; workflows and scripts execute them.
 
 ## Production Topology
 
-- Web: static SPA deployment
 - API: NestJS container on Google Cloud Run
 - Database: PostgreSQL
-- Cache: Redis
 - File storage: Cloudflare R2
+
+The repository also builds a static SPA artifact from `apps/web`, but the production web-hosting system is not currently defined in-repo.
 
 ## Execution Boundaries
 
@@ -29,6 +42,7 @@ This document defines the intended deployment shape for the repository. Runbooks
 
 - Runtime config is injected by the deploy workflow through env vars and secrets
 - Production deploys should be immutable by commit SHA
+- Redis appears in environment and compose-level deployment assumptions, but the current repo implementation does not use a shared Redis runtime for app logic or realtime fan-out
 
 ### Local Production-Like
 
