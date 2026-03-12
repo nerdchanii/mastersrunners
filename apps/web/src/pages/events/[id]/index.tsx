@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
@@ -143,18 +143,7 @@ export default function EventDetailPage() {
   const [showWorkoutLink, setShowWorkoutLink] = useState(false);
   const [workoutId, setWorkoutId] = useState("");
 
-  useEffect(() => {
-    if (!eventId || eventId === "_") return;
-    fetchEvent();
-  }, [eventId]);
-
-  useEffect(() => {
-    if (activeTab === "results" && eventId && eventId !== "_") {
-      fetchResults();
-    }
-  }, [activeTab, eventId]);
-
-  const fetchEvent = async () => {
+  const fetchEvent = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await api.fetch<EventDetail>(`/events/${eventId}`);
@@ -174,9 +163,9 @@ export default function EventDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [eventId]);
 
-  const fetchResults = async () => {
+  const fetchResults = useCallback(async () => {
     try {
       setResultsLoading(true);
       const data = await api.fetch<EventResult[]>(`/events/${eventId}/results`);
@@ -186,7 +175,18 @@ export default function EventDetailPage() {
     } finally {
       setResultsLoading(false);
     }
-  };
+  }, [eventId]);
+
+  useEffect(() => {
+    if (!eventId || eventId === "_") return;
+    void fetchEvent();
+  }, [eventId, fetchEvent]);
+
+  useEffect(() => {
+    if (activeTab === "results" && eventId && eventId !== "_") {
+      void fetchResults();
+    }
+  }, [activeTab, eventId, fetchResults]);
 
   const handleRegister = async () => {
     setActionLoading(true);

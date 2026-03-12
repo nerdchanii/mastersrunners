@@ -46,6 +46,9 @@ jobs:
       - name: Run lint
         run: pnpm lint
 
+      - name: Check task review metadata for active and todo tasks
+        run: bash scripts/check-task-review-metadata.sh
+
       - name: Check harness structure
         run: |
           test -f AGENTS.md

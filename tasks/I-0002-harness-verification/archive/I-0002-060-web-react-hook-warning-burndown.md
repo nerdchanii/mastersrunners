@@ -3,7 +3,7 @@ id: I-0002-060
 title: Burn down remaining web react-hooks warnings
 parent: I-0002-harness-verification
 scope: web
-owner: unassigned
+owner: gauss
 reviewers:
   - frontend-reviewer
   - ui-ux-reviewer
@@ -12,7 +12,7 @@ depends_on:
   - I-0002-010
 blocked_by: []
 verify:
-  - pnpm --filter @masters/web lint -- --max-warnings=0
+  - pnpm --filter @masters/web exec eslint . --max-warnings=0
 artifacts:
   - apps/web/src/components/challenge/ChallengeTeams.tsx
   - apps/web/src/components/challenge/TeamLeaderboard.tsx
@@ -30,7 +30,7 @@ Resolve the remaining `react-hooks/exhaustive-deps` warnings so web lint can bec
 
 ## Done Criteria
 
-- `pnpm --filter @masters/web lint -- --max-warnings=0` passes
+- `pnpm --filter @masters/web exec eslint . --max-warnings=0` passes
 - warning fixes do not change user-visible behavior unexpectedly
 - any intentional dependency omissions are documented inline
 
@@ -46,13 +46,14 @@ Resolve the remaining `react-hooks/exhaustive-deps` warnings so web lint can bec
 
 ## Handoff
 
-- Use `pnpm --filter @masters/web lint -- --max-warnings=0` as the closure signal for this warning burn-down task.
+- Use `pnpm --filter @masters/web exec eslint . --max-warnings=0` as the closure signal for this warning burn-down task.
 
 ## Attempt Log
 
 - 2026-03-11: task created after lint repair left 11 non-blocking `react-hooks/exhaustive-deps` warnings in web code
+- 2026-03-12: stabilized shared data loaders with `useCallback` and corrected the task verify command to the actual ESLint invocation shape
 
 ## Review Notes
 
-- Specialist review:
-- PO review:
+- Specialist review: `frontend-reviewer` and `ui-ux-reviewer` found no blocking issues. The warning cleanup stabilizes effect-triggered loaders with `useCallback`, keeps loading/refresh behavior intact, and does not introduce extra fetch loops in the reviewed pages and components. Residual risk: these flows still depend on network timing and existing loading states, so only runtime interaction coverage can catch regressions outside lint scope.
+- PO review: `po-reviewer` found no blocking issues. The cleanup stays tightly bounded to the tracked warning list and is worth landing because it removes recurring lint noise without expanding into product behavior changes. Residual risk: the task has little direct user-visible value, so similar cleanup work should continue to stay small and explicitly scoped.

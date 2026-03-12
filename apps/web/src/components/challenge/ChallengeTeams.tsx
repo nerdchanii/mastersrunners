@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Users, Plus, LogOut, UserPlus, Trophy } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
@@ -31,7 +31,10 @@ interface ChallengeTeamsProps {
   isJoined: boolean;
 }
 
-export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeamsProps) {
+export default function ChallengeTeams({
+  challengeId,
+  isJoined,
+}: ChallengeTeamsProps) {
   const { user } = useAuth();
   const [teams, setTeams] = useState<Team[]>([]);
   const [myTeam, setMyTeam] = useState<Team | null>(null);
@@ -42,11 +45,7 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [leaveTeamId, setLeaveTeamId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchTeams();
-  }, [challengeId]);
-
-  const fetchTeams = async () => {
+  const fetchTeams = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await api.fetch<Team[]>(`/challenges/${challengeId}/teams`);
@@ -54,14 +53,20 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
       setTeams(teamsArray);
 
       // Find my team
-      const myTeamData = teamsArray.find((team) => team.members?.some((member) => member.id === user?.id));
+      const myTeamData = teamsArray.find((team) =>
+        team.members?.some((member) => member.id === user?.id),
+      );
       setMyTeam(myTeamData || null);
     } catch (err) {
       console.error("Failed to fetch teams:", err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [challengeId, user?.id]);
+
+  useEffect(() => {
+    void fetchTeams();
+  }, [fetchTeams]);
 
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +82,9 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
       setShowCreateForm(false);
       await fetchTeams();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "팀 생성에 실패했습니다.");
+      toast.error(
+        err instanceof Error ? err.message : "팀 생성에 실패했습니다.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -91,7 +98,9 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
       });
       await fetchTeams();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "팀 가입에 실패했습니다.");
+      toast.error(
+        err instanceof Error ? err.message : "팀 가입에 실패했습니다.",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -107,7 +116,9 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
       await fetchTeams();
       toast.success("팀에서 나갔습니다.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "팀 나가기에 실패했습니다.");
+      toast.error(
+        err instanceof Error ? err.message : "팀 나가기에 실패했습니다.",
+      );
     } finally {
       setActionLoading(false);
       setLeaveTeamId(null);
@@ -167,9 +178,11 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
             {showLeaderboard ? "팀 목록" : "팀 순위"}
           </Button>
           {!myTeam && (
-            <Button size="sm" onClick={() => setShowCreateForm(!showCreateForm)}>
-              <Plus className="mr-2 size-4" />
-              팀 만들기
+            <Button
+              size="sm"
+              onClick={() => setShowCreateForm(!showCreateForm)}
+            >
+              <Plus className="mr-2 size-4" />팀 만들기
             </Button>
           )}
         </div>
@@ -185,7 +198,10 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
                 placeholder="팀 이름"
                 maxLength={50}
               />
-              <Button type="submit" disabled={actionLoading || !newTeamName.trim()}>
+              <Button
+                type="submit"
+                disabled={actionLoading || !newTeamName.trim()}
+              >
                 {actionLoading ? "생성중..." : "생성"}
               </Button>
               <Button
@@ -212,8 +228,8 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
-                    <Users className="size-5 text-primary" />
-                    내 팀: {myTeam.name}
+                    <Users className="size-5 text-primary" />내 팀:{" "}
+                    {myTeam.name}
                   </CardTitle>
                   <Button
                     variant="ghost"
@@ -230,12 +246,16 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">멤버</span>
-                    <span className="font-medium">{myTeam._count?.members ?? 0}명</span>
+                    <span className="font-medium">
+                      {myTeam._count?.members ?? 0}명
+                    </span>
                   </div>
                   {myTeam.aggregateProgress !== undefined && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">팀 진행도</span>
-                      <span className="font-medium">{myTeam.aggregateProgress.toFixed(1)}</span>
+                      <span className="font-medium">
+                        {myTeam.aggregateProgress.toFixed(1)}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -256,7 +276,10 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
               {teams
                 .filter((team) => team.id !== myTeam?.id)
                 .map((team) => (
-                  <Card key={team.id} className={cn("hover:shadow-md transition-shadow")}>
+                  <Card
+                    key={team.id}
+                    className={cn("hover:shadow-md transition-shadow")}
+                  >
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
                         <Users className="size-4" />
@@ -266,12 +289,18 @@ export default function ChallengeTeams({ challengeId, isJoined }: ChallengeTeams
                     <CardContent className="space-y-3">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">멤버</span>
-                        <span className="font-medium">{team._count?.members ?? 0}명</span>
+                        <span className="font-medium">
+                          {team._count?.members ?? 0}명
+                        </span>
                       </div>
                       {team.aggregateProgress !== undefined && (
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">팀 진행도</span>
-                          <span className="font-medium">{team.aggregateProgress.toFixed(1)}</span>
+                          <span className="text-muted-foreground">
+                            팀 진행도
+                          </span>
+                          <span className="font-medium">
+                            {team.aggregateProgress.toFixed(1)}
+                          </span>
                         </div>
                       )}
                       {!myTeam && (

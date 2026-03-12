@@ -43,7 +43,7 @@ The repository now has task and verification harnesses, but it does not yet defi
 ## Task Breakdown
 
 - `tasks/I-0003-review-harness/archive/I-0003-010-meta-review-harness-policy.md`
-- `tasks/I-0003-review-harness/todo/I-0003-020-meta-review-metadata-enforcement.md`
+- `tasks/I-0003-review-harness/archive/I-0003-020-meta-review-metadata-enforcement.md`
 
 ## Success Criteria
 

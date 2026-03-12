@@ -1,10 +1,16 @@
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { QrCode, Check } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/common/EmptyState";
 import { UserAvatar } from "@/components/common/UserAvatar";
@@ -28,17 +34,22 @@ interface CrewAttendanceProps {
   isMember: boolean;
 }
 
-export default function CrewAttendance({ crewId, activityId, isAdmin, isMember }: CrewAttendanceProps) {
+export default function CrewAttendance({
+  crewId,
+  activityId,
+  isAdmin,
+  isMember,
+}: CrewAttendanceProps) {
   const { user } = useAuth();
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
 
-  const fetchAttendees = async () => {
+  const fetchAttendees = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await api.fetch<Attendee[]>(
-        `/crews/${crewId}/activities/${activityId}/attendance`
+        `/crews/${crewId}/activities/${activityId}/attendance`,
       );
       setAttendees(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -46,11 +57,11 @@ export default function CrewAttendance({ crewId, activityId, isAdmin, isMember }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [activityId, crewId]);
 
   useEffect(() => {
-    fetchAttendees();
-  }, [crewId, activityId]);
+    void fetchAttendees();
+  }, [fetchAttendees]);
 
   const handleCheckIn = async () => {
     setIsCheckingIn(true);
@@ -60,7 +71,9 @@ export default function CrewAttendance({ crewId, activityId, isAdmin, isMember }
       });
       await fetchAttendees();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "출석 체크에 실패했습니다.");
+      toast.error(
+        err instanceof Error ? err.message : "출석 체크에 실패했습니다.",
+      );
     } finally {
       setIsCheckingIn(false);
     }
@@ -121,7 +134,9 @@ export default function CrewAttendance({ crewId, activityId, isAdmin, isMember }
             <Button
               size="lg"
               onClick={handleCheckIn}
-              disabled={isCheckingIn || attendees.some((a) => a.userId === user?.id)}
+              disabled={
+                isCheckingIn || attendees.some((a) => a.userId === user?.id)
+              }
               className="w-full max-w-sm"
             >
               <Check className="w-5 h-5 mr-2" />
@@ -147,9 +162,15 @@ export default function CrewAttendance({ crewId, activityId, isAdmin, isMember }
                   className="flex items-center justify-between p-3 rounded-lg border"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <UserAvatar user={attendee.user} size="default" linkToProfile />
+                    <UserAvatar
+                      user={attendee.user}
+                      size="default"
+                      linkToProfile
+                    />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{attendee.user.name}</p>
+                      <p className="text-sm font-medium truncate">
+                        {attendee.user.name}
+                      </p>
                       <TimeAgo date={attendee.checkedInAt} />
                     </div>
                   </div>

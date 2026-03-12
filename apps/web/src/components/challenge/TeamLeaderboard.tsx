@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Trophy, Users } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,15 +20,11 @@ export default function TeamLeaderboard({ challengeId }: TeamLeaderboardProps) {
   const [entries, setEntries] = useState<TeamLeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchLeaderboard();
-  }, [challengeId]);
-
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await api.fetch<TeamLeaderboardEntry[]>(
-        `/challenges/${challengeId}/teams/leaderboard?limit=50`
+        `/challenges/${challengeId}/teams/leaderboard?limit=50`,
       );
       setEntries(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -36,7 +32,11 @@ export default function TeamLeaderboard({ challengeId }: TeamLeaderboardProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [challengeId]);
+
+  useEffect(() => {
+    void fetchLeaderboard();
+  }, [fetchLeaderboard]);
 
   if (isLoading) {
     return (
@@ -72,12 +72,14 @@ export default function TeamLeaderboard({ challengeId }: TeamLeaderboardProps) {
             key={entry.teamId}
             className={cn(
               "flex items-center gap-4 p-4 rounded-lg border transition-colors",
-              isTop3 && "bg-primary/5 border-primary/20"
+              isTop3 && "bg-primary/5 border-primary/20",
             )}
           >
             <div className="w-8 text-center flex-shrink-0">
               {isTop3 ? (
-                <span className={cn("text-lg font-bold", medalColors[entry.rank])}>
+                <span
+                  className={cn("text-lg font-bold", medalColors[entry.rank])}
+                >
                   {entry.rank}
                 </span>
               ) : (
@@ -92,7 +94,9 @@ export default function TeamLeaderboard({ challengeId }: TeamLeaderboardProps) {
                 <Users className="size-5 text-primary" />
               </div>
               <div className="min-w-0 flex-1">
-                <h4 className="font-semibold text-sm truncate">{entry.teamName}</h4>
+                <h4 className="font-semibold text-sm truncate">
+                  {entry.teamName}
+                </h4>
                 <p className="text-xs text-muted-foreground">
                   {entry.memberCount}명
                 </p>

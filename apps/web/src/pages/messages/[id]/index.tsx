@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api, API_BASE } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
@@ -37,6 +37,10 @@ interface ConversationDetailResponse {
   nextCursor: string | null;
 }
 
+function normalizeMessages(items: Message[]) {
+  return [...items].reverse();
+}
+
 export default function MessageDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -53,52 +57,53 @@ export default function MessageDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [content, setContent] = useState("");
 
-  const normalizeMessages = (items: Message[]) => [...items].reverse();
+  const fetchConversation = useCallback(
+    async (cursor?: string | null) => {
+      try {
+        if (cursor) {
+          setLoadingMore(true);
+        } else {
+          setLoading(true);
+        }
+        setError(null);
+        let path = `/conversations/${id}?limit=50`;
+        if (cursor) path += `&cursor=${encodeURIComponent(cursor)}`;
+        const data = await api.fetch<ConversationDetailResponse>(path);
+        if (!data) return;
+        const normalizedMessages = normalizeMessages(data.messages ?? []);
 
-  const fetchConversation = async (cursor?: string | null) => {
-    try {
-      if (cursor) {
-        setLoadingMore(true);
-      } else {
-        setLoading(true);
+        setConversation(data.conversation);
+        if (cursor) {
+          // Prepend older messages
+          setMessages((prev) => [...normalizedMessages, ...prev]);
+        } else {
+          setMessages(normalizedMessages);
+        }
+        setNextCursor(data.nextCursor ?? null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
       }
-      setError(null);
-      let path = `/conversations/${id}?limit=50`;
-      if (cursor) path += `&cursor=${encodeURIComponent(cursor)}`;
-      const data = await api.fetch<ConversationDetailResponse>(path);
-      if (!data) return;
-      const normalizedMessages = normalizeMessages(data.messages ?? []);
+    },
+    [id],
+  );
 
-      setConversation(data.conversation);
-      if (cursor) {
-        // Prepend older messages
-        setMessages((prev) => [...normalizedMessages, ...prev]);
-      } else {
-        setMessages(normalizedMessages);
-      }
-      setNextCursor(data.nextCursor ?? null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  };
-
-  const markAsRead = async () => {
+  const markAsRead = useCallback(async () => {
     try {
       await api.fetch(`/conversations/${id}/read`, { method: "PATCH" });
     } catch (err) {
       console.error("Failed to mark as read:", err);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     if (id) {
-      fetchConversation();
-      markAsRead();
+      void fetchConversation();
+      void markAsRead();
     }
-  }, [id]);
+  }, [id, fetchConversation, markAsRead]);
 
   // SSE connection for real-time messages
   useEffect(() => {
@@ -108,7 +113,7 @@ export default function MessageDetailPage() {
     if (!token) return;
 
     const eventSource = new EventSource(
-      `${API_BASE}/conversations/sse?token=${encodeURIComponent(token)}`
+      `${API_BASE}/conversations/sse?token=${encodeURIComponent(token)}`,
     );
 
     eventSource.addEventListener("new-message", (event) => {
@@ -122,7 +127,7 @@ export default function MessageDetailPage() {
             return [...prev, message];
           });
           // Auto-mark as read when new message arrives
-          markAsRead();
+          void markAsRead();
         }
       } catch (err) {
         console.error("Failed to parse SSE message:", err);
@@ -136,7 +141,7 @@ export default function MessageDetailPage() {
     return () => {
       eventSource.close();
     };
-  }, [id]);
+  }, [id, markAsRead]);
 
   useEffect(() => {
     // Scroll to bottom when messages change (but not when loading more)
@@ -158,12 +163,14 @@ export default function MessageDetailPage() {
         {
           method: "POST",
           body: JSON.stringify({ content: trimmedContent }),
-        }
+        },
       );
       setMessages((prev) => [...prev, newMessage]);
-      markAsRead();
+      void markAsRead();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "메시지 전송에 실패했습니다.");
+      setError(
+        err instanceof Error ? err.message : "메시지 전송에 실패했습니다.",
+      );
       setContent(trimmedContent);
     } finally {
       setSending(false);
@@ -179,7 +186,7 @@ export default function MessageDetailPage() {
 
   const handleLoadMore = () => {
     if (nextCursor && !loadingMore) {
-      fetchConversation(nextCursor);
+      void fetchConversation(nextCursor);
     }
   };
 
@@ -284,9 +291,7 @@ export default function MessageDetailPage() {
             )}
             <AvatarFallback>{otherUser.name[0]}</AvatarFallback>
           </Avatar>
-          <h2 className="font-semibold text-lg">
-            {otherUser.name}
-          </h2>
+          <h2 className="font-semibold text-lg">{otherUser.name}</h2>
         </div>
       </div>
 
@@ -320,7 +325,9 @@ export default function MessageDetailPage() {
                   </div>
                 )}
 
-                <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                >
                   <div
                     className={`flex gap-2 max-w-[70%] ${
                       isOwn ? "flex-row-reverse" : "flex-row"
@@ -334,7 +341,9 @@ export default function MessageDetailPage() {
                             alt={message.sender.name}
                           />
                         )}
-                        <AvatarFallback>{message.sender.name[0]}</AvatarFallback>
+                        <AvatarFallback>
+                          {message.sender.name[0]}
+                        </AvatarFallback>
                       </Avatar>
                     )}
 
@@ -347,8 +356,8 @@ export default function MessageDetailPage() {
                           message.deletedAt
                             ? "bg-muted text-muted-foreground italic"
                             : isOwn
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-foreground"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-foreground",
                         )}
                       >
                         {message.deletedAt ? (

@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Check, X } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
@@ -25,27 +25,34 @@ interface PendingMemberListProps {
   onUpdate: () => void;
 }
 
-export default function PendingMemberList({ crewId, onUpdate }: PendingMemberListProps) {
+export default function PendingMemberList({
+  crewId,
+  onUpdate,
+}: PendingMemberListProps) {
   const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const fetchPendingMembers = async () => {
+  const fetchPendingMembers = useCallback(async () => {
     setIsLoading(true);
     try {
-      const allMembers = await api.fetch<PendingMember[]>(`/crews/${crewId}/members`);
-      const pending = (Array.isArray(allMembers) ? allMembers : []).filter((m) => m.status === "PENDING");
+      const allMembers = await api.fetch<PendingMember[]>(
+        `/crews/${crewId}/members`,
+      );
+      const pending = (Array.isArray(allMembers) ? allMembers : []).filter(
+        (m) => m.status === "PENDING",
+      );
       setPendingMembers(pending);
     } catch (err) {
       console.error("Failed to load pending members:", err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [crewId]);
 
   useEffect(() => {
-    fetchPendingMembers();
-  }, [crewId]);
+    void fetchPendingMembers();
+  }, [fetchPendingMembers]);
 
   const handleApprove = async (memberId: string, userId: string) => {
     setProcessingId(memberId);
