@@ -1,0 +1,88 @@
+# AI PR Review Workflow
+
+Use this guide for `dev`-targeted PRs that opt into AI review and Codex auto-fix.
+
+## Scope
+
+- target branch: `dev`
+- AI reviewers: Gemini and GitHub Copilot
+- auto-fix trigger: `ai-fix` label or `/codex fix`
+- auto-fix stop: remove `ai-fix` label or comment `/codex stop`
+- execution host: self-hosted macOS runner with label `codex-runner`
+
+## Core Rule
+
+- AI review does not replace specialist review or PO review.
+- Codex auto-fix only operates on the PR head branch.
+- Protected branches are never pushed directly.
+- Forked PRs may receive AI review, but they must not run the self-hosted auto-fix workflow.
+
+## Review Detection
+
+Detection is `login first, marker fallback`.
+
+- If `AI_REVIEW_COPILOT_LOGIN` is set, Copilot review is detected by login first.
+- If that variable is not set, the workflow falls back to a review-body marker. The current Copilot fallback marker is `Copilot AI`.
+- If `AI_REVIEW_GEMINI_LOGIN` is set, Gemini review is detected by login first.
+- If Gemini identity is not configured yet, the workflow waits for a seed PR to capture the reviewer login or fallback marker before opening the fix gate.
+
+The fix gate only opens when both AI reviews are present for the current PR head SHA.
+
+## Control Surface
+
+### Start auto-fix
+
+- add the `ai-fix` label to the PR, or
+- comment `/codex fix`
+
+### Stop auto-fix
+
+- remove the `ai-fix` label, or
+- comment `/codex stop`
+
+## Iteration Loop
+
+- The loop is limited to `5` iterations per PR branch.
+- Each iteration updates a machine-readable PR state comment.
+- A new iteration only starts when all of these are true:
+  - the PR still targets `dev`
+  - the PR is not from a fork
+  - the PR is enabled for auto-fix
+  - Gemini and Copilot have both reviewed the current head SHA
+  - the current head SHA has not already been requested
+  - the iteration count is still below `5`
+
+This prevents the workflow from reusing stale reviews after Codex pushes a new commit.
+
+## Seed PR Setup
+
+Use the first `dev` PR to confirm the actual reviewer identities.
+
+1. Let Gemini and Copilot review the PR.
+2. Capture the actual reviewer login shown in the PR UI.
+3. Store the login in the repository variables:
+   - `AI_REVIEW_GEMINI_LOGIN`
+   - `AI_REVIEW_COPILOT_LOGIN`
+4. Keep the Copilot marker fallback until the login is confirmed stable.
+
+## Status Model
+
+The workflows report states such as:
+
+- `paused`
+- `waiting for Gemini identity`
+- `waiting for Gemini review`
+- `waiting for Copilot review`
+- `ready`
+- `running`
+- `succeeded`
+- `no_changes`
+- `failed`
+- `max iterations reached`
+- `fork blocked`
+
+## Relationship to Task Review
+
+- PR auto-fix is a branch-level automation loop.
+- Repository task completion still requires self-review, specialist review, PO review, verification, and task archival.
+- If AI review uncovers a design gap, keep the design truth intact and create a follow-up task instead of lowering the design doc.
