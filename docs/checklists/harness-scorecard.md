@@ -8,12 +8,12 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 | ----------------------------- | -----: | -----: | --------: | -----: | ---------------: |
 | Agent Entry Point             |     13 |      2 |         0 |     15 |              87% |
 | Document Structure            |      9 |      3 |         0 |     12 |              75% |
-| Invariant Enforcement         |     12 |      2 |         1 |     15 |              86% |
+| Invariant Enforcement         |     13 |      1 |         1 |     15 |              93% |
 | Architecture                  |     10 |      2 |         0 |     12 |              83% |
 | Repository as Source of Truth |      6 |      4 |         0 |     10 |              60% |
-| Operations and Maintenance    |      3 |      5 |         2 |     10 |              38% |
+| Operations and Maintenance    |      5 |      3 |         2 |     10 |              63% |
 | Agent Readability             |      7 |      3 |         0 |     10 |              70% |
-| **Total**                     | **60** | **21** |     **3** | **84** | **74% adjusted** |
+| **Total**                     | **63** | **18** |     **3** | **84** | **78% adjusted** |
 
 ## Category Targets
 
@@ -84,7 +84,7 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 | Invariant Enforcement | INV-012 | coverage 기준 강제     | pass           |              | apps/api/jest.config.ts              | harness | I-0006-030  | API coverage gate blocks in CI; web coverage remains follow-up work |
 | Invariant Enforcement | INV-013 | branch protection 규칙 | exception      | EX-0001      | design/operating-rules/exceptions.md | harness | I-0006-040  | external proof required                                             |
 | Invariant Enforcement | INV-014 | import 순서 규칙 강제  | pass           |              | eslint.config.mjs                    | harness | I-0006-010  | simple-import-sort is blocking in lint                              |
-| Invariant Enforcement | INV-015 | 보안 검사 자동 실행    | fail           |              | .github/workflows/                   | harness | I-0006-040  | pending CodeQL/dependency review                                    |
+| Invariant Enforcement | INV-015 | 보안 검사 자동 실행    | pass           |              | .github/workflows/codeql.yml         | harness | I-0006-040  | CodeQL and dependency review workflows are committed                |
 
 ### Architecture
 
@@ -120,18 +120,18 @@ This file is the scored snapshot against the canonical checklist in `docs/checkl
 
 ### Operations and Maintenance
 
-| category                   | item_id | statement               | current_status | exception_id | evidence_path                            | owner   | target_task | notes                                               |
-| -------------------------- | ------- | ----------------------- | -------------- | ------------ | ---------------------------------------- | ------- | ----------- | --------------------------------------------------- |
-| Operations and Maintenance | OPS-001 | dead code 도구 설정     | fail           |              | package.json                             | harness | I-0006-050  | pending knip                                        |
-| Operations and Maintenance | OPS-002 | dead code 주기 제거     | fail           |              | docs/reports/                            | harness | I-0006-050  | no process yet                                      |
-| Operations and Maintenance | OPS-003 | 의존성 주기 업데이트    | fail           |              | .github/                                 | harness | I-0006-040  | dependabot pending                                  |
-| Operations and Maintenance | OPS-004 | stale dependency 식별   | fail           |              | package.json                             | harness | I-0006-040  | no automation yet                                   |
-| Operations and Maintenance | OPS-005 | 구조화된 로깅           | fail           |              | apps/api/src/main.ts                     | backend | I-0006-070  | scaffold pending                                    |
-| Operations and Maintenance | OPS-006 | 에러 모니터링 연동      | exception      | EX-0002      | design/operating-rules/exceptions.md     | harness | I-0006-070  | scaffold in repo, live hookup external              |
-| Operations and Maintenance | OPS-007 | health check 엔드포인트 | pass           |              | apps/api/src/health/health.controller.ts | backend |             |                                                     |
-| Operations and Maintenance | OPS-008 | 불필요한 설정 정리      | pass           |              | .gitignore                               | harness | I-0004-030  | generated output rules exist                        |
-| Operations and Maintenance | OPS-009 | Docker 이미지 최적화    | pass           |              | apps/api/Dockerfile                      | backend |             | multi-stage                                         |
-| Operations and Maintenance | OPS-010 | flaky test 관리         | exception      | EX-0003      | design/operating-rules/exceptions.md     | harness | I-0006-060  | policy/report pending, routing proof external today |
+| category                   | item_id | statement               | current_status | exception_id | evidence_path                            | owner   | target_task | notes                                                                 |
+| -------------------------- | ------- | ----------------------- | -------------- | ------------ | ---------------------------------------- | ------- | ----------- | --------------------------------------------------------------------- |
+| Operations and Maintenance | OPS-001 | dead code 도구 설정     | fail           |              | package.json                             | harness | I-0006-050  | pending knip                                                          |
+| Operations and Maintenance | OPS-002 | dead code 주기 제거     | fail           |              | docs/reports/                            | harness | I-0006-050  | no process yet                                                        |
+| Operations and Maintenance | OPS-003 | 의존성 주기 업데이트    | pass           |              | .github/dependabot.yml                   | harness | I-0006-040  | Dependabot manages weekly npm and GitHub Actions updates              |
+| Operations and Maintenance | OPS-004 | stale dependency 식별   | pass           |              | .github/workflows/dependency-review.yml  | harness | I-0006-040  | dependency review plus Dependabot make stale dependency drift visible |
+| Operations and Maintenance | OPS-005 | 구조화된 로깅           | fail           |              | apps/api/src/main.ts                     | backend | I-0006-070  | scaffold pending                                                      |
+| Operations and Maintenance | OPS-006 | 에러 모니터링 연동      | exception      | EX-0002      | design/operating-rules/exceptions.md     | harness | I-0006-070  | scaffold in repo, live hookup external                                |
+| Operations and Maintenance | OPS-007 | health check 엔드포인트 | pass           |              | apps/api/src/health/health.controller.ts | backend |             |                                                                       |
+| Operations and Maintenance | OPS-008 | 불필요한 설정 정리      | pass           |              | .gitignore                               | harness | I-0004-030  | generated output rules exist                                          |
+| Operations and Maintenance | OPS-009 | Docker 이미지 최적화    | pass           |              | apps/api/Dockerfile                      | backend |             | multi-stage                                                           |
+| Operations and Maintenance | OPS-010 | flaky test 관리         | exception      | EX-0003      | design/operating-rules/exceptions.md     | harness | I-0006-060  | policy/report pending, routing proof external today                   |
 
 ### Agent Readability
 
