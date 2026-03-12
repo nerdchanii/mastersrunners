@@ -1,0 +1,206 @@
+name: Codex PR Fix
+
+on:
+  pull_request_target:
+    branches: [dev]
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: codex-pr-fix-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  resolve-request:
+    name: Resolve Request
+    runs-on: ubuntu-latest
+    outputs:
+      reason: ${{ steps.resolve.outputs.reason }}
+      pr_number: ${{ steps.resolve.outputs.pr_number }}
+      head_sha: ${{ steps.resolve.outputs.head_sha }}
+      should_run: ${{ steps.resolve.outputs.should_run }}
+      should_stop: ${{ steps.resolve.outputs.should_stop }}
+
+    steps:
+      - name: Resolve trigger state
+        id: resolve
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const eventName = context.eventName;
+            const action = context.payload.action || '';
+
+            const setOutputs = (values) => {
+              for (const [key, value] of Object.entries(values)) {
+                core.setOutput(key, String(value));
+              }
+            };
+
+            let pr;
+            if (eventName === 'pull_request_target') {
+              pr = context.payload.pull_request;
+            } else if (eventName === 'issue_comment' && context.payload.issue?.pull_request) {
+              const response = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: context.payload.issue.number,
+              });
+              pr = response.data;
+            }
+
+            if (!pr) {
+              core.notice('The event is not attached to a pull request.');
+              setOutputs({
+                reason: 'not-a-pr',
+                pr_number: '',
+                head_sha: '',
+                should_run: false,
+                should_stop: false,
+              });
+              return;
+            }
+
+            if (pr.base.ref !== 'dev') {
+              core.notice(`PR #${pr.number} targets ${pr.base.ref}, not dev.`);
+              setOutputs({
+                reason: 'not-dev-pr',
+                pr_number: pr.number,
+                head_sha: pr.head.sha,
+                should_run: false,
+                should_stop: false,
+              });
+              return;
+            }
+
+            const iterationComments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: pr.number,
+              per_page: 100,
+            });
+
+            const labels = (pr.labels || []).map((label) => label.name);
+            const hasAiFixLabel = labels.includes('ai-fix');
+            const commentBody = context.payload.comment?.body || '';
+            const requestedByComment = /^\/codex fix\b/i.test(commentBody.trim());
+            const stopByComment = /^\/codex stop\b/i.test(commentBody.trim());
+            const startByLabel = eventName === 'pull_request_target' && action === 'labeled' && context.payload.label?.name === 'ai-fix';
+            const stopByLabel = eventName === 'pull_request_target' && action === 'unlabeled' && context.payload.label?.name === 'ai-fix';
+
+            const controlComments = iterationComments
+              .map((comment) => {
+                const body = (comment.body || '').trim();
+                if (/^\/codex fix\b/i.test(body)) {
+                  return { createdAt: comment.created_at, type: 'fix' };
+                }
+                if (/^\/codex stop\b/i.test(body)) {
+                  return { createdAt: comment.created_at, type: 'stop' };
+                }
+                return null;
+              })
+              .filter(Boolean)
+              .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt));
+
+            const latestControl = controlComments[0] || null;
+            const stopPersists = latestControl?.type === 'stop';
+            const rerunBySync =
+              eventName === 'pull_request_target' &&
+              hasAiFixLabel &&
+              !stopPersists &&
+              ['opened', 'reopened', 'synchronize'].includes(action);
+
+            const shouldStop = stopByComment || stopByLabel;
+            let shouldRun = !shouldStop && (startByLabel || requestedByComment || rerunBySync);
+            let reason = shouldRun ? 'run-requested' : shouldStop ? 'stop-requested' : stopPersists ? 'stopped' : 'no-op';
+
+            const iterationPattern = /<!-- codex-pr-fix:iteration:(\d+) -->/;
+            let currentIteration = 0;
+            for (const comment of iterationComments) {
+              const match = comment.body && comment.body.match(iterationPattern);
+              if (match) {
+                currentIteration = Math.max(currentIteration, Number(match[1]));
+              }
+            }
+
+            const nextIteration = currentIteration + 1;
+            if (shouldRun && nextIteration > 5) {
+              shouldRun = false;
+              reason = 'max-iterations-reached';
+            }
+
+            if (shouldRun && pr.head.repo.fork) {
+              shouldRun = false;
+              reason = 'fork-pr-blocked';
+            }
+
+            if (shouldRun) {
+              const trigger = startByLabel
+                ? 'label ai-fix'
+                : requestedByComment
+                  ? '/codex fix comment'
+                  : `pull_request_target:${action}`;
+
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body: [
+                  `<!-- codex-pr-fix:iteration:${nextIteration} -->`,
+                  `Codex PR fix iteration ${nextIteration}/5 queued.`,
+                  `Trigger: ${trigger}.`,
+                ].join('\n'),
+              });
+            }
+
+            core.info(
+              JSON.stringify({
+                pr: pr.number,
+                shouldRun,
+                shouldStop,
+                reason,
+                nextIteration,
+                fork: pr.head.repo.fork,
+              })
+            );
+
+            setOutputs({
+              reason,
+              pr_number: pr.number,
+              head_sha: pr.head.sha,
+              should_run: shouldRun,
+              should_stop: shouldStop,
+            });
+
+  codex-fix:
+    name: Codex Fix Skeleton
+    needs: resolve-request
+    if: needs.resolve-request.outputs.should_run == 'true'
+    runs-on: [self-hosted, macos, codex-runner]
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve-request.outputs.head_sha }}
+          fetch-depth: 0
+
+      - name: Skeleton execution placeholder
+        run: |
+          echo "Codex autofix harness skeleton"
+          echo "PR #${{ needs.resolve-request.outputs.pr_number }}"
+          echo "Reason: ${{ needs.resolve-request.outputs.reason }}"
+          echo "No branch mutation is implemented in this skeleton."

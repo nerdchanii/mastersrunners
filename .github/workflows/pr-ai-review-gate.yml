@@ -1,0 +1,118 @@
+name: Dev PR AI Review Gate
+
+on:
+  pull_request_target:
+    branches: [dev]
+    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  ai-review-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check AI review state
+        uses: actions/github-script@v7
+        env:
+          AI_REVIEW_COPILOT_LOGIN: ${{ vars.AI_REVIEW_COPILOT_LOGIN }}
+          AI_REVIEW_GEMINI_LOGIN: ${{ vars.AI_REVIEW_GEMINI_LOGIN }}
+          AI_REVIEW_COPILOT_MARKER: ${{ vars.AI_REVIEW_COPILOT_MARKER }}
+          AI_REVIEW_GEMINI_MARKER: ${{ vars.AI_REVIEW_GEMINI_MARKER }}
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            if (!pr) {
+              core.setFailed('This workflow only supports pull_request_target events.');
+              return;
+            }
+
+            if (pr.draft) {
+              core.notice(`PR #${pr.number} is draft. AI review gate is waiting for the PR to leave draft state.`);
+              return;
+            }
+
+            const normalize = (value) => (value || '').trim().toLowerCase();
+            const nonEmpty = (value) => (value || '').trim();
+            const configuredLogins = {
+              copilot: normalize(process.env.AI_REVIEW_COPILOT_LOGIN),
+              gemini: normalize(process.env.AI_REVIEW_GEMINI_LOGIN),
+            };
+            const fallbackMarkers = {
+              copilot: nonEmpty(process.env.AI_REVIEW_COPILOT_MARKER) || 'Copilot AI',
+              gemini: nonEmpty(process.env.AI_REVIEW_GEMINI_MARKER),
+            };
+
+            const [reviews, comments] = await Promise.all([
+              github.paginate(github.rest.pulls.listReviews, {
+                owner,
+                repo,
+                pull_number: pr.number,
+                per_page: 100,
+              }),
+              github.paginate(github.rest.issues.listComments, {
+                owner,
+                repo,
+                issue_number: pr.number,
+                per_page: 100,
+              }),
+            ]);
+
+            const evidence = [
+              ...reviews.map((review) => ({
+                kind: 'review',
+                login: normalize(review.user?.login),
+                text: `${review.body || ''}\n${review.state || ''}`,
+              })),
+              ...comments.map((comment) => ({
+                kind: 'comment',
+                login: normalize(comment.user?.login),
+                text: comment.body || '',
+              })),
+            ];
+
+            const detection = {};
+            for (const provider of ['copilot', 'gemini']) {
+              const login = configuredLogins[provider];
+              const marker = fallbackMarkers[provider];
+
+              let matchedBy = '';
+              if (login) {
+                const loginHit = evidence.find((item) => item.login === login);
+                if (loginHit) {
+                  matchedBy = `${provider} login:${login}`;
+                }
+              }
+
+              if (!matchedBy && marker) {
+                const markerHit = evidence.find((item) => item.text.includes(marker));
+                if (markerHit) {
+                  matchedBy = `${provider} marker:${marker}`;
+                }
+              }
+
+              detection[provider] = matchedBy;
+            }
+
+            core.info(`Detection summary: ${JSON.stringify(detection)}`);
+
+            if (detection.copilot || detection.gemini) {
+              core.notice(`AI review detected for PR #${pr.number}.`);
+              return;
+            }
+
+            core.setFailed(
+              [
+                `Waiting for AI review on PR #${pr.number}.`,
+                'Detection is login-first via repository variables AI_REVIEW_COPILOT_LOGIN and AI_REVIEW_GEMINI_LOGIN.',
+                'Copilot marker fallback defaults to "Copilot AI".',
+                'Gemini marker fallback is intentionally unset; leave it that way until the real marker is known.',
+              ].join(' ')
+            );
