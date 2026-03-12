@@ -74,19 +74,19 @@ Use the first `dev` PR to confirm the actual reviewer identities.
 
 The workflows report states such as:
 
-- `paused`
-- `waiting_for_gemini_identity`
-- `waiting_for_gemini_review`
-- `waiting_for_copilot_review`
-- `ready`
-- `queued`
-- `running`
-- `succeeded`
-- `no_changes`
-- `failed`
-- `already_requested`
-- `max_iterations_reached`
-- `fork_blocked`
+- `paused`: auto-fix is not currently enabled for the PR head, either because no fix request is active yet or because it was stopped via `/codex stop` or label removal.
+- `waiting_for_gemini_identity`: the seed PR has not yet established a stable Gemini login or fallback marker.
+- `waiting_for_gemini_review`: Gemini has not reviewed the current PR head SHA yet.
+- `waiting_for_copilot_review`: GitHub Copilot has not reviewed the current PR head SHA yet.
+- `ready`: both AI reviews are present for the current head and the PR can be queued for auto-fix.
+- `queued`: an auto-fix request has been accepted and is waiting for a matching self-hosted runner.
+- `running`: the self-hosted runner is actively executing the Codex fix loop.
+- `succeeded`: the last auto-fix run completed and pushed a new commit back to the PR branch.
+- `no_changes`: the last auto-fix run finished without producing a commit.
+- `failed`: the last auto-fix run aborted because validation, execution, or verification failed.
+- `already_requested`: the current head SHA already has a queued or completed auto-fix request, so a duplicate request is ignored.
+- `max_iterations_reached`: the PR branch hit the five-iteration safety cap and will not queue another run.
+- `fork_blocked`: the PR is from a fork, so self-hosted auto-fix is intentionally disabled.
 
 ## Relationship to Task Review
 

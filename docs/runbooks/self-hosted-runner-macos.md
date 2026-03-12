@@ -37,8 +37,9 @@ The runner must expose all of these labels:
 3. Confirm `codex --help` works in the runner shell.
 4. Confirm `codex login status` shows a usable login for the runner account.
 5. If the runner uses API-key auth, provision it with `printenv OPENAI_API_KEY | codex login --with-api-key`.
-6. Confirm the workflow token can push to same-repo PR branches when `contents: write` is granted.
-7. Confirm the runner does not have direct-push use cases for `main` or `dev`.
+6. Source `OPENAI_API_KEY` from secure runner secret storage or an encrypted secret-injection path instead of plaintext shell startup files.
+7. Confirm the workflow token can push to same-repo PR branches when `contents: write` is granted.
+8. Confirm the runner does not have direct-push use cases for `main` or `dev`.
 
 ## Service Control
 

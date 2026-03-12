@@ -63,6 +63,7 @@ The repository now has task and verification harnesses, but it does not yet defi
 - `tasks/I-0003-review-harness/archive/I-0003-050-meta-commit-message-lint.md`
 - `tasks/I-0003-review-harness/archive/I-0003-060-meta-parallel-worktree-lifecycle.md`
 - `tasks/I-0003-review-harness/archive/I-0003-070-meta-ai-pr-review-autofix.md`
+- `tasks/I-0003-review-harness/archive/I-0003-080-docs-ai-pr-review-clarifications.md`
 
 ## Success Criteria
 
