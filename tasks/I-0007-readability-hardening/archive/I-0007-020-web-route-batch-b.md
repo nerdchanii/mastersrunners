@@ -54,6 +54,7 @@ Make the second route hotspot batch smaller and remove direct page-side `api.fet
 - 2026-03-12: `posts/new`는 `usePostComposer` + step components로 분리해 route를 117줄까지 줄였고, `settings/profile`은 `useProfileEditForm`으로 업로드/저장 흐름을 route 밖으로 이동해 335줄로 줄였다.
 - 2026-03-12: `workouts/new`는 upload/parse/manual-submit orchestration을 `useWorkoutEntry`로 이동했고, `crews/[id]/activities/[activityId]`는 `useCrewActivityDetailViewModel`로 route head의 파생 상태/액션을 분리했다.
 - 2026-03-12: Verify ran: `pnpm --filter @masters/web exec eslint ...`, `pnpm --filter @masters/web build`, `! rg -n "api\\.fetch" ...`, `wc -l ...` -> posts `117`, workouts `454`, settings `335`, crew activity `590`.
+- 2026-03-12: final scorecard sync marked `posts/new` and `settings/profile` as `pass` after rerunning `bash scripts/check-size-budgets.sh` on the integrated main worktree.
 
 ## Review Notes
 
