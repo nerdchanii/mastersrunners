@@ -8,6 +8,10 @@ on:
   issue_comment:
     types: [created]
 
+concurrency:
+  group: pr-ai-review-gate-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
 permissions:
   actions: write
   contents: read
@@ -19,93 +23,47 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout workflow support
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
       - name: Derive AI review gate state
         id: gate
         uses: actions/github-script@v7
         env:
+          HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
           COPILOT_REVIEW_LOGIN: ${{ vars.COPILOT_REVIEW_LOGIN }}
           GEMINI_REVIEW_LOGIN: ${{ vars.GEMINI_REVIEW_LOGIN }}
-          COPILOT_REVIEW_MARKER: Copilot AI
+          COPILOT_REVIEW_MARKER: ${{ vars.COPILOT_REVIEW_MARKER }}
           GEMINI_REVIEW_MARKER: ${{ vars.GEMINI_REVIEW_MARKER }}
           STATE_MARKER: "<!-- codex-pr-fix-state -->"
           FIX_LABEL: ai-fix
           MAX_ITERATIONS: "5"
+          QUEUED_STALE_MINUTES: "15"
         with:
           script: |
+            const {
+              findStateComment,
+              currentHeadReviewReady,
+              isQueuedRequestStale,
+              latestCommand,
+              parseControlCommand,
+              parseState,
+              renderState,
+            } = require(process.env.HELPER_PATH);
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const eventName = context.eventName;
             const fixLabel = process.env.FIX_LABEL;
             const stateMarker = process.env.STATE_MARKER;
             const maxIterations = Number(process.env.MAX_ITERATIONS || "5");
+            const queuedStaleMinutes = Number(process.env.QUEUED_STALE_MINUTES || "15");
             const copilotLogin = (process.env.COPILOT_REVIEW_LOGIN || "").trim().toLowerCase();
             const geminiLogin = (process.env.GEMINI_REVIEW_LOGIN || "").trim().toLowerCase();
             const copilotMarker = (process.env.COPILOT_REVIEW_MARKER || "").trim();
             const geminiMarker = (process.env.GEMINI_REVIEW_MARKER || "").trim();
-
-            function parseState(body) {
-              const empty = {
-                iteration: 0,
-                last_requested_sha: "",
-                last_result: "idle",
-                last_fix_completed_at: "",
-                last_fixed_sha: "",
-              };
-
-              if (!body || !body.includes(stateMarker)) {
-                return empty;
-              }
-
-              const match = body.match(/```json\n([\s\S]*?)\n```/);
-              if (!match) {
-                return empty;
-              }
-
-              try {
-                return { ...empty, ...JSON.parse(match[1]) };
-              } catch {
-                return empty;
-              }
-            }
-
-            function renderState(state) {
-              return [
-                stateMarker,
-                "## Codex PR Auto-Fix State",
-                "",
-                "```json",
-                JSON.stringify(state, null, 2),
-                "```",
-              ].join("\n");
-            }
-
-            function reviewMatches(review, login, marker) {
-              const author = (review.user?.login || "").toLowerCase();
-              const body = review.body || "";
-              if (login && author === login) {
-                return true;
-              }
-              if (marker && body.includes(marker)) {
-                return true;
-              }
-              return false;
-            }
-
-            function currentHeadReviewReady(reviews, headSha, login, marker) {
-              if (!login && !marker) {
-                return false;
-              }
-
-              return reviews.some((review) => {
-                if (review.state === "DISMISSED") {
-                  return false;
-                }
-                if (review.commit_id !== headSha) {
-                  return false;
-                }
-                return reviewMatches(review, login, marker);
-              });
-            }
 
             async function loadPullRequest() {
               if (eventName === "issue_comment") {
@@ -138,29 +96,21 @@ jobs:
               });
             }
 
-            function latestCommand(comments) {
-              const allowedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
-              const filtered = comments
-                .filter((comment) => comment.body)
-                .filter((comment) => comment.user?.login !== "github-actions[bot]")
-                .filter((comment) => allowedAssociations.has(comment.author_association))
-                .filter((comment) => /\/codex (fix|stop)\b/.test(comment.body))
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-              const latest = filtered[0];
-              if (!latest) {
+            function currentCommentCommand() {
+              if (eventName !== "issue_comment") {
                 return "";
               }
 
-              if (/\/codex stop\b/.test(latest.body)) {
-                return "stop";
+              const comment = context.payload.comment;
+              if (!comment?.body) {
+                return "";
               }
 
-              if (/\/codex fix\b/.test(latest.body)) {
-                return "fix";
+              const allowedAssociations = new Set(["OWNER"]);
+              if (!allowedAssociations.has(comment.author_association)) {
+                return "";
               }
-
-              return "";
+              return parseControlCommand(comment.body);
             }
 
             const pr = await loadPullRequest();
@@ -178,21 +128,27 @@ jobs:
             }
 
             const issueComments = await listIssueComments(pr.number);
-            const stateComment = issueComments.find((comment) => comment.body?.includes(stateMarker));
-            const state = parseState(stateComment?.body || "");
+            const stateComment = findStateComment(issueComments, stateMarker);
+            const state = parseState(stateComment?.body || "", stateMarker);
             const lastCommand = latestCommand(issueComments);
+            const currentCommand = currentCommentCommand();
             const hasFixLabel = (pr.labels || []).some((label) => label.name === fixLabel);
-            const labeledNow = eventName === "pull_request_target" && context.payload.action === "labeled" && context.payload.label?.name === fixLabel;
-            const unlabeledNow = eventName === "pull_request_target" && context.payload.action === "unlabeled" && context.payload.label?.name === fixLabel;
-            let enabled = hasFixLabel;
-            if (labeledNow) {
-              enabled = true;
-            } else if (unlabeledNow) {
+            const ownerTriggeredLabelAction =
+              eventName === "pull_request_target" && context.payload.sender?.login === owner;
+            const labeledNow =
+              ownerTriggeredLabelAction &&
+              context.payload.action === "labeled" &&
+              context.payload.label?.name === fixLabel;
+            const unlabeledNow =
+              ownerTriggeredLabelAction &&
+              context.payload.action === "unlabeled" &&
+              context.payload.label?.name === fixLabel;
+            const explicitFixRequestedNow = labeledNow || currentCommand === "fix";
+            let enabled = Boolean(state.enabled);
+            if (unlabeledNow || currentCommand === "stop") {
               enabled = false;
-            } else if (lastCommand === "fix") {
+            } else if (labeledNow || currentCommand === "fix") {
               enabled = true;
-            } else if (lastCommand === "stop") {
-              enabled = false;
             }
             const forkBlocked = pr.head.repo.full_name !== `${owner}/${repo}`;
             const reviews = await github.paginate(github.rest.pulls.listReviews, {
@@ -206,25 +162,39 @@ jobs:
             const copilotIdentityConfigured = Boolean(copilotLogin || copilotMarker);
             const geminiReady = currentHeadReviewReady(reviews, pr.head.sha, geminiLogin, geminiMarker);
             const copilotReady = currentHeadReviewReady(reviews, pr.head.sha, copilotLogin, copilotMarker);
+            const queuedRequestStale = isQueuedRequestStale(state, pr.head.sha, queuedStaleMinutes);
+            const retryRequiresExplicitTrigger =
+              queuedRequestStale || state.last_result === "dispatch_failed";
+            const requestId = `${pr.head.sha}:${Date.now()}`;
 
             let status = "paused";
             if (forkBlocked) {
               status = "fork_blocked";
+            } else if (pr.author_association !== "OWNER") {
+              status = "untrusted_pr_author";
             } else if (!enabled) {
               status = "paused";
             } else if (state.iteration >= maxIterations) {
               status = "max_iterations_reached";
             } else if (!geminiIdentityConfigured) {
               status = "waiting_for_gemini_identity";
+            } else if (!copilotIdentityConfigured) {
+              status = "waiting_for_copilot_identity";
             } else if (!geminiReady) {
               status = "waiting_for_gemini_review";
             } else if (!copilotReady) {
               status = "waiting_for_copilot_review";
-            } else if (state.last_requested_sha === pr.head.sha) {
+            } else if (retryRequiresExplicitTrigger && !explicitFixRequestedNow) {
+              status = "retry_required";
+            } else if (state.last_requested_sha === pr.head.sha && !queuedRequestStale) {
               status = "already_requested";
             } else {
               status = "ready";
             }
+
+            const dispatchReady =
+              status === "ready" &&
+              (!retryRequiresExplicitTrigger || explicitFixRequestedNow);
 
             const nextState = {
               ...state,
@@ -239,17 +209,20 @@ jobs:
               gemini_review_ready: geminiReady,
               copilot_identity_configured: copilotIdentityConfigured,
               copilot_review_ready: copilotReady,
-              latest_command: lastCommand || "",
+              queued_request_stale: queuedRequestStale,
+              latest_command: currentCommand || lastCommand || "",
               updated_at: new Date().toISOString(),
             };
 
-            if (status === "ready") {
+            if (dispatchReady) {
               nextState.status = "queued";
+              nextState.last_request_id = requestId;
               nextState.last_requested_sha = pr.head.sha;
+              nextState.last_requested_at = new Date().toISOString();
               nextState.last_result = "queued";
             }
 
-            const body = renderState(nextState);
+            const body = renderState(nextState, stateMarker);
 
             if (stateComment) {
               await github.rest.issues.updateComment({
@@ -267,14 +240,17 @@ jobs:
               });
             }
 
-            core.setOutput("dispatch", status === "ready" ? "true" : "false");
+            core.setOutput("dispatch", dispatchReady ? "true" : "false");
             core.setOutput("pr_number", String(pr.number));
+            core.setOutput("request_id", dispatchReady ? requestId : "");
             core.setOutput("head_ref", pr.head.ref);
             core.setOutput("head_sha", pr.head.sha);
             core.setOutput("status", status);
 
       - name: Dispatch Codex auto-fix workflow
+        id: dispatch
         if: steps.gate.outputs.dispatch == 'true'
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |
@@ -282,10 +258,71 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: "codex-pr-fix.yml",
-              ref: "main",
+              ref: "dev",
               inputs: {
                 pr_number: "${{ steps.gate.outputs.pr_number }}",
+                request_id: "${{ steps.gate.outputs.request_id }}",
                 head_ref: "${{ steps.gate.outputs.head_ref }}",
                 head_sha: "${{ steps.gate.outputs.head_sha }}",
+              },
+            });
+
+      - name: Recover queued state after dispatch failure
+        if: steps.gate.outputs.dispatch == 'true' && steps.dispatch.outcome != 'success'
+        uses: actions/github-script@v7
+        env:
+          HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
+          STATE_MARKER: "<!-- codex-pr-fix-state -->"
+        with:
+          script: |
+            const { findStateComment, parseState, renderState } = require(process.env.HELPER_PATH);
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = Number("${{ steps.gate.outputs.pr_number }}");
+            const headSha = "${{ steps.gate.outputs.head_sha }}";
+            const stateMarker = process.env.STATE_MARKER;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+            const stateComment = findStateComment(comments, stateMarker);
+            const currentState = parseState(stateComment?.body || "", stateMarker);
+
+            if (currentState.last_requested_sha !== headSha || currentState.status !== "queued") {
+              return;
+            }
+
+            const recoveredState = {
+              ...currentState,
+              status: "retry_required",
+              last_request_id: "",
+              last_requested_sha: "",
+              last_requested_at: "",
+              last_result: "dispatch_failed",
+              updated_at: new Date().toISOString(),
+            };
+
+            await github.rest.issues.updateComment({
+              owner,
+              repo,
+              comment_id: stateComment.id,
+              body: renderState(recoveredState, stateMarker),
+            });
+
+      - name: Refresh status workflow after gate update
+        if: always() && steps.gate.outputs.pr_number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: "codex-pr-fix-status.yml",
+              ref: "dev",
+              inputs: {
+                pr_number: "${{ steps.gate.outputs.pr_number }}",
               },
             });

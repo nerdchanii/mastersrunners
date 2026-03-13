@@ -7,6 +7,10 @@ on:
         description: "Pull request number"
         required: true
         type: string
+      request_id:
+        description: "Gate-issued request identifier"
+        required: true
+        type: string
       head_ref:
         description: "PR head branch ref"
         required: true
@@ -37,22 +41,37 @@ jobs:
       reason: ${{ steps.validate.outputs.reason }}
     env:
       PR_NUMBER: ${{ inputs.pr_number }}
+      REQUEST_ID: ${{ inputs.request_id }}
       HEAD_REF: ${{ inputs.head_ref }}
       HEAD_SHA: ${{ inputs.head_sha }}
       STATE_MARKER: "<!-- codex-pr-fix-state -->"
       COPILOT_REVIEW_LOGIN: ${{ vars.COPILOT_REVIEW_LOGIN }}
       GEMINI_REVIEW_LOGIN: ${{ vars.GEMINI_REVIEW_LOGIN }}
-      COPILOT_REVIEW_MARKER: Copilot AI
+      COPILOT_REVIEW_MARKER: ${{ vars.COPILOT_REVIEW_MARKER }}
       GEMINI_REVIEW_MARKER: ${{ vars.GEMINI_REVIEW_MARKER }}
       FIX_LABEL: ai-fix
       MAX_ITERATIONS: "5"
 
     steps:
+      - name: Checkout workflow support
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
       - name: Validate workflow dispatch request
         id: validate
         uses: actions/github-script@v7
+        env:
+          HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
         with:
           script: |
+            const {
+              currentHeadReviewReady,
+              findStateComment,
+              latestCommand,
+              parseState,
+            } = require(process.env.HELPER_PATH);
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const issueNumber = Number(process.env.PR_NUMBER);
@@ -63,83 +82,6 @@ jobs:
             const geminiLogin = (process.env.GEMINI_REVIEW_LOGIN || "").trim().toLowerCase();
             const copilotMarker = (process.env.COPILOT_REVIEW_MARKER || "").trim();
             const geminiMarker = (process.env.GEMINI_REVIEW_MARKER || "").trim();
-
-            function parseState(body) {
-              const empty = {
-                iteration: 0,
-                last_requested_sha: "",
-                last_result: "idle",
-                last_fix_completed_at: "",
-                last_fixed_sha: "",
-              };
-
-              if (!body || !body.includes(stateMarker)) {
-                return empty;
-              }
-
-              const match = body.match(/```json\n([\s\S]*?)\n```/);
-              if (!match) {
-                return empty;
-              }
-
-              try {
-                return { ...empty, ...JSON.parse(match[1]) };
-              } catch {
-                return empty;
-              }
-            }
-
-            function reviewMatches(review, login, marker) {
-              const author = (review.user?.login || "").toLowerCase();
-              const body = review.body || "";
-              if (login && author === login) {
-                return true;
-              }
-              if (marker && body.includes(marker)) {
-                return true;
-              }
-              return false;
-            }
-
-            function currentHeadReviewReady(reviews, headSha, login, marker) {
-              if (!login && !marker) {
-                return false;
-              }
-
-              return reviews.some((review) => {
-                if (review.state === "DISMISSED") {
-                  return false;
-                }
-                if (review.commit_id !== headSha) {
-                  return false;
-                }
-                return reviewMatches(review, login, marker);
-              });
-            }
-
-            function latestCommand(comments) {
-              const allowedAssociations = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
-              const filtered = comments
-                .filter((comment) => comment.body)
-                .filter((comment) => allowedAssociations.has(comment.author_association))
-                .filter((comment) => /\/codex (fix|stop)\b/.test(comment.body))
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-              const latest = filtered[0];
-              if (!latest) {
-                return "";
-              }
-
-              if (/\/codex stop\b/.test(latest.body)) {
-                return "stop";
-              }
-
-              if (/\/codex fix\b/.test(latest.body)) {
-                return "fix";
-              }
-
-              return "";
-            }
 
             const prResponse = await github.rest.pulls.get({
               owner,
@@ -159,16 +101,10 @@ jobs:
               issue_number: issueNumber,
               per_page: 100,
             });
-            const stateComment = issueComments.find((comment) => comment.body?.includes(stateMarker));
-            const state = parseState(stateComment?.body || "");
+            const stateComment = findStateComment(issueComments, stateMarker);
+            const state = parseState(stateComment?.body || "", stateMarker);
             const lastCommand = latestCommand(issueComments);
-            const hasFixLabel = (pr.labels || []).some((label) => label.name === fixLabel);
-            let enabled = hasFixLabel;
-            if (lastCommand === "fix") {
-              enabled = true;
-            } else if (lastCommand === "stop") {
-              enabled = false;
-            }
+            let enabled = Boolean(state.enabled);
 
             const reviews = await github.paginate(github.rest.pulls.listReviews, {
               owner,
@@ -189,6 +125,9 @@ jobs:
             } else if (pr.head.repo.full_name !== `${owner}/${repo}`) {
               shouldRun = false;
               reason = "fork_blocked";
+            } else if (pr.author_association !== "OWNER") {
+              shouldRun = false;
+              reason = "untrusted_pr_author";
             } else if (["main", "dev"].includes(pr.head.ref) || headBranch.protected) {
               shouldRun = false;
               reason = "protected_or_shared_head_branch";
@@ -210,6 +149,9 @@ jobs:
             } else if (!copilotReady) {
               shouldRun = false;
               reason = "waiting_for_copilot_review";
+            } else if (state.last_request_id !== process.env.REQUEST_ID) {
+              shouldRun = false;
+              reason = "stale_request_id";
             } else if (state.last_requested_sha !== pr.head.sha) {
               shouldRun = false;
               reason = "request_not_queued";
@@ -221,22 +163,124 @@ jobs:
             core.setOutput("head_sha", pr.head.sha);
             core.setOutput("reason", reason);
 
+      - name: Recover queued state when validation rejects request
+        if: steps.validate.outputs.should_run != 'true'
+        uses: actions/github-script@v7
+        env:
+          HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
+        with:
+          script: |
+            const { findStateComment, parseState, renderState } = require(process.env.HELPER_PATH);
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = Number(process.env.PR_NUMBER);
+            const stateMarker = process.env.STATE_MARKER;
+            const headSha = process.env.HEAD_SHA;
+            const requestId = process.env.REQUEST_ID;
+            const reason = "${{ steps.validate.outputs.reason }}";
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+            const stateComment = findStateComment(comments, stateMarker);
+            const previousState = parseState(stateComment?.body || "", stateMarker);
+
+            const matchesActiveRequest =
+              previousState.last_request_id === requestId ||
+              previousState.last_requested_sha === headSha;
+            if (!matchesActiveRequest) {
+              return;
+            }
+
+            const statusByReason = {
+              fork_blocked: "fork_blocked",
+              untrusted_pr_author: "untrusted_pr_author",
+              waiting_for_gemini_identity: "waiting_for_gemini_identity",
+              waiting_for_gemini_review: "waiting_for_gemini_review",
+              waiting_for_copilot_review: "waiting_for_copilot_review",
+              max_iterations_reached: "max_iterations_reached",
+              not_enabled: "paused",
+              protected_or_shared_head_branch: "failed",
+              stale_head: "retry_required",
+              stale_request_id: "retry_required",
+              request_not_queued: "retry_required",
+            };
+
+            const nextState = {
+              ...previousState,
+              status: statusByReason[reason] || "failed",
+              last_request_id: "",
+              last_requested_sha: "",
+              last_requested_at: "",
+              last_result: reason || "validation_rejected",
+              updated_at: new Date().toISOString(),
+            };
+
+            const body = renderState(nextState, stateMarker);
+            if (stateComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: stateComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body,
+              });
+            }
+
+      - name: Refresh status workflow after rejected request
+        if: steps.validate.outputs.should_run != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: "codex-pr-fix-status.yml",
+              ref: "dev",
+              inputs: {
+                pr_number: process.env.PR_NUMBER,
+              },
+            });
+
   fix:
     needs: validate-request
     if: needs.validate-request.outputs.should_run == 'true'
     runs-on: [self-hosted, macos, codex-runner]
     timeout-minutes: 45
     env:
+      HELPER_PATH: ${{ runner.temp }}/pr-autofix-state.cjs
       PR_NUMBER: ${{ needs.validate-request.outputs.pr_number }}
+      REQUEST_ID: ${{ inputs.request_id }}
       HEAD_REF: ${{ needs.validate-request.outputs.head_ref }}
       HEAD_SHA: ${{ needs.validate-request.outputs.head_sha }}
       STATE_MARKER: "<!-- codex-pr-fix-state -->"
       COPILOT_REVIEW_LOGIN: ${{ vars.COPILOT_REVIEW_LOGIN }}
       GEMINI_REVIEW_LOGIN: ${{ vars.GEMINI_REVIEW_LOGIN }}
-      COPILOT_REVIEW_MARKER: Copilot AI
+      COPILOT_REVIEW_MARKER: ${{ vars.COPILOT_REVIEW_MARKER }}
       GEMINI_REVIEW_MARKER: ${{ vars.GEMINI_REVIEW_MARKER }}
 
     steps:
+      - name: Checkout workflow support
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          path: _workflow_support
+
+      - name: Stage shared workflow helper
+        run: |
+          cp "_workflow_support/.github/scripts/pr-autofix-state.cjs" "$RUNNER_TEMP/pr-autofix-state.cjs"
+          rm -rf _workflow_support
+
       - name: Checkout PR head
         uses: actions/checkout@v4
         with:
@@ -262,46 +306,11 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const { findStateComment, parseState, renderState } = require(process.env.HELPER_PATH);
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const issueNumber = Number(process.env.PR_NUMBER);
             const stateMarker = process.env.STATE_MARKER;
-
-            function parseState(body) {
-              const empty = {
-                iteration: 0,
-                last_requested_sha: "",
-                last_result: "idle",
-                last_fix_completed_at: "",
-                last_fixed_sha: "",
-              };
-
-              if (!body || !body.includes(stateMarker)) {
-                return empty;
-              }
-
-              const match = body.match(/```json\n([\s\S]*?)\n```/);
-              if (!match) {
-                return empty;
-              }
-
-              try {
-                return { ...empty, ...JSON.parse(match[1]) };
-              } catch {
-                return empty;
-              }
-            }
-
-            function renderState(state) {
-              return [
-                stateMarker,
-                "## Codex PR Auto-Fix State",
-                "",
-                "```json",
-                JSON.stringify(state, null, 2),
-                "```",
-              ].join("\n");
-            }
 
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner,
@@ -309,18 +318,19 @@ jobs:
               issue_number: issueNumber,
               per_page: 100,
             });
-            const stateComment = comments.find((comment) => comment.body?.includes(stateMarker));
-            const previousState = parseState(stateComment?.body || "");
+            const stateComment = findStateComment(comments, stateMarker);
+            const previousState = parseState(stateComment?.body || "", stateMarker);
             const nextState = {
               ...previousState,
               iteration: Number(previousState.iteration || 0) + 1,
               status: "running",
+              last_request_id: process.env.REQUEST_ID,
               last_requested_sha: process.env.HEAD_SHA,
               last_result: "running",
               updated_at: new Date().toISOString(),
             };
 
-            const body = renderState(nextState);
+            const body = renderState(nextState, stateMarker);
             if (stateComment) {
               await github.rest.issues.updateComment({
                 owner,
@@ -347,6 +357,7 @@ jobs:
         with:
           script: |
             const fs = require("fs");
+            const { reviewMatches } = require(process.env.HELPER_PATH);
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const issueNumber = Number(process.env.PR_NUMBER);
@@ -356,17 +367,6 @@ jobs:
             const copilotMarker = (process.env.COPILOT_REVIEW_MARKER || "").trim();
             const geminiMarker = (process.env.GEMINI_REVIEW_MARKER || "").trim();
             const feedbackPath = process.env.FEEDBACK_PATH;
-
-            function matches(body, userLogin, login, marker) {
-              const author = (userLogin || "").toLowerCase();
-              if (login && author === login) {
-                return true;
-              }
-              if (marker && (body || "").includes(marker)) {
-                return true;
-              }
-              return false;
-            }
 
             const prResponse = await github.rest.pulls.get({
               owner,
@@ -396,8 +396,8 @@ jobs:
                 return false;
               }
               return (
-                matches(review.body, review.user?.login, copilotLogin, copilotMarker) ||
-                matches(review.body, review.user?.login, geminiLogin, geminiMarker)
+                reviewMatches(review, copilotLogin, copilotMarker) ||
+                reviewMatches(review, geminiLogin, geminiMarker)
               );
             });
 
@@ -406,8 +406,8 @@ jobs:
                 return false;
               }
               return (
-                matches(comment.body, comment.user?.login, copilotLogin, copilotMarker) ||
-                matches(comment.body, comment.user?.login, geminiLogin, geminiMarker)
+                reviewMatches(comment, copilotLogin, copilotMarker) ||
+                reviewMatches(comment, geminiLogin, geminiMarker)
               );
             });
 
@@ -499,9 +499,39 @@ jobs:
           fi
           echo "remote_sha=$REMOTE_SHA" >> "$GITHUB_OUTPUT"
 
+      - name: Confirm auto-fix still enabled before push
+        id: stop-check
+        if: steps.feedback.outputs.has_feedback == 'true' && steps.codex.outcome == 'success' && steps.lint.outcome == 'success' && steps.typecheck.outcome == 'success' && steps.branch-head.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { findStateComment, parseState } = require(process.env.HELPER_PATH);
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = Number(process.env.PR_NUMBER);
+            const stateMarker = process.env.STATE_MARKER;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+            const stateComment = findStateComment(comments, stateMarker);
+            const state = parseState(stateComment?.body || "", stateMarker);
+            const stillEnabled =
+              Boolean(state.enabled) &&
+              state.last_request_id === process.env.REQUEST_ID &&
+              state.head_sha === process.env.HEAD_SHA;
+
+            core.setOutput("still_enabled", String(stillEnabled));
+            if (!stillEnabled) {
+              core.setFailed("Auto-fix was disabled or superseded before push.");
+            }
+
       - name: Commit and push PR autofix
         id: push
-        if: steps.feedback.outputs.has_feedback == 'true' && steps.codex.outcome == 'success' && steps.lint.outcome == 'success' && steps.typecheck.outcome == 'success' && steps.diff.outputs.has_changes == 'true' && steps.branch-head.outcome == 'success'
+        if: steps.feedback.outputs.has_feedback == 'true' && steps.codex.outcome == 'success' && steps.lint.outcome == 'success' && steps.typecheck.outcome == 'success' && steps.diff.outputs.has_changes == 'true' && steps.branch-head.outcome == 'success' && steps.stop-check.outputs.still_enabled == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -522,46 +552,11 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const { findStateComment, parseState, renderState } = require(process.env.HELPER_PATH);
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const issueNumber = Number(process.env.PR_NUMBER);
             const stateMarker = process.env.STATE_MARKER;
-
-            function parseState(body) {
-              const empty = {
-                iteration: 0,
-                last_requested_sha: "",
-                last_result: "idle",
-                last_fix_completed_at: "",
-                last_fixed_sha: "",
-              };
-
-              if (!body || !body.includes(stateMarker)) {
-                return empty;
-              }
-
-              const match = body.match(/```json\n([\s\S]*?)\n```/);
-              if (!match) {
-                return empty;
-              }
-
-              try {
-                return { ...empty, ...JSON.parse(match[1]) };
-              } catch {
-                return empty;
-              }
-            }
-
-            function renderState(state) {
-              return [
-                stateMarker,
-                "## Codex PR Auto-Fix State",
-                "",
-                "```json",
-                JSON.stringify(state, null, 2),
-                "```",
-              ].join("\n");
-            }
 
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner,
@@ -569,8 +564,8 @@ jobs:
               issue_number: issueNumber,
               per_page: 100,
             });
-            const stateComment = comments.find((comment) => comment.body?.includes(stateMarker));
-            const previousState = parseState(stateComment?.body || "");
+            const stateComment = findStateComment(comments, stateMarker);
+            const previousState = parseState(stateComment?.body || "", stateMarker);
 
             let status = "no_changes";
             let lastResult = "no_changes";
@@ -589,6 +584,9 @@ jobs:
             } else if ("${{ steps.diff.outputs.has_changes }}" !== "true") {
               status = "no_changes";
               lastResult = "no_changes";
+            } else if ("${{ steps.stop-check.outputs.still_enabled }}" !== "true") {
+              status = "paused";
+              lastResult = "stopped_before_push";
             } else if ("${{ steps.push.outcome }}" !== "success") {
               status = "failed";
               lastResult = "push_failed";
@@ -600,13 +598,14 @@ jobs:
             const nextState = {
               ...previousState,
               status,
+              last_request_id: process.env.REQUEST_ID,
               last_result: lastResult,
               last_fix_completed_at: new Date().toISOString(),
               last_fixed_sha: "${{ steps.push.outputs.pushed_sha || env.HEAD_SHA }}",
               updated_at: new Date().toISOString(),
             };
 
-            const body = renderState(nextState);
+            const body = renderState(nextState, stateMarker);
             if (stateComment) {
               await github.rest.issues.updateComment({
                 owner,
@@ -632,7 +631,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: "codex-pr-fix-status.yml",
-              ref: "main",
+              ref: "dev",
               inputs: {
                 pr_number: process.env.PR_NUMBER,
               },

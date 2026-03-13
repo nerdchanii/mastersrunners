@@ -28,12 +28,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout workflow support
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
       - name: Refresh PR auto-fix status check
         uses: actions/github-script@v7
         env:
+          HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
           STATE_MARKER: "<!-- codex-pr-fix-state -->"
         with:
           script: |
+            const { findStateComment, parseState } = require(process.env.HELPER_PATH);
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const stateMarker = process.env.STATE_MARKER;
@@ -55,7 +63,7 @@ jobs:
               }
 
               if (context.eventName === "workflow_dispatch") {
-                const prNumber = Number(core.getInput("pr_number"));
+                const prNumber = Number(context.payload.inputs.pr_number);
                 const response = await github.rest.pulls.get({
                   owner,
                   repo,
@@ -84,33 +92,6 @@ jobs:
               return context.payload.pull_request;
             }
 
-            function parseState(body) {
-              const empty = {
-                status: "unknown",
-                iteration: 0,
-                max_iterations: 5,
-                head_sha: "",
-                last_result: "idle",
-                gemini_review_ready: false,
-                copilot_review_ready: false,
-              };
-
-              if (!body || !body.includes(stateMarker)) {
-                return empty;
-              }
-
-              const match = body.match(/```json\n([\s\S]*?)\n```/);
-              if (!match) {
-                return empty;
-              }
-
-              try {
-                return { ...empty, ...JSON.parse(match[1]) };
-              } catch {
-                return empty;
-              }
-            }
-
             const pr = await loadPullRequest();
             if (!pr || pr.base.ref !== "dev") {
               core.info("No dev PR context for status refresh.");
@@ -123,25 +104,29 @@ jobs:
               issue_number: pr.number,
               per_page: 100,
             });
-            const stateComment = comments.find((comment) => comment.body?.includes(stateMarker));
-            const state = parseState(stateComment?.body || "");
+            const stateComment = findStateComment(comments, stateMarker);
+            const state = parseState(stateComment?.body || "", stateMarker);
 
             const statusMap = {
-              ready: "success",
-              queued: "in_progress",
-              running: "in_progress",
-              succeeded: "success",
-              no_changes: "success",
-              paused: "neutral",
-              waiting_for_gemini_identity: "neutral",
-              waiting_for_gemini_review: "neutral",
-              waiting_for_copilot_review: "neutral",
-              already_requested: "neutral",
-              max_iterations_reached: "failure",
-              fork_blocked: "neutral",
-              failed: "failure",
-              unknown: "neutral",
+              ready: { status: "completed", conclusion: "success" },
+              queued: { status: "in_progress" },
+              running: { status: "in_progress" },
+              succeeded: { status: "completed", conclusion: "success" },
+              no_changes: { status: "completed", conclusion: "success" },
+              paused: { status: "completed", conclusion: "neutral" },
+              waiting_for_gemini_identity: { status: "completed", conclusion: "neutral" },
+              waiting_for_copilot_identity: { status: "completed", conclusion: "neutral" },
+              waiting_for_gemini_review: { status: "completed", conclusion: "neutral" },
+              waiting_for_copilot_review: { status: "completed", conclusion: "neutral" },
+              retry_required: { status: "completed", conclusion: "neutral" },
+              already_requested: { status: "completed", conclusion: "neutral" },
+              max_iterations_reached: { status: "completed", conclusion: "failure" },
+              fork_blocked: { status: "completed", conclusion: "neutral" },
+              untrusted_pr_author: { status: "completed", conclusion: "neutral" },
+              failed: { status: "completed", conclusion: "failure" },
+              unknown: { status: "completed", conclusion: "neutral" },
             };
+            const checkState = statusMap[state.status || "unknown"] || statusMap.unknown;
 
             const summaryLines = [
               `Status: ${state.status || "unknown"}`,
@@ -156,8 +141,8 @@ jobs:
               repo,
               name: "Codex PR Auto-Fix Status",
               head_sha: pr.head.sha,
-              status: "completed",
-              conclusion: statusMap[state.status || "unknown"],
+              status: checkState.status,
+              ...(checkState.conclusion ? { conclusion: checkState.conclusion } : {}),
               output: {
                 title: "Codex PR Auto-Fix",
                 summary: summaryLines.join("\n"),
