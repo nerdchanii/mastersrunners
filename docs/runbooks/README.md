@@ -7,6 +7,7 @@ Current runbooks:
 - `environment-and-settings.md`
 - `deployment.md`
 - `rollback.md`
+- `self-hosted-runner-macos.md`
 
 Rule:
 
