@@ -19,6 +19,7 @@ verify:
 artifacts:
   - .github/workflows/ci.yml
   - apps/api/Dockerfile
+  - knip.json
   - scripts/check-generated-artifacts.sh
   - scripts/run-if-bin.mjs
   - scripts/ci-local.sh
@@ -92,6 +93,7 @@ Identify why Cloudflare Pages preview deployments are failing and close the gap 
 - 2026-03-13: after the Pages dashboard build command was changed to `pnpm build:web`, a retried deployment for commit `bb38228` failed with `ERR_PNPM_NO_SCRIPT Missing script: build:web`, which confirms the dashboard now points at the new command but the remote branch still needs the repo-side script commit.
 - 2026-03-13: PR #7 confirmed the Cloudflare Pages preview succeeds on commit `b3bde30`, then exposed unrelated CI failures: the harness structure check ran after `pnpm install`, and the API Docker runner stage failed because `prepare` and `postinstall` expected dev-only `husky` and `prisma` binaries during a production-only install.
 - 2026-03-13: addressed Gemini review feedback by removing misleading numbering from deployment-surface headings and splitting the Cloudflare Pages build contract into scan-friendly subsections.
+- 2026-03-13: a follow-up PR #7 run exposed two more repo-side issues, both now patched in-branch: `knip` flagged `husky` as unused after the lifecycle helper indirection, and the API Docker builder needed the web package manifest plus Prisma config files copied before install so the workspace install matched local type dependency resolution.
 
 ## Review Notes
 
