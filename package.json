@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "pnpm --parallel -r run dev",
     "build": "pnpm -r run build",
+    "build:web": "pnpm --filter @masters/web build",
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm --filter @masters/database db:generate && pnpm --filter @masters/database exec tsc -p tsconfig.json --noEmit && pnpm --filter @masters/types exec tsc -p tsconfig.json --noEmit && pnpm --filter @masters/api exec tsc -p tsconfig.build.json --noEmit && pnpm --filter @masters/web exec tsc -p tsconfig.json --noEmit",
     "knip": "bash scripts/run-knip.sh",

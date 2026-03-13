@@ -1,14 +1,16 @@
 ---
 doc_state: current
 owner: architecture
-last_verified: 2026-03-12
+last_verified: 2026-03-13
 sources:
   - .github/workflows/deploy.yml
   - scripts/verify-deployment.sh
   - docker-compose.prod.yml
+  - package.json
   - apps/api/Dockerfile
   - apps/api/src/main.ts
   - apps/web/package.json
+  - docs/runbooks/deployment.md
 ---
 
 # Deployment Architecture
@@ -18,14 +20,16 @@ This document defines the intended deployment shape for the repository. Runbooks
 ## Production Topology
 
 - API: NestJS container on Google Cloud Run
+- Web: static Vite SPA on Cloudflare Pages
 - Database: PostgreSQL
 - File storage: Cloudflare R2
-
-The repository also builds a static SPA artifact from `apps/web`, but the production web-hosting system is not currently defined in-repo.
 
 ## Execution Boundaries
 
 - Build artifact for API: Docker image from `apps/api/Dockerfile`
+- Build artifact for web: static files from `apps/web/dist`
+- Web build entrypoint: root `pnpm build:web` script
+- Web deploy automation: Cloudflare Pages Git integration with dashboard-managed project settings
 - Deployment automation: `.github/workflows/deploy.yml`
 - Local production-like runtime: `docker-compose.prod.yml`
 - Post-deploy verification: `scripts/verify-deployment.sh`
@@ -41,8 +45,10 @@ The repository also builds a static SPA artifact from `apps/web`, but the produc
 ### Production
 
 - Runtime config is injected by the deploy workflow through env vars and secrets
+- Web runtime config for Cloudflare Pages is injected through Pages environment variables such as `VITE_API_URL`
 - Production deploys should be immutable by commit SHA
 - Redis appears in environment and compose-level deployment assumptions, but the current repo implementation does not use a shared Redis runtime for app logic or realtime fan-out
+- The Pages project itself is external state, so its build command and output directory must match `docs/runbooks/deployment.md`
 
 ### Local Production-Like
 

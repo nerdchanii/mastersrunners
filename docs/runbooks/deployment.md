@@ -8,6 +8,7 @@ This runbook explains how deployment works in this repository, what to verify be
 - Production deploy workflow: `.github/workflows/deploy.yml`
 - Production-like local stack: `docker-compose.prod.yml`
 - Post-deploy verification script: `scripts/verify-deployment.sh`
+- Cloudflare Pages web build entrypoint: `package.json` -> `pnpm build:web`
 
 ## Deployment Surfaces
 
@@ -21,6 +22,13 @@ This runbook explains how deployment works in this repository, what to verify be
 
 - Target: local Docker Compose stack
 - Purpose: validate runtime config, container boot, and health checks before touching production
+
+### 3. Web Static Hosting
+
+- Target: Cloudflare Pages
+- Trigger: Git-connected preview and production deployments
+- Build artifact: `apps/web/dist`
+- Build contract source of truth: this runbook plus the root `build:web` script
 
 ## Pre-Deploy Checklist
 
@@ -50,6 +58,11 @@ This runbook explains how deployment works in this repository, what to verify be
   - `FRONTEND_URL`
   - OAuth provider credentials
   - storage config
+
+### Cloudflare Pages
+
+- Set the Pages build command to `pnpm build:web`
+- Set the Pages build output directory to `apps/web/dist`
 
 ## Local Production-Like Verification
 
@@ -90,6 +103,37 @@ docker compose -f docker-compose.prod.yml down
 3. GitHub Actions deploys that image to Cloud Run.
 4. GitHub Actions runs `scripts/verify-deployment.sh` against the deployed service URL.
 
+## Cloudflare Pages Build Contract
+
+The confirmed Pages contract for this repository is:
+
+- Build command: `pnpm build:web`
+- Build output directory: `apps/web/dist`
+
+Failure signature to recognize:
+
+- If Pages runs `npx next build` and fails with `Couldn't find any pages or app directory`, the project is still using a stale Next.js-era build command from an older frontend setup.
+- That failure is configuration drift in the Pages dashboard, not a current repo-local Vite build failure.
+
+Observed non-blocking context from the failing deployment:
+
+- Cloudflare cloned the repository successfully from the repo root.
+- Cloudflare detected `pnpm@10.28.2` and `nodejs@22.16.0`.
+- Cloudflare completed dependency installation before the stale user build command ran.
+
+Recommendations:
+
+- Keep the project configured so workspace installs continue to resolve the root `pnpm-workspace.yaml` and shared packages.
+- If you change install or root-directory settings later, verify that `@masters/types` still resolves during the Pages build.
+- After the build is restored, set `VITE_API_URL` for preview and production environments; the local fallback in `apps/web/src/lib/api-client.ts` is only safe for local development.
+
+Recovery steps:
+
+1. Open the Cloudflare Pages project build settings.
+2. Replace the stale build command with `pnpm build:web`.
+3. Confirm the output directory is `apps/web/dist`.
+4. Re-run the failed preview deployment or push a no-op commit after the settings change.
+
 ## Post-Deploy Checks
 
 - Health check succeeds:
@@ -126,3 +170,5 @@ pnpm db:migrate
 - `docs/runbooks/rollback.md`
 - `.github/workflows/deploy.yml`
 - `docker-compose.prod.yml`
+- `package.json`
+- `apps/web/package.json`

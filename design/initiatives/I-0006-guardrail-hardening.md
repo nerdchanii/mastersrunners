@@ -51,7 +51,8 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `tasks/I-0006-guardrail-hardening/archive/I-0006-060-meta-pr-template-test-stability.md`
 - `tasks/I-0006-guardrail-hardening/archive/I-0006-070-api-logging-monitoring-scaffold.md`
 - `tasks/I-0006-guardrail-hardening/archive/I-0006-080-ci-explicit-typecheck-guard.md`
-- `tasks/I-0006-guardrail-hardening/todo/I-0006-090-ci-api-database-typecheck-rollout.md`
+- `tasks/I-0006-guardrail-hardening/archive/I-0006-090-ci-api-database-typecheck-rollout.md`
+- `tasks/I-0006-guardrail-hardening/active/I-0006-100-ci-cloudflare-pages-preview-failure.md`
 
 ## Success Criteria
 
@@ -68,5 +69,6 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `I-0006-050` now adds a blocking `knip` baseline plus dead-code maintenance policy for CI and local CI.
 - `I-0006-060` now adds the PR template, test-stability runbook, flaky-test ledger, and task-linked TODO/FIXME policy with closed review notes.
 - `I-0006-070` adds the API structured logger, request interceptor, and env-gated monitoring stub while correctly leaving live vendor hookup as external exception `EX-0002`.
-- `I-0006-080` originally split API/database rollout out of the first explicit typecheck lane, and `I-0006-090` remains open because explicit API typecheck still has broader debt outside this logging wave.
-- In-repo guardrail hardening is effectively complete except for the remaining API/database typecheck rollout and the external exceptions in `design/operating-rules/exceptions.md`.
+- `I-0006-080` originally split API/database rollout out of the first explicit typecheck lane, and `I-0006-090` closed the remaining explicit API/database typecheck rollout.
+- `I-0006-100` tracks the still-failing Cloudflare Pages preview build, which currently looks like a Pages configuration or environment mismatch because local web builds pass while the GitHub check fails immediately without annotations.
+- In-repo guardrail hardening is effectively complete except for the Cloudflare Pages preview failure follow-up and the external exceptions in `design/operating-rules/exceptions.md`.
