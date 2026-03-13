@@ -114,6 +114,7 @@ jobs:
             });
 
             const geminiIdentityConfigured = Boolean(geminiLogin || geminiMarker);
+            const copilotIdentityConfigured = Boolean(copilotLogin || copilotMarker);
             const copilotReady = currentHeadReviewReady(reviews, pr.head.sha, copilotLogin, copilotMarker);
             const geminiReady = currentHeadReviewReady(reviews, pr.head.sha, geminiLogin, geminiMarker);
 
@@ -143,6 +144,9 @@ jobs:
             } else if (!geminiIdentityConfigured) {
               shouldRun = false;
               reason = "waiting_for_gemini_identity";
+            } else if (!copilotIdentityConfigured) {
+              shouldRun = false;
+              reason = "waiting_for_copilot_identity";
             } else if (!geminiReady) {
               shouldRun = false;
               reason = "waiting_for_gemini_review";
@@ -199,6 +203,7 @@ jobs:
               fork_blocked: "fork_blocked",
               untrusted_pr_author: "untrusted_pr_author",
               waiting_for_gemini_identity: "waiting_for_gemini_identity",
+              waiting_for_copilot_identity: "waiting_for_copilot_identity",
               waiting_for_gemini_review: "waiting_for_gemini_review",
               waiting_for_copilot_review: "waiting_for_copilot_review",
               max_iterations_reached: "max_iterations_reached",

@@ -69,11 +69,15 @@ Address the workflow hardening issues raised by Copilot review without weakening
 - 2026-03-13: redirected internal workflow dispatches from `main` to `dev` so dev-targeted PR automation always runs the matching harness version during rollout.
 - 2026-03-13: corrected the operator guide so validation-recovery outcomes match the actual workflow state machine, including terminal `failed` outcomes for guardrail rejections.
 - 2026-03-13: narrowed queued-request recovery to exact `request_id` matches, with SHA fallback only for legacy state comments that predate request IDs, so an older rejected dispatch cannot wipe a newer retry on the same head.
+- 2026-03-13: added `waiting_for_copilot_identity` symmetry to `codex-pr-fix` validation and recovery so missing Copilot identity is not reported as a missing review.
+- 2026-03-13: added PR-scoped concurrency to `codex-pr-fix-status` so direct event runs and explicit refresh dispatches collapse to a single live status update per PR.
 
 ## Review Notes
 
 - Specialist review:
   - `harness-reviewer`: no blocking issues after redirecting internal workflow dispatches to `dev`, preserving same-head/request-id validation, owner-only control, and queued-request recovery without letting an older rejected dispatch clobber a newer retry on the same head.
   - `docs-reviewer`: no blocking issues; the operator guide matches the live state names, retry behavior, validation-recovery outcomes, identity gating, and the `dev`-scoped dispatch model.
+  - `harness-reviewer` follow-up: no blocking issues after adding Copilot identity-state symmetry in validation/recovery and PR-scoped concurrency for the status refresh workflow.
 - PO review:
   - `po-reviewer`: no blocking issues; the operator model remains explicit, owner-controlled, and understandable while avoiding stuck queued states during rollout.
+  - `po-reviewer` follow-up: no blocking issues in the latest Copilot follow-up fixes; the state naming and status refresh behavior remain understandable for operators.
