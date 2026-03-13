@@ -7,12 +7,15 @@ on:
     types: [submitted, edited, dismissed]
   issue_comment:
     types: [created]
-  workflow_run:
-    workflows: ["Copilot code review"]
-    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to refresh"
+        required: true
+        type: string
 
 concurrency:
-  group: pr-ai-review-gate-${{ github.event.pull_request.number || github.event.pull_request_review.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number || github.run_id }}
+  group: pr-ai-review-gate-${{ github.event.pull_request.number || github.event.pull_request_review.pull_request.number || github.event.issue.number || github.event.inputs.pr_number || github.run_id }}
   cancel-in-progress: false
 
 permissions:
@@ -37,9 +40,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
-          COPILOT_REVIEW_LOGIN: ${{ vars.COPILOT_REVIEW_LOGIN }}
           GEMINI_REVIEW_LOGIN: ${{ vars.GEMINI_REVIEW_LOGIN }}
-          COPILOT_REVIEW_MARKER: ${{ vars.COPILOT_REVIEW_MARKER }}
           GEMINI_REVIEW_MARKER: ${{ vars.GEMINI_REVIEW_MARKER }}
           STATE_MARKER: "<!-- codex-pr-fix-state -->"
           FIX_LABEL: ai-fix
@@ -49,10 +50,10 @@ jobs:
           script: |
             const {
               findStateComment,
-              findWorkflowRunPrNumber,
               currentHeadReviewReady,
               isQueuedRequestStale,
               latestCommand,
+              parsePositiveInt,
               parseControlCommand,
               parseState,
               renderState,
@@ -64,15 +65,14 @@ jobs:
             const stateMarker = process.env.STATE_MARKER;
             const maxIterations = Number(process.env.MAX_ITERATIONS || "5");
             const queuedStaleMinutes = Number(process.env.QUEUED_STALE_MINUTES || "15");
-            const copilotLogin = (process.env.COPILOT_REVIEW_LOGIN || "").trim().toLowerCase();
             const geminiLogin = (process.env.GEMINI_REVIEW_LOGIN || "").trim().toLowerCase();
-            const copilotMarker = (process.env.COPILOT_REVIEW_MARKER || "").trim();
             const geminiMarker = (process.env.GEMINI_REVIEW_MARKER || "").trim();
 
             async function loadPullRequest() {
-              if (eventName === "workflow_run") {
-                const prNumber = findWorkflowRunPrNumber(context.payload.workflow_run);
+              if (eventName === "workflow_dispatch") {
+                const prNumber = parsePositiveInt(context.payload.inputs?.pr_number);
                 if (!prNumber) {
+                  core.setFailed("workflow_dispatch requires a positive integer pr_number input.");
                   return null;
                 }
 
@@ -178,9 +178,7 @@ jobs:
             });
 
             const geminiIdentityConfigured = Boolean(geminiLogin || geminiMarker);
-            const copilotIdentityConfigured = Boolean(copilotLogin || copilotMarker);
             const geminiReady = currentHeadReviewReady(reviews, pr.head.sha, geminiLogin, geminiMarker);
-            const copilotReady = currentHeadReviewReady(reviews, pr.head.sha, copilotLogin, copilotMarker);
             const queuedRequestStale = isQueuedRequestStale(state, pr.head.sha, queuedStaleMinutes);
             const retryRequiresExplicitTrigger =
               queuedRequestStale || state.last_result === "dispatch_failed";
@@ -197,12 +195,8 @@ jobs:
               status = "max_iterations_reached";
             } else if (!geminiIdentityConfigured) {
               status = "waiting_for_gemini_identity";
-            } else if (!copilotIdentityConfigured) {
-              status = "waiting_for_copilot_identity";
             } else if (!geminiReady) {
               status = "waiting_for_gemini_review";
-            } else if (!copilotReady) {
-              status = "waiting_for_copilot_review";
             } else if (retryRequiresExplicitTrigger && !explicitFixRequestedNow) {
               status = "retry_required";
             } else if (state.last_requested_sha === pr.head.sha && !queuedRequestStale) {
@@ -226,8 +220,6 @@ jobs:
               max_iterations: maxIterations,
               gemini_identity_configured: geminiIdentityConfigured,
               gemini_review_ready: geminiReady,
-              copilot_identity_configured: copilotIdentityConfigured,
-              copilot_review_ready: copilotReady,
               queued_request_stale: queuedRequestStale,
               latest_command: currentCommand || lastCommand || "",
               updated_at: new Date().toISOString(),

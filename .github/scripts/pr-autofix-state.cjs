@@ -11,7 +11,6 @@ function createEmptyState() {
     last_fix_completed_at: "",
     last_fixed_sha: "",
     gemini_review_ready: false,
-    copilot_review_ready: false,
   };
 }
 
@@ -19,6 +18,9 @@ function parseControlCommand(body) {
   const normalized = (body || "").trim();
   if (normalized === "/codex stop") {
     return "stop";
+  }
+  if (normalized === "/codex refresh") {
+    return "refresh";
   }
   if (normalized === "/codex fix") {
     return "fix";
@@ -49,7 +51,10 @@ function parseState(body, stateMarker) {
   }
 
   try {
-    return { ...empty, ...JSON.parse(match[1]) };
+    const parsed = { ...empty, ...JSON.parse(match[1]) };
+    delete parsed.copilot_identity_configured;
+    delete parsed.copilot_review_ready;
+    return parsed;
   } catch {
     return empty;
   }
@@ -71,6 +76,20 @@ function normalizeLogin(login) {
     .trim()
     .toLowerCase()
     .replace(/\[bot\]$/, "");
+}
+
+function parsePositiveInt(value) {
+  const normalized = String(value ?? "").trim();
+  if (!/^\d+$/.test(normalized)) {
+    return null;
+  }
+
+  const parsed = Number(normalized);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
 }
 
 function reviewMatches(review, login, marker) {
@@ -168,6 +187,7 @@ module.exports = {
   isTrustedStateComment,
   latestCommand,
   normalizeLogin,
+  parsePositiveInt,
   parseControlCommand,
   parseState,
   renderState,

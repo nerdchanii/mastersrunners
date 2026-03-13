@@ -58,7 +58,7 @@ Before commit, the task must satisfy all of these:
 ## PR Automation Boundary
 
 - Dev-targeted PR automation is documented in `docs/guides/ai-pr-review-workflow.md`.
-- Gemini and Copilot reviews may be used as inputs to a Codex autofix loop on PR branches.
+- Gemini review may be used as an input to a Codex autofix loop on PR branches.
 - That loop is advisory and branch-scoped. It must not be treated as a substitute for the repository's task review requirements.
 - PR autofix commits may land on the PR head branch before specialist and PO review. That is allowed because the branch remains under review and protected-branch merge rules still apply. It must not be confused with a task being ready for archive or final commit on the main line.
 

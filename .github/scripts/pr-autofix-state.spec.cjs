@@ -5,13 +5,31 @@ const {
   currentHeadReviewReady,
   findWorkflowRunPrNumber,
   normalizeLogin,
+  parsePositiveInt,
+  parseControlCommand,
+  parseState,
   reviewMatches,
 } = require("./pr-autofix-state.cjs");
+
+test("parseControlCommand recognizes refresh without changing fix/stop parsing", () => {
+  assert.equal(parseControlCommand("/codex refresh"), "refresh");
+  assert.equal(parseControlCommand("/codex fix"), "fix");
+  assert.equal(parseControlCommand("/codex stop"), "stop");
+  assert.equal(parseControlCommand("/codex noop"), "");
+});
 
 test("normalizeLogin removes a trailing bot suffix and lowercases the value", () => {
   assert.equal(normalizeLogin("Gemini-Code-Assist[bot]"), "gemini-code-assist");
   assert.equal(normalizeLogin("copilot-pull-request-reviewer"), "copilot-pull-request-reviewer");
   assert.equal(normalizeLogin(""), "");
+});
+
+test("parsePositiveInt accepts trimmed positive integers only", () => {
+  assert.equal(parsePositiveInt("9"), 9);
+  assert.equal(parsePositiveInt(" 42 "), 42);
+  assert.equal(parsePositiveInt("#9"), null);
+  assert.equal(parsePositiveInt("abc"), null);
+  assert.equal(parsePositiveInt("0"), null);
 });
 
 test("reviewMatches accepts configured bot logins with or without the suffix", () => {
@@ -83,4 +101,26 @@ test("findWorkflowRunPrNumber prefers workflow_run pull request numbers and fall
     }),
     null,
   );
+});
+
+test("parseState drops legacy copilot fields from persisted state comments", () => {
+  const body = [
+    "<!-- codex-pr-fix-state -->",
+    "## Codex PR Auto-Fix State",
+    "",
+    "```json",
+    JSON.stringify({
+      status: "paused",
+      gemini_review_ready: true,
+      copilot_identity_configured: true,
+      copilot_review_ready: true,
+    }),
+    "```",
+  ].join("\n");
+
+  const state = parseState(body, "<!-- codex-pr-fix-state -->");
+  assert.equal(state.status, "paused");
+  assert.equal(state.gemini_review_ready, true);
+  assert.equal("copilot_identity_configured" in state, false);
+  assert.equal("copilot_review_ready" in state, false);
 });

@@ -8,7 +8,7 @@ on:
   issue_comment:
     types: [created]
   workflow_run:
-    workflows: ["Codex PR Fix", "Copilot code review"]
+    workflows: ["Codex PR Fix"]
     types: [completed]
   workflow_dispatch:
     inputs:
@@ -48,6 +48,7 @@ jobs:
             const {
               findStateComment,
               findWorkflowRunPrNumber,
+              parsePositiveInt,
               parseState,
             } = require(process.env.HELPER_PATH);
             const owner = context.repo.owner;
@@ -70,7 +71,12 @@ jobs:
               }
 
               if (context.eventName === "workflow_dispatch") {
-                const prNumber = Number(context.payload.inputs.pr_number);
+                const prNumber = parsePositiveInt(context.payload.inputs?.pr_number);
+                if (!prNumber) {
+                  core.setFailed("workflow_dispatch requires a positive integer pr_number input.");
+                  return null;
+                }
+
                 const response = await github.rest.pulls.get({
                   owner,
                   repo,
@@ -122,9 +128,7 @@ jobs:
               no_changes: { status: "completed", conclusion: "success" },
               paused: { status: "completed", conclusion: "neutral" },
               waiting_for_gemini_identity: { status: "completed", conclusion: "neutral" },
-              waiting_for_copilot_identity: { status: "completed", conclusion: "neutral" },
               waiting_for_gemini_review: { status: "completed", conclusion: "neutral" },
-              waiting_for_copilot_review: { status: "completed", conclusion: "neutral" },
               retry_required: { status: "completed", conclusion: "neutral" },
               already_requested: { status: "completed", conclusion: "neutral" },
               max_iterations_reached: { status: "completed", conclusion: "failure" },
@@ -139,7 +143,6 @@ jobs:
               `Status: ${state.status || "unknown"}`,
               `Iteration: ${state.iteration || 0} / ${state.max_iterations || 5}`,
               `Gemini ready: ${state.gemini_review_ready ? "yes" : "no"}`,
-              `Copilot ready: ${state.copilot_review_ready ? "yes" : "no"}`,
               `Last result: ${state.last_result || "idle"}`,
             ];
 
