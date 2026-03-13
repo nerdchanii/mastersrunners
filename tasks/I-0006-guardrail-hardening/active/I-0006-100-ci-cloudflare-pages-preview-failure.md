@@ -6,15 +6,24 @@ scope: ci
 owner: codex
 reviewers:
   - harness-reviewer
+  - backend-reviewer
 po_review: required
 depends_on: []
 blocked_by: []
 verify:
+  - bash scripts/check-generated-artifacts.sh
   - pnpm --filter @masters/web build
   - pnpm build:web
+  - docker build -f apps/api/Dockerfile .
   - gh pr view 6 --json statusCheckRollup
 artifacts:
+  - .github/workflows/ci.yml
+  - apps/api/Dockerfile
+  - scripts/check-generated-artifacts.sh
+  - scripts/run-if-bin.mjs
+  - scripts/ci-local.sh
   - package.json
+  - packages/database/package.json
   - apps/web/package.json
   - docs/runbooks/deployment.md
   - design/architecture/deployment.md
@@ -43,6 +52,8 @@ Identify why Cloudflare Pages preview deployments are failing and close the gap 
 - Repo-side closure:
   - add a root `pnpm build:web` script so the Pages build entrypoint is versioned in the repo.
   - update deployment docs to record the required Cloudflare Pages build contract and the exact stale-failure signature.
+  - harden lifecycle scripts so production-only installs do not fail when dev-only CLIs such as `husky` or `prisma` are absent.
+  - make the generated-artifact invariant check look at tracked files instead of the post-install filesystem so CI and local CI stay aligned.
 - External dependency:
   - the Cloudflare Pages project build command and output directory still live in dashboard-managed external state, so the repo fix must be pushed before a retried deployment can consume `pnpm build:web`.
 
@@ -51,8 +62,8 @@ Identify why Cloudflare Pages preview deployments are failing and close the gap 
 - Scope and intent: isolate the preview build failure without mixing unrelated deployment changes.
 - Source of truth: GitHub check payload, the captured Cloudflare build log, local web build output, and the updated deployment runbook/design docs.
 - Design divergence: the failing state lived in external dashboard config; the repo now records the expected Pages contract without weakening the Vite SPA design truth.
-- Verification: `pnpm --filter @masters/web build`, `pnpm build:web`, and GitHub check inspection are the completion gates.
-- Review routing: `harness-reviewer` plus `po-reviewer` are sufficient because this change tightens deployment/CI contract documentation and a repo-level build entrypoint without changing user-visible UI behavior.
+- Verification: `bash scripts/check-generated-artifacts.sh`, `pnpm --filter @masters/web build`, `pnpm build:web`, `docker build -f apps/api/Dockerfile .`, and GitHub check inspection are the completion gates.
+- Review routing: `harness-reviewer`, `backend-reviewer`, and `po-reviewer` are required because this follow-up now touches CI guardrails, lifecycle scripts, and the database package install path used by the API image build.
 
 ## Review Focus
 
@@ -79,6 +90,8 @@ Identify why Cloudflare Pages preview deployments are failing and close the gap 
 - 2026-03-13: added a root `pnpm build:web` script and recorded the required Cloudflare Pages build contract in the deployment runbook and deployment architecture doc.
 - 2026-03-13: verify passed with `pnpm --filter @masters/web build`, `pnpm build:web`, `pnpm format:check`, and `gh pr view 6 --json statusCheckRollup`.
 - 2026-03-13: after the Pages dashboard build command was changed to `pnpm build:web`, a retried deployment for commit `bb38228` failed with `ERR_PNPM_NO_SCRIPT Missing script: build:web`, which confirms the dashboard now points at the new command but the remote branch still needs the repo-side script commit.
+- 2026-03-13: PR #7 confirmed the Cloudflare Pages preview succeeds on commit `b3bde30`, then exposed unrelated CI failures: the harness structure check ran after `pnpm install`, and the API Docker runner stage failed because `prepare` and `postinstall` expected dev-only `husky` and `prisma` binaries during a production-only install.
+- 2026-03-13: addressed Gemini review feedback by removing misleading numbering from deployment-surface headings and splitting the Cloudflare Pages build contract into scan-friendly subsections.
 
 ## Review Notes
 

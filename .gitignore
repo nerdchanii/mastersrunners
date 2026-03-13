@@ -56,6 +56,7 @@ next-env.d.ts
 # oh-my-claudecode
 .omc/
 .husky/_/
+.playwright-cli/
 .playwright-report
 **/playwright-report/
 

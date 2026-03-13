@@ -40,6 +40,14 @@ jobs:
           node-version: 22
           cache: "pnpm"
 
+      - name: Check harness structure
+        run: |
+          test -f AGENTS.md
+          test -d design
+          test -d docs
+          test -d tasks
+          bash scripts/check-generated-artifacts.sh
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -54,17 +62,6 @@ jobs:
 
       - name: Check task review metadata for active and todo tasks
         run: bash scripts/check-task-review-metadata.sh
-
-      - name: Check harness structure
-        run: |
-          test -f AGENTS.md
-          test -d design
-          test -d docs
-          test -d tasks
-          test ! -d apps/web/.next
-          test ! -d apps/web/dist
-          test ! -d apps/api/dist
-          test ! -d packages/database/generated
 
       - name: Check dependency boundaries and cycles
         run: pnpm depcruise

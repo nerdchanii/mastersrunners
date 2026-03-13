@@ -12,18 +12,18 @@ This runbook explains how deployment works in this repository, what to verify be
 
 ## Deployment Surfaces
 
-### 1. Production API
+### Production API
 
 - Target: Google Cloud Run
 - Trigger: push to `main`
 - Artifact: Docker image built from `apps/api/Dockerfile`
 
-### 2. Production-like Local Verification
+### Production-like Local Verification
 
 - Target: local Docker Compose stack
 - Purpose: validate runtime config, container boot, and health checks before touching production
 
-### 3. Web Static Hosting
+### Web Static Hosting
 
 - Target: Cloudflare Pages
 - Trigger: Git-connected preview and production deployments
@@ -105,29 +105,31 @@ docker compose -f docker-compose.prod.yml down
 
 ## Cloudflare Pages Build Contract
 
+### Confirmed Contract
+
 The confirmed Pages contract for this repository is:
 
 - Build command: `pnpm build:web`
 - Build output directory: `apps/web/dist`
 
-Failure signature to recognize:
+### Failure Signature
 
 - If Pages runs `npx next build` and fails with `Couldn't find any pages or app directory`, the project is still using a stale Next.js-era build command from an older frontend setup.
 - That failure is configuration drift in the Pages dashboard, not a current repo-local Vite build failure.
 
-Observed non-blocking context from the failing deployment:
+### Observed Context
 
 - Cloudflare cloned the repository successfully from the repo root.
 - Cloudflare detected `pnpm@10.28.2` and `nodejs@22.16.0`.
 - Cloudflare completed dependency installation before the stale user build command ran.
 
-Recommendations:
+### Recommendations
 
 - Keep the project configured so workspace installs continue to resolve the root `pnpm-workspace.yaml` and shared packages.
 - If you change install or root-directory settings later, verify that `@masters/types` still resolves during the Pages build.
 - After the build is restored, set `VITE_API_URL` for preview and production environments; the local fallback in `apps/web/src/lib/api-client.ts` is only safe for local development.
 
-Recovery steps:
+### Recovery Steps
 
 1. Open the Cloudflare Pages project build settings.
 2. Replace the stale build command with `pnpm build:web`.
