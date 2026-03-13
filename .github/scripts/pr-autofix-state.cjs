@@ -51,7 +51,10 @@ function parseState(body, stateMarker) {
   }
 
   try {
-    return { ...empty, ...JSON.parse(match[1]) };
+    const parsed = { ...empty, ...JSON.parse(match[1]) };
+    delete parsed.copilot_identity_configured;
+    delete parsed.copilot_review_ready;
+    return parsed;
   } catch {
     return empty;
   }
