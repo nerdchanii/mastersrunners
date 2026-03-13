@@ -248,7 +248,7 @@ jobs:
     runs-on: [self-hosted, macos, codex-runner]
     timeout-minutes: 45
     env:
-      HELPER_PATH: ${{ runner.temp }}/pr-autofix-state.cjs
+      HELPER_PATH: ${{ github.workspace }}/.codex-temp/pr-autofix-state.cjs
       PR_NUMBER: ${{ needs.validate-request.outputs.pr_number }}
       REQUEST_ID: ${{ inputs.request_id }}
       HEAD_REF: ${{ needs.validate-request.outputs.head_ref }}
@@ -267,7 +267,8 @@ jobs:
 
       - name: Stage shared workflow helper
         run: |
-          cp "_workflow_support/.github/scripts/pr-autofix-state.cjs" "$RUNNER_TEMP/pr-autofix-state.cjs"
+          mkdir -p ".codex-temp"
+          cp "_workflow_support/.github/scripts/pr-autofix-state.cjs" ".codex-temp/pr-autofix-state.cjs"
           rm -rf _workflow_support
 
       - name: Checkout PR head
@@ -342,7 +343,7 @@ jobs:
         id: feedback
         uses: actions/github-script@v7
         env:
-          FEEDBACK_PATH: ${{ runner.temp }}/ai-review-feedback.md
+          FEEDBACK_PATH: ${{ github.workspace }}/.codex-temp/ai-review-feedback.md
         with:
           script: |
             const fs = require("fs");

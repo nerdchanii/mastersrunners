@@ -12,9 +12,11 @@ depends_on:
   - I-0003-110
 blocked_by: []
 verify:
+  - ruby -e 'require "yaml"; YAML.load_file(".github/workflows/codex-pr-fix.yml")'
   - pnpm format:check
   - bash scripts/check-task-review-metadata.sh
 artifacts:
+  - .github/workflows/codex-pr-fix.yml
   - docs/guides/ai-pr-review-workflow.md
   - design/initiatives/I-0003-review-harness.md
   - tasks/I-0003-review-harness/active/I-0003-120-meta-gemini-codex-smoke-sequence.md
@@ -41,7 +43,7 @@ Validate the merged Gemini-only PR review topology on a fresh `dev`-targeted PR 
 - Scope and intent: keep the smoke PR intentionally small so it validates topology rather than mixing in unrelated code risk.
 - Source of truth: `I-0003-110`, the merged `dev` workflows, and the AI PR workflow guide.
 - Design divergence: none.
-- Verification: formatting and task review metadata checks passed.
+- Verification: YAML parsing for the touched workflow plus formatting and task review metadata checks passed.
 - Review routing: `harness-reviewer` for workflow-operability framing, `docs-reviewer` for operator guidance, and `po-reviewer` because this changes the validation path the team will follow.
 
 ## Review Focus
@@ -61,6 +63,7 @@ Validate the merged Gemini-only PR review topology on a fresh `dev`-targeted PR 
 
 - 2026-03-14: created after PR #9 merged to `dev` so the team can validate the Gemini-only review topology on a fresh PR instead of relying on branch-ref dispatches.
 - 2026-03-14: kept the smoke scope to docs and task metadata so the validation PR stays safe even if the self-hosted fix loop produces `no_changes`.
+- 2026-03-14: smoke execution found a real dispatch blocker in `codex-pr-fix.yml`; the workflow referenced `runner.temp` in expressions that GitHub rejected during workflow parsing, so the PR now also patches that workflow-path bug before retrying the sequence.
 
 ## Review Notes
 
