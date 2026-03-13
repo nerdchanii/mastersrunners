@@ -9,6 +9,7 @@ Use this guide before committing any completed task.
 - Every task needs a PO review.
 - Docs-only tasks are not exempt.
 - Multi-scope tasks need multiple specialist reviewers.
+- GitHub AI reviews may trigger PR autofix loops, but they do not replace specialist review or PO review for task completion.
 
 ## Reviewer Roles
 
@@ -53,6 +54,13 @@ Before commit, the task must satisfy all of these:
 5. PO review has been completed.
 6. The task file has been updated with review notes.
 7. The task is moved to `archive/` in the same changeset that finalizes the work.
+
+## PR Automation Boundary
+
+- Dev-targeted PR automation is documented in `docs/guides/ai-pr-review-workflow.md`.
+- Gemini and Copilot reviews may be used as inputs to a Codex autofix loop on PR branches.
+- That loop is advisory and branch-scoped. It must not be treated as a substitute for the repository's task review requirements.
+- PR autofix commits may land on the PR head branch before specialist and PO review. That is allowed because the branch remains under review and protected-branch merge rules still apply. It must not be confused with a task being ready for archive or final commit on the main line.
 
 ## Commit Intent Rule
 
