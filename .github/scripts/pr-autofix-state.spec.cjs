@@ -5,6 +5,7 @@ const {
   currentHeadReviewReady,
   findWorkflowRunPrNumber,
   normalizeLogin,
+  parsePositiveInt,
   parseControlCommand,
   parseState,
   reviewMatches,
@@ -21,6 +22,14 @@ test("normalizeLogin removes a trailing bot suffix and lowercases the value", ()
   assert.equal(normalizeLogin("Gemini-Code-Assist[bot]"), "gemini-code-assist");
   assert.equal(normalizeLogin("copilot-pull-request-reviewer"), "copilot-pull-request-reviewer");
   assert.equal(normalizeLogin(""), "");
+});
+
+test("parsePositiveInt accepts trimmed positive integers only", () => {
+  assert.equal(parsePositiveInt("9"), 9);
+  assert.equal(parsePositiveInt(" 42 "), 42);
+  assert.equal(parsePositiveInt("#9"), null);
+  assert.equal(parsePositiveInt("abc"), null);
+  assert.equal(parsePositiveInt("0"), null);
 });
 
 test("reviewMatches accepts configured bot logins with or without the suffix", () => {

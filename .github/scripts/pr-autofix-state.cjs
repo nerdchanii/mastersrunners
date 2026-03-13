@@ -78,6 +78,20 @@ function normalizeLogin(login) {
     .replace(/\[bot\]$/, "");
 }
 
+function parsePositiveInt(value) {
+  const normalized = String(value ?? "").trim();
+  if (!/^\d+$/.test(normalized)) {
+    return null;
+  }
+
+  const parsed = Number(normalized);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+}
+
 function reviewMatches(review, login, marker) {
   const author = normalizeLogin(review.user?.login || "");
   const expected = normalizeLogin(login);
@@ -173,6 +187,7 @@ module.exports = {
   isTrustedStateComment,
   latestCommand,
   normalizeLogin,
+  parsePositiveInt,
   parseControlCommand,
   parseState,
   renderState,

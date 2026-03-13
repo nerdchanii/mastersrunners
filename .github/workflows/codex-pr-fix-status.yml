@@ -48,6 +48,7 @@ jobs:
             const {
               findStateComment,
               findWorkflowRunPrNumber,
+              parsePositiveInt,
               parseState,
             } = require(process.env.HELPER_PATH);
             const owner = context.repo.owner;
@@ -70,7 +71,12 @@ jobs:
               }
 
               if (context.eventName === "workflow_dispatch") {
-                const prNumber = Number(context.payload.inputs.pr_number);
+                const prNumber = parsePositiveInt(context.payload.inputs?.pr_number);
+                if (!prNumber) {
+                  core.setFailed("workflow_dispatch requires a positive integer pr_number input.");
+                  return null;
+                }
+
                 const response = await github.rest.pulls.get({
                   owner,
                   repo,

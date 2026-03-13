@@ -8,7 +8,7 @@ Use this guide for `dev`-targeted PRs that opt into Gemini review and Codex auto
 - AI reviewer of record: Gemini
 - auto-fix trigger: `ai-fix` label or `/codex fix`
 - auto-fix stop: remove `ai-fix` label or comment `/codex stop`
-- state refresh trigger: comment `/codex refresh` or manually dispatch `PR AI Review Gate` with the PR number
+- state refresh trigger: comment `/codex refresh` as the repository owner or manually dispatch `PR AI Review Gate` with the PR number
 - execution host: self-hosted macOS runner with label `codex-runner`
 - runner auth: the runner account must already pass `codex login status` before auto-fix can execute
 
@@ -49,7 +49,7 @@ If the gate state or status check remains stale after Gemini review lands, use t
 
 ### Refresh review state
 
-- comment exactly `/codex refresh` as the repository owner when the PR already has AI reviews but the state comment or status check still looks stale, or
+- comment exactly `/codex refresh` as the repository owner when the PR already has Gemini review on the current head but the state comment or status check still looks stale, or
 - manually dispatch `PR AI Review Gate` with the PR number when you need the workflow to recompute the machine state comment from the current PR head
 
 ## Iteration Loop

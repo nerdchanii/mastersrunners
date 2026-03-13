@@ -6,7 +6,7 @@ Workflow trigger and stop rules live in `docs/guides/ai-pr-review-workflow.md`.
 
 ## Purpose
 
-This runner executes `dev`-branch PR auto-fix jobs after Gemini review has completed and a maintainer explicitly enables the loop.
+This runner executes `dev`-branch PR auto-fix jobs after Gemini review has completed and the repository owner explicitly enables the loop.
 
 ## Required Labels
 

@@ -53,6 +53,7 @@ jobs:
               currentHeadReviewReady,
               isQueuedRequestStale,
               latestCommand,
+              parsePositiveInt,
               parseControlCommand,
               parseState,
               renderState,
@@ -69,10 +70,16 @@ jobs:
 
             async function loadPullRequest() {
               if (eventName === "workflow_dispatch") {
+                const prNumber = parsePositiveInt(context.payload.inputs?.pr_number);
+                if (!prNumber) {
+                  core.setFailed("workflow_dispatch requires a positive integer pr_number input.");
+                  return null;
+                }
+
                 const response = await github.rest.pulls.get({
                   owner,
                   repo,
-                  pull_number: Number(context.payload.inputs.pr_number),
+                  pull_number: prNumber,
                 });
 
                 return response.data;
