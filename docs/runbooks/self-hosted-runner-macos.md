@@ -6,7 +6,7 @@ Workflow trigger and stop rules live in `docs/guides/ai-pr-review-workflow.md`.
 
 ## Purpose
 
-This runner executes `dev`-branch PR auto-fix jobs after Gemini and Copilot review has completed and a maintainer explicitly enables the loop.
+This runner executes `dev`-branch PR auto-fix jobs after Gemini review has completed and a maintainer explicitly enables the loop.
 
 ## Required Labels
 
@@ -74,7 +74,7 @@ If the runner stops processing jobs:
 
 1. Check that the runner still appears online in GitHub.
 2. Check whether a `Codex PR Fix` `workflow_dispatch` run actually exists for the target PR. If it does not, the blocker is still upstream in the AI review gate or dispatch workflow rather than on the runner.
-3. If the PR already has Gemini and Copilot reviews but the machine state still says one reviewer is missing, ask the repository owner to comment `/codex refresh` or manually dispatch `PR AI Review Gate` before treating the runner as the bottleneck.
+3. If Gemini has already reviewed the current PR head but the machine state still says review is missing, ask the repository owner to comment `/codex refresh` or manually dispatch `PR AI Review Gate` before treating the runner as the bottleneck.
 4. Check that the label list still includes `codex-runner`.
 5. Check `./svc.sh status` from the runner installation directory.
 6. If the service is not running, restart it with `./svc.sh stop` then `./svc.sh start`.

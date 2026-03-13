@@ -11,7 +11,6 @@ function createEmptyState() {
     last_fix_completed_at: "",
     last_fixed_sha: "",
     gemini_review_ready: false,
-    copilot_review_ready: false,
   };
 }
 

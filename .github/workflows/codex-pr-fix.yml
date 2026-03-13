@@ -45,9 +45,7 @@ jobs:
       HEAD_REF: ${{ inputs.head_ref }}
       HEAD_SHA: ${{ inputs.head_sha }}
       STATE_MARKER: "<!-- codex-pr-fix-state -->"
-      COPILOT_REVIEW_LOGIN: ${{ vars.COPILOT_REVIEW_LOGIN }}
       GEMINI_REVIEW_LOGIN: ${{ vars.GEMINI_REVIEW_LOGIN }}
-      COPILOT_REVIEW_MARKER: ${{ vars.COPILOT_REVIEW_MARKER }}
       GEMINI_REVIEW_MARKER: ${{ vars.GEMINI_REVIEW_MARKER }}
       FIX_LABEL: ai-fix
       MAX_ITERATIONS: "5"
@@ -78,9 +76,7 @@ jobs:
             const stateMarker = process.env.STATE_MARKER;
             const fixLabel = process.env.FIX_LABEL;
             const maxIterations = Number(process.env.MAX_ITERATIONS || "5");
-            const copilotLogin = (process.env.COPILOT_REVIEW_LOGIN || "").trim().toLowerCase();
             const geminiLogin = (process.env.GEMINI_REVIEW_LOGIN || "").trim().toLowerCase();
-            const copilotMarker = (process.env.COPILOT_REVIEW_MARKER || "").trim();
             const geminiMarker = (process.env.GEMINI_REVIEW_MARKER || "").trim();
 
             const prResponse = await github.rest.pulls.get({
@@ -114,8 +110,6 @@ jobs:
             });
 
             const geminiIdentityConfigured = Boolean(geminiLogin || geminiMarker);
-            const copilotIdentityConfigured = Boolean(copilotLogin || copilotMarker);
-            const copilotReady = currentHeadReviewReady(reviews, pr.head.sha, copilotLogin, copilotMarker);
             const geminiReady = currentHeadReviewReady(reviews, pr.head.sha, geminiLogin, geminiMarker);
 
             let reason = "ready";
@@ -144,15 +138,9 @@ jobs:
             } else if (!geminiIdentityConfigured) {
               shouldRun = false;
               reason = "waiting_for_gemini_identity";
-            } else if (!copilotIdentityConfigured) {
-              shouldRun = false;
-              reason = "waiting_for_copilot_identity";
             } else if (!geminiReady) {
               shouldRun = false;
               reason = "waiting_for_gemini_review";
-            } else if (!copilotReady) {
-              shouldRun = false;
-              reason = "waiting_for_copilot_review";
             } else if (state.last_request_id !== process.env.REQUEST_ID) {
               shouldRun = false;
               reason = "stale_request_id";
@@ -203,9 +191,7 @@ jobs:
               fork_blocked: "fork_blocked",
               untrusted_pr_author: "untrusted_pr_author",
               waiting_for_gemini_identity: "waiting_for_gemini_identity",
-              waiting_for_copilot_identity: "waiting_for_copilot_identity",
               waiting_for_gemini_review: "waiting_for_gemini_review",
-              waiting_for_copilot_review: "waiting_for_copilot_review",
               max_iterations_reached: "max_iterations_reached",
               not_enabled: "paused",
               protected_or_shared_head_branch: "failed",
@@ -268,9 +254,7 @@ jobs:
       HEAD_REF: ${{ needs.validate-request.outputs.head_ref }}
       HEAD_SHA: ${{ needs.validate-request.outputs.head_sha }}
       STATE_MARKER: "<!-- codex-pr-fix-state -->"
-      COPILOT_REVIEW_LOGIN: ${{ vars.COPILOT_REVIEW_LOGIN }}
       GEMINI_REVIEW_LOGIN: ${{ vars.GEMINI_REVIEW_LOGIN }}
-      COPILOT_REVIEW_MARKER: ${{ vars.COPILOT_REVIEW_MARKER }}
       GEMINI_REVIEW_MARKER: ${{ vars.GEMINI_REVIEW_MARKER }}
 
     steps:
@@ -367,9 +351,7 @@ jobs:
             const repo = context.repo.repo;
             const issueNumber = Number(process.env.PR_NUMBER);
             const headSha = process.env.HEAD_SHA;
-            const copilotLogin = (process.env.COPILOT_REVIEW_LOGIN || "").trim().toLowerCase();
             const geminiLogin = (process.env.GEMINI_REVIEW_LOGIN || "").trim().toLowerCase();
-            const copilotMarker = (process.env.COPILOT_REVIEW_MARKER || "").trim();
             const geminiMarker = (process.env.GEMINI_REVIEW_MARKER || "").trim();
             const feedbackPath = process.env.FEEDBACK_PATH;
 
@@ -400,20 +382,14 @@ jobs:
               if (review.commit_id !== headSha) {
                 return false;
               }
-              return (
-                reviewMatches(review, copilotLogin, copilotMarker) ||
-                reviewMatches(review, geminiLogin, geminiMarker)
-              );
+              return reviewMatches(review, geminiLogin, geminiMarker);
             });
 
             const filteredComments = reviewComments.filter((comment) => {
               if (comment.commit_id !== headSha && comment.original_commit_id !== headSha) {
                 return false;
               }
-              return (
-                reviewMatches(comment, copilotLogin, copilotMarker) ||
-                reviewMatches(comment, geminiLogin, geminiMarker)
-              );
+              return reviewMatches(comment, geminiLogin, geminiMarker);
             });
 
             const sections = [];

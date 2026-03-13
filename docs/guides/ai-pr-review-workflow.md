@@ -1,11 +1,11 @@
 # AI PR Review Workflow
 
-Use this guide for `dev`-targeted PRs that opt into AI review and Codex auto-fix.
+Use this guide for `dev`-targeted PRs that opt into Gemini review and Codex auto-fix.
 
 ## Scope
 
 - target branch: `dev`
-- AI reviewers: Gemini and GitHub Copilot
+- AI reviewer of record: Gemini
 - auto-fix trigger: `ai-fix` label or `/codex fix`
 - auto-fix stop: remove `ai-fix` label or comment `/codex stop`
 - state refresh trigger: comment `/codex refresh` or manually dispatch `PR AI Review Gate` with the PR number
@@ -25,19 +25,15 @@ Use this guide for `dev`-targeted PRs that opt into AI review and Codex auto-fix
 
 Detection is `login first, marker fallback`.
 
-- If `COPILOT_REVIEW_LOGIN` is set, Copilot review is detected by login only.
-- If `COPILOT_REVIEW_MARKER` is set, the workflow can temporarily fall back to that review-body marker until the login is known. A practical value is `Copilot AI`.
 - If `GEMINI_REVIEW_LOGIN` is set, Gemini review is detected by login only.
 - If `GEMINI_REVIEW_MARKER` is set, the workflow can use that marker as a temporary fallback until the login is known.
 - Configured reviewer logins are normalized before matching, so `gemini-code-assist` and `gemini-code-assist[bot]` are treated as the same reviewer identity.
 - If Gemini identity is not configured yet, the workflow waits for a seed PR to capture the reviewer login or fallback marker before opening the fix gate.
-- If Copilot identity is not configured yet, the workflow waits for the Copilot reviewer login or fallback marker before opening the fix gate.
 
 Marker fallback is only trusted for bot-authored PR reviews when the reviewer login is not configured yet. Human-authored prose that copies the marker text must not satisfy the gate. Bot-authored review comments may still be collected as fix input after the gate opens, but they do not open the gate by themselves.
 
-The fix gate only opens when both AI reviews are present for the current PR head SHA.
-Copilot review completion also has a workflow-level fallback path: when the `Copilot code review` workflow finishes, the gate recomputes the PR state even if the `pull_request_review` event itself did not advance the gate.
-If those bot-triggered refreshes are blocked or remain stale, use the explicit refresh path instead of treating reviewer detection itself as broken.
+The fix gate only opens when Gemini review is present for the current PR head SHA.
+If the gate state or status check remains stale after Gemini review lands, use the explicit refresh path instead of treating reviewer detection itself as broken.
 
 ## Control Surface
 
@@ -67,7 +63,7 @@ If those bot-triggered refreshes are blocked or remain stale, use the explicit r
   - the PR still targets `dev`
   - the PR is not from a fork
   - the PR is enabled for auto-fix
-  - Gemini and Copilot have both reviewed the current head SHA
+  - Gemini has reviewed the current head SHA
   - the current head SHA has not already been requested
   - the iteration count is still below `5`
 
@@ -81,14 +77,12 @@ If the queued request later fails validation before the self-hosted job starts, 
 
 Use the first `dev` PR to confirm the actual reviewer identities.
 
-1. Let Gemini and Copilot review the PR.
+1. Let Gemini review the PR.
 2. Capture the actual reviewer login shown in the PR UI.
 3. Store the login in the repository variables:
    - `GEMINI_REVIEW_LOGIN`
-   - `COPILOT_REVIEW_LOGIN`
      Store the stable base login shown in GitHub, with or without `[bot]`; the workflow normalizes that suffix during matching.
 4. If Gemini login is not yet stable, store a temporary fallback marker in `GEMINI_REVIEW_MARKER`.
-5. If Copilot login is not yet stable, optionally store a temporary fallback marker in `COPILOT_REVIEW_MARKER`.
 
 ## Status Model
 
@@ -96,10 +90,8 @@ The workflows report states such as:
 
 - `paused`: auto-fix is not currently enabled for the PR head, either because no fix request is active yet or because it was stopped via `/codex stop` or label removal.
 - `waiting_for_gemini_identity`: the seed PR has not yet established a stable Gemini login or fallback marker.
-- `waiting_for_copilot_identity`: the workflow is still waiting for a stable Copilot login or fallback marker configuration.
 - `waiting_for_gemini_review`: Gemini has not reviewed the current PR head SHA yet.
-- `waiting_for_copilot_review`: GitHub Copilot has not reviewed the current PR head SHA yet.
-- `ready`: both AI reviews are present for the current head and the PR can be queued for auto-fix.
+- `ready`: Gemini review is present for the current head and the PR can be queued for auto-fix.
 - `retry_required`: a previous queue attempt did not start successfully, so a fresh explicit trigger is required before the same head can be queued again.
 - `queued`: an auto-fix request has been accepted and is waiting for a matching self-hosted runner.
 - `running`: the self-hosted runner is actively executing the Codex fix loop.
@@ -115,7 +107,7 @@ The workflows report states such as:
 
 - If the self-hosted runner is online and idle, first check whether a `Codex PR Fix` `workflow_dispatch` run exists for the PR.
 - If no `Codex PR Fix` dispatch exists yet, the blocker is still in the review gate or dispatch path, not the runner.
-- If the PR visibly has Gemini and Copilot reviews but the state comment still says one reviewer is missing, trigger `/codex refresh` or manually dispatch `PR AI Review Gate` before debugging the runner.
+- If Gemini has already reviewed the current PR head but the state comment still says review is missing, trigger `/codex refresh` or manually dispatch `PR AI Review Gate` before debugging the runner.
 - If a `Codex PR Fix` dispatch exists and its `fix` job stays queued on `[self-hosted, macos, codex-runner]`, then treat the runner as the active bottleneck.
 
 ## Relationship to Task Review
