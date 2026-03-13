@@ -110,6 +110,18 @@ The workflows report states such as:
 - If Gemini has already reviewed the current PR head but the state comment still says review is missing, trigger `/codex refresh` or manually dispatch `PR AI Review Gate` before debugging the runner.
 - If a `Codex PR Fix` dispatch exists and its `fix` job stays queued on `[self-hosted, macos, codex-runner]`, then treat the runner as the active bottleneck.
 
+## Smoke Validation
+
+Use a fresh same-repo `dev` PR to validate the topology after workflow changes merge to `dev`.
+
+1. Open a very small PR after the workflow change has landed on `dev`.
+2. Let Gemini review the current head.
+3. Trigger `/codex fix` as the repository owner.
+4. Confirm `PR AI Review Gate` and `Codex PR Auto-Fix Status` update from the `dev` workflow definitions.
+5. Confirm a `Codex PR Fix` `workflow_dispatch` run starts on the self-hosted runner.
+
+The smoke run does not need to produce a commit. `no_changes` still counts as a successful topology validation if the review gate, dispatch path, and self-hosted execution lane all activate on the fresh PR.
+
 ## Relationship to Task Review
 
 - PR auto-fix is a branch-level automation loop.
