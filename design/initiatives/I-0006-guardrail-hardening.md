@@ -52,7 +52,7 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `tasks/I-0006-guardrail-hardening/archive/I-0006-070-api-logging-monitoring-scaffold.md`
 - `tasks/I-0006-guardrail-hardening/archive/I-0006-080-ci-explicit-typecheck-guard.md`
 - `tasks/I-0006-guardrail-hardening/archive/I-0006-090-ci-api-database-typecheck-rollout.md`
-- `tasks/I-0006-guardrail-hardening/active/I-0006-100-ci-cloudflare-pages-preview-failure.md`
+- `tasks/I-0006-guardrail-hardening/archive/I-0006-100-ci-cloudflare-pages-preview-failure.md`
 
 ## Success Criteria
 
@@ -70,5 +70,5 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `I-0006-060` now adds the PR template, test-stability runbook, flaky-test ledger, and task-linked TODO/FIXME policy with closed review notes.
 - `I-0006-070` adds the API structured logger, request interceptor, and env-gated monitoring stub while correctly leaving live vendor hookup as external exception `EX-0002`.
 - `I-0006-080` originally split API/database rollout out of the first explicit typecheck lane, and `I-0006-090` closed the remaining explicit API/database typecheck rollout.
-- `I-0006-100` captured the Cloudflare Pages preview failure, codified the repo-side build contract, and now passes preview deploys on PR #7 after the Pages dashboard was aligned to `pnpm build:web` and `apps/web/dist`.
+- `I-0006-100` captured the Cloudflare Pages preview failure, codified the repo-side build contract, passed preview deploys on PR #7 after the Pages dashboard was aligned to `pnpm build:web` and `apps/web/dist`, and is now archived with closeout verification plus recorded backend review.
 - In-repo guardrail hardening is effectively complete; the remaining blockers are external platform settings and the exceptions recorded in `design/operating-rules/exceptions.md`.
