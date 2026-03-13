@@ -50,6 +50,7 @@ Read in this order:
 - Every task also needs a PO review before commit, including docs-only work.
 - Multi-scope changes need the union of the relevant specialist reviewers, not just one reviewer.
 - Review requirements live in the task file. Do not treat a task as done until review and verify are both complete.
+- GitHub PR auto-fix commits are a branch-level automation exception. They may push to the PR head branch before human review, but they do not mark a task complete, do not satisfy task review gates, and do not bypass protected-branch merge rules.
 - Do not commit free-floating `TODO` or `FIXME` markers. Link them to a task as described in `docs/guides/todo-fixme-policy.md`.
 
 ## Coding Conventions
@@ -60,8 +61,10 @@ Read in this order:
 - If those docs are stricter than current implementation, keep the design truth and track the gap with tasks instead of weakening the convention.
 - Agent self-review guidance lives in `docs/guides/agent-self-review.md`.
 - Reviewer-role guidance lives in `docs/guides/reviewer-taxonomy.md`.
+- Dev PR AI review and Codex auto-fix workflow lives in `docs/guides/ai-pr-review-workflow.md`.
 - Commit message subjects are validated in the `commit-msg` hook, not the `pre-commit` hook.
 - Parallel split and merge workflow lives in `design/operating-rules/parallel-worktree-lifecycle.md` and `docs/guides/parallel-worktree-workflow.md`.
+- Self-hosted macOS runner setup lives in `docs/runbooks/self-hosted-runner-macos.md`.
 
 ## Design Divergence Handling
 
