@@ -1,0 +1,328 @@
+name: PR AI Review Gate
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: pr-ai-review-gate-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout workflow support
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Derive AI review gate state
+        id: gate
+        uses: actions/github-script@v7
+        env:
+          HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
+          COPILOT_REVIEW_LOGIN: ${{ vars.COPILOT_REVIEW_LOGIN }}
+          GEMINI_REVIEW_LOGIN: ${{ vars.GEMINI_REVIEW_LOGIN }}
+          COPILOT_REVIEW_MARKER: ${{ vars.COPILOT_REVIEW_MARKER }}
+          GEMINI_REVIEW_MARKER: ${{ vars.GEMINI_REVIEW_MARKER }}
+          STATE_MARKER: "<!-- codex-pr-fix-state -->"
+          FIX_LABEL: ai-fix
+          MAX_ITERATIONS: "5"
+          QUEUED_STALE_MINUTES: "15"
+        with:
+          script: |
+            const {
+              findStateComment,
+              currentHeadReviewReady,
+              isQueuedRequestStale,
+              latestCommand,
+              parseControlCommand,
+              parseState,
+              renderState,
+            } = require(process.env.HELPER_PATH);
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const eventName = context.eventName;
+            const fixLabel = process.env.FIX_LABEL;
+            const stateMarker = process.env.STATE_MARKER;
+            const maxIterations = Number(process.env.MAX_ITERATIONS || "5");
+            const queuedStaleMinutes = Number(process.env.QUEUED_STALE_MINUTES || "15");
+            const copilotLogin = (process.env.COPILOT_REVIEW_LOGIN || "").trim().toLowerCase();
+            const geminiLogin = (process.env.GEMINI_REVIEW_LOGIN || "").trim().toLowerCase();
+            const copilotMarker = (process.env.COPILOT_REVIEW_MARKER || "").trim();
+            const geminiMarker = (process.env.GEMINI_REVIEW_MARKER || "").trim();
+
+            async function loadPullRequest() {
+              if (eventName === "issue_comment") {
+                if (!context.payload.issue?.pull_request) {
+                  return null;
+                }
+
+                const response = await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: context.payload.issue.number,
+                });
+
+                return response.data;
+              }
+
+              if (eventName === "pull_request_review") {
+                return context.payload.pull_request;
+              }
+
+              return context.payload.pull_request;
+            }
+
+            async function listIssueComments(prNumber) {
+              return github.paginate(github.rest.issues.listComments, {
+                owner,
+                repo,
+                issue_number: prNumber,
+                per_page: 100,
+              });
+            }
+
+            function currentCommentCommand() {
+              if (eventName !== "issue_comment") {
+                return "";
+              }
+
+              const comment = context.payload.comment;
+              if (!comment?.body) {
+                return "";
+              }
+
+              const allowedAssociations = new Set(["OWNER"]);
+              if (!allowedAssociations.has(comment.author_association)) {
+                return "";
+              }
+              return parseControlCommand(comment.body);
+            }
+
+            const pr = await loadPullRequest();
+
+            if (!pr) {
+              core.info("No PR context for this event.");
+              core.setOutput("dispatch", "false");
+              return;
+            }
+
+            if (pr.base.ref !== "dev") {
+              core.info(`PR #${pr.number} does not target dev.`);
+              core.setOutput("dispatch", "false");
+              return;
+            }
+
+            const issueComments = await listIssueComments(pr.number);
+            const stateComment = findStateComment(issueComments, stateMarker);
+            const state = parseState(stateComment?.body || "", stateMarker);
+            const lastCommand = latestCommand(issueComments);
+            const currentCommand = currentCommentCommand();
+            const hasFixLabel = (pr.labels || []).some((label) => label.name === fixLabel);
+            const ownerTriggeredLabelAction =
+              eventName === "pull_request_target" && context.payload.sender?.login === owner;
+            const labeledNow =
+              ownerTriggeredLabelAction &&
+              context.payload.action === "labeled" &&
+              context.payload.label?.name === fixLabel;
+            const unlabeledNow =
+              ownerTriggeredLabelAction &&
+              context.payload.action === "unlabeled" &&
+              context.payload.label?.name === fixLabel;
+            const explicitFixRequestedNow = labeledNow || currentCommand === "fix";
+            let enabled = Boolean(state.enabled);
+            if (unlabeledNow || currentCommand === "stop") {
+              enabled = false;
+            } else if (labeledNow || currentCommand === "fix") {
+              enabled = true;
+            }
+            const forkBlocked = pr.head.repo.full_name !== `${owner}/${repo}`;
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner,
+              repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+
+            const geminiIdentityConfigured = Boolean(geminiLogin || geminiMarker);
+            const copilotIdentityConfigured = Boolean(copilotLogin || copilotMarker);
+            const geminiReady = currentHeadReviewReady(reviews, pr.head.sha, geminiLogin, geminiMarker);
+            const copilotReady = currentHeadReviewReady(reviews, pr.head.sha, copilotLogin, copilotMarker);
+            const queuedRequestStale = isQueuedRequestStale(state, pr.head.sha, queuedStaleMinutes);
+            const retryRequiresExplicitTrigger =
+              queuedRequestStale || state.last_result === "dispatch_failed";
+            const requestId = `${pr.head.sha}:${Date.now()}`;
+
+            let status = "paused";
+            if (forkBlocked) {
+              status = "fork_blocked";
+            } else if (pr.author_association !== "OWNER") {
+              status = "untrusted_pr_author";
+            } else if (!enabled) {
+              status = "paused";
+            } else if (state.iteration >= maxIterations) {
+              status = "max_iterations_reached";
+            } else if (!geminiIdentityConfigured) {
+              status = "waiting_for_gemini_identity";
+            } else if (!copilotIdentityConfigured) {
+              status = "waiting_for_copilot_identity";
+            } else if (!geminiReady) {
+              status = "waiting_for_gemini_review";
+            } else if (!copilotReady) {
+              status = "waiting_for_copilot_review";
+            } else if (retryRequiresExplicitTrigger && !explicitFixRequestedNow) {
+              status = "retry_required";
+            } else if (state.last_requested_sha === pr.head.sha && !queuedRequestStale) {
+              status = "already_requested";
+            } else {
+              status = "ready";
+            }
+
+            const dispatchReady =
+              status === "ready" &&
+              (!retryRequiresExplicitTrigger || explicitFixRequestedNow);
+
+            const nextState = {
+              ...state,
+              enabled,
+              status,
+              pr_number: pr.number,
+              base_ref: pr.base.ref,
+              head_ref: pr.head.ref,
+              head_sha: pr.head.sha,
+              max_iterations: maxIterations,
+              gemini_identity_configured: geminiIdentityConfigured,
+              gemini_review_ready: geminiReady,
+              copilot_identity_configured: copilotIdentityConfigured,
+              copilot_review_ready: copilotReady,
+              queued_request_stale: queuedRequestStale,
+              latest_command: currentCommand || lastCommand || "",
+              updated_at: new Date().toISOString(),
+            };
+
+            if (dispatchReady) {
+              nextState.status = "queued";
+              nextState.last_request_id = requestId;
+              nextState.last_requested_sha = pr.head.sha;
+              nextState.last_requested_at = new Date().toISOString();
+              nextState.last_result = "queued";
+            }
+
+            const body = renderState(nextState, stateMarker);
+
+            if (stateComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: stateComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body,
+              });
+            }
+
+            core.setOutput("dispatch", dispatchReady ? "true" : "false");
+            core.setOutput("pr_number", String(pr.number));
+            core.setOutput("request_id", dispatchReady ? requestId : "");
+            core.setOutput("head_ref", pr.head.ref);
+            core.setOutput("head_sha", pr.head.sha);
+            core.setOutput("status", status);
+
+      - name: Dispatch Codex auto-fix workflow
+        id: dispatch
+        if: steps.gate.outputs.dispatch == 'true'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: "codex-pr-fix.yml",
+              ref: "dev",
+              inputs: {
+                pr_number: "${{ steps.gate.outputs.pr_number }}",
+                request_id: "${{ steps.gate.outputs.request_id }}",
+                head_ref: "${{ steps.gate.outputs.head_ref }}",
+                head_sha: "${{ steps.gate.outputs.head_sha }}",
+              },
+            });
+
+      - name: Recover queued state after dispatch failure
+        if: steps.gate.outputs.dispatch == 'true' && steps.dispatch.outcome != 'success'
+        uses: actions/github-script@v7
+        env:
+          HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
+          STATE_MARKER: "<!-- codex-pr-fix-state -->"
+        with:
+          script: |
+            const { findStateComment, parseState, renderState } = require(process.env.HELPER_PATH);
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issueNumber = Number("${{ steps.gate.outputs.pr_number }}");
+            const headSha = "${{ steps.gate.outputs.head_sha }}";
+            const stateMarker = process.env.STATE_MARKER;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+            const stateComment = findStateComment(comments, stateMarker);
+            const currentState = parseState(stateComment?.body || "", stateMarker);
+
+            if (currentState.last_requested_sha !== headSha || currentState.status !== "queued") {
+              return;
+            }
+
+            const recoveredState = {
+              ...currentState,
+              status: "retry_required",
+              last_request_id: "",
+              last_requested_sha: "",
+              last_requested_at: "",
+              last_result: "dispatch_failed",
+              updated_at: new Date().toISOString(),
+            };
+
+            await github.rest.issues.updateComment({
+              owner,
+              repo,
+              comment_id: stateComment.id,
+              body: renderState(recoveredState, stateMarker),
+            });
+
+      - name: Refresh status workflow after gate update
+        if: always() && steps.gate.outputs.pr_number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: "codex-pr-fix-status.yml",
+              ref: "dev",
+              inputs: {
+                pr_number: "${{ steps.gate.outputs.pr_number }}",
+              },
+            });
