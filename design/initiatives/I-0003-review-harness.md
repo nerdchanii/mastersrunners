@@ -66,6 +66,7 @@ The repository now has task and verification harnesses, but it does not yet defi
 - `tasks/I-0003-review-harness/archive/I-0003-080-docs-ai-pr-review-clarifications.md`
 - `tasks/I-0003-review-harness/archive/I-0003-090-meta-copilot-review-followups.md`
 - `tasks/I-0003-review-harness/archive/I-0003-100-meta-bot-review-login-normalization.md`
+- `tasks/I-0003-review-harness/active/I-0003-110-meta-ai-review-refresh-recovery.md`
 
 ## Success Criteria
 
@@ -83,3 +84,4 @@ The repository now has task and verification harnesses, but it does not yet defi
 
 - `I-0003-070` through `I-0003-090` established the dev-targeted AI PR review and Codex auto-fix harness, including current-head review gating, explicit triggers, and queued-request recovery.
 - `I-0003-100` closes the live reviewer-identity mismatch where GitHub REST review payloads append `[bot]` to Gemini and Copilot logins, adds a `Copilot code review` workflow fallback for PR-context recovery, and documents how to distinguish gate/dispatch failures from runner failures.
+- `I-0003-110` is active to add an explicit repo-controlled recovery path after PR #8 showed that Copilot review can be detected correctly in helper logic while the bot-triggered refresh workflows still fail before the state comment updates.

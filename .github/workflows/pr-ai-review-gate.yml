@@ -10,9 +10,15 @@ on:
   workflow_run:
     workflows: ["Copilot code review"]
     types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to refresh"
+        required: true
+        type: string
 
 concurrency:
-  group: pr-ai-review-gate-${{ github.event.pull_request.number || github.event.pull_request_review.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number || github.run_id }}
+  group: pr-ai-review-gate-${{ github.event.pull_request.number || github.event.pull_request_review.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number || github.event.inputs.pr_number || github.run_id }}
   cancel-in-progress: false
 
 permissions:
@@ -70,6 +76,16 @@ jobs:
             const geminiMarker = (process.env.GEMINI_REVIEW_MARKER || "").trim();
 
             async function loadPullRequest() {
+              if (eventName === "workflow_dispatch") {
+                const response = await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: Number(context.payload.inputs.pr_number),
+                });
+
+                return response.data;
+              }
+
               if (eventName === "workflow_run") {
                 const prNumber = findWorkflowRunPrNumber(context.payload.workflow_run);
                 if (!prNumber) {

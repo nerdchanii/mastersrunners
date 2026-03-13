@@ -8,6 +8,7 @@ Use this guide for `dev`-targeted PRs that opt into AI review and Codex auto-fix
 - AI reviewers: Gemini and GitHub Copilot
 - auto-fix trigger: `ai-fix` label or `/codex fix`
 - auto-fix stop: remove `ai-fix` label or comment `/codex stop`
+- state refresh trigger: comment `/codex refresh` or manually dispatch `PR AI Review Gate` with the PR number
 - execution host: self-hosted macOS runner with label `codex-runner`
 - runner auth: the runner account must already pass `codex login status` before auto-fix can execute
 
@@ -36,6 +37,7 @@ Marker fallback is only trusted for bot-authored PR reviews when the reviewer lo
 
 The fix gate only opens when both AI reviews are present for the current PR head SHA.
 Copilot review completion also has a workflow-level fallback path: when the `Copilot code review` workflow finishes, the gate recomputes the PR state even if the `pull_request_review` event itself did not advance the gate.
+If those bot-triggered refreshes are blocked or remain stale, use the explicit refresh path instead of treating reviewer detection itself as broken.
 
 ## Control Surface
 
@@ -48,6 +50,11 @@ Copilot review completion also has a workflow-level fallback path: when the `Cop
 
 - remove the `ai-fix` label as the repository owner, or
 - comment exactly `/codex stop` as the repository owner
+
+### Refresh review state
+
+- comment exactly `/codex refresh` as the repository owner when the PR already has AI reviews but the state comment or status check still looks stale, or
+- manually dispatch `PR AI Review Gate` with the PR number when you need the workflow to recompute the machine state comment from the current PR head
 
 ## Iteration Loop
 
@@ -108,6 +115,7 @@ The workflows report states such as:
 
 - If the self-hosted runner is online and idle, first check whether a `Codex PR Fix` `workflow_dispatch` run exists for the PR.
 - If no `Codex PR Fix` dispatch exists yet, the blocker is still in the review gate or dispatch path, not the runner.
+- If the PR visibly has Gemini and Copilot reviews but the state comment still says one reviewer is missing, trigger `/codex refresh` or manually dispatch `PR AI Review Gate` before debugging the runner.
 - If a `Codex PR Fix` dispatch exists and its `fix` job stays queued on `[self-hosted, macos, codex-runner]`, then treat the runner as the active bottleneck.
 
 ## Relationship to Task Review

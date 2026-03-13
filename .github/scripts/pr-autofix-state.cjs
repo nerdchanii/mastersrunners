@@ -20,6 +20,9 @@ function parseControlCommand(body) {
   if (normalized === "/codex stop") {
     return "stop";
   }
+  if (normalized === "/codex refresh") {
+    return "refresh";
+  }
   if (normalized === "/codex fix") {
     return "fix";
   }

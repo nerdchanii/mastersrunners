@@ -5,8 +5,16 @@ const {
   currentHeadReviewReady,
   findWorkflowRunPrNumber,
   normalizeLogin,
+  parseControlCommand,
   reviewMatches,
 } = require("./pr-autofix-state.cjs");
+
+test("parseControlCommand recognizes refresh without changing fix/stop parsing", () => {
+  assert.equal(parseControlCommand("/codex refresh"), "refresh");
+  assert.equal(parseControlCommand("/codex fix"), "fix");
+  assert.equal(parseControlCommand("/codex stop"), "stop");
+  assert.equal(parseControlCommand("/codex noop"), "");
+});
 
 test("normalizeLogin removes a trailing bot suffix and lowercases the value", () => {
   assert.equal(normalizeLogin("Gemini-Code-Assist[bot]"), "gemini-code-assist");
