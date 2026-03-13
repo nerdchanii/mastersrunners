@@ -66,7 +66,7 @@ This prevents the workflow from reusing stale reviews after Codex pushes a new c
 If the PR head moves before push, the workflow stops instead of applying fixes to an unreviewed newer head.
 If workflow dispatch fails immediately after a request is queued, the gate rewrites the state to `retry_required` so the next explicit trigger can retry cleanly.
 If a request remains marked as queued for too long without starting, the queue entry is treated as stale after a short timeout and the state moves to `retry_required` until a fresh explicit trigger arrives.
-If the queued request later fails validation before the self-hosted job starts, the state is rewritten to the blocking reason or `retry_required` instead of remaining stuck at `queued`.
+If the queued request later fails validation before the self-hosted job starts, the state is rewritten to a reason-specific wait state, `retry_required`, or a terminal `failed` state instead of remaining stuck at `queued`.
 
 ## Seed PR Setup
 

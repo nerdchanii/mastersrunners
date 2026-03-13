@@ -190,7 +190,7 @@ jobs:
 
             const matchesActiveRequest =
               previousState.last_request_id === requestId ||
-              previousState.last_requested_sha === headSha;
+              (!previousState.last_request_id && previousState.last_requested_sha === headSha);
             if (!matchesActiveRequest) {
               return;
             }

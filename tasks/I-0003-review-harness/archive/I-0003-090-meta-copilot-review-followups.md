@@ -67,11 +67,13 @@ Address the workflow hardening issues raised by Copilot review without weakening
 - 2026-03-13: created after Copilot review surfaced status input, identity-state symmetry, queued recovery, and helper duplication concerns.
 - 2026-03-13: centralized shared state helpers into `.github/scripts/pr-autofix-state.cjs`, then tightened state parsing and stale queued-request handling after harness review found two follow-up bugs in the first draft.
 - 2026-03-13: redirected internal workflow dispatches from `main` to `dev` so dev-targeted PR automation always runs the matching harness version during rollout.
+- 2026-03-13: corrected the operator guide so validation-recovery outcomes match the actual workflow state machine, including terminal `failed` outcomes for guardrail rejections.
+- 2026-03-13: narrowed queued-request recovery to exact `request_id` matches, with SHA fallback only for legacy state comments that predate request IDs, so an older rejected dispatch cannot wipe a newer retry on the same head.
 
 ## Review Notes
 
 - Specialist review:
-  - `harness-reviewer`: no blocking issues after redirecting internal workflow dispatches to `dev`, preserving same-head/request-id validation, owner-only control, and queued-request recovery.
-  - `docs-reviewer`: no blocking issues; the operator guide matches the live state names, retry behavior, identity gating, and the `dev`-scoped dispatch model.
+  - `harness-reviewer`: no blocking issues after redirecting internal workflow dispatches to `dev`, preserving same-head/request-id validation, owner-only control, and queued-request recovery without letting an older rejected dispatch clobber a newer retry on the same head.
+  - `docs-reviewer`: no blocking issues; the operator guide matches the live state names, retry behavior, validation-recovery outcomes, identity gating, and the `dev`-scoped dispatch model.
 - PO review:
   - `po-reviewer`: no blocking issues; the operator model remains explicit, owner-controlled, and understandable while avoiding stuck queued states during rollout.
