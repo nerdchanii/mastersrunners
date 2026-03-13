@@ -56,7 +56,7 @@ Identify why Cloudflare Pages preview deployments are failing and close the gap 
   - harden lifecycle scripts so production-only installs do not fail when dev-only CLIs such as `husky` or `prisma` are absent.
   - make the generated-artifact invariant check look at tracked files instead of the post-install filesystem so CI and local CI stay aligned.
 - External dependency:
-  - the Cloudflare Pages project build command and output directory still live in dashboard-managed external state, so the repo fix must be pushed before a retried deployment can consume `pnpm build:web`.
+  - the Cloudflare Pages project build command and output directory still live in dashboard-managed external state; PR #7 now proves preview deploys pass once that state is aligned with `pnpm build:web` and `apps/web/dist`.
 
 ## Self Review
 
@@ -77,8 +77,9 @@ Identify why Cloudflare Pages preview deployments are failing and close the gap 
   - build command `pnpm build:web`
   - build output directory `apps/web/dist`
 - Do not widen the Pages reconfiguration beyond those confirmed blockers unless a later deployment log shows another failing setting.
-- Re-run the failed preview deployment after the dashboard setting change.
-- Push the repo-side `build:web` entrypoint before retrying deployment, otherwise older commits will fail with `ERR_PNPM_NO_SCRIPT`.
+- Keep the Pages dashboard aligned to the repo contract:
+  - build command `pnpm build:web`
+  - build output directory `apps/web/dist`
 
 ## Design Divergence
 
