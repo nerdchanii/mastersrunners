@@ -117,8 +117,8 @@ Use a fresh same-repo `dev` PR to validate the topology after workflow changes m
 1. Open a very small PR after the workflow change has landed on `dev`.
 2. Let Gemini review the current head.
 3. Trigger `/codex fix` as the repository owner.
-4. Confirm `PR AI Review Gate` and `Codex PR Auto-Fix Status` update from the `dev` workflow definitions.
-5. Confirm a `Codex PR Fix` `workflow_dispatch` run starts on the self-hosted runner.
+4. Confirm the PR status checks and machine state comment for `PR AI Review Gate` and `Codex PR Auto-Fix Status` update from the `dev` workflow definitions.
+5. Confirm a `Codex PR Fix` `workflow_dispatch` run starts on the self-hosted runner and is visible in the repository Actions tab.
 
 The smoke run does not need to produce a commit. `no_changes` still counts as a successful topology validation if the review gate, dispatch path, and self-hosted execution lane all activate on the fresh PR.
 

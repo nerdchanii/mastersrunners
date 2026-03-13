@@ -19,7 +19,6 @@ artifacts:
   - .github/workflows/codex-pr-fix.yml
   - docs/guides/ai-pr-review-workflow.md
   - design/initiatives/I-0003-review-harness.md
-  - tasks/I-0003-review-harness/active/I-0003-120-meta-gemini-codex-smoke-sequence.md
 ---
 
 ## Goal
@@ -63,7 +62,7 @@ Validate the merged Gemini-only PR review topology on a fresh `dev`-targeted PR 
 
 - 2026-03-14: created after PR #9 merged to `dev` so the team can validate the Gemini-only review topology on a fresh PR instead of relying on branch-ref dispatches.
 - 2026-03-14: kept the smoke scope to docs and task metadata so the validation PR stays safe even if the self-hosted fix loop produces `no_changes`.
-- 2026-03-14: smoke execution found a real dispatch blocker in `codex-pr-fix.yml`; the workflow referenced `runner.temp` in expressions that GitHub rejected during workflow parsing, so the PR now also patches that workflow-path bug before retrying the sequence.
+- 2026-03-14: smoke execution found a real dispatch blocker in `codex-pr-fix.yml`; GitHub rejected the workflow because `${{ runner.temp }}` was used in an expression, so this task now also tracks the workspace-path fix needed before rerunning the sequence.
 
 ## Review Notes
 
