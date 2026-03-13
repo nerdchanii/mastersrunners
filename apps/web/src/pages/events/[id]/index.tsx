@@ -56,15 +56,13 @@ function parseTimeInput(input: string): number | null {
   const parts = input.split(":").map(Number);
   if (parts.some(isNaN)) return null;
 
-  let seconds = 0;
   if (parts.length === 3) {
-    seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
-  } else if (parts.length === 2) {
-    seconds = parts[0] * 60 + parts[1];
-  } else {
-    return null;
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
   }
-  return seconds;
+  if (parts.length === 2) {
+    return parts[0] * 60 + parts[1];
+  }
+  return null;
 }
 
 export default function EventDetailPage() {

@@ -124,6 +124,7 @@ export class FitParserService {
       }
       throw new Error(
         `Failed to parse FIT file: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { cause: error },
       );
     }
   }
