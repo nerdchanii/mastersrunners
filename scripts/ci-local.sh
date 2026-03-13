@@ -10,7 +10,7 @@ set -euo pipefail
 #   `pnpm install --frozen-lockfile` first.
 # - PostgreSQL for API tests is reachable at DATABASE_URL.
 # - Redis is reachable at REDIS_URL if the API test suite requires it.
-# - The generated/build directories checked below should be absent before the run.
+# - Generated/build artifacts must not be tracked in git.
 # - This script intentionally omits the separate Docker image build job from CI.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -33,6 +33,16 @@ run_step() {
   "$@"
 }
 
+run_step "Check harness structure" bash -c '
+  set -euo pipefail
+  test -f AGENTS.md
+  test -d design
+  test -d docs
+  test -d tasks
+  bash scripts/check-generated-artifacts.sh
+  node --test .github/scripts/pr-autofix-state.spec.cjs
+'
+
 if [ "$CI_LOCAL_INSTALL" = "1" ]; then
   run_step "Install dependencies" pnpm install --frozen-lockfile
 else
@@ -44,18 +54,6 @@ run_step "Run format check" pnpm format:check
 run_step "Run lint" pnpm lint
 
 run_step "Run explicit typecheck" pnpm typecheck
-
-run_step "Check harness structure" bash -c '
-  set -euo pipefail
-  test -f AGENTS.md
-  test -d design
-  test -d docs
-  test -d tasks
-  test ! -d apps/web/.next
-  test ! -d apps/web/dist
-  test ! -d apps/api/dist
-  test ! -d packages/database/generated
-'
 
 run_step "Check dependency boundaries and cycles" pnpm depcruise
 

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "pnpm --parallel -r run dev",
     "build": "pnpm -r run build",
+    "build:web": "pnpm --filter @masters/web build",
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm --filter @masters/database db:generate && pnpm --filter @masters/database exec tsc -p tsconfig.json --noEmit && pnpm --filter @masters/types exec tsc -p tsconfig.json --noEmit && pnpm --filter @masters/api exec tsc -p tsconfig.build.json --noEmit && pnpm --filter @masters/web exec tsc -p tsconfig.json --noEmit",
     "knip": "bash scripts/run-knip.sh",
@@ -12,7 +13,7 @@
     "format:check": "prettier --check --ignore-unknown AGENTS.md README.md DEPLOYMENT.md design docs/checklists docs/README.md docs/guides docs/runbooks docs/reports/README.md docs/plans/README.md tasks scripts .github package.json",
     "precommit": "bash scripts/pre-commit.sh",
     "commitmsg:check": "commitlint",
-    "prepare": "husky",
+    "prepare": "node scripts/run-if-bin.mjs husky",
     "ci:local": "bash scripts/ci-local.sh",
     "depcruise": "dependency-cruiser --config .dependency-cruiser.cjs apps packages",
     "deploy:verify": "bash scripts/verify-deployment.sh",

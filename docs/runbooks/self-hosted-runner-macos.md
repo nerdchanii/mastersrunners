@@ -73,11 +73,12 @@ For macOS service inspection, `./svc.sh status` uses `launchctl` under the hood.
 If the runner stops processing jobs:
 
 1. Check that the runner still appears online in GitHub.
-2. Check that the label list still includes `codex-runner`.
-3. Check `./svc.sh status` from the runner installation directory.
-4. If the service is not running, restart it with `./svc.sh stop` then `./svc.sh start`.
-5. Inspect the latest `_diag/Runner_*` and `_diag/Worker_*` files for startup or job failures.
-6. Check `codex login status` and refresh authentication if it has expired.
-7. Check that `codex` is still available in `PATH`.
-8. If the runner registration is broken, remove and re-register it with `./config.sh remove`, then add it again from the repository runner settings.
-9. Re-run a same-repo `dev` PR with `ai-fix` enabled to confirm the queue is picked up.
+2. Check whether a `Codex PR Fix` `workflow_dispatch` run actually exists for the target PR. If it does not, the blocker is still upstream in the AI review gate or dispatch workflow rather than on the runner.
+3. Check that the label list still includes `codex-runner`.
+4. Check `./svc.sh status` from the runner installation directory.
+5. If the service is not running, restart it with `./svc.sh stop` then `./svc.sh start`.
+6. Inspect the latest `_diag/Runner_*` and `_diag/Worker_*` files for startup or job failures.
+7. Check `codex login status` and refresh authentication if it has expired.
+8. Check that `codex` is still available in `PATH`.
+9. If the runner registration is broken, remove and re-register it with `./config.sh remove`, then add it again from the repository runner settings.
+10. Re-run a same-repo `dev` PR with `ai-fix` enabled to confirm the queue is picked up.

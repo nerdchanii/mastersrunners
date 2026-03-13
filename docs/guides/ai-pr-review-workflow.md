@@ -28,12 +28,14 @@ Detection is `login first, marker fallback`.
 - If `COPILOT_REVIEW_MARKER` is set, the workflow can temporarily fall back to that review-body marker until the login is known. A practical value is `Copilot AI`.
 - If `GEMINI_REVIEW_LOGIN` is set, Gemini review is detected by login only.
 - If `GEMINI_REVIEW_MARKER` is set, the workflow can use that marker as a temporary fallback until the login is known.
+- Configured reviewer logins are normalized before matching, so `gemini-code-assist` and `gemini-code-assist[bot]` are treated as the same reviewer identity.
 - If Gemini identity is not configured yet, the workflow waits for a seed PR to capture the reviewer login or fallback marker before opening the fix gate.
 - If Copilot identity is not configured yet, the workflow waits for the Copilot reviewer login or fallback marker before opening the fix gate.
 
 Marker fallback is only trusted for bot-authored PR reviews when the reviewer login is not configured yet. Human-authored prose that copies the marker text must not satisfy the gate. Bot-authored review comments may still be collected as fix input after the gate opens, but they do not open the gate by themselves.
 
 The fix gate only opens when both AI reviews are present for the current PR head SHA.
+Copilot review completion also has a workflow-level fallback path: when the `Copilot code review` workflow finishes, the gate recomputes the PR state even if the `pull_request_review` event itself did not advance the gate.
 
 ## Control Surface
 
@@ -77,6 +79,7 @@ Use the first `dev` PR to confirm the actual reviewer identities.
 3. Store the login in the repository variables:
    - `GEMINI_REVIEW_LOGIN`
    - `COPILOT_REVIEW_LOGIN`
+     Store the stable base login shown in GitHub, with or without `[bot]`; the workflow normalizes that suffix during matching.
 4. If Gemini login is not yet stable, store a temporary fallback marker in `GEMINI_REVIEW_MARKER`.
 5. If Copilot login is not yet stable, optionally store a temporary fallback marker in `COPILOT_REVIEW_MARKER`.
 
@@ -100,6 +103,12 @@ The workflows report states such as:
 - `max_iterations_reached`: the PR branch hit the five-iteration safety cap and will not queue another run.
 - `fork_blocked`: the PR is from a fork, so self-hosted auto-fix is intentionally disabled.
 - `untrusted_pr_author`: the PR is not authored by the repository owner, so self-hosted auto-fix is intentionally disabled on the shared runner.
+
+## Troubleshooting Split
+
+- If the self-hosted runner is online and idle, first check whether a `Codex PR Fix` `workflow_dispatch` run exists for the PR.
+- If no `Codex PR Fix` dispatch exists yet, the blocker is still in the review gate or dispatch path, not the runner.
+- If a `Codex PR Fix` dispatch exists and its `fix` job stays queued on `[self-hosted, macos, codex-runner]`, then treat the runner as the active bottleneck.
 
 ## Relationship to Task Review
 

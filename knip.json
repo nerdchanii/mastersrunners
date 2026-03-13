@@ -6,6 +6,7 @@
     "@prisma/client",
     "@types/sharp",
     "@types/supertest",
+    "husky",
     "ioredis",
     "next-themes",
     "pg",

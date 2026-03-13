@@ -7,8 +7,12 @@ WORKDIR /app
 
 # Copy workspace config
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY scripts/ scripts/
 COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
 COPY packages/database/package.json packages/database/
+COPY packages/database/prisma.config.ts packages/database/
+COPY packages/database/prisma/ packages/database/prisma/
 COPY packages/types/package.json packages/types/
 
 # Install dependencies
@@ -38,6 +42,7 @@ WORKDIR /app
 
 # Copy workspace config
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY scripts/ scripts/
 COPY apps/api/package.json apps/api/
 COPY packages/database/package.json packages/database/
 COPY packages/types/package.json packages/types/

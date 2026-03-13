@@ -8,7 +8,7 @@ on:
   issue_comment:
     types: [created]
   workflow_run:
-    workflows: ["Codex PR Fix"]
+    workflows: ["Codex PR Fix", "Copilot code review"]
     types: [completed]
   workflow_dispatch:
     inputs:
@@ -45,23 +45,26 @@ jobs:
           STATE_MARKER: "<!-- codex-pr-fix-state -->"
         with:
           script: |
-            const { findStateComment, parseState } = require(process.env.HELPER_PATH);
+            const {
+              findStateComment,
+              findWorkflowRunPrNumber,
+              parseState,
+            } = require(process.env.HELPER_PATH);
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const stateMarker = process.env.STATE_MARKER;
 
             async function loadPullRequest() {
               if (context.eventName === "workflow_run") {
-                const prs = context.payload.workflow_run.pull_requests || [];
-                const target = prs.find((pullRequest) => pullRequest.base?.ref === "dev") || prs[0];
-                if (!target) {
+                const prNumber = findWorkflowRunPrNumber(context.payload.workflow_run);
+                if (!prNumber) {
                   return null;
                 }
 
                 const response = await github.rest.pulls.get({
                   owner,
                   repo,
-                  pull_number: target.number,
+                  pull_number: prNumber,
                 });
                 return response.data;
               }

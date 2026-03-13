@@ -17,7 +17,7 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "clean": "rm -rf dist generated",
-    "postinstall": "prisma generate"
+    "postinstall": "node ../../scripts/run-if-bin.mjs prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.5.0",
