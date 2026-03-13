@@ -66,19 +66,44 @@ function renderState(state, stateMarker) {
   ].join("\n");
 }
 
+function normalizeLogin(login) {
+  return (login || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\[bot\]$/, "");
+}
+
 function reviewMatches(review, login, marker) {
-  const author = (review.user?.login || "").toLowerCase();
+  const author = normalizeLogin(review.user?.login || "");
+  const expected = normalizeLogin(login);
   const body = review.body || "";
-  if (login && author === login) {
+  if (expected && author === expected) {
     return true;
   }
-  if (login) {
+  if (expected) {
     return false;
   }
   if (marker && body.includes(marker) && review.user?.type === "Bot") {
     return true;
   }
   return false;
+}
+
+function findWorkflowRunPrNumber(workflowRun) {
+  const directNumber = workflowRun?.pull_requests?.find((pullRequest) =>
+    Number.isInteger(pullRequest?.number),
+  )?.number;
+  if (directNumber) {
+    return directNumber;
+  }
+
+  const headBranch = workflowRun?.head_branch || "";
+  const match = headBranch.match(/^refs\/pull\/(\d+)\/head$/);
+  if (!match) {
+    return null;
+  }
+
+  return Number(match[1]);
 }
 
 function currentHeadReviewReady(reviews, headSha, login, marker) {
@@ -137,10 +162,12 @@ function isQueuedRequestStale(state, headSha, staleMinutes, now = new Date()) {
 module.exports = {
   createEmptyState,
   findStateComment,
+  findWorkflowRunPrNumber,
   currentHeadReviewReady,
   isQueuedRequestStale,
   isTrustedStateComment,
   latestCommand,
+  normalizeLogin,
   parseControlCommand,
   parseState,
   renderState,
