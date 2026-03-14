@@ -248,7 +248,6 @@ jobs:
     runs-on: [self-hosted, macos, codex-runner]
     timeout-minutes: 45
     env:
-      HELPER_PATH: ${{ github.workspace }}/.codex-temp/pr-autofix-state.cjs
       PR_NUMBER: ${{ needs.validate-request.outputs.pr_number }}
       REQUEST_ID: ${{ inputs.request_id }}
       HEAD_REF: ${{ needs.validate-request.outputs.head_ref }}
@@ -267,8 +266,9 @@ jobs:
 
       - name: Stage shared workflow helper
         run: |
-          mkdir -p ".codex-temp"
-          cp "_workflow_support/.github/scripts/pr-autofix-state.cjs" ".codex-temp/pr-autofix-state.cjs"
+          cp "_workflow_support/.github/scripts/pr-autofix-state.cjs" "$RUNNER_TEMP/pr-autofix-state.cjs"
+          echo "HELPER_PATH=$RUNNER_TEMP/pr-autofix-state.cjs" >> "$GITHUB_ENV"
+          echo "FEEDBACK_PATH=$RUNNER_TEMP/ai-review-feedback.md" >> "$GITHUB_ENV"
           rm -rf _workflow_support
 
       - name: Checkout PR head
@@ -342,8 +342,6 @@ jobs:
       - name: Collect AI review feedback
         id: feedback
         uses: actions/github-script@v7
-        env:
-          FEEDBACK_PATH: ${{ github.workspace }}/.codex-temp/ai-review-feedback.md
         with:
           script: |
             const fs = require("fs");
@@ -442,7 +440,7 @@ jobs:
         if: steps.feedback.outputs.has_feedback == 'true'
         continue-on-error: true
         run: |
-          cat "$RUNNER_TEMP/ai-review-feedback.md" >> "$RUNNER_TEMP/codex-pr-fix-prompt.md"
+          cat "$FEEDBACK_PATH" >> "$RUNNER_TEMP/codex-pr-fix-prompt.md"
           codex -a never -s workspace-write exec -C "$GITHUB_WORKSPACE" --output-last-message "$RUNNER_TEMP/codex-last-message.txt" - < "$RUNNER_TEMP/codex-pr-fix-prompt.md"
 
       - name: Run lint
