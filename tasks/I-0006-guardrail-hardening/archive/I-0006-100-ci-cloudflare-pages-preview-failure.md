@@ -16,6 +16,7 @@ verify:
   - pnpm build:web
   - docker build -f apps/api/Dockerfile .
   - gh pr view 6 --json statusCheckRollup
+  - gh pr view 7 --json statusCheckRollup
 artifacts:
   - .github/workflows/ci.yml
   - apps/api/Dockerfile
@@ -95,10 +96,13 @@ Identify why Cloudflare Pages preview deployments are failing and close the gap 
 - 2026-03-13: PR #7 confirmed the Cloudflare Pages preview succeeds on commit `b3bde30`, then exposed unrelated CI failures: the harness structure check ran after `pnpm install`, and the API Docker runner stage failed because `prepare` and `postinstall` expected dev-only `husky` and `prisma` binaries during a production-only install.
 - 2026-03-13: addressed Gemini review feedback by removing misleading numbering from deployment-surface headings and splitting the Cloudflare Pages build contract into scan-friendly subsections.
 - 2026-03-13: a follow-up PR #7 run exposed two more repo-side issues, both now patched in-branch: `knip` flagged `husky` as unused after the lifecycle helper indirection, and the API Docker builder needed the web package manifest plus Prisma config files copied before install so the workspace install matched local type dependency resolution.
+- 2026-03-14: closeout verification reran `bash scripts/check-generated-artifacts.sh`, `pnpm --filter @masters/web build`, `pnpm build:web`, `gh pr view 6 --json statusCheckRollup`, and `gh pr view 7 --json statusCheckRollup`; PR #6 still shows the original failing Cloudflare Pages check, while PR #7 shows the repaired preview deployment succeeding with passing guard checks.
+- 2026-03-14: local `docker build -f apps/api/Dockerfile .` could not be rerun during closeout because the workstation session did not have a reachable Docker daemon on its configured socket; this closeout keeps the Docker verify step documented and relies on GitHub CI for the last rerun evidence.
 
 ## Review Notes
 
 - Specialist review:
   - `harness-reviewer` pass on 2026-03-13: confirmed the stale `npx next build` log is sufficient evidence and the repo now records the Pages build contract without over-specifying unrelated dashboard settings.
+  - `backend-reviewer` internal role review pass on 2026-03-14: checked the API Dockerfile workspace-context changes plus the optional `husky`/`prisma` lifecycle guards against production-only install behavior; no blocking repo-controlled issues remain, and the only unresolved gap is rerunning the Docker verify command from an environment with a live daemon.
 - PO review:
   - `po-reviewer` pass on 2026-03-13: accepted after narrowing the required external fix to the confirmed blockers `pnpm build:web` and `apps/web/dist`.

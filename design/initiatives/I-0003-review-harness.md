@@ -66,8 +66,8 @@ The repository now has task and verification harnesses, but it does not yet defi
 - `tasks/I-0003-review-harness/archive/I-0003-080-docs-ai-pr-review-clarifications.md`
 - `tasks/I-0003-review-harness/archive/I-0003-090-meta-copilot-review-followups.md`
 - `tasks/I-0003-review-harness/archive/I-0003-100-meta-bot-review-login-normalization.md`
-- `tasks/I-0003-review-harness/active/I-0003-110-meta-gemini-only-ai-review-gate.md`
-- `tasks/I-0003-review-harness/active/I-0003-120-meta-gemini-codex-smoke-sequence.md`
+- `tasks/I-0003-review-harness/archive/I-0003-110-meta-gemini-only-ai-review-gate.md`
+- `tasks/I-0003-review-harness/archive/I-0003-120-meta-gemini-codex-smoke-sequence.md`
 
 ## Success Criteria
 
@@ -85,5 +85,5 @@ The repository now has task and verification harnesses, but it does not yet defi
 
 - `I-0003-070` through `I-0003-090` established the dev-targeted AI PR review and Codex auto-fix harness, including current-head review gating, explicit triggers, and queued-request recovery.
 - `I-0003-100` closed the login-normalization gap that showed up during the dual-review rollout and documented how to distinguish gate/dispatch failures from runner failures while that model was still active.
-- `I-0003-110` is active to simplify the AI PR review harness to a Gemini-only gate after PR #8 and PR #9 showed that Copilot-specific gating added more operational complexity than value.
-- `I-0003-120` is active to validate the merged Gemini-only topology on a fresh same-repo PR so the team can watch the default-branch `Gemini review -> /codex fix -> self-hosted Codex` sequence end to end.
+- `I-0003-110` simplified the AI PR review harness to a Gemini-only gate so the self-hosted lane now waits only for current-head Gemini review plus an explicit maintainer `/codex fix` request.
+- `I-0003-120` validated the merged Gemini-only topology on a fresh same-repo PR; the final smoke run on PR #12 completed `Gemini review -> /codex fix -> self-hosted Codex` end to end and closed with `no_changes`.
