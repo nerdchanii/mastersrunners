@@ -9,6 +9,7 @@ Current runbooks:
 - `deployment.md`
 - `rollback.md`
 - `self-hosted-runner-macos.md`
+- `task-supervisor.md`
 
 Rule:
 

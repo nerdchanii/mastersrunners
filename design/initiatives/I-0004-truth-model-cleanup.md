@@ -56,7 +56,7 @@ The repository has a useful harness shape, but source-of-truth boundaries, excep
 - `tasks/I-0004-truth-model-cleanup/archive/I-0004-060-docs-env-and-settings-index.md`
 - `tasks/I-0004-truth-model-cleanup/archive/I-0004-070-docs-release-history-home.md`
 - `tasks/I-0004-truth-model-cleanup/archive/I-0004-080-meta-diagnostics-surface-retirement.md`
-- `tasks/I-0004-truth-model-cleanup/todo/I-0004-090-meta-intake-harness-default.md`
+- `tasks/I-0004-truth-model-cleanup/archive/I-0004-090-meta-intake-harness-default.md`
 
 ## Success Criteria
 
@@ -69,3 +69,4 @@ The repository has a useful harness shape, but source-of-truth boundaries, excep
 
 - `I-0004-070` now turns `docs/reports/README.md` into the durable release-history home for milestone summaries, QA reports, and future release notes.
 - `I-0004-080` retires the legacy diagnostics surface, moves readability budget metadata into a committed JSON registry, and routes future harness checks through `docs/runbooks/harness-diagnostics.md`.
+- `I-0004-090` is now superseded by the repo-native intake transition in `I-0008-agent-company-workflow` so intake defaults no longer split across two live task units.

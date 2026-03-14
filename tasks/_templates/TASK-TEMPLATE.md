@@ -29,6 +29,12 @@ Describe the single unit of work.
 - Constraints
 - relevant links
 
+## Runtime
+
+- Runtime sidecar: `<task-id>.runtime.yaml` when the task is in `active/`
+- Next safe action:
+- Branch / worktree notes:
+
 ## Self Review
 
 - Scope and intent:

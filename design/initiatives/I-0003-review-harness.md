@@ -87,3 +87,4 @@ The repository now has task and verification harnesses, but it does not yet defi
 - `I-0003-100` closed the login-normalization gap that showed up during the dual-review rollout and documented how to distinguish gate/dispatch failures from runner failures while that model was still active.
 - `I-0003-110` simplified the AI PR review harness to a Gemini-only gate so the self-hosted lane now waits only for current-head Gemini review plus an explicit maintainer `/codex fix` request.
 - `I-0003-120` validated the merged Gemini-only topology on a fresh same-repo PR; the final smoke run on PR #12 completed `Gemini review -> /codex fix -> self-hosted Codex` end to end and closed with `no_changes`.
+- Further unification of intake, task-sidecar runtime continuity, and supervisor-owned delivery sequencing now belongs to `I-0008-agent-company-workflow` so review-harness changes do not grow into a second top-level operating model.

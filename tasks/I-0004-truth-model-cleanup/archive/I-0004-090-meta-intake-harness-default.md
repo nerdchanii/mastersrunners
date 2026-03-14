@@ -33,6 +33,7 @@ Make task and doc creation the default intake path when a new request arrives an
 
 - This is an intake-flow task, not a feature-delivery task.
 - Keep product behavior and diagnostics policy unchanged unless the intake rule truly requires it.
+- Superseded by `I-0008-010`, which now owns the canonical intake transition and repo-native task supervisor model.
 
 ## Self Review
 
@@ -50,14 +51,16 @@ Make task and doc creation the default intake path when a new request arrives an
 ## Handoff
 
 - Consider lightweight enforcement only if the guidance-only version still allows too much ad hoc work.
+- Do not reopen this task. Continue intake-default work under `I-0008-agent-company-workflow`.
 
 ## Design Divergence
 
-- Record any mismatch between desired intake behavior and what current automation can enforce.
+- Historical note only after supersession.
 
 ## Attempt Log
 
 - 2026-03-14: created as a follow-up during scorecard retirement so intake-harness strengthening stays separate from the truth-model cleanup changeset.
+- 2026-03-14: superseded and archived once `I-0008-010` absorbed the canonical intake transition into the repo-native supervisor workflow.
 
 ## Review Notes
 

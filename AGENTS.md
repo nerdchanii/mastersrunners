@@ -52,6 +52,7 @@ Read in this order:
 - Every task also needs a PO review before commit, including docs-only work.
 - Multi-scope changes need the union of the relevant specialist reviewers, not just one reviewer.
 - Review requirements live in the task file. Do not treat a task as done until review and verify are both complete.
+- Active tasks may carry a task-sidecar runtime file named `<task-id>.runtime.yaml` in the same folder. It is continuity-only and must never replace task folder state, task review notes, or verify truth.
 - GitHub PR auto-fix commits are a branch-level automation exception. They may push to the PR head branch before human review, but they do not mark a task complete, do not satisfy task review gates, and do not bypass protected-branch merge rules.
 - Do not commit free-floating `TODO` or `FIXME` markers. Link them to a task as described in `docs/guides/todo-fixme-policy.md`.
 
@@ -67,6 +68,7 @@ Read in this order:
 - Commit message subjects are validated in the `commit-msg` hook, not the `pre-commit` hook.
 - Parallel split and merge workflow lives in `design/operating-rules/parallel-worktree-lifecycle.md` and `docs/guides/parallel-worktree-workflow.md`.
 - Self-hosted macOS runner setup lives in `docs/runbooks/self-hosted-runner-macos.md`.
+- Task supervisor runtime and repo-native task commands live in `docs/runbooks/task-supervisor.md`.
 
 ## Design Divergence Handling
 
@@ -115,6 +117,10 @@ Lifecycle:
 - Install dependencies: `pnpm install`
 - Run dev: `pnpm dev`
 - Build workspace: `pnpm build`
+- Intake a new repo-native task scaffold: `pnpm task:intake -- --goal "<goal>" --parent <initiative-slug> --order <NNN> --scope <scope> --slug <slug>` (supervising agent entrypoint)
+- Start task runtime continuity for an active task: `pnpm task:start -- --task <task_id>`
+- Resume an interrupted active task: `pnpm task:resume -- --task <task_id>`
+- Show canonical task status plus runtime observations: `pnpm task:status -- --task <task_id>`
 - Run workspace lint: `pnpm lint`
 - Run explicit workspace typecheck: `pnpm typecheck`
 - Run local CI approximation: `pnpm ci:local`
@@ -150,7 +156,9 @@ Lifecycle:
 - Current-state design corpus: `design/initiatives/I-0005-current-state-design-corpus.md`
 - Guardrail hardening: `design/initiatives/I-0006-guardrail-hardening.md`
 - Readability hardening: `design/initiatives/I-0007-readability-hardening.md`
+- Agent company workflow: `design/initiatives/I-0008-agent-company-workflow.md`
 
 ## Current Limitation
 
 - A few guardrail and readability items still rely on external exceptions or follow-up tasks. Check `design/operating-rules/exceptions.md`, `scripts/check-size-budgets.targets.json`, and run `harness-diagnostics` on demand when you need a fresh audit.
+- Intake defaults and the PR delivery loop are being re-framed under `I-0008` so future intake and merge automation land on one top-level workflow model instead of independent local optimizations.
