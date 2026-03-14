@@ -30,7 +30,7 @@ Use this policy to keep dead-code drift from re-entering the repository.
 
 - Any task that materially edits a file already listed in `knip.json` should try to remove the matching ignore entry in the same task.
 - If a cleanup is too large for the current task, keep the code change scoped and create a follow-up task instead of weakening the guard.
-- Harness maintenance tasks should review the baseline on every scorecard push that touches `OPS-001` or `OPS-002`.
+- Harness maintenance tasks should review the baseline whenever diagnostics-driven cleanup materially touches the dead-code guard or baseline policy.
 
 ## Current Intentional Baseline
 

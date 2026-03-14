@@ -13,10 +13,9 @@ depends_on:
 blocked_by: []
 verify:
   - test -f design/operating-rules/exceptions.md
-  - rg -n "EX-0001|EX-0002|EX-0003" design/operating-rules/exceptions.md docs/checklists/harness-scorecard.md
+  - rg -n "EX-0001|EX-0002|EX-0003" design/operating-rules/exceptions.md
 artifacts:
   - design/operating-rules/exceptions.md
-  - docs/checklists/harness-scorecard.md
 ---
 
 ## Goal

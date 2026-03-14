@@ -14,7 +14,7 @@ verify:
   - bash scripts/check-size-budgets.sh
 artifacts:
   - scripts/check-size-budgets.sh
-  - docs/checklists/harness-scorecard.md
+  - scripts/check-size-budgets.targets.json
 ---
 
 ## Goal

@@ -4,7 +4,7 @@ owner: harness
 last_verified: 2026-03-12
 sources:
   - AGENTS.md
-  - docs/checklists/README.md
+  - docs/runbooks/harness-diagnostics.md
 ---
 
 # Document States
@@ -59,4 +59,4 @@ All new `design/**/*.md` and synced `docs/domain/*.md` must include:
 
 - `last_verified` must be updated when a task materially rechecks the document against code or automation.
 - `sources` must point to the specific code/docs used to verify the content.
-- Any scorecard change that depends on a document state must reference a `current` doc, not a historical plan.
+- Any task or diagnostics note that depends on a document state must reference a `current` doc, not a historical plan.

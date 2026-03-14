@@ -17,7 +17,6 @@ verify:
 artifacts:
   - apps/api/src/
   - design/operating-rules/exceptions.md
-  - docs/checklists/harness-scorecard.md
   - design/initiatives/I-0006-guardrail-hardening.md
 ---
 

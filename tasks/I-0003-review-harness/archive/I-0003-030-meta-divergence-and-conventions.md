@@ -28,7 +28,6 @@ artifacts:
   - docs/guides/review-harness.md
   - tasks/_templates/TASK-TEMPLATE.md
   - tasks/README.md
-  - docs/checklists/harness-scorecard.md
 ---
 
 ## Goal

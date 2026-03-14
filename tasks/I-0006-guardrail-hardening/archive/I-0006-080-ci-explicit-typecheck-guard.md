@@ -20,7 +20,6 @@ artifacts:
   - package.json
   - .github/workflows/ci.yml
   - scripts/ci-local.sh
-  - docs/checklists/harness-scorecard.md
   - design/initiatives/I-0006-guardrail-hardening.md
 ---
 

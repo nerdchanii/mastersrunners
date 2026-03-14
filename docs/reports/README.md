@@ -21,18 +21,19 @@ What does not belong here:
 
 ## Current Report Index
 
-| File                        | Purpose                                                            | Status     |
-| --------------------------- | ------------------------------------------------------------------ | ---------- |
-| `phase6-qa-report.md`       | phase-level QA evidence for the phase 6 release wave               | historical |
-| `pre-phase5-fixes.md`       | pre-phase fix summary captured before later harness work           | historical |
-| `masters-upgrade-report.md` | upgrade and implementation summary for the Masters product refresh | historical |
-| `flaky-tests.md`            | active ledger for advisory or quarantined test instability         | live       |
+| File                                | Purpose                                                            | Status     |
+| ----------------------------------- | ------------------------------------------------------------------ | ---------- |
+| `phase6-qa-report.md`               | phase-level QA evidence for the phase 6 release wave               | historical |
+| `pre-phase5-fixes.md`               | pre-phase fix summary captured before later harness work           | historical |
+| `masters-upgrade-report.md`         | upgrade and implementation summary for the Masters product refresh | historical |
+| `flaky-tests.md`                    | active ledger for advisory or quarantined test instability         | live       |
+| `diagnostics-surface-retirement.md` | drift report that retired the legacy diagnostics surface           | live       |
 
 ## How to Extend This Folder
 
 - Add new milestone summaries or release notes here instead of reviving archived phase plans as current references.
 - Keep durable technical design in `design/` and business truth in `docs/domain/`.
-- When a task or scorecard row needs release-history evidence, point it at this folder home or a specific report file here.
+- When a task or maintenance report needs release-history evidence, point it at this folder home or a specific report file here.
 
 ## Relationship to `docs/plans/`
 

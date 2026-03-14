@@ -5,6 +5,7 @@ Runbooks describe operational procedures.
 Current runbooks:
 
 - `environment-and-settings.md`
+- `harness-diagnostics.md`
 - `deployment.md`
 - `rollback.md`
 - `self-hosted-runner-macos.md`

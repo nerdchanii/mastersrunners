@@ -14,7 +14,7 @@
 - 메시지/대화, 알림
 - 파일 업로드와 스토리지 연동
 
-현재 하네스 기준의 진행 상황과 점수는 `docs/checklists/harness-scorecard.md`에서 관리합니다.
+하네스 상태는 상시 점수표 대신 `harness-diagnostics`를 필요할 때 호출해 점검합니다. 운영 방식은 `docs/runbooks/harness-diagnostics.md`를 기준으로 봅니다.
 
 ## 기술 스택
 
@@ -78,29 +78,29 @@ pnpm deploy:verify -- http://localhost:4000
 이 저장소는 에이전트 친화적인 하네스로 정리 중입니다. 문서를 읽을 때는 아래 순서를 권장합니다.
 
 1. [AGENTS.md](./AGENTS.md)
-2. [docs/checklists/README.md](./docs/checklists/README.md)
-3. [tasks/](./tasks)
-4. [design/](./design)
-5. [docs/domain/](./docs/domain)
-6. [docs/runbooks/](./docs/runbooks)
+2. [tasks/](./tasks)
+3. [design/](./design)
+4. [docs/domain/](./docs/domain)
+5. [docs/runbooks/environment-and-settings.md](./docs/runbooks/environment-and-settings.md)
+6. [docs/runbooks/harness-diagnostics.md](./docs/runbooks/harness-diagnostics.md)
 
 역할은 다음처럼 나뉩니다.
 
 - `design/`: 프론트엔드, 백엔드, 아키텍처, ADR, initiative
-- `docs/`: 도메인 규칙, 운영 가이드, 체크리스트, 보고서, 일반 가이드
+- `docs/`: 도메인 규칙, 운영 가이드, 보고서, 일반 가이드
 - `tasks/`: 실제 실행 상태
 - `.github/workflows/`, `scripts/`: 실행 가능한 자동화
 
 ## 주요 문서
 
 - [AGENTS.md](./AGENTS.md): 표준 에이전트 진입점
-- [docs/checklists/README.md](./docs/checklists/README.md): 하네스 체크리스트 정의
-- [docs/checklists/harness-scorecard.md](./docs/checklists/harness-scorecard.md): 현재 점수와 예외 포함 상태 스냅샷
 - [design/README.md](./design/README.md): 설계 문서 경계
 - [docs/README.md](./docs/README.md): 문서 구조 설명
 - [docs/domain/README.md](./docs/domain/README.md): 도메인 문서 인덱스
 - [docs/runbooks/environment-and-settings.md](./docs/runbooks/environment-and-settings.md): 환경 변수와 런타임 설정의 첫 진입점
+- [docs/runbooks/harness-diagnostics.md](./docs/runbooks/harness-diagnostics.md): 하네스 진단을 언제 어떻게 호출할지
 - [docs/runbooks/deployment.md](./docs/runbooks/deployment.md): 배포 runbook
+- [design/operating-rules/exceptions.md](./design/operating-rules/exceptions.md): repo 밖에서만 닫을 수 있는 예외 레지스트리
 - [design/initiatives/I-0004-truth-model-cleanup.md](./design/initiatives/I-0004-truth-model-cleanup.md): truth-model cleanup
 - [design/initiatives/I-0005-current-state-design-corpus.md](./design/initiatives/I-0005-current-state-design-corpus.md): current-state design corpus
 - [design/initiatives/I-0006-guardrail-hardening.md](./design/initiatives/I-0006-guardrail-hardening.md): guardrail hardening

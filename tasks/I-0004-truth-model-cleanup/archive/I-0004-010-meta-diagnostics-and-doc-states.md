@@ -11,12 +11,8 @@ po_review: required
 depends_on: []
 blocked_by: []
 verify:
-  - test -f docs/checklists/README.md
-  - test -f docs/checklists/harness-scorecard.md
   - test -f design/operating-rules/document-states.md
 artifacts:
-  - docs/checklists/README.md
-  - docs/checklists/harness-scorecard.md
   - design/operating-rules/document-states.md
 ---
 

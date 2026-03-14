@@ -21,7 +21,6 @@ artifacts:
   - scripts/ci-local.sh
   - .github/workflows/ci.yml
   - docs/guides/dead-code-policy.md
-  - docs/checklists/harness-scorecard.md
 ---
 
 ## Goal
