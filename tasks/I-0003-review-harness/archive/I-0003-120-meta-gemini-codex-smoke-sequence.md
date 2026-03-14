@@ -66,8 +66,12 @@ Validate the merged Gemini-only PR review topology on a fresh `dev`-targeted PR 
 - 2026-03-14: opened a second fresh smoke PR after merging the workspace-path fix to `dev` so the default-branch topology can be validated without branch-definition drift.
 - 2026-03-14: the rerun reached the self-hosted `Codex PR Fix` workflow, then failed because the helper path lived under the checked-out workspace and disappeared after the PR-head checkout; the fix is to stage helper artifacts in `RUNNER_TEMP` instead.
 - 2026-03-14: opened a final fresh smoke PR after merging the `RUNNER_TEMP` helper-path fix to `dev` so the team can validate the full `Gemini review -> /codex fix -> self-hosted Codex` path without another workflow-definition mismatch.
+- 2026-03-14: final smoke PR #12 completed the end-to-end sequence on `dev`; Gemini review was detected on the current head, `/codex fix` queued the self-hosted lane, `Codex PR Fix` ran successfully, and the loop closed with `no_changes`.
 
 ## Review Notes
 
 - Specialist review:
+  - `harness-reviewer` internal role review pass on 2026-03-14: confirmed the final fresh-PR smoke run reached `Gemini review -> /codex fix -> self-hosted Codex` end to end on default-branch workflow definitions, with the auto-fix state closing as `no_changes`.
+  - `docs-reviewer` internal role review pass on 2026-03-14: confirmed the smoke-validation guidance is accurate about using a fresh PR after workflow changes land on `dev` and about treating `no_changes` as a successful topology validation outcome.
 - PO review:
+  - `po-reviewer` pass on 2026-03-14: accepted the validated sequence as the lowest-overhead operating model that still proves the self-hosted review lane works when explicitly requested.
