@@ -6,7 +6,7 @@ Add the missing formatting, boundary, coverage, dependency, security, dead-code,
 
 ## Problem
 
-The repository now has lint, CI, and review metadata enforcement, but it still lacks several guardrails needed for stable autonomous work and measurable checklist progress.
+The repository now has lint, CI, and review metadata enforcement, but it still lacks several guardrails needed for stable autonomous work and clear diagnostic evidence.
 
 ## Goals
 
@@ -31,8 +31,7 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 
 ## Design References
 
-- `docs/checklists/README.md`
-- `docs/checklists/harness-scorecard.md`
+- `docs/runbooks/harness-diagnostics.md`
 - `design/operating-rules/exceptions.md`
 
 ## Review Plan

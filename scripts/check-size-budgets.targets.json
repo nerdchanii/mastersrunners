@@ -1,0 +1,69 @@
+{
+  "budget": 350,
+  "targets": [
+    {
+      "path": "apps/web/src/pages/events/[id]/index.tsx",
+      "status": "exception",
+      "exception_id": "RDR-BUDGET-001",
+      "owner": "engineering",
+      "revisit_date": "2026-03-31",
+      "task_id": "I-0007-010"
+    },
+    {
+      "path": "apps/web/src/pages/crews/[id]/activities/[activityId]/index.tsx",
+      "status": "exception",
+      "exception_id": "RDR-BUDGET-002",
+      "owner": "engineering",
+      "revisit_date": "2026-03-31",
+      "task_id": "I-0007-020"
+    },
+    {
+      "path": "apps/web/src/pages/posts/new/index.tsx",
+      "status": "pass",
+      "exception_id": null,
+      "owner": "engineering",
+      "revisit_date": "2026-03-12",
+      "task_id": "I-0007-020"
+    },
+    {
+      "path": "apps/web/src/pages/workouts/new/index.tsx",
+      "status": "exception",
+      "exception_id": "RDR-BUDGET-004",
+      "owner": "engineering",
+      "revisit_date": "2026-03-31",
+      "task_id": "I-0007-020"
+    },
+    {
+      "path": "apps/web/src/pages/challenges/[id]/index.tsx",
+      "status": "exception",
+      "exception_id": "RDR-BUDGET-005",
+      "owner": "engineering",
+      "revisit_date": "2026-03-31",
+      "task_id": "I-0007-010"
+    },
+    {
+      "path": "apps/web/src/pages/settings/profile/index.tsx",
+      "status": "pass",
+      "exception_id": null,
+      "owner": "engineering",
+      "revisit_date": "2026-03-12",
+      "task_id": "I-0007-020"
+    },
+    {
+      "path": "apps/web/src/pages/messages/[id]/index.tsx",
+      "status": "pass",
+      "exception_id": null,
+      "owner": "engineering",
+      "revisit_date": "2026-03-12",
+      "task_id": "I-0007-010"
+    },
+    {
+      "path": "apps/api/src/crews/crews.service.ts",
+      "status": "pass",
+      "exception_id": null,
+      "owner": "engineering",
+      "revisit_date": "2026-03-12",
+      "task_id": "I-0007-030"
+    }
+  ]
+}

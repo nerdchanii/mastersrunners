@@ -7,7 +7,7 @@ sources:
   - apps/web/src/router.tsx
   - apps/web/src/hooks
   - apps/web/src/pages
-  - docs/checklists/harness-scorecard.md
+  - scripts/check-size-budgets.targets.json
 ---
 
 # Frontend Conventions

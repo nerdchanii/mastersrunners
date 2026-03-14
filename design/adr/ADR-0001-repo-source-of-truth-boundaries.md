@@ -49,4 +49,4 @@ Approved design must not be downgraded to match weak implementation. Divergence 
 - Agents have one stable map for where to read and where to write.
 - Design drift is handled through follow-up tasks instead of silent documentation downgrade.
 - Historical plans remain useful as salvage input but stop competing with current docs.
-- Future folder-boundary changes should update this ADR and the scorecard together.
+- Future folder-boundary changes should update this ADR and the entrypoint or diagnostics workflow docs together.

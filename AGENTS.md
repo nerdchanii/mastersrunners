@@ -7,11 +7,11 @@ This repository is being reshaped into an agent-friendly engineering harness for
 Read in this order:
 
 1. `AGENTS.md`
-2. `docs/checklists/README.md`
-3. `docs/checklists/harness-scorecard.md`
-4. `tasks/` for the active initiative or assigned task
-5. `design/` for technical design and architecture
-6. `docs/domain/` for business rules
+2. `tasks/` for the active initiative or assigned task
+3. `design/` for technical design and architecture
+4. `docs/domain/` for business rules
+5. `docs/runbooks/environment-and-settings.md`
+6. `docs/runbooks/harness-diagnostics.md`
 7. `docs/runbooks/` for operational procedures
 
 ## Source of Truth Map
@@ -19,8 +19,9 @@ Read in this order:
 - Product and business rules: `docs/domain/`
 - Technical design: `design/frontend/`, `design/backend/`, `design/architecture/`
 - Architectural decisions: `design/adr/`
-- Harness score definition: `docs/checklists/README.md`
-- Harness score snapshot: `docs/checklists/harness-scorecard.md`
+- Harness diagnostics workflow: `docs/runbooks/harness-diagnostics.md`
+- External blockers and proof: `design/operating-rules/exceptions.md`
+- Readability budget registry: `scripts/check-size-budgets.targets.json`
 - Operating rules and exceptions: `design/operating-rules/`
 - Large change framing: `design/initiatives/`
 - Execution state: `tasks/`
@@ -39,8 +40,9 @@ Read in this order:
 ## Working Rules
 
 - Do not use `README.md` as the only source of truth for feature status. Check `design/`, `docs/domain/`, and `tasks/`.
-- Treat `docs/checklists/README.md` as the authoritative checklist-definition registry and `docs/checklists/harness-scorecard.md` as the current scored snapshot.
-- If a scorecard row is `exception`, it must point to `design/operating-rules/exceptions.md` with an `exception_id`.
+- Use on-demand `harness-diagnostics` runs instead of maintaining a standing in-repo score snapshot.
+- If a blocker cannot be fully proven or closed inside the repository, track it in `design/operating-rules/exceptions.md` with a durable `EX-xxxx` id.
+- Readability budget exceptions live in `scripts/check-size-budgets.targets.json`, not in ad hoc notes.
 - Status lives in task folder location, not in duplicated `status:` metadata inside task files.
 - One task file should represent one executable unit of work.
 - One initiative file should represent one large change, not one commit.
@@ -151,4 +153,4 @@ Lifecycle:
 
 ## Current Limitation
 
-- A few guardrail and readability items still rely on exceptions or follow-up tasks. Track progress in `docs/checklists/harness-scorecard.md`.
+- A few guardrail and readability items still rely on external exceptions or follow-up tasks. Check `design/operating-rules/exceptions.md`, `scripts/check-size-budgets.targets.json`, and run `harness-diagnostics` on demand when you need a fresh audit.

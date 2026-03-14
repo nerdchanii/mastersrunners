@@ -1,33 +1,33 @@
 ---
 doc_state: current
 owner: harness
-last_verified: 2026-03-12
+last_verified: 2026-03-14
 sources:
-  - docs/checklists/README.md
-  - docs/checklists/harness-scorecard.md
+  - AGENTS.md
+  - docs/runbooks/harness-diagnostics.md
 ---
 
 # Exceptions Register
 
-Exceptions are only for checklist items that cannot be fully proven or closed inside the repository.
+Exceptions are only for repository controls that cannot be fully proven or closed inside the repository.
 
 ## Schema
 
 - `id`: stable `EX-xxxx` identifier
-- `checklist_item`: canonical checklist item ID from `docs/checklists/README.md`
+- `related_principles`: one or more `P1`-`P12` principle ids from `harness-diagnostics`
+- `repo_control`: stable label for the blocked repository control
 - `reason_not_repo_controllable`: why the repo alone cannot satisfy the item
 - `external_owner`: who controls the missing proof or setting
 - `required_external_proof`: what evidence would close the exception
 - `revisit_date`: next required review date
 - `unblock_condition`: concrete condition for removing the exception
 
-Exceptions do not count as pass in score math.
-
 ## Active Exceptions
 
 ### EX-0001
 
-- `checklist_item`: `INV-013`
+- `related_principles`: `P3`, `P10`
+- `repo_control`: `branch-protection`
 - `reason_not_repo_controllable`: GitHub branch protection and required status checks are repository-host settings, not files in the repo.
 - `external_owner`: repository admin
 - `required_external_proof`: screenshot or admin confirmation that main is protected and required checks match CI
@@ -36,7 +36,8 @@ Exceptions do not count as pass in score math.
 
 ### EX-0002
 
-- `checklist_item`: `OPS-006`
+- `related_principles`: `P8`
+- `repo_control`: `monitoring-live-hookup`
 - `reason_not_repo_controllable`: monitoring vendor/project hookup and DSN configuration require external project provisioning and secrets.
 - `external_owner`: project owner
 - `required_external_proof`: active Sentry or equivalent project with DSN configured for web/api
@@ -45,7 +46,8 @@ Exceptions do not count as pass in score math.
 
 ### EX-0003
 
-- `checklist_item`: `OPS-010`
+- `related_principles`: `P8`
+- `repo_control`: `prod-alert-routing`
 - `reason_not_repo_controllable`: alert routing and production notification destinations live outside the repository.
 - `external_owner`: project owner
 - `required_external_proof`: alert policy or routing destination for production errors
