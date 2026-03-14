@@ -65,6 +65,7 @@ Validate the merged Gemini-only PR review topology on a fresh `dev`-targeted PR 
 - 2026-03-14: smoke execution found a real dispatch blocker in `codex-pr-fix.yml`; GitHub rejected the workflow because `${{ runner.temp }}` was used in an expression, so this task now also tracks the workspace-path fix needed before rerunning the sequence.
 - 2026-03-14: opened a second fresh smoke PR after merging the workspace-path fix to `dev` so the default-branch topology can be validated without branch-definition drift.
 - 2026-03-14: the rerun reached the self-hosted `Codex PR Fix` workflow, then failed because the helper path lived under the checked-out workspace and disappeared after the PR-head checkout; the fix is to stage helper artifacts in `RUNNER_TEMP` instead.
+- 2026-03-14: opened a final fresh smoke PR after merging the `RUNNER_TEMP` helper-path fix to `dev` so the team can validate the full `Gemini review -> /codex fix -> self-hosted Codex` path without another workflow-definition mismatch.
 
 ## Review Notes
 
