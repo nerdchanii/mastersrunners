@@ -67,6 +67,7 @@ Introduce the top-level initiative and lock the v1 operating model for canonical
 - 2026-03-14: revised the initiative around task-sidecar runtime, repo-native `task:*` commands, and explicit intake transition from `I-0004-090`.
 - 2026-03-14: added command-level integration tests and tightened `task:status` so runtime identity and PR attachment drift fail closed instead of printing stale state.
 - 2026-03-14: clarified supervisor vs human responsibilities, bootstrap use of `task:intake --state active`, and runtime closeout rules in the runbook and initiative docs.
+- 2026-03-16: addressed current-head Gemini maintainability feedback by switching the custom argument parser to `node:util.parseArgs` token handling and logging full error objects in the task CLI entrypoints.
 
 ## Review Notes
 

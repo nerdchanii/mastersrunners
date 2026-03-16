@@ -114,6 +114,6 @@ ${goal}
 }
 
 main().catch((error) => {
-  console.error(error.message);
+  console.error(error);
   process.exitCode = 1;
 });

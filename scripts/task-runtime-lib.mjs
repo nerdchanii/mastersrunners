@@ -2,24 +2,29 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import os from "node:os";
+import { parseArgs as nodeParseArgs } from "node:util";
 
 export function parseArgs(argv) {
-  const args = {};
-  for (let i = 0; i < argv.length; i += 1) {
-    const token = argv[i];
-    if (!token.startsWith("--")) {
+  const { tokens } = nodeParseArgs({
+    args: argv,
+    strict: false,
+    allowPositionals: true,
+    tokens: true,
+  });
+
+  const values = {};
+  for (const token of tokens) {
+    if (token.kind !== "option") {
       continue;
     }
-    const key = token.slice(2);
-    const next = argv[i + 1];
+    const next = argv[token.index + 1];
     if (!next || next.startsWith("--")) {
-      args[key] = true;
+      values[token.name] = true;
       continue;
     }
-    args[key] = next;
-    i += 1;
+    values[token.name] = next;
   }
-  return args;
+  return values;
 }
 
 export function requireArg(args, key) {

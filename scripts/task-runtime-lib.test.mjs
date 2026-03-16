@@ -1,6 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseFlatYaml, stringifyFlatYaml, ensurePrAttachmentConsistency } from "./task-runtime-lib.mjs";
+import {
+  ensurePrAttachmentConsistency,
+  parseArgs,
+  parseFlatYaml,
+  stringifyFlatYaml,
+} from "./task-runtime-lib.mjs";
+
+test("parseArgs preserves value and boolean semantics while using util parser tokens", () => {
+  assert.deepEqual(parseArgs(["--goal", "hello", "--json", "--lease-seconds", "90"]), {
+    goal: "hello",
+    json: true,
+    "lease-seconds": "90",
+  });
+});
 
 test("flat yaml roundtrip preserves scalar runtime fields", () => {
   const record = {
