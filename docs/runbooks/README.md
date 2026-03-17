@@ -8,7 +8,8 @@ Current runbooks:
 - `harness-diagnostics.md`
 - `deployment.md`
 - `rollback.md`
-- `self-hosted-runner-macos.md`
+- `codex-connector-pr-fix.md`
+- `self-hosted-runner-macos.md` (historical)
 - `task-supervisor.md`
 
 Rule:

@@ -46,11 +46,7 @@ test("pr attachment consistency fails if only one PR field exists", () => {
 
 test("pr attachment consistency fails if head sha does not match", () => {
   assert.throws(
-    () =>
-      ensurePrAttachmentConsistency(
-        { pr_number: 12, head_sha: "old" },
-        "new",
-      ),
+    () => ensurePrAttachmentConsistency({ pr_number: 12, head_sha: "old" }, "new"),
     /does not match the current branch head/,
   );
 });

@@ -29,4 +29,4 @@ task
 - integrate through commits
 - preserve unrelated local changes
 - never treat copy-paste between worktrees as the merge strategy
-- PR branch auto-fix loops are a separate integration path and do not replace worktree isolation for multi-agent task execution
+- PR branch fix loops are a separate integration path and do not replace worktree isolation for multi-agent task execution

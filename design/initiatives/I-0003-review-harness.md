@@ -2,52 +2,50 @@
 
 ## Summary
 
-Add explicit specialist-review and PO-review gates so completed tasks are not committed without the right review context.
+Maintain the repository's branch-level PR review lane so `dev`-targeted PRs can detect actual Gemini review, reconcile current-head review threads, publish machine-readable merge readiness, and merge cleanly without redefining the top-level task operating model that now lives in `I-0008`.
 
 ## Problem
 
-The repository now has task and verification harnesses, but it does not yet define who should review completed work before commit. That makes commit quality depend too much on ad hoc judgment.
+The repository already has task review policy and a top-level agent operating model, but the branch-level PR lane still needs to reconcile AI review threads, connector state publication, and merge readiness without drifting into a second workflow truth.
 
 ## Goals
 
-- define specialist reviewer roles by work type
-- require PO review for every task
-- wire review requirements into task and initiative templates
-- document the review gate before commit
+- preserve the repository's specialist-review and PO-review rules while keeping PR automation clearly subordinate to task completion
+- normalize actual Gemini current-head review as the only AI review signal
+- add branch-level review-thread export and reconciliation tooling
+- extend machine-readable merge readiness so current-head actionable threads block merge
+- document the staged connector control surface without overstating a fully proven executor cutover
 
 ## Non-Goals
 
 - automated reviewer assignment
-- GitHub branch protection policy outside the repository
-- skill or subagent implementation for each reviewer persona
+- redefining task/supervisor/intake semantics that are already owned by `I-0008`
+- treating branch-level PR automation as a replacement for specialist review, PO review, or task archival
 
 ## Scope
 
 - `AGENTS.md`
 - `.github/workflows/pr-ai-review-gate.yml`
-- `.github/workflows/codex-pr-fix.yml`
+- `.github/workflows/pr-merge-readiness.yml`
 - `.github/workflows/codex-pr-fix-status.yml`
+- `.github/scripts/pr-merge-readiness.cjs`
+- `.github/scripts/pr-review-threads.cjs`
 - `docs/guides/review-harness.md`
 - `docs/guides/ai-pr-review-workflow.md`
-- `docs/guides/agent-self-review.md`
 - `docs/guides/parallel-worktree-workflow.md`
-- `docs/guides/reviewer-taxonomy.md`
-- `docs/guides/design-divergence-workflow.md`
+- `docs/runbooks/codex-connector-pr-fix.md`
 - `docs/runbooks/self-hosted-runner-macos.md`
-- `tasks/README.md`
-- `tasks/_templates/TASK-TEMPLATE.md`
-- `design/initiatives/INITIATIVE-TEMPLATE.md`
-- `design/operating-rules/commit-conventions.md`
-- `design/operating-rules/document-states.md`
-- `design/operating-rules/parallel-worktree-lifecycle.md`
-- `design/frontend/conventions.md`
-- `design/backend/conventions.md`
+- `scripts/merge-dev-pr.sh`
+- `scripts/export-pr-review-bundle.mjs`
+- `scripts/reconcile-pr-review-threads.mjs`
+- `scripts/update-pr-connector-state.mjs`
 
 ## Design References
 
 - `AGENTS.md`
 - `docs/guides/review-harness.md`
-- `tasks/_templates/TASK-TEMPLATE.md`
+- `docs/guides/ai-pr-review-workflow.md`
+- `design/initiatives/I-0008-agent-company-workflow.md`
 
 ## Review Plan
 
@@ -68,23 +66,31 @@ The repository now has task and verification harnesses, but it does not yet defi
 - `tasks/I-0003-review-harness/archive/I-0003-100-meta-bot-review-login-normalization.md`
 - `tasks/I-0003-review-harness/archive/I-0003-110-meta-gemini-only-ai-review-gate.md`
 - `tasks/I-0003-review-harness/archive/I-0003-120-meta-gemini-codex-smoke-sequence.md`
+- `tasks/I-0003-review-harness/archive/I-0003-130-meta-gemini-review-signal-normalization.md`
+- `tasks/I-0003-review-harness/archive/I-0003-140-meta-pr-merge-readiness-state.md`
+- `tasks/I-0003-review-harness/archive/I-0003-150-meta-agent-merge-lane.md`
+- `tasks/I-0003-review-harness/archive/I-0003-160-meta-auto-fix-default-and-required-check-rollout.md`
+- `tasks/I-0003-review-harness/active/I-0003-170-meta-pr-review-thread-reconciler.md`
+- `tasks/I-0003-review-harness/todo/I-0003-180-meta-codex-connector-executor-cutover.md`
+- `tasks/I-0003-review-harness/active/I-0003-190-meta-merge-readiness-thread-hygiene.md`
+- `tasks/I-0003-review-harness/todo/I-0003-200-meta-connector-rollout-and-smoke-pr.md`
 
 ## Success Criteria
 
-- every new task template includes reviewer and PO review requirements
-- the repository has one clear review routing guide
-- pre-commit completion rules explicitly mention specialist and PO review
-- approved design is not downgraded to excuse incomplete implementation
-- commit subjects explain intent while task linkage lives in trailers
-- every task has one consistent self-review step before specialist review
-- commit subjects are enforced by repository automation
-- parallel task execution has an explicit split and integration rule
-- dev-targeted PRs can wait for Gemini review before an explicitly requested Codex auto-fix loop runs on the self-hosted runner
+- branch-level PR lane uses actual current-head Gemini reviews as its only AI review signal
+- current-head actionable review threads can be exported, replied to, and resolved through repo-standard tooling
+- `PR Merge Readiness` blocks merge until current-head actionable threads are clean
+- branch-level state publication does not override task review, PO review, or the `I-0008` task-supervisor model
+- connector cutover and rollout promises are staged and not documented as fully proven before smoke validation
 
 ## Progress Notes
 
 - `I-0003-070` through `I-0003-090` established the dev-targeted AI PR review and Codex auto-fix harness, including current-head review gating, explicit triggers, and queued-request recovery.
 - `I-0003-100` closed the login-normalization gap that showed up during the dual-review rollout and documented how to distinguish gate/dispatch failures from runner failures while that model was still active.
-- `I-0003-110` simplified the AI PR review harness to a Gemini-only gate so the self-hosted lane now waits only for current-head Gemini review plus an explicit maintainer `/codex fix` request.
-- `I-0003-120` validated the merged Gemini-only topology on a fresh same-repo PR; the final smoke run on PR #12 completed `Gemini review -> /codex fix -> self-hosted Codex` end to end and closed with `no_changes`.
-- Further unification of intake, task-sidecar runtime continuity, and supervisor-owned delivery sequencing now belongs to `I-0008-agent-company-workflow` so review-harness changes do not grow into a second top-level operating model.
+- `I-0003-110` simplified the AI PR review harness to a Gemini-only gate.
+- `I-0003-120` validated the earlier self-hosted topology before the connector cutover work began.
+- `I-0003-130` through `I-0003-150` normalized Gemini signals, added machine-readable merge readiness, and introduced the repo-standard agent merge lane.
+- `I-0003-160` is now historical rollout context after the work split moved into narrower follow-up tasks.
+- `I-0003-170` and `I-0003-190` are the live near-term branch-level tasks for review-thread reconciliation and thread-aware merge readiness.
+- `I-0003-180` and `I-0003-200` remain deferred until the connector executor cutover and smoke validation can be proven without weakening the `I-0008` top-level operating model.
+- Further unification of intake, task-sidecar runtime continuity, and supervisor-owned delivery sequencing belongs to `I-0008-agent-company-workflow`, not `I-0003`.

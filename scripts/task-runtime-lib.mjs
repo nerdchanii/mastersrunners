@@ -108,10 +108,7 @@ export async function findTaskById(repoRoot, taskId) {
 }
 
 export function runtimePathForTask(taskEntry) {
-  return path.join(
-    path.dirname(taskEntry.taskPath),
-    `${taskEntry.taskId}.runtime.yaml`,
-  );
+  return path.join(path.dirname(taskEntry.taskPath), `${taskEntry.taskId}.runtime.yaml`);
 }
 
 export async function readRuntimeFile(runtimePath) {
@@ -180,9 +177,7 @@ export function ensurePrAttachmentConsistency(runtime, currentHeadSha) {
   const hasHeadSha = runtime.head_sha !== null && runtime.head_sha !== undefined;
 
   if (hasPrNumber !== hasHeadSha) {
-    throw new Error(
-      "PR-attached runtime must have both pr_number and head_sha, or neither",
-    );
+    throw new Error("PR-attached runtime must have both pr_number and head_sha, or neither");
   }
 
   if (hasHeadSha && runtime.head_sha !== currentHeadSha) {

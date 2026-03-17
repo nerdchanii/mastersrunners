@@ -1,4 +1,4 @@
-name: Codex PR Auto-Fix Status
+name: Codex Connector Execution Status
 
 on:
   pull_request_target:
@@ -7,9 +7,6 @@ on:
     types: [submitted, edited, dismissed]
   issue_comment:
     types: [created]
-  workflow_run:
-    workflows: ["Codex PR Fix"]
-    types: [completed]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -18,7 +15,7 @@ on:
         type: string
 
 concurrency:
-  group: codex-pr-fix-status-${{ github.event.pull_request.number || github.event.pull_request_review.pull_request.number || github.event.issue.number || github.event.workflow_run.pull_requests[0].number || github.event.inputs.pr_number || github.run_id }}
+  group: codex-pr-fix-status-${{ github.event.pull_request.number || github.event.pull_request_review.pull_request.number || github.event.issue.number || github.event.inputs.pr_number || github.run_id }}
   cancel-in-progress: true
 
 permissions:
@@ -38,38 +35,19 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Refresh PR auto-fix status check
+      - name: Refresh connector execution status check
         uses: actions/github-script@v7
         env:
           HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
           STATE_MARKER: "<!-- codex-pr-fix-state -->"
         with:
           script: |
-            const {
-              findStateComment,
-              findWorkflowRunPrNumber,
-              parsePositiveInt,
-              parseState,
-            } = require(process.env.HELPER_PATH);
+            const { findStateComment, parsePositiveInt, parseState } = require(process.env.HELPER_PATH);
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const stateMarker = process.env.STATE_MARKER;
 
             async function loadPullRequest() {
-              if (context.eventName === "workflow_run") {
-                const prNumber = findWorkflowRunPrNumber(context.payload.workflow_run);
-                if (!prNumber) {
-                  return null;
-                }
-
-                const response = await github.rest.pulls.get({
-                  owner,
-                  repo,
-                  pull_number: prNumber,
-                });
-                return response.data;
-              }
-
               if (context.eventName === "workflow_dispatch") {
                 const prNumber = parsePositiveInt(context.payload.inputs?.pr_number);
                 if (!prNumber) {
@@ -107,7 +85,7 @@ jobs:
 
             const pr = await loadPullRequest();
             if (!pr || pr.base.ref !== "dev") {
-              core.info("No dev PR context for status refresh.");
+              core.info("No dev PR context for execution status refresh.");
               return;
             }
 
@@ -121,8 +99,7 @@ jobs:
             const state = parseState(stateComment?.body || "", stateMarker);
 
             const statusMap = {
-              ready: { status: "completed", conclusion: "success" },
-              queued: { status: "in_progress" },
+              waiting_for_connector_fix: { status: "completed", conclusion: "neutral" },
               running: { status: "in_progress" },
               succeeded: { status: "completed", conclusion: "success" },
               no_changes: { status: "completed", conclusion: "success" },
@@ -130,10 +107,10 @@ jobs:
               waiting_for_gemini_identity: { status: "completed", conclusion: "neutral" },
               waiting_for_gemini_review: { status: "completed", conclusion: "neutral" },
               retry_required: { status: "completed", conclusion: "neutral" },
-              already_requested: { status: "completed", conclusion: "neutral" },
               max_iterations_reached: { status: "completed", conclusion: "failure" },
               fork_blocked: { status: "completed", conclusion: "neutral" },
               untrusted_pr_author: { status: "completed", conclusion: "neutral" },
+              protected_or_shared_head_branch: { status: "completed", conclusion: "failure" },
               failed: { status: "completed", conclusion: "failure" },
               unknown: { status: "completed", conclusion: "neutral" },
             };
@@ -144,17 +121,18 @@ jobs:
               `Iteration: ${state.iteration || 0} / ${state.max_iterations || 5}`,
               `Gemini ready: ${state.gemini_review_ready ? "yes" : "no"}`,
               `Last result: ${state.last_result || "idle"}`,
+              `Executor: ${state.executor || "chatgpt_codex_connector"}`,
             ];
 
             await github.rest.checks.create({
               owner,
               repo,
-              name: "Codex PR Auto-Fix Status",
+              name: "Codex Connector Execution Status",
               head_sha: pr.head.sha,
               status: checkState.status,
               ...(checkState.conclusion ? { conclusion: checkState.conclusion } : {}),
               output: {
-                title: "Codex PR Auto-Fix",
+                title: "Codex Connector Execution",
                 summary: summaryLines.join("\n"),
               },
             });
