@@ -37,7 +37,7 @@ jobs:
 
       - name: Derive AI review gate state
         id: gate
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
           GEMINI_REVIEW_LOGIN: ${{ vars.GEMINI_REVIEW_LOGIN }}
@@ -278,7 +278,7 @@ jobs:
 
       - name: Refresh merge readiness workflow
         if: steps.gate.outputs.pr_number != ''
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({
@@ -293,7 +293,7 @@ jobs:
 
       - name: Refresh status workflow after gate update
         if: always() && steps.gate.outputs.pr_number != ''
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({

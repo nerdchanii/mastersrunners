@@ -59,7 +59,7 @@ jobs:
 
       - name: Validate workflow dispatch request
         id: validate
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
         with:
@@ -157,7 +157,7 @@ jobs:
 
       - name: Recover queued state when validation rejects request
         if: steps.validate.outputs.should_run != 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
         with:
@@ -229,7 +229,7 @@ jobs:
 
       - name: Refresh status workflow after rejected request
         if: steps.validate.outputs.should_run != 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({
@@ -293,7 +293,7 @@ jobs:
 
       - name: Mark state as running
         id: state-start
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const { findStateComment, parseState, renderState } = require(process.env.HELPER_PATH);
@@ -341,7 +341,7 @@ jobs:
 
       - name: Collect AI review feedback
         id: feedback
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require("fs");
@@ -482,7 +482,7 @@ jobs:
       - name: Confirm auto-fix still enabled before push
         id: stop-check
         if: steps.feedback.outputs.has_feedback == 'true' && steps.codex.outcome == 'success' && steps.lint.outcome == 'success' && steps.typecheck.outcome == 'success' && steps.branch-head.outcome == 'success'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const { findStateComment, parseState } = require(process.env.HELPER_PATH);
@@ -529,7 +529,7 @@ jobs:
 
       - name: Finalize PR state
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const { findStateComment, parseState, renderState } = require(process.env.HELPER_PATH);
@@ -604,7 +604,7 @@ jobs:
 
       - name: Refresh status workflow
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({
@@ -619,7 +619,7 @@ jobs:
 
       - name: Refresh merge readiness workflow
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({

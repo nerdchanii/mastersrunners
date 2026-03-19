@@ -34,7 +34,7 @@ jobs:
           persist-credentials: false
 
       - name: Refresh merge readiness state and check
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           AUTOFIX_HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
           READINESS_HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-merge-readiness.cjs

@@ -36,7 +36,7 @@ jobs:
           persist-credentials: false
 
       - name: Refresh connector execution status check
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
           STATE_MARKER: "<!-- codex-pr-fix-state -->"
