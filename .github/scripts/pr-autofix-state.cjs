@@ -1,15 +1,18 @@
 function createEmptyState() {
   return {
     status: "unknown",
+    enabled: false,
+    executor: "chatgpt_codex_connector",
     iteration: 0,
     max_iterations: 5,
     head_sha: "",
     last_requested_sha: "",
-    last_request_id: "",
     last_requested_at: "",
     last_result: "idle",
     last_fix_completed_at: "",
     last_fixed_sha: "",
+    last_skip_sha: "",
+    last_stop_sha: "",
     gemini_review_ready: false,
   };
 }
@@ -24,6 +27,9 @@ function parseControlCommand(body) {
   }
   if (normalized === "/codex fix") {
     return "fix";
+  }
+  if (normalized === "/codex skip") {
+    return "skip";
   }
   return "";
 }
@@ -63,7 +69,7 @@ function parseState(body, stateMarker) {
 function renderState(state, stateMarker) {
   return [
     stateMarker,
-    "## Codex PR Auto-Fix State",
+    "## Codex PR Execution State",
     "",
     "```json",
     JSON.stringify(state, null, 2),
@@ -108,23 +114,6 @@ function reviewMatches(review, login, marker) {
   return false;
 }
 
-function findWorkflowRunPrNumber(workflowRun) {
-  const directNumber = workflowRun?.pull_requests?.find((pullRequest) =>
-    Number.isInteger(pullRequest?.number),
-  )?.number;
-  if (directNumber) {
-    return directNumber;
-  }
-
-  const headBranch = workflowRun?.head_branch || "";
-  const match = headBranch.match(/^refs\/pull\/(\d+)\/head$/);
-  if (!match) {
-    return null;
-  }
-
-  return Number(match[1]);
-}
-
 function currentHeadReviewReady(reviews, headSha, login, marker) {
   if (!login && !marker) {
     return false;
@@ -157,33 +146,10 @@ function latestCommand(comments) {
   return parseControlCommand(latest.body);
 }
 
-function isQueuedRequestStale(state, headSha, staleMinutes, now = new Date()) {
-  if (!state.last_requested_sha || state.last_requested_sha !== headSha) {
-    return false;
-  }
-  if (state.last_result !== "queued") {
-    return false;
-  }
-
-  const timestamp = state.last_requested_at || state.updated_at || "";
-  if (!timestamp) {
-    return true;
-  }
-
-  const requestedAt = new Date(timestamp);
-  if (Number.isNaN(requestedAt.getTime())) {
-    return true;
-  }
-
-  return now.getTime() - requestedAt.getTime() > staleMinutes * 60 * 1000;
-}
-
 module.exports = {
   createEmptyState,
   findStateComment,
-  findWorkflowRunPrNumber,
   currentHeadReviewReady,
-  isQueuedRequestStale,
   isTrustedStateComment,
   latestCommand,
   normalizeLogin,

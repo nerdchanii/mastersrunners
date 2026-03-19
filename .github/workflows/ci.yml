@@ -48,6 +48,9 @@ jobs:
           test -d tasks
           bash scripts/check-generated-artifacts.sh
           node --test .github/scripts/pr-autofix-state.spec.cjs
+          node --test .github/scripts/pr-review-threads.spec.cjs
+          node --test .github/scripts/pr-merge-readiness.spec.cjs
+          bash -n scripts/merge-dev-pr.sh
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

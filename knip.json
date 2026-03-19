@@ -14,6 +14,8 @@
   ],
   "ignoreBinaries": ["tsx"],
   "ignoreFiles": [
+    ".github/scripts/internal/read-readiness-from-checks.cjs",
+    ".github/scripts/internal/read-readiness-from-comments.cjs",
     "apps/api/src/workout-types/seed/workout-type.seed.ts",
     "apps/api/test/auth.e2e-spec.ts",
     "apps/api/test/feed.e2e-spec.ts",
@@ -26,9 +28,15 @@
     "apps/web/src/components/crew/CrewCard.tsx",
     "apps/web/src/components/profile/ProfileStats.tsx",
     "apps/web/src/components/ui/sheet.tsx",
-    "apps/web/src/components/workout/WorkoutDetail.tsx"
+    "apps/web/src/components/workout/WorkoutDetail.tsx",
+    "scripts/export-pr-review-bundle.mjs",
+    "scripts/reconcile-pr-review-threads.mjs",
+    "scripts/update-pr-connector-state.mjs"
   ],
   "ignoreIssues": {
+    ".github/scripts/pr-autofix-state.cjs": ["exports"],
+    ".github/scripts/pr-merge-readiness.cjs": ["exports"],
+    ".github/scripts/pr-review-threads.cjs": ["exports"],
     "apps/api/src/uploads/uploads.service.ts": ["types"],
     "apps/api/src/uploads/utils/douglas-peucker.ts": ["types"],
     "apps/api/src/uploads/utils/encoded-polyline.ts": ["types"],

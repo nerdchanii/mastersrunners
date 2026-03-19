@@ -3,7 +3,6 @@ const assert = require("node:assert/strict");
 
 const {
   currentHeadReviewReady,
-  findWorkflowRunPrNumber,
   normalizeLogin,
   parsePositiveInt,
   parseControlCommand,
@@ -14,6 +13,7 @@ const {
 test("parseControlCommand recognizes refresh without changing fix/stop parsing", () => {
   assert.equal(parseControlCommand("/codex refresh"), "refresh");
   assert.equal(parseControlCommand("/codex fix"), "fix");
+  assert.equal(parseControlCommand("/codex skip"), "skip");
   assert.equal(parseControlCommand("/codex stop"), "stop");
   assert.equal(parseControlCommand("/codex noop"), "");
 });
@@ -79,38 +79,14 @@ test("currentHeadReviewReady still requires the current head SHA after login nor
   );
 });
 
-test("findWorkflowRunPrNumber prefers workflow_run pull request numbers and falls back to refs/pull/<n>/head", () => {
-  assert.equal(
-    findWorkflowRunPrNumber({
-      pull_requests: [{ number: 7 }],
-      head_branch: "refs/pull/99/head",
-    }),
-    7,
-  );
-  assert.equal(
-    findWorkflowRunPrNumber({
-      pull_requests: [],
-      head_branch: "refs/pull/42/head",
-    }),
-    42,
-  );
-  assert.equal(
-    findWorkflowRunPrNumber({
-      pull_requests: [],
-      head_branch: "task-i-0006-100-cloudflare-pages",
-    }),
-    null,
-  );
-});
-
 test("parseState drops legacy copilot fields from persisted state comments", () => {
   const body = [
     "<!-- codex-pr-fix-state -->",
-    "## Codex PR Auto-Fix State",
+    "## Codex PR Execution State",
     "",
     "```json",
     JSON.stringify({
-      status: "paused",
+      status: "waiting_for_connector_fix",
       gemini_review_ready: true,
       copilot_identity_configured: true,
       copilot_review_ready: true,
@@ -119,7 +95,7 @@ test("parseState drops legacy copilot fields from persisted state comments", () 
   ].join("\n");
 
   const state = parseState(body, "<!-- codex-pr-fix-state -->");
-  assert.equal(state.status, "paused");
+  assert.equal(state.status, "waiting_for_connector_fix");
   assert.equal(state.gemini_review_ready, true);
   assert.equal("copilot_identity_configured" in state, false);
   assert.equal("copilot_review_ready" in state, false);

@@ -1,0 +1,264 @@
+name: PR Merge Readiness
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to refresh"
+        required: true
+        type: string
+
+concurrency:
+  group: pr-merge-readiness-${{ github.event.pull_request.number || github.event.pull_request_review.pull_request.number || github.event.issue.number || github.event.inputs.pr_number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  checks: write
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout workflow support
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Refresh merge readiness state and check
+        uses: actions/github-script@v7
+        env:
+          AUTOFIX_HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-autofix-state.cjs
+          READINESS_HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-merge-readiness.cjs
+          THREAD_HELPER_PATH: ${{ github.workspace }}/.github/scripts/pr-review-threads.cjs
+          AUTOFIX_MARKER: "<!-- codex-pr-fix-state -->"
+          READINESS_MARKER: "<!-- pr-merge-readiness-state -->"
+          GEMINI_REVIEW_LOGIN: ${{ vars.GEMINI_REVIEW_LOGIN }}
+          GEMINI_REVIEW_MARKER: ${{ vars.GEMINI_REVIEW_MARKER }}
+        with:
+          script: |
+            const {
+              findStateComment,
+              parsePositiveInt,
+              parseState,
+            } = require(process.env.AUTOFIX_HELPER_PATH);
+            const {
+              deriveMergeReadiness,
+              findReadinessComment,
+              renderReadinessStateBlock,
+              renderReadinessState,
+            } = require(process.env.READINESS_HELPER_PATH);
+            const { summarizeReviewThreads } = require(process.env.THREAD_HELPER_PATH);
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const ownerRepoFullName = `${owner}/${repo}`;
+            const geminiLogin = (process.env.GEMINI_REVIEW_LOGIN || "").trim().toLowerCase();
+            const geminiMarker = (process.env.GEMINI_REVIEW_MARKER || "").trim();
+
+            async function loadPullRequest() {
+              if (context.eventName === "workflow_dispatch") {
+                const prNumber = parsePositiveInt(context.payload.inputs?.pr_number);
+                if (!prNumber) {
+                  core.setFailed("workflow_dispatch requires a positive integer pr_number input.");
+                  return null;
+                }
+
+                const response = await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: prNumber,
+                });
+                return response.data;
+              }
+
+              if (context.eventName === "issue_comment") {
+                if (!context.payload.issue?.pull_request) {
+                  return null;
+                }
+
+                const response = await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: context.payload.issue.number,
+                });
+                return response.data;
+              }
+
+              if (context.eventName === "pull_request_review") {
+                return context.payload.pull_request;
+              }
+
+              return context.payload.pull_request;
+            }
+
+            const pr = await loadPullRequest();
+            if (!pr || pr.base.ref !== "dev") {
+              core.info("No dev PR context for merge readiness refresh.");
+              return;
+            }
+
+            const sameRepo = pr.head.repo.full_name === ownerRepoFullName;
+
+            async function loadReviewThreads(prNumber) {
+              const response = await github.graphql(
+                `
+                  query($owner: String!, $repo: String!, $number: Int!) {
+                    repository(owner: $owner, name: $repo) {
+                      pullRequest(number: $number) {
+                        reviewThreads(first: 100) {
+                          nodes {
+                            id
+                            isResolved
+                            isOutdated
+                            path
+                            line
+                            originalLine
+                            diffSide
+                            comments(first: 20) {
+                              nodes {
+                                id
+                                body
+                                publishedAt
+                                path
+                                line
+                                originalLine
+                                url
+                                author {
+                                  login
+                                }
+                                pullRequestReview {
+                                  state
+                                  author {
+                                    login
+                                  }
+                                }
+                                commit {
+                                  oid
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                `,
+                {
+                  owner,
+                  repo,
+                  number: prNumber,
+                },
+              );
+
+              return response.repository.pullRequest.reviewThreads.nodes || [];
+            }
+
+            const [comments, reviews, branchResponse, reviewThreads] = await Promise.all([
+              github.paginate(github.rest.issues.listComments, {
+                owner,
+                repo,
+                issue_number: pr.number,
+                per_page: 100,
+              }),
+              github.paginate(github.rest.pulls.listReviews, {
+                owner,
+                repo,
+                pull_number: pr.number,
+                per_page: 100,
+              }),
+              sameRepo
+                ? github.rest.repos.getBranch({
+                    owner,
+                    repo,
+                    branch: pr.head.ref,
+                  })
+                : Promise.resolve({ data: { protected: false } }),
+              loadReviewThreads(pr.number),
+            ]);
+
+            const autofixComment = findStateComment(comments, process.env.AUTOFIX_MARKER);
+            const autofixState = parseState(autofixComment?.body || "", process.env.AUTOFIX_MARKER);
+            const reviewThreadSummary = summarizeReviewThreads(reviewThreads);
+            const readinessState = deriveMergeReadiness({
+              ownerRepoFullName,
+              pr,
+              reviews,
+              executionState: autofixState,
+              reviewThreadSummary,
+              geminiLogin,
+              geminiMarker,
+              headBranchProtected: Boolean(branchResponse.data?.protected),
+            });
+
+            const readinessComment = findReadinessComment(comments, process.env.READINESS_MARKER);
+            const body = renderReadinessState(readinessState, process.env.READINESS_MARKER);
+
+            try {
+              if (readinessComment) {
+                await github.rest.issues.updateComment({
+                  owner,
+                  repo,
+                  comment_id: readinessComment.id,
+                  body,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: pr.number,
+                  body,
+                });
+              }
+            } catch (error) {
+              core.warning(`Skipping readiness comment refresh: ${error.message}`);
+            }
+
+            const checkMap = {
+              ready_to_merge: {
+                status: "completed",
+                conclusion: "success",
+              },
+              blocked: {
+                status: "completed",
+                conclusion: "failure",
+              },
+            };
+            const checkState = checkMap[readinessState.status] || {
+              status: "in_progress",
+            };
+
+            const summaryLines = [
+              `Status: ${readinessState.status}`,
+              `Reason: ${readinessState.reason || "n/a"}`,
+              `Gemini ready: ${readinessState.gemini_review_ready ? "yes" : "no"}`,
+              `Connector status: ${readinessState.connector_status}`,
+              `Actionable open threads: ${readinessState.actionable_open_thread_count}`,
+            ];
+
+            await github.rest.checks.create({
+              owner,
+              repo,
+              name: "PR Merge Readiness",
+              head_sha: pr.head.sha,
+              status: checkState.status,
+              ...(checkState.conclusion ? { conclusion: checkState.conclusion } : {}),
+              output: {
+                title: "PR Merge Readiness",
+                summary: [
+                  summaryLines.join("\n"),
+                  "",
+                  "Machine-readable state:",
+                  "",
+                  renderReadinessStateBlock(readinessState),
+                ].join("\n"),
+              },
+            });

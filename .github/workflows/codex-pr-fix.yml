@@ -236,7 +236,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: "codex-pr-fix-status.yml",
-              ref: "dev",
+              ref: process.env.HEAD_REF,
               inputs: {
                 pr_number: process.env.PR_NUMBER,
               },
@@ -611,7 +611,22 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: "codex-pr-fix-status.yml",
-              ref: "dev",
+              ref: process.env.HEAD_REF,
+              inputs: {
+                pr_number: process.env.PR_NUMBER,
+              },
+            });
+
+      - name: Refresh merge readiness workflow
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: "pr-merge-readiness.yml",
+              ref: process.env.HEAD_REF,
               inputs: {
                 pr_number: process.env.PR_NUMBER,
               },

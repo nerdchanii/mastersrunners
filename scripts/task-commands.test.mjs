@@ -5,8 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 
-const repoScript = (name) =>
-  path.resolve(import.meta.dirname, name);
+const repoScript = (name) => path.resolve(import.meta.dirname, name);
 
 function run(cmd, args, cwd) {
   return execFileSync(cmd, args, { cwd, encoding: "utf8" }).trim();
@@ -99,11 +98,7 @@ test("task start, status, and resume operate on the runtime sidecar", async () =
   );
   assert.ok(taskPath);
 
-  const runtimePath = run(
-    "node",
-    [repoScript("task-start.mjs"), "--task", "I-9999-020"],
-    repoDir,
-  );
+  const runtimePath = run("node", [repoScript("task-start.mjs"), "--task", "I-9999-020"], repoDir);
   const runtimeText = await fs.readFile(runtimePath, "utf8");
   assert.match(runtimeText, /task_id: "I-9999-020"/);
   assert.match(runtimeText, /state: "running"/);
@@ -118,11 +113,7 @@ test("task start, status, and resume operate on the runtime sidecar", async () =
   assert.equal(status.runtime.task_id, "I-9999-020");
   assert.equal(status.runtime.branch, "task-i-9999-test");
 
-  const resumedPath = run(
-    "node",
-    [repoScript("task-resume.mjs"), "--task", "I-9999-020"],
-    repoDir,
-  );
+  const resumedPath = run("node", [repoScript("task-resume.mjs"), "--task", "I-9999-020"], repoDir);
   assert.equal(resumedPath, runtimePath);
 });
 
@@ -148,17 +139,10 @@ test("task status fails closed when runtime identity drifts from the current bra
     ],
     repoDir,
   );
-  const runtimePath = run(
-    "node",
-    [repoScript("task-start.mjs"), "--task", "I-9999-030"],
-    repoDir,
-  );
+  const runtimePath = run("node", [repoScript("task-start.mjs"), "--task", "I-9999-030"], repoDir);
 
   let runtimeText = await fs.readFile(runtimePath, "utf8");
-  runtimeText = runtimeText.replace(
-    'branch: "task-i-9999-test"',
-    'branch: "other-branch"',
-  );
+  runtimeText = runtimeText.replace('branch: "task-i-9999-test"', 'branch: "other-branch"');
   await fs.writeFile(runtimePath, runtimeText, "utf8");
 
   const stderr = runFailure(
