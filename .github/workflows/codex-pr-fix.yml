@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - name: Checkout workflow support
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
           persist-credentials: false
@@ -258,7 +258,7 @@ jobs:
 
     steps:
       - name: Checkout workflow support
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
           persist-credentials: false
@@ -272,7 +272,7 @@ jobs:
           rm -rf _workflow_support
 
       - name: Checkout PR head
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ env.HEAD_SHA }}
           fetch-depth: 0
