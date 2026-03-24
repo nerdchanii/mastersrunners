@@ -9,7 +9,7 @@ Use this guide before committing any completed task.
 - Every task needs a PO review.
 - Docs-only tasks are not exempt.
 - Multi-scope tasks need multiple specialist reviewers.
-- GitHub AI reviews may trigger PR fix loops, but they do not replace specialist review or PO review for task completion.
+- GitHub PR comments, approvals, or AI feedback may help collaboration, but they do not replace specialist review or PO review for task completion.
 
 ## Reviewer Roles
 
@@ -55,16 +55,12 @@ Before commit, the task must satisfy all of these:
 6. The task file has been updated with review notes.
 7. The task is moved to `archive/` in the same changeset that finalizes the work.
 
-## PR Automation Boundary
+## Manual PR Use
 
-- Dev-targeted PR automation is documented in `docs/guides/ai-pr-review-workflow.md`.
-- That PR workflow is a delivery subflow under `I-0008`; it must not be treated as the repository's top-level task operating model.
-- Gemini summary comments are not review signals; only actual current-head Gemini PR reviews count for AI lifecycle state.
-- Same-repo owner-authored `dev` PRs may enter the Codex connector lane by default after current-head Gemini review.
-- `PR Merge Readiness` is a branch-level machine gate for the AI review and merge lifecycle. It does not replace the repository's task review requirements.
-- PR fix commits may land on the PR head branch before specialist and PO review. That is allowed because the branch remains under review and protected-branch merge rules still apply. It must not be confused with a task being ready for archive or final commit on the main line.
-- Replying to and resolving current-head actionable review threads is part of the PR automation lifecycle, not optional cleanup.
-- Repository-standard `dev` PR merges should run through `bash scripts/merge-dev-pr.sh`, which waits for machine-readable readiness before merge and branch cleanup.
+- Pull requests are optional collaboration artifacts, not a second completion workflow.
+- If you open a PR, keep it lightweight: link the task and initiative, summarize verification, and note any risk or rollback context.
+- Handle review comments manually in GitHub. The repository no longer defines a special AI review lane, thread-resolution loop, or merge-readiness state machine.
+- Merge timing is governed by human judgment and normal branch protection, not by a repo-specific PR harness.
 
 ## Commit Intent Rule
 

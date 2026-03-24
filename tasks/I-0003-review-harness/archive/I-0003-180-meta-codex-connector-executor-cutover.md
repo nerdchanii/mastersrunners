@@ -41,6 +41,7 @@ Complete the later cutover from legacy self-hosted PR fix assumptions to a prove
 - Deferred follow-up after the branch-level delivery primitives in `I-0003-170` and `I-0003-190` are stable.
 - The supervising agent owns connector task creation and result recording.
 - GitHub workflows remain responsible for gate and status publication, not code execution.
+- Superseded by `I-0003-210` on 2026-03-24 when the repository retired the PR-specific harness instead of completing connector cutover.
 
 ## Self Review
 
@@ -68,6 +69,7 @@ Complete the later cutover from legacy self-hosted PR fix assumptions to a prove
 
 - 2026-03-14: created to cut over the dev PR execution lane from self-hosted Codex to an agent-owned connector model.
 - 2026-03-16: deferred behind branch-level reconciliation and readiness work so docs do not overclaim a completed cutover.
+- 2026-03-24: archived as superseded after the repository removed the PR-specific harness instead of finishing the connector lane.
 
 ## Review Notes
 

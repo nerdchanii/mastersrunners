@@ -42,6 +42,7 @@ Give the `I-0008` delivery subflow a repo-standard way to export actionable PR r
 - This remains a live branch-level PR lane task under `I-0008-agent-company-workflow`; it does not redefine the repo-wide task supervisor model.
 - Thread reconciliation must work for both Gemini and human current-head review threads.
 - Literal suggestion blocks should be extracted into the review bundle for deterministic apply when possible.
+- Superseded by `I-0003-210` on 2026-03-24 when the repository retired the PR-specific harness.
 
 ## Self Review
 
@@ -69,6 +70,7 @@ Give the `I-0008` delivery subflow a repo-standard way to export actionable PR r
 
 - 2026-03-14: created to standardize review-thread export and reply-plus-resolve reconciliation for the agent-first PR lane.
 - 2026-03-16: reaffirmed as a live near-term task after `I-0008` merged the repo-wide task-supervisor model.
+- 2026-03-24: archived as superseded after the repository removed the PR-specific harness instead of continuing the branch-level lane.
 
 ## Review Notes
 

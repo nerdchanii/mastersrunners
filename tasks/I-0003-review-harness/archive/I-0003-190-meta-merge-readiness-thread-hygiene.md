@@ -40,6 +40,7 @@ Make the `I-0008` delivery subflow's `PR Merge Readiness` block merge until curr
 - This remains a live near-term task because thread-aware readiness is already part of the implemented branch-level PR lane.
 - `summary` comments remain non-signals for readiness.
 - `/codex skip` only skips connector execution for the current head; it does not auto-resolve open review threads.
+- Superseded by `I-0003-210` on 2026-03-24 when the repository retired the PR-specific harness.
 
 ## Self Review
 
@@ -67,6 +68,7 @@ Make the `I-0008` delivery subflow's `PR Merge Readiness` block merge until curr
 
 - 2026-03-14: created to fold review-thread hygiene into the machine-readable merge gate for dev PRs.
 - 2026-03-16: kept live after `I-0008` because current-head thread hygiene is part of the near-term PR delivery subflow.
+- 2026-03-24: archived as superseded after the repository removed the PR-specific harness instead of keeping a merge-readiness lane.
 
 ## Review Notes
 

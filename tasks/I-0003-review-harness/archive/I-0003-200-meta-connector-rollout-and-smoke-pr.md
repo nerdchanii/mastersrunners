@@ -41,6 +41,7 @@ Finish the later rollout step that proves the connector-oriented PR lane on a fr
 
 - Deferred follow-up after `I-0003-170`, `I-0003-180`, and `I-0003-190` are in place.
 - A live smoke PR may be opened for observation if needed, but branch protection enforcement stays out of scope until the connector lane is proven.
+- Superseded by `I-0003-210` on 2026-03-24 when the repository retired the PR-specific harness.
 
 ## Self Review
 
@@ -68,6 +69,7 @@ Finish the later rollout step that proves the connector-oriented PR lane on a fr
 
 - 2026-03-14: created to convert the live PR workflow docs from self-hosted execution to connector-owned execution and smoke validation.
 - 2026-03-16: deferred until the branch-level delivery primitives and later executor cutover are ready for a real smoke PR.
+- 2026-03-24: archived as superseded after the repository removed the PR-specific harness instead of staging smoke validation.
 
 ## Review Notes
 

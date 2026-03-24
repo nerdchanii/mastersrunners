@@ -53,11 +53,7 @@ Read in this order:
 - Multi-scope changes need the union of the relevant specialist reviewers, not just one reviewer.
 - Review requirements live in the task file. Do not treat a task as done until review and verify are both complete.
 - Active tasks may carry a task-sidecar runtime file named `<task-id>.runtime.yaml` in the same folder. It is continuity-only and must never replace task folder state, task review notes, or verify truth.
-- Gemini PR summary comments are not review signals. Only actual current-head Gemini PR reviews count for AI review readiness.
-- Same-repo owner-authored `dev` PRs default to a Gemini-driven Codex connector lane unless `/codex stop` or `/codex skip` is issued for the current head.
-- Current-head actionable open review threads block merge until they are replied to and resolved.
-- Use `bash scripts/merge-dev-pr.sh` for repo-standard `dev` PR merges instead of raw `gh pr merge --delete-branch`.
-- GitHub PR fix commits are a branch-level automation exception. They may push to the PR head branch before human review, but they do not mark a task complete, do not satisfy task review gates, and do not bypass protected-branch merge rules.
+- Pull requests are optional collaboration artifacts. Do not treat PR state, comments, or approvals as the repository's completion truth.
 - Do not commit free-floating `TODO` or `FIXME` markers. Link them to a task as described in `docs/guides/todo-fixme-policy.md`.
 
 ## Coding Conventions
@@ -68,10 +64,8 @@ Read in this order:
 - If those docs are stricter than current implementation, keep the design truth and track the gap with tasks instead of weakening the convention.
 - Agent self-review guidance lives in `docs/guides/agent-self-review.md`.
 - Reviewer-role guidance lives in `docs/guides/reviewer-taxonomy.md`.
-- Dev PR AI review and Codex connector workflow lives in `docs/guides/ai-pr-review-workflow.md`.
 - Commit message subjects are validated in the `commit-msg` hook, not the `pre-commit` hook.
 - Parallel split and merge workflow lives in `design/operating-rules/parallel-worktree-lifecycle.md` and `docs/guides/parallel-worktree-workflow.md`.
-- Codex connector PR fix operations live in `docs/runbooks/codex-connector-pr-fix.md`.
 - Task supervisor runtime and repo-native task commands live in `docs/runbooks/task-supervisor.md`.
 
 ## Design Divergence Handling
@@ -121,10 +115,10 @@ Lifecycle:
 - Install dependencies: `pnpm install`
 - Run dev: `pnpm dev`
 - Build workspace: `pnpm build`
-- Intake a new repo-native task scaffold: `pnpm task:intake -- --goal "<goal>" --parent <initiative-slug> --order <NNN> --scope <scope> --slug <slug>` (supervising agent entrypoint)
-- Start task runtime continuity for an active task: `pnpm task:start -- --task <task_id>`
-- Resume an interrupted active task: `pnpm task:resume -- --task <task_id>`
-- Show canonical task status plus runtime observations: `pnpm task:status -- --task <task_id>`
+- Intake a new repo-native task scaffold: `pnpm task:intake --goal "<goal>" --parent <initiative-slug> --order <NNN> --scope <scope> --slug <slug>` (supervising agent entrypoint)
+- Start task runtime continuity for an active task: `pnpm task:start --task <task_id>`
+- Resume an interrupted active task: `pnpm task:resume --task <task_id>`
+- Show canonical task status plus runtime observations: `pnpm task:status --task <task_id>`
 - Run workspace lint: `pnpm lint`
 - Run explicit workspace typecheck: `pnpm typecheck`
 - Run local CI approximation: `pnpm ci:local`
@@ -133,7 +127,6 @@ Lifecycle:
 - Run a single API spec: `pnpm --filter @masters/api test -- --runTestsByPath src/auth/auth.service.spec.ts`
 - Build web only: `pnpm --filter @masters/web build`
 - Verify deployment target: `pnpm deploy:verify -- http://localhost:4000`
-- Merge a ready `dev` PR through the repo-standard lane: `bash scripts/merge-dev-pr.sh --pr <number>`
 
 ## Gotchas
 
@@ -152,18 +145,7 @@ Lifecycle:
   - `packages/database/generated`
   - `apps/api/src/coverage`
 
-## Current Harness Initiatives
-
-- Foundation: `design/initiatives/I-0001-harness-foundation.md`
-- Verification: `design/initiatives/I-0002-harness-verification.md`
-- Review: `design/initiatives/I-0003-review-harness.md`
-- Truth model cleanup: `design/initiatives/I-0004-truth-model-cleanup.md`
-- Current-state design corpus: `design/initiatives/I-0005-current-state-design-corpus.md`
-- Guardrail hardening: `design/initiatives/I-0006-guardrail-hardening.md`
-- Readability hardening: `design/initiatives/I-0007-readability-hardening.md`
-- Agent company workflow: `design/initiatives/I-0008-agent-company-workflow.md`
-
 ## Current Limitation
 
 - A few guardrail and readability items still rely on external exceptions or follow-up tasks. Check `design/operating-rules/exceptions.md`, `scripts/check-size-budgets.targets.json`, and run `harness-diagnostics` on demand when you need a fresh audit.
-- Intake defaults and the repo-wide agent operating model now live under `I-0008`; `I-0003` remains the branch-level PR delivery subflow for review, thread hygiene, and merge readiness.
+- Initiative inventory lives under `design/initiatives/`; avoid duplicating a separate live list here.

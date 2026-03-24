@@ -9,33 +9,29 @@ Use this runbook for the repo-native task continuity commands and the thin super
   - does not need to invoke repo commands directly in the normal path
 - Supervising agent:
   - chooses the initiative, task id/order/scope/slug, and invokes `task:intake`, `task:start`, `task:resume`, and `task:status`
-  - owns continuity, recovery, and handoff between implementation and PR subflows
+  - owns continuity, recovery, and handoff between implementation and any optional delivery artifacts such as branches or PRs
 - Worker agent:
   - executes the task in the claimed branch/worktree context
   - updates the canonical task notes and verify evidence
-- PR subflow:
-  - stays on the existing `I-0003` branch-level readiness and merge lane once delivery begins
 
 ## Canonical Rule
 
 - `tasks/` remains the only source of truth for claim, active/archive location, verify satisfaction, specialist review, PO review, and completion readiness.
-- `<task-id>.runtime.yaml` is continuity-only. It may record branch, worktree, lease, last safe action, and mirrored PR observations.
+- `<task-id>.runtime.yaml` is continuity-only. It may record branch, worktree, lease, last safe action, and optional mirrored PR observations.
 - If a runtime file is stale, missing, or deleted, reconstruct from the canonical task file, folder location, current git branch/worktree state, and any attached PR state before proceeding.
 
 ## Public Commands
 
 - Intake a task scaffold:
-  - `pnpm task:intake -- --goal "<goal>" --parent <initiative-slug> --order <NNN> --scope <scope> --slug <slug>`
+  - `pnpm task:intake --goal "<goal>" --parent <initiative-slug> --order <NNN> --scope <scope> --slug <slug>`
   - this is a supervisor/operator entrypoint, not a human-facing CLI contract
   - `--state active` is only a bootstrap shortcut when the supervising agent is claiming the task immediately in the same session; it must still be followed by `pnpm task:start`
 - Start continuity on an active task:
-  - `pnpm task:start -- --task <task_id>`
+  - `pnpm task:start --task <task_id>`
 - Resume a task after interruption:
-  - `pnpm task:resume -- --task <task_id>`
+  - `pnpm task:resume --task <task_id>`
 - Show task status:
-  - `pnpm task:status -- --task <task_id>`
-- Merge a ready dev PR:
-  - `bash scripts/merge-dev-pr.sh --pr <number>`
+  - `pnpm task:status --task <task_id>`
 
 ## Runtime Fields
 
@@ -68,14 +64,14 @@ Required after PR attachment:
 - `interrupted`
 - `completed`
 
-The runtime file must never set task completion by itself. `completed` is only valid after the canonical task file, folder state, and branch-level PR truth already indicate completion.
+The runtime file must never set task completion by itself. `completed` is only valid after the canonical task file and folder state already indicate completion.
 
 ## Closeout Mapping
 
 - Canonical completion still comes from the task file, review notes, verify evidence, and `active/ -> archive/` transition.
 - The runtime sidecar may move to `completed` only after the supervising agent has confirmed the task is ready for archive.
 - The runtime sidecar should be removed or left behind with the `active/` directory state change; it must not become an archive-state signal.
-- If merge is part of the task delivery, the runtime may reflect `completed` only after the branch-level PR lane is already green and the canonical task closeout is ready.
+- If a PR exists, its state is informational only and must not override canonical task closeout.
 
 ## Lease Rules
 
@@ -84,11 +80,12 @@ The runtime file must never set task completion by itself. `completed` is only v
 - `resume` must fail closed unless `task_id`, `branch`, and `worktree_path` still match.
 - Different worktrees may run in parallel as long as they do not contend on the same branch.
 
-## PR Attachment Rule
+## Optional PR Attachment
 
-- `pr_number` comes from the attached branch PR.
-- `head_sha` comes from the current attached branch head and must match the branch-level PR view when PR mirroring is active.
+- `pr_number` may mirror the attached branch PR when one exists.
+- `head_sha` may mirror the current attached branch head for continuity and fail-closed resume behavior.
 - Once PR mirroring begins, `resume`, `status`, and supervisor actions must refuse to proceed if `pr_number` or `head_sha` is missing, or if `head_sha` no longer matches the branch head.
+- PR attachment does not create a second readiness model and does not decide task completion.
 
 ## Recovery
 
