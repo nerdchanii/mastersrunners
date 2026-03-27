@@ -19,12 +19,14 @@ export default function MessageDetailPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [content, setContent] = useState("");
   const {
+    clearSendError,
     conversation,
     error,
     loading,
     loadingMore,
     messages,
     nextCursor,
+    sendError,
     sending,
     loadMore,
     retry,
@@ -240,7 +242,10 @@ export default function MessageDetailPage() {
         <div className="flex gap-2">
           <Textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              clearSendError();
+              setContent(e.target.value);
+            }}
             onKeyDown={handleKeyPress}
             placeholder="메시지를 입력하세요 (Shift+Enter로 줄바꿈)"
             className="min-h-[60px] max-h-[120px] resize-none"
@@ -254,6 +259,7 @@ export default function MessageDetailPage() {
             {sending ? "전송 중..." : "전송"}
           </Button>
         </div>
+        {sendError && <p className="mt-2 text-xs text-destructive">{sendError}</p>}
       </div>
     </div>
   );

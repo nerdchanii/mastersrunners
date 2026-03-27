@@ -47,6 +47,7 @@ export const messageKeys = {
   all: ["messages"] as const,
   conversations: () => [...messageKeys.all, "conversations"] as const,
   conversation: (id: string) => [...messageKeys.all, "conversation", id] as const,
+  unreadCount: () => [...messageKeys.all, "unread-count"] as const,
 };
 
 export function useConversations() {
@@ -79,6 +80,20 @@ export function useMessages(conversationId: string) {
     staleTime: 10 * 1000,
     retry: 1,
     refetchInterval: 10 * 1000,
+  });
+}
+
+export function useUnreadMessageCount(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: messageKeys.unreadCount(),
+    queryFn: async () => {
+      const data = await api.fetch<ConversationsResponse>("/conversations?limit=100");
+      return data?.data?.reduce((sum, conversation) => sum + conversation.unreadCount, 0) ?? 0;
+    },
+    enabled: options?.enabled ?? true,
+    staleTime: 30 * 1000,
+    refetchInterval: 10 * 1000,
+    retry: 1,
   });
 }
 

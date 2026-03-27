@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: frontend
-last_verified: 2026-03-12
+last_verified: 2026-03-21
 sources:
   - apps/web/src/pages/crews/index.tsx
   - apps/web/src/pages/crews/new/index.tsx
@@ -15,6 +15,7 @@ sources:
   - apps/web/src/components/crew/CrewMemberList.tsx
   - apps/web/src/components/crew/GroupChat.tsx
   - apps/web/src/hooks/useCrewActivities.ts
+  - apps/web/src/hooks/useCrews.ts
   - apps/web/src/hooks/useGroupChat.ts
 ---
 
@@ -68,9 +69,18 @@ The activity detail route was slimmed down in `I-0007`, but it still orchestrate
 
 - direct crew chat and activity chat are built on the group-chat hooks
 - direct messages use SSE, but crew and activity chat still rely on the group-chat polling model
+- crew chat and activity chat now use route-owned labels and copy instead of generic room names
+- raw `crewId`, `activityId`, or fallback conversation ids should not surface in crew-facing chat headers or empty states
+- activity chat route access is intentionally aligned with the activity detail CTA:
+  - `RSVP`
+  - `CHECKED_IN`
+  - crew admins/owners
+  - popup hosts with manage permission
+- users outside those access rules see an explanatory state and a return action instead of an editable chat composer
 
 ## Current Constraints
 
 - `/crews/:id` still performs direct page-level fetches instead of a dedicated hook/query owner
 - crew hub scope is broad and spans social, admin, and activity flows in one route tree
 - membership approval, tag management, and activity operations are implemented, but their state is not yet normalized through one shared crew query layer
+- group chat still polls every 10 seconds, so scroll behavior must protect users who are reading older messages during refreshes

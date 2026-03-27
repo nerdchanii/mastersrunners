@@ -360,7 +360,7 @@ export default function CrewActivityDetailPage() {
       </Card>
 
       {/* Chat link */}
-      {(myStatus === "RSVP" || myStatus === "CHECKED_IN") && (
+      {(canManage || myStatus === "RSVP" || myStatus === "CHECKED_IN") && (
         <Card>
           <CardContent className="py-4">
             <Button variant="outline" className="w-full" onClick={goToChat}>

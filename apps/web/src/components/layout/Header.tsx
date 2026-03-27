@@ -1,22 +1,16 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Bell, MessageCircle, Monitor, Moon, Sun } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
+import { messageKeys } from "@/hooks/useMessages";
 import { notificationKeys } from "@/hooks/useNotifications";
-import { api, API_BASE } from "@/lib/api-client";
+import { useUnreadCounts } from "@/hooks/useUnreadCounts";
+import { API_BASE } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
-
-interface ConversationsResponse {
-  data: Array<{ unreadCount: number }>;
-}
-
-interface UnreadCountResponse {
-  count: number;
-}
 
 const navLinks = [
   { href: "/feed", label: "피드" },
@@ -31,35 +25,12 @@ export default function Header() {
   const { theme, setTheme } = useTheme();
   const { pathname } = useLocation();
   const queryClient = useQueryClient();
-  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
-  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const { messages: unreadMessageCount, notifications: unreadNotifCount } = useUnreadCounts();
 
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + "/");
 
-  const fetchUnreadMessageCount = useCallback(async () => {
-    try {
-      const data = await api.fetch<ConversationsResponse>("/conversations?limit=100");
-      const total = data?.data?.reduce((sum, conv) => sum + conv.unreadCount, 0) ?? 0;
-      setUnreadMessageCount(total);
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const fetchUnreadNotifCount = useCallback(async () => {
-    try {
-      const data = await api.fetch<UnreadCountResponse>("/notifications/unread-count");
-      setUnreadNotifCount(data?.count ?? 0);
-    } catch {
-      setUnreadNotifCount(0);
-    }
-  }, []);
-
   useEffect(() => {
     if (!isAuthenticated) return;
-
-    fetchUnreadMessageCount();
-    fetchUnreadNotifCount();
 
     const token = localStorage.getItem("accessToken");
     if (!token) return;
@@ -69,9 +40,12 @@ export default function Header() {
       `${API_BASE}/conversations/sse?token=${encodeURIComponent(token)}`,
     );
     dmEventSource.addEventListener("new-message", () => {
-      fetchUnreadMessageCount();
+      queryClient.invalidateQueries({ queryKey: messageKeys.unreadCount() });
+      queryClient.invalidateQueries({ queryKey: messageKeys.conversations() });
     });
-    dmEventSource.onerror = () => dmEventSource.close();
+    dmEventSource.onerror = (error) => {
+      console.error("DM SSE error:", error);
+    };
 
     // Notification SSE — 새 알림 수신 시 TanStack Query 캐시 무효화
     let notifEventSource: EventSource | null = null;
@@ -80,10 +54,11 @@ export default function Header() {
         `${API_BASE}/notifications/sse?token=${encodeURIComponent(token)}`,
       );
       notifEventSource.addEventListener("notification", () => {
-        fetchUnreadNotifCount();
         queryClient.invalidateQueries({ queryKey: notificationKeys.all });
       });
-      notifEventSource.onerror = () => notifEventSource?.close();
+      notifEventSource.onerror = (error) => {
+        console.error("Notification SSE error:", error);
+      };
     } catch {
       // notifications SSE not available yet — skip
     }
@@ -92,14 +67,7 @@ export default function Header() {
       dmEventSource.close();
       notifEventSource?.close();
     };
-  }, [isAuthenticated, fetchUnreadMessageCount, fetchUnreadNotifCount, queryClient]);
-
-  // Decrement notification badge when visiting /notifications
-  useEffect(() => {
-    if (pathname === "/notifications") {
-      setUnreadNotifCount(0);
-    }
-  }, [pathname]);
+  }, [isAuthenticated, queryClient]);
 
   return (
     <header className="sticky top-0 z-50 hidden w-full border-b bg-background/95 backdrop-blur-lg md:block">

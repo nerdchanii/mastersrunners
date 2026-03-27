@@ -39,12 +39,14 @@
 - 프로필에서 direct conversation을 시작할 수 있다.
 - 크루 전체 채팅과 활동 채팅도 같은 conversation 모델을 쓴다.
 - direct message detail은 SSE 기반 실시간 수신을 사용한다.
+- 헤더 unread listener와 DM 상세 화면은 같은 사용자에 대해 동시에 SSE를 구독할 수 있다.
 - 일부 그룹 채팅 흐름은 polling 기반이다.
 
 ## 읽음 상태
 
 - 안읽음 계산은 `lastReadAt` 기반이다.
-- 헤더와 메시지 화면에서 unread 상태를 별도로 소비한다.
+- 헤더와 모바일 하단 네비는 같은 unread source를 소비한다.
+- `/messages`와 `/messages/:id`에서는 unread badge를 감추고, read mutation 이후 같은 source를 무효화한다.
 
 ## 현재 제약
 

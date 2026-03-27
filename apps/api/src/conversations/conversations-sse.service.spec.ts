@@ -36,10 +36,11 @@ describe("ConversationsSseService", () => {
       service.sendToUser(userId, { test: "data" });
     });
 
-    it("should replace existing connection for same user", (done) => {
+    it("should allow concurrent connections for the same user", (done) => {
       const userId = "user-1";
       let firstCallCount = 0;
       let secondCallCount = 0;
+      let completedCount = 0;
 
       const firstObs = service.addConnection(userId);
       firstObs.subscribe({
@@ -47,25 +48,26 @@ describe("ConversationsSseService", () => {
           firstCallCount++;
         },
         complete: () => {
-          // First connection should be completed when replaced
-          expect(firstCallCount).toBe(0);
+          completedCount++;
         },
       });
 
-      // Add second connection for same user
       const secondObs = service.addConnection(userId);
       secondObs.subscribe({
         next: () => {
           secondCallCount++;
         },
+        complete: () => {
+          completedCount++;
+        },
       });
 
-      // Send event - should only go to second connection
       service.sendToUser(userId, { test: "data" });
 
       setTimeout(() => {
-        expect(firstCallCount).toBe(0);
+        expect(firstCallCount).toBe(1);
         expect(secondCallCount).toBe(1);
+        expect(completedCount).toBe(0);
         done();
       }, 50);
     });
@@ -81,21 +83,43 @@ describe("ConversationsSseService", () => {
 
       expect(service.hasConnection(userId)).toBe(false);
     });
+
+    it("should keep the user connected until the last subscription unsubscribes", () => {
+      const userId = "user-1";
+      const firstSubscription = service.addConnection(userId).subscribe();
+      const secondSubscription = service.addConnection(userId).subscribe();
+
+      expect(service.hasConnection(userId)).toBe(true);
+
+      firstSubscription.unsubscribe();
+      expect(service.hasConnection(userId)).toBe(true);
+
+      secondSubscription.unsubscribe();
+      expect(service.hasConnection(userId)).toBe(false);
+    });
   });
 
   describe("removeConnection", () => {
-    it("should remove and complete user connection", (done) => {
+    it("should remove and complete every user connection", (done) => {
       const userId = "user-1";
-      const observable = service.addConnection(userId);
+      let completedCount = 0;
 
-      observable.subscribe({
+      service.addConnection(userId).subscribe({
         complete: () => {
-          expect(service.hasConnection(userId)).toBe(false);
-          done();
+          completedCount++;
+        },
+      });
+      service.addConnection(userId).subscribe({
+        complete: () => {
+          completedCount++;
         },
       });
 
       service.removeConnection(userId);
+
+      expect(service.hasConnection(userId)).toBe(false);
+      expect(completedCount).toBe(2);
+      done();
     });
 
     it("should be idempotent when user has no connection", () => {

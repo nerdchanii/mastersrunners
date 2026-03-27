@@ -1,5 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 
+import { messageKeys } from "@/hooks/useMessages";
 import { api, API_BASE } from "@/lib/api-client";
 
 export interface Message {
@@ -33,7 +35,18 @@ function normalizeMessages(items: Message[]) {
   return [...items].reverse();
 }
 
+function appendUniqueMessage(items: Message[], next: Message) {
+  if (items.some((message) => message.id === next.id)) {
+    return items;
+  }
+
+  return [...items, next].sort(
+    (left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime(),
+  );
+}
+
 export function useMessageDetailPage(id?: string) {
+  const queryClient = useQueryClient();
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -41,6 +54,7 @@ export function useMessageDetailPage(id?: string) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const fetchConversation = useCallback(
     async (cursor?: string | null) => {
@@ -91,10 +105,12 @@ export function useMessageDetailPage(id?: string) {
 
     try {
       await api.fetch(`/conversations/${id}/read`, { method: "PATCH" });
+      queryClient.invalidateQueries({ queryKey: messageKeys.unreadCount() });
+      queryClient.invalidateQueries({ queryKey: messageKeys.conversations() });
     } catch (err) {
       console.error("Failed to mark as read:", err);
     }
-  }, [id]);
+  }, [id, queryClient]);
 
   useEffect(() => {
     if (!id) {
@@ -126,12 +142,8 @@ export function useMessageDetailPage(id?: string) {
           return;
         }
 
-        setMessages((prev) => {
-          if (prev.some((item) => item.id === message.id)) {
-            return prev;
-          }
-          return [...prev, message];
-        });
+        setMessages((prev) => appendUniqueMessage(prev, message));
+        queryClient.invalidateQueries({ queryKey: messageKeys.conversations() });
         void markAsRead();
       } catch (err) {
         console.error("Failed to parse SSE message:", err);
@@ -145,7 +157,7 @@ export function useMessageDetailPage(id?: string) {
     return () => {
       eventSource.close();
     };
-  }, [id, markAsRead]);
+  }, [id, markAsRead, queryClient]);
 
   const loadMore = useCallback(() => {
     if (!nextCursor || loadingMore) {
@@ -166,32 +178,40 @@ export function useMessageDetailPage(id?: string) {
       }
 
       setSending(true);
+      setSendError(null);
 
       try {
         const newMessage = await api.fetch<Message>(`/conversations/${id}/messages`, {
           method: "POST",
           body: JSON.stringify({ content }),
         });
-        setMessages((prev) => [...prev, newMessage]);
+        setMessages((prev) => appendUniqueMessage(prev, newMessage));
+        queryClient.invalidateQueries({ queryKey: messageKeys.conversations() });
         void markAsRead();
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "메시지 전송에 실패했습니다.");
+        setSendError(err instanceof Error ? err.message : "메시지 전송에 실패했습니다.");
         return false;
       } finally {
         setSending(false);
       }
     },
-    [id, markAsRead, sending],
+    [id, markAsRead, queryClient, sending],
   );
+
+  const clearSendError = useCallback(() => {
+    setSendError(null);
+  }, []);
 
   return {
     conversation,
+    clearSendError,
     error,
     loading,
     loadingMore,
     messages,
     nextCursor,
+    sendError,
     sending,
     loadMore,
     retry,

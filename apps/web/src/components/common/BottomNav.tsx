@@ -1,93 +1,59 @@
 import { Bell, Home, MessageCircle, Plus, Trophy, User, Users } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
-import { api } from "@/lib/api-client";
+import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
-interface UnreadCounts {
-  messages: number;
-  notifications: number;
-}
-
 const baseNavItems = [
-  { href: "/feed", label: "홈", icon: Home, auth: false, badge: null as keyof UnreadCounts | null },
+  {
+    href: "/feed",
+    label: "홈",
+    icon: Home,
+    auth: false,
+    badge: null as "messages" | "notifications" | null,
+  },
   {
     href: "/crews",
     label: "크루",
     icon: Users,
     auth: false,
-    badge: null as keyof UnreadCounts | null,
+    badge: null as "messages" | "notifications" | null,
   },
   {
     href: "/challenges",
     label: "챌린지",
     icon: Trophy,
     auth: false,
-    badge: null as keyof UnreadCounts | null,
+    badge: null as "messages" | "notifications" | null,
   },
   {
     href: "/messages",
     label: "메시지",
     icon: MessageCircle,
     auth: true,
-    badge: "messages" as keyof UnreadCounts | null,
+    badge: "messages" as const,
   },
   {
     href: "/notifications",
     label: "알림",
     icon: Bell,
     auth: true,
-    badge: "notifications" as keyof UnreadCounts | null,
+    badge: "notifications" as const,
   },
   {
     href: "/profile",
     label: "프로필",
     icon: User,
     auth: true,
-    badge: null as keyof UnreadCounts | null,
+    badge: null as "messages" | "notifications" | null,
   },
 ] as const;
 
 export function BottomNav() {
   const { pathname } = useLocation();
   const { isAuthenticated } = useAuth();
-  const [unread, setUnread] = useState<UnreadCounts>({ messages: 0, notifications: 0 });
-
-  const fetchUnread = useCallback(async () => {
-    if (!isAuthenticated) return;
-    try {
-      const [msgData, notifData] = await Promise.allSettled([
-        api.fetch<{ data: Array<{ unreadCount: number }> }>("/conversations?limit=100"),
-        api.fetch<{ count: number }>("/notifications/unread-count"),
-      ]);
-      const messages =
-        msgData.status === "fulfilled"
-          ? (msgData.value?.data?.reduce((s, c) => s + c.unreadCount, 0) ?? 0)
-          : 0;
-      const notifications = notifData.status === "fulfilled" ? (notifData.value?.count ?? 0) : 0;
-      setUnread({ messages, notifications });
-    } catch {
-      // ignore
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 60_000);
-    return () => clearInterval(interval);
-  }, [fetchUnread]);
-
-  // Clear notification badge when visiting /notifications
-  useEffect(() => {
-    if (pathname === "/notifications") {
-      setUnread((prev) => ({ ...prev, notifications: 0 }));
-    }
-    if (pathname === "/messages" || pathname.startsWith("/messages/")) {
-      setUnread((prev) => ({ ...prev, messages: 0 }));
-    }
-  }, [pathname]);
+  const unread = useUnreadCounts();
 
   const visibleItems = baseNavItems.filter((item) => !item.auth || isAuthenticated);
 

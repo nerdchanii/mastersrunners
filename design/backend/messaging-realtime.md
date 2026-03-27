@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-03-12
+last_verified: 2026-03-27
 sources:
   - apps/api/src/conversations/conversations.controller.ts
   - apps/api/src/conversations/conversations.service.ts
@@ -50,6 +50,7 @@ Direct messaging is implemented as an authenticated conversations module with cu
 - Realtime delivery is SSE, not WebSocket.
 - SSE endpoints are public at the route layer but protected by query-token auth through `JwtSseGuard`.
 - Message creation persists first, then fan-out happens as a non-blocking side effect.
+- One caller may hold multiple concurrent SSE subscriptions for the same user, such as the shell unread listener plus the direct-message detail stream.
 
 ## Current Constraints
 

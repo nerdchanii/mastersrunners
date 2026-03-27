@@ -57,11 +57,13 @@ export function useNotifications() {
   });
 }
 
-export function useUnreadNotificationCount() {
+export function useUnreadNotificationCount(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: notificationKeys.unreadCount(),
     queryFn: () => api.fetch<UnreadCountResponse>("/notifications/unread-count"),
+    enabled: options?.enabled ?? true,
     staleTime: 1000 * 30,
+    refetchInterval: 10 * 1000,
     select: (data) => data?.count ?? 0,
   });
 }

@@ -1,5 +1,6 @@
 import { MessageCircle, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { Button } from "@/components/ui/button";
@@ -14,25 +15,69 @@ interface GroupChatProps {
   isLoading: boolean;
   crewId: string;
   activityId?: string;
+  title?: string;
+  subtitle?: string;
+  emptyMessage?: string;
+  missingConversationMessage?: string;
+  composerPlaceholder?: string;
 }
 
-export default function GroupChat({ data, isLoading, crewId, activityId }: GroupChatProps) {
+export default function GroupChat({
+  data,
+  isLoading,
+  crewId,
+  activityId,
+  title,
+  subtitle,
+  emptyMessage = "아직 메시지가 없습니다. 첫 메시지를 보내보세요!",
+  missingConversationMessage = "채팅방이 아직 준비되지 않았습니다.",
+  composerPlaceholder = "메시지를 입력하세요...",
+}: GroupChatProps) {
   const { user } = useAuth();
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const shouldScrollOnNextUpdateRef = useRef(true);
   const sendMessage = useSendGroupMessage();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior,
+      });
+      return;
+    }
+
+    messagesEndRef.current?.scrollIntoView({ behavior });
   };
 
+  const isNearBottom = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return true;
+    return container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+  };
+
+  // Reverse messages for chronological display (API returns newest first)
+  const sortedMessages = [...(data?.messages || [])].reverse();
+  const lastMessageId = sortedMessages.at(-1)?.id;
+
   useEffect(() => {
-    scrollToBottom();
-  }, [data?.messages]);
+    if (!lastMessageId) {
+      scrollToBottom("auto");
+      return;
+    }
+
+    if (shouldScrollOnNextUpdateRef.current || isNearBottom()) {
+      scrollToBottom();
+    }
+    shouldScrollOnNextUpdateRef.current = false;
+  }, [lastMessageId]);
 
   const handleSend = () => {
     if (!message.trim() || !data?.conversation) return;
 
+    shouldScrollOnNextUpdateRef.current = true;
     sendMessage.mutate(
       {
         conversationId: data.conversation.id,
@@ -42,6 +87,9 @@ export default function GroupChat({ data, isLoading, crewId, activityId }: Group
       },
       {
         onSuccess: () => setMessage(""),
+        onError: (error) => {
+          toast.error(error instanceof Error ? error.message : "메시지 전송에 실패했습니다.");
+        },
       },
     );
   };
@@ -65,35 +113,38 @@ export default function GroupChat({ data, isLoading, crewId, activityId }: Group
   if (!data?.conversation) {
     return (
       <Card>
+        <CardHeader className="border-b">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <MessageCircle className="size-5" />
+            {title ?? "채팅"}
+          </CardTitle>
+          {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+        </CardHeader>
         <CardContent className="py-8 text-center text-muted-foreground">
           <MessageCircle className="size-8 mx-auto mb-2 opacity-50" />
-          채팅방이 아직 생성되지 않았습니다.
+          {missingConversationMessage}
         </CardContent>
       </Card>
     );
   }
 
-  // Reverse messages for chronological display (API returns newest first)
-  const sortedMessages = [...(data.messages || [])].reverse();
-
   return (
     <Card className="flex flex-col h-[500px]">
       <CardHeader className="pb-2 border-b shrink-0">
-        <CardTitle className="text-lg flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-lg">
           <MessageCircle className="size-5" />
-          채팅
+          {title ?? "채팅"}
           <span className="text-sm font-normal text-muted-foreground">
             ({data.conversation.participants.length}명)
           </span>
         </CardTitle>
+        {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
       </CardHeader>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div ref={messagesContainerRef} className="flex-1 space-y-3 overflow-y-auto p-4">
         {sortedMessages.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground py-8">
-            아직 메시지가 없습니다. 첫 메시지를 보내보세요!
-          </p>
+          <p className="py-8 text-center text-sm text-muted-foreground">{emptyMessage}</p>
         ) : (
           sortedMessages.map((msg) => (
             <MessageBubble key={msg.id} message={msg} isOwn={msg.senderId === user?.id} />
@@ -103,13 +154,13 @@ export default function GroupChat({ data, isLoading, crewId, activityId }: Group
       </div>
 
       {/* Input area */}
-      <div className="p-3 border-t shrink-0">
+      <div className="shrink-0 border-t p-3">
         <div className="flex items-center gap-2">
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="메시지를 입력하세요..."
+            placeholder={composerPlaceholder}
             className="flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
             rows={1}
           />
@@ -121,6 +172,13 @@ export default function GroupChat({ data, isLoading, crewId, activityId }: Group
             <Send className="size-4" />
           </Button>
         </div>
+        {sendMessage.isError && (
+          <p className="mt-2 text-xs text-destructive">
+            {sendMessage.error instanceof Error
+              ? sendMessage.error.message
+              : "메시지 전송에 실패했습니다."}
+          </p>
+        )}
       </div>
     </Card>
   );
@@ -129,7 +187,7 @@ export default function GroupChat({ data, isLoading, crewId, activityId }: Group
 function MessageBubble({ message, isOwn }: { message: ChatMessage; isOwn: boolean }) {
   if (message.deletedAt) {
     return (
-      <div className="text-center text-xs text-muted-foreground py-1">삭제된 메시지입니다.</div>
+      <div className="py-1 text-center text-xs text-muted-foreground">삭제된 메시지입니다.</div>
     );
   }
 
@@ -146,7 +204,7 @@ function MessageBubble({ message, isOwn }: { message: ChatMessage; isOwn: boolea
         />
       )}
       <div className={`max-w-[70%] ${isOwn ? "text-right" : ""}`}>
-        {!isOwn && <p className="text-xs text-muted-foreground mb-0.5">{message.sender.name}</p>}
+        {!isOwn && <p className="mb-0.5 text-xs text-muted-foreground">{message.sender.name}</p>}
         <div
           className={`inline-block rounded-lg px-3 py-2 text-sm ${
             isOwn ? "bg-primary text-primary-foreground" : "bg-muted"
@@ -154,7 +212,7 @@ function MessageBubble({ message, isOwn }: { message: ChatMessage; isOwn: boolea
         >
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         </div>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           {new Date(message.createdAt).toLocaleTimeString("ko-KR", {
             hour: "2-digit",
             minute: "2-digit",

@@ -284,7 +284,16 @@ export default function CrewDetailClient() {
 
         {isMember && (
           <TabsContent value="chat" className="mt-6">
-            <GroupChat data={chatData} isLoading={chatLoading} crewId={crewId} />
+            <GroupChat
+              data={chatData}
+              isLoading={chatLoading}
+              crewId={crewId}
+              title={`${crew.name} 크루 채팅`}
+              subtitle="멤버 전용 대화 공간"
+              emptyMessage={`${crew.name} 크루에 첫 메시지를 남겨보세요.`}
+              missingConversationMessage="크루 채팅방이 아직 준비되지 않았습니다."
+              composerPlaceholder={`${crew.name} 크루에 메시지 보내기`}
+            />
           </TabsContent>
         )}
 
