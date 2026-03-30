@@ -4,10 +4,8 @@ owner: product
 last_verified: 2026-03-30
 sources:
   - packages/database/prisma/schema.prisma
-  - design/backend/events-challenges.md
   - apps/api/src/challenges/challenges.controller.ts
   - apps/api/src/challenges/challenges.service.ts
-  - apps/api/src/challenges/repositories/challenge.repository.ts
   - apps/api/src/challenges/repositories/challenge-participant.repository.ts
   - apps/api/src/challenges/repositories/challenge-team.repository.ts
 ---
@@ -16,175 +14,117 @@ sources:
 
 ## 정의
 
-현재 챌린지는 `Challenge`, `ChallengeParticipant`, `ChallengeTeam`을 중심으로 동작하는 목표 달성형 기능이다.
-
-- 생성은 현재 로그인 유저 기준으로 이뤄진다.
-- 크루 전용 챌린지는 `crewId`를 연결해서 표현한다.
-- 개인 진행률은 참가 레코드의 `currentValue`와 `isCompleted`에 직접 저장한다.
-- 팀 기능은 존재하지만, 생성 단계에서 복잡한 승인/공개 정책을 세밀하게 구성하는 제품 표면은 아직 아니다.
+현재 챌린지는 기간과 목표 수치를 가진 참여형 목표 기능이다. 생성자는 항상 사용자이고, 챌린지는 공개 또는 크루 범위로 만들 수 있다. 참여자는 개인 단위로 들어오며 진행률은 `currentValue`로 관리된다.
 
 ## 현재 생성 입력
 
-현재 API가 생성 시 받는 핵심 필드는 아래와 같다.
+현재 API가 생성/수정에서 직접 다루는 필드는 다음과 같다.
 
 | 필드 | 설명 |
 | --- | --- |
-| `title` | 챌린지 이름 |
+| `title` | 챌린지 제목 |
 | `description` | 설명 |
 | `type` | `DISTANCE`, `FREQUENCY`, `STREAK`, `PACE` |
 | `targetValue` | 목표 수치 |
 | `targetUnit` | `KM`, `COUNT`, `DAYS`, `SEC_PER_KM` |
-| `startDate` | 시작 시각 |
-| `endDate` | 종료 시각 |
-| `crewId` | 크루 전용 챌린지 연결용 선택 필드 |
+| `startDate` / `endDate` | 시작일과 종료일 |
+| `crewId` | 선택적 크루 범위 |
 | `isPublic` | 공개 여부 |
 | `imageUrl` | 대표 이미지 |
 
-`endDate`는 `startDate` 이후여야 한다.
+현재 서비스는 `creatorId`를 로그인 사용자로 고정하고, 생성 직후 생성자를 자동 참여자로 추가한다.
 
-## 스키마에 존재하는 기본값 메타데이터
+## Challenge 모델
 
-`Challenge` 스키마에는 아래 필드가 존재하지만, 현재 생성 UI/API는 이 값을 풍부하게 조합해 받기보다 기본값에 의존한다.
+스키마 기준 현재 필드는 다음과 같다.
 
-| 필드 | 현재 기본값 또는 현재 사용 방식 |
-| --- | --- |
-| `creatorType` | 기본값 `USER` |
-| `goalType` | 기본값 `CUMULATIVE` |
-| `participationUnit` | 기본값 `INDIVIDUAL` |
-| `participationMode` | 기본값 `SOLO` |
-| `joinType` | 기본값 `OPEN` |
-| `visibility` | 기본값 `PUBLIC` |
-
-즉, 과거 문서에 있던 `PLATFORM` 생성자, 팔로워 공개 범위, 다단계 승인 워크플로우는 현재 canonical 동작이 아니다.
-
-## 핵심 모델
-
-### Challenge
-
-- 목표 정의
+- 기본 식별과 설명
+  - `id`
+  - `title`
+  - `description`
+  - `imageUrl`
+- 목표와 기간
   - `type`
   - `targetValue`
   - `targetUnit`
-- 일정
   - `startDate`
   - `endDate`
-- 소유/범위
+- 생성자와 범위
   - `creatorId`
   - `crewId`
   - `isPublic`
-- 메타데이터
+- 스키마 확장 필드
   - `creatorType`
   - `goalType`
   - `participationUnit`
   - `participationMode`
   - `joinType`
   - `visibility`
-- 삭제
   - `deletedAt`
+
+### 스키마 확장 필드의 현재 의미
+
+위 확장 필드는 스키마에 기본값과 함께 존재하지만, 현재 controller/service 계약은 이 필드들에 대한 별도 분기나 권한 흐름을 노출하지 않는다. 현재 비즈니스 truth는 `creatorType = USER` 전제의 개인 참여 챌린지에 가깝고, 승인형 참여나 플랫폼 생성 챌린지는 현재 문서 기준의 runtime truth가 아니다.
+
+## 참여 모델
 
 ### ChallengeParticipant
 
-참가자는 현재 유저 단위로 기록된다.
+현재 participant 레코드는 다음 정보를 가진다.
 
-- `challengeId`
-- `userId`
-- `currentValue`
-- `isCompleted`
-- `completedAt`
-- `status`
-  - 기본값 `ACTIVE`
-  - 현재 서비스 흐름에서 leave는 상태 변경이 아니라 레코드 삭제로 처리된다
-- `challengeTeamId`
-- `joinedAt`
+| 필드 | 설명 |
+| --- | --- |
+| `challengeId` | 대상 챌린지 |
+| `userId` | 참여 사용자 |
+| `currentValue` | 현재 진행 수치 |
+| `isCompleted` | 목표 달성 여부 |
+| `completedAt` | 달성 시각 |
+| `status` | 스키마 기본값은 `ACTIVE` |
+| `challengeTeamId` | 선택적 팀 연결 |
+| `joinedAt` | 참여 시각 |
 
-현재 API는 `challengeId + userId` 조합을 유니크 참가 키로 사용한다.
+### 현재 참여 흐름
 
-### ChallengeTeam
+- 참여(`join`)
+  - 종료된 챌린지에는 참여할 수 없다.
+  - 이미 참여 중이면 중복 참여할 수 없다.
+  - 새 participant row를 생성한다.
+- 탈퇴(`leave`)
+  - 현재 구현은 `WITHDRAWN` 상태 전환이 아니라 participant row를 삭제한다.
+- 진행률 갱신(`updateProgress`)
+  - `currentValue`를 직접 갱신한다.
+  - `targetValue` 이상이면 `isCompleted = true`, `completedAt`을 기록한다.
 
-팀 모드에서 사용할 임시 팀 엔티티다.
+즉, 스키마에는 `status`가 있지만 현재 leave 흐름은 soft state transition보다 hard removal에 가깝다.
 
-- `challengeId`
-- `name`
-- 별도 팀 리더 엔티티는 없다
-- 팀 리더보드는 참가자 `currentValue` 합산으로 계산한다
+## 팀 기능
 
-## 현재 참여 흐름
+현재 서비스는 챌린지 내부 팀을 지원한다.
 
-챌린지 진행률은 두 경로로 움직인다.
+- `ChallengeTeam`
+  - `challengeId`
+  - `name`
+  - `participants`
+- 현재 API 동작
+  - 참여자 또는 생성자가 팀을 생성할 수 있다.
+  - 참여자는 팀에 합류하거나 팀 연결을 해제할 수 있다.
+  - 팀 리더보드는 participant의 `currentValue` 합계로 계산한다.
 
-- 명시적 갱신
-  - `PATCH /challenges/:id/progress`
-- 워크아웃 생성 시 집계
-  - `ChallengeAggregationService`
-  - 현재는 `DISTANCE`, `FREQUENCY` 타입만 자동 집계 대상이다
-  - `STREAK`, `PACE`는 자동 집계에서 제외된다
-  - 이 집계는 워크아웃 저장 성공 이후의 non-blocking 후속 처리다
-
-### 개인 참여
-
-1. 유저가 `POST /challenges/:id/join`
-2. 이미 참가 중이면 실패
-3. 종료된 챌린지면 실패
-4. 참가 레코드 생성
-
-### 참여 철회
-
-- `DELETE /challenges/:id/leave`
-- 현재 구현은 `WITHDRAWN` 상태 전환이 아니라 참가 레코드 hard delete다
-
-### 진행률 갱신
-
-- `PATCH /challenges/:id/progress`
-- `currentValue`를 직접 갱신한다
-- `currentValue >= targetValue` 이면 `isCompleted = true`, `completedAt`이 기록된다
-- 워크아웃 생성 경로에서는 별도 `PATCH` 호출 없이 집계 서비스가 같은 참가 레코드 값을 누적 갱신할 수 있다
-
-## 현재 팀 기능
-
-현재 API는 다음 팀 기능을 제공한다.
-
-- 팀 생성
-  - `POST /challenges/:id/teams`
-- 팀 조회
-  - `GET /challenges/:id/teams`
-- 팀 참가
-  - `POST /challenges/:id/teams/:teamId/join`
-- 팀 이탈
-  - `DELETE /challenges/:id/teams/leave`
-- 팀 삭제
-  - `DELETE /challenges/:id/teams/:teamId`
-- 팀 리더보드
-  - `GET /challenges/:id/teams/leaderboard`
-
-팀 기능은 current runtime에 존재하지만, 과거 문서의 풍부한 승인 정책이나 플랫폼 운영 기능까지 구현된 것은 아니다.
+현재 팀 기능은 챌린지 내부 편성 기능이며, 문서화된 별도 승인 워크플로우나 복잡한 팀 권한 모델은 없다.
 
 ## 조회와 리더보드
 
-- 목록 조회
-  - 공개 여부(`isPublic`)
-  - 크루 ID(`crewId`)
-  - cursor/limit
-- 내 챌린지 조회
-  - 참가 레코드를 기준으로 조회
-  - 응답에 `myProgress`가 포함될 수 있다
-- 개인 리더보드
-  - 참가자의 `currentValue` 내림차순
-- 팀 리더보드
-  - 팀별 참가자 `currentValue` 합산
+- 목록 조회는 `isPublic`, `crewId`, cursor/limit 기반이다.
+- `my` 목록은 참여 중인 챌린지와 자신의 `currentValue`를 함께 돌려준다.
+- 상세 조회는 현재 사용자 기준으로
+  - `isJoined`
+  - `myProgress`
+    를 계산해 반환한다.
+- 개인 리더보드는 participant `currentValue` 내림차순이다.
+- 팀 리더보드는 팀별 participant 합산 값 기준이다.
 
-## 삭제 규칙
+## 현재 제약
 
-- 챌린지는 hard delete가 아니라 `deletedAt`을 채우는 soft delete다.
-- 참가자와 팀은 챌린지 삭제 시 relation cascade로 함께 제거된다.
-- 참가 철회와 팀 삭제는 별도 soft delete 필드 없이 hard delete다.
-
-## 현재 문서에서 제거한 오래된 설명
-
-다음은 현재 코드/스키마 기준으로 재확인되지 않아 current doc에서 제거했다.
-
-- `PLATFORM` 생성자가 현재 제품 기능처럼 동작한다는 설명
-- `FOLLOWERS` 공개 범위를 현재 챌린지 visibility 규칙으로 쓰는 설명
-- `PENDING`, `REMOVED` 같은 참가 상태를 현재 API가 운영한다는 설명
-- 크루 대표 승인/신청 워크플로우가 현재 구현되어 있다는 설명
-
-이 개념들이 다시 필요하면 `target` 설계로 복구해야 한다.
+- 승인형 참여, 플랫폼 생성, richer visibility 정책은 스키마 확장 필드로만 남아 있고 현재 서비스 계약으로 적극 사용되지 않는다.
+- participant `status`의 `WITHDRAWN` 의미는 현재 leave 구현과 완전히 일치하지 않는다. 현재 leave는 레코드 삭제다.
+- 챌린지 진행률은 명시적 업데이트와 workout aggregation service 호출에 의존하며, 완전히 분리된 비동기 플랫폼으로 동작하지는 않는다.
