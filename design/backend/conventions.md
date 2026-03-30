@@ -1,7 +1,7 @@
 ---
 doc_state: target
 owner: backend
-last_verified: 2026-03-12
+last_verified: 2026-03-30
 sources:
   - apps/api/package.json
   - apps/api/src/main.ts
@@ -24,6 +24,7 @@ This document defines the preferred backend coding style for `apps/api`. Some mo
 
 - Request DTOs use `class-validator` and `class-transformer`.
 - Validation stays at the transport boundary.
+- Controllers should accept DTOs or explicit transport contracts instead of inline `@Body("field")` extraction or ad hoc string query parsing.
 - Domain services should receive already-validated inputs or clear internal contracts.
 
 ## Service Shape

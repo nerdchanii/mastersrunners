@@ -15,6 +15,7 @@ import { Observable } from "rxjs";
 import { JwtSseGuard } from "../auth/guards/jwt-sse.guard.js";
 import { Public } from "../common/decorators/public.decorator.js";
 
+import { ListNotificationsQueryDto } from "./dto/list-notifications-query.dto.js";
 import { NotificationsService } from "./notifications.service.js";
 import { NotificationsSseService } from "./notifications-sse.service.js";
 
@@ -28,14 +29,12 @@ export class NotificationsController {
   @Get()
   getNotifications(
     @Req() req: { user: { userId: string } },
-    @Query("cursor") cursor?: string,
-    @Query("limit") limit?: string,
-    @Query("unreadOnly") unreadOnly?: string,
+    @Query() query: ListNotificationsQueryDto,
   ) {
     return this.notificationsService.getNotifications(req.user.userId, {
-      cursor,
-      limit: limit ? parseInt(limit, 10) : undefined,
-      unreadOnly: unreadOnly === "true",
+      cursor: query.cursor,
+      limit: query.resolveOptionalLimit(),
+      unreadOnly: query.unreadOnly ?? false,
     });
   }
 

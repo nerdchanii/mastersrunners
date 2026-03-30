@@ -1,5 +1,6 @@
 import { Test } from "@nestjs/testing";
 
+import { ListCrewActivitiesQueryDto } from "./dto/list-crew-activities-query.dto.js";
 import { CrewsController } from "./crews.controller.js";
 import { CrewsService } from "./crews.service.js";
 
@@ -221,7 +222,11 @@ describe("CrewsController", () => {
       const expected = { items: [{ id: "a1" }], nextCursor: null };
       mockCrewsService.getActivities.mockResolvedValue(expected);
 
-      const result = await controller.getActivities("crew-1", "cursor-1", "10");
+      const query = Object.assign(new ListCrewActivitiesQueryDto(), {
+        cursor: "cursor-1",
+        limit: "10",
+      });
+      const result = await controller.getActivities("crew-1", query);
 
       expect(mockCrewsService.getActivities).toHaveBeenCalledWith("crew-1", {
         cursor: "cursor-1",
@@ -236,7 +241,8 @@ describe("CrewsController", () => {
       const expected = { items: [], nextCursor: null };
       mockCrewsService.getActivities.mockResolvedValue(expected);
 
-      const result = await controller.getActivities("crew-1", undefined, undefined);
+      const query = new ListCrewActivitiesQueryDto();
+      const result = await controller.getActivities("crew-1", query);
 
       expect(mockCrewsService.getActivities).toHaveBeenCalledWith("crew-1", {
         cursor: undefined,
@@ -299,7 +305,7 @@ describe("CrewsController", () => {
       const expected = { id: "att-1", method: "QR" };
       mockCrewsService.checkIn.mockResolvedValue(expected);
 
-      const result = await controller.checkIn("activity-1", mockReq, "QR");
+      const result = await controller.checkIn("activity-1", mockReq, { method: "QR" } as any);
 
       expect(mockCrewsService.checkIn).toHaveBeenCalledWith("activity-1", "user-123", "QR");
       expect(result).toEqual(expected);
@@ -309,7 +315,7 @@ describe("CrewsController", () => {
       const expected = { id: "att-1", method: "QR" };
       mockCrewsService.checkIn.mockResolvedValue(expected);
 
-      const result = await controller.checkIn("activity-1", mockReq, undefined);
+      const result = await controller.checkIn("activity-1", mockReq, {} as any);
 
       expect(mockCrewsService.checkIn).toHaveBeenCalledWith("activity-1", "user-123", undefined);
       expect(result).toEqual(expected);
@@ -321,7 +327,7 @@ describe("CrewsController", () => {
       const expected = [{ id: "att-1", userId: "user-1" }];
       mockCrewsService.getAttendees.mockResolvedValue(expected);
 
-      const result = await controller.getAttendees("activity-1");
+      const result = await controller.getAttendees("activity-1", {} as any);
 
       expect(mockCrewsService.getAttendees).toHaveBeenCalledWith("activity-1", undefined);
       expect(result).toEqual(expected);

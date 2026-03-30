@@ -44,7 +44,9 @@ describe("ChallengesController", () => {
       const expected = { id: "team-1", name: "Team Alpha" };
       mockChallengesService.createTeam.mockResolvedValue(expected);
 
-      const result = await controller.createTeam("challenge-1", mockReq, "Team Alpha");
+      const result = await controller.createTeam("challenge-1", mockReq, {
+        teamName: "Team Alpha",
+      } as any);
 
       expect(mockChallengesService.createTeam).toHaveBeenCalledWith(
         "challenge-1",

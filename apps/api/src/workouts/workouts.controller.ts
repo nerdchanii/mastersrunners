@@ -18,6 +18,7 @@ import { Public } from "../common/decorators/public.decorator.js";
 import { FollowRepository } from "../follow/repositories/follow.repository.js";
 
 import { CreateWorkoutDto } from "./dto/create-workout.dto.js";
+import { ListWorkoutsQueryDto } from "./dto/list-workouts-query.dto.js";
 import { UpdateWorkoutDto } from "./dto/update-workout.dto.js";
 import { WorkoutsService } from "./workouts.service.js";
 
@@ -32,20 +33,15 @@ export class WorkoutsController {
   @ApiOperation({ summary: "내 워크아웃 목록 조회 (cursor 페이지네이션)" })
   @ApiResponse({ status: 200, description: "성공" })
   @Get()
-  findAll(
-    @Req() req: Request,
-    @Query("userId") targetUserId?: string,
-    @Query("cursor") cursor?: string,
-    @Query("limit") limit?: string,
-  ) {
+  findAll(@Req() req: Request, @Query() query: ListWorkoutsQueryDto) {
     const { userId } = req.user as { userId: string };
     return this.workoutsService.findAll(
       userId,
       {
-        cursor,
-        limit: limit ? parseInt(limit, 10) : undefined,
+        cursor: query.cursor,
+        limit: query.resolveOptionalLimit(),
       },
-      targetUserId,
+      query.userId,
     );
   }
 

@@ -37,11 +37,11 @@ Make controller transport rules concrete by replacing inline request-shape short
 
 ## Self Review
 
-- Scope and intent:
-- Source of truth:
-- Design divergence:
-- Verification:
-- Review routing:
+- Scope and intent: Replaced inline controller request-shape shortcuts with DTO/query objects across challenge, conversation, crew-board, crew, event, feed, notification, post, upload, workout, and workout-social endpoints.
+- Source of truth: `design/backend/conventions.md`, the updated controller/DTO files under `apps/api/src/**`, and the passing Jest controller/service suite.
+- Design divergence: None. This task intentionally stops at controller transport cleanup and leaves persistence/logging boundary work to `I-0011-070`.
+- Verification: `bash scripts/check-task-review-metadata.sh`; `pnpm lint`; `pnpm --filter @masters/api test`; `bash -lc 'if rg -n "@Body\\(\\) body: \\{|@Body\\(\"|@Query\\(\".*\"\\) .*\\?: string" apps/api/src/*controller.ts apps/api/src/**/*controller.ts -g "!**/*.spec.ts"; then exit 1; else exit 0; fi'`
+- Review routing: `backend-reviewer`, `architecture-reviewer`, `po-reviewer`
 
 ## Review Focus
 
@@ -54,13 +54,14 @@ Make controller transport rules concrete by replacing inline request-shape short
 
 ## Design Divergence
 
-- If some controller still needs a temporary exception, record the reason and link the follow-up task here.
+- None.
 
 ## Attempt Log
 
 - 2026-03-30: created after controller review found repeated inline body/query shapes and controller-owned branching in current API modules.
+- 2026-03-30: completed DTO/query-object adoption across representative controller hotspots, updated backend conventions, and cleaned spec import ordering so lint, tests, and banned-pattern grep all pass together.
 
 ## Review Notes
 
-- Specialist review:
-- PO review:
+- Specialist review: 2026-03-30 `backend-reviewer` and `architecture-reviewer` pass. Confirmed controllers now accept DTOs/query objects instead of inline field extraction, and the banned inline transport patterns are absent across controller files.
+- PO review: 2026-03-30 `po-reviewer` pass. Confirmed the contract cleanup preserves behavior and reduces ambiguity; `pnpm --filter @masters/api test` passed with 53/53 suites green.

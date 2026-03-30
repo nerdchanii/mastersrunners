@@ -18,6 +18,7 @@ import { Observable } from "rxjs";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard.js";
 import { JwtSseGuard } from "../auth/guards/jwt-sse.guard.js";
 import { Public } from "../common/decorators/public.decorator.js";
+import { CursorLimitQueryDto } from "../common/dto/cursor-limit-query.dto.js";
 
 import { CreateConversationDto } from "./dto/create-conversation.dto.js";
 import { SendMessageDto } from "./dto/send-message.dto.js";
@@ -43,11 +44,13 @@ export class ConversationsController {
   @Get()
   async getConversations(
     @Req() req: { user: { userId: string } },
-    @Query("cursor") cursor?: string,
-    @Query("limit") limit?: string,
+    @Query() query: CursorLimitQueryDto,
   ) {
-    const parsedLimit = limit ? Math.min(Math.max(1, parseInt(limit, 10) || 20), 50) : 20;
-    return this.conversationsService.getConversations(req.user.userId, cursor, parsedLimit);
+    return this.conversationsService.getConversations(
+      req.user.userId,
+      query.cursor,
+      query.resolveLimit(20, 50),
+    );
   }
 
   @Sse("sse")
@@ -62,11 +65,14 @@ export class ConversationsController {
   async getConversation(
     @Req() req: { user: { userId: string } },
     @Param("id") id: string,
-    @Query("cursor") cursor?: string,
-    @Query("limit") limit?: string,
+    @Query() query: CursorLimitQueryDto,
   ) {
-    const parsedLimit = limit ? Math.min(Math.max(1, parseInt(limit, 10) || 50), 100) : 50;
-    return this.conversationsService.getConversation(id, req.user.userId, cursor, parsedLimit);
+    return this.conversationsService.getConversation(
+      id,
+      req.user.userId,
+      query.cursor,
+      query.resolveLimit(50, 100),
+    );
   }
 
   @Post(":id/messages")
