@@ -1,3 +1,12 @@
+---
+doc_state: current
+owner: product
+last_verified: 2026-03-30
+sources:
+  - packages/database/prisma/schema.prisma
+  - apps/api/src
+---
+
 # 워크아웃 (Workout)
 
 ## 정의

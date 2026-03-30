@@ -1,3 +1,12 @@
+---
+doc_state: current
+owner: product
+last_verified: 2026-03-30
+sources:
+  - packages/database/prisma/schema.prisma
+  - apps/api/src
+---
+
 # 크루 (Crew)
 
 ## 정의

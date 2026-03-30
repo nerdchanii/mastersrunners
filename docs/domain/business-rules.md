@@ -1,3 +1,12 @@
+---
+doc_state: current
+owner: product
+last_verified: 2026-03-30
+sources:
+  - packages/database/prisma/schema.prisma
+  - apps/api/src
+---
+
 # 비즈니스 규칙 (Business Rules)
 
 ## 삭제 규칙

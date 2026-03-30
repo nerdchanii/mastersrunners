@@ -1,3 +1,12 @@
+---
+doc_state: current
+owner: platform
+last_verified: 2026-03-30
+sources:
+  - AGENTS.md
+  - design/operating-rules/document-states.md
+---
+
 # Operating Rules
 
 `design/operating-rules/` stores repository-wide harness rules that are neither feature design nor operational runbooks.

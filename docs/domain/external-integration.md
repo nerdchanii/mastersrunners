@@ -1,3 +1,12 @@
+---
+doc_state: current
+owner: product
+last_verified: 2026-03-30
+sources:
+  - packages/database/prisma/schema.prisma
+  - apps/api/src
+---
+
 # 외부 플랫폼 연동 (External Integration)
 
 ## 연동 우선순위

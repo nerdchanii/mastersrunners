@@ -42,11 +42,11 @@ Make `docs/domain/` obey the repository-wide document-state contract and convert
 
 ## Self Review
 
-- Scope and intent:
-- Source of truth:
-- Design divergence:
-- Verification:
-- Review routing:
+- Scope and intent: Added required frontmatter across `docs/domain`, moved speculative comparison-dashboard content into `design/frontend/comparison-dashboard.md`, and expanded frontmatter automation so `docs/domain` and `design/operating-rules` are checked together.
+- Source of truth: `design/operating-rules/document-states.md`, `packages/database/prisma/schema.prisma`, and the code-backed sources listed in each `docs/domain` file frontmatter.
+- Design divergence: None. `comparison-dashboard` is now explicitly tracked as `doc_state: target` outside `docs/domain`.
+- Verification: `bash scripts/check-task-review-metadata.sh`; `bash scripts/check-doc-frontmatter.sh`; `rg -n "^doc_state:|^owner:|^last_verified:|^sources:$" docs/domain`; `rg -n "current|target|docs/domain" docs/domain/README.md design/operating-rules/document-states.md scripts/check-doc-frontmatter.sh`
+- Review routing: `docs-reviewer`, `harness-reviewer`, `po-reviewer`
 
 ## Review Focus
 
@@ -59,13 +59,14 @@ Make `docs/domain/` obey the repository-wide document-state contract and convert
 
 ## Design Divergence
 
-- If any domain file still needs to stay future-facing after this task, record the reason and link the follow-up task or exception here.
+- None.
 
 ## Attempt Log
 
 - 2026-03-30: created from a multi-review audit after confirming `docs/domain/` drifted outside the enforced `current` or `target` model and the live task queue was empty.
+- 2026-03-30: added frontmatter to the synced domain corpus, moved comparison-dashboard into `design/frontend`, and fixed `design/operating-rules/README.md` after the widened frontmatter check exposed the legacy gap.
 
 ## Review Notes
 
-- Specialist review:
-- PO review:
+- Specialist review: 2026-03-30 `docs-reviewer` and `harness-reviewer` pass. Confirmed `docs/domain/` is `current`-only, speculative dashboard content moved to `design/frontend/comparison-dashboard.md`, and automation now guards both synced domain docs and operating-rule docs.
+- PO review: 2026-03-30 `po-reviewer` pass. Confirmed current business truth remains easy to locate in `docs/domain/` and future comparison-dashboard intent no longer reads as already implemented.
