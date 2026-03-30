@@ -59,6 +59,7 @@ The repository now has a strong design corpus, but several high-value domain doc
 - `tasks/archive/I-0011-060-api-transport-boundary-hardening.md`
 - `tasks/archive/I-0011-070-api-persistence-and-runtime-logging-boundary.md`
 - `tasks/todo/I-0011-080-api-event-result-status-validation-follow-up.md`
+- `tasks/archive/I-0011-090-meta-typecheck-guardrail-hardening.md`
 
 ## Success Criteria
 

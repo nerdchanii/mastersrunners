@@ -1,3 +1,4 @@
+import type { TransactionClient } from "@masters/database";
 import { Injectable } from "@nestjs/common";
 
 import { DatabaseService } from "../../database/database.service.js";
@@ -13,7 +14,7 @@ export class BlockRepository {
   }
 
   async blockAndRemoveFollows(blockerId: string, blockedId: string) {
-    return this.db.prisma.$transaction(async (tx) => {
+    return this.db.prisma.$transaction(async (tx: TransactionClient) => {
       const block = await tx.block.create({
         data: { blockerId, blockedId },
       });

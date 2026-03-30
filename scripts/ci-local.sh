@@ -52,7 +52,7 @@ run_step "Run format check" pnpm format:check
 
 run_step "Run lint" pnpm lint
 
-run_step "Run explicit typecheck" pnpm typecheck
+run_step "Run explicit typecheck" bash scripts/run-typecheck.sh
 
 run_step "Check dependency boundaries and cycles" pnpm depcruise
 
