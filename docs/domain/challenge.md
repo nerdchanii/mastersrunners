@@ -4,8 +4,10 @@ owner: product
 last_verified: 2026-03-30
 sources:
   - packages/database/prisma/schema.prisma
+  - design/backend/events-challenges.md
   - apps/api/src/challenges/challenges.controller.ts
   - apps/api/src/challenges/challenges.service.ts
+  - apps/api/src/challenges/repositories/challenge.repository.ts
   - apps/api/src/challenges/repositories/challenge-participant.repository.ts
   - apps/api/src/challenges/repositories/challenge-team.repository.ts
 ---
@@ -128,3 +130,14 @@ sources:
 - 승인형 참여, 플랫폼 생성, richer visibility 정책은 스키마 확장 필드로만 남아 있고 현재 서비스 계약으로 적극 사용되지 않는다.
 - participant `status`의 `WITHDRAWN` 의미는 현재 leave 구현과 완전히 일치하지 않는다. 현재 leave는 레코드 삭제다.
 - 챌린지 진행률은 명시적 업데이트와 workout aggregation service 호출에 의존하며, 완전히 분리된 비동기 플랫폼으로 동작하지는 않는다.
+
+## 삭제와 lifecycle
+
+- 챌린지 삭제
+  - `Challenge.deletedAt`을 채우는 soft delete다.
+- 참가 탈퇴
+  - `ChallengeParticipant` row를 hard delete한다.
+- 팀 삭제
+  - `ChallengeTeam` row를 hard delete한다.
+- 챌린지 삭제 후 정리
+  - participant/team relation은 스키마 cascade에 따라 함께 제거된다.

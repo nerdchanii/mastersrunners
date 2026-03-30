@@ -63,6 +63,7 @@ Rewrite the challenge domain doc so it reflects the current Prisma schema, API b
 - 2026-03-30: created after reviewers found the challenge domain doc was the largest single mismatch between current docs and runtime behavior.
 - 2026-03-30: current challenge truth를 사용자 생성/참여, 참가자·팀 lifecycle, soft delete 기준으로 재정리하고 오래된 PLATFORM/승인 워크플로우 설명을 제거했다.
 - 2026-03-30: `ChallengeAggregationService`와 `workouts.service.ts`를 다시 대조해 `DISTANCE`, `FREQUENCY` 타입의 workout-triggered progress aggregation은 current runtime으로 문서에 남겼다.
+- 2026-03-30: dedicated worktree에서 verify를 재실행했고, worker drift로 잠시 `active`로 되돌아간 task lifecycle을 최종 changeset에서 `archive`로 정상화했다.
 
 ## Review Notes
 
