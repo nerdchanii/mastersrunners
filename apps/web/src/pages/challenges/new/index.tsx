@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { challengeKeys } from "@/hooks/useChallenges";
-import { api } from "@/lib/api-client";
+
+import { createChallenge } from "./challenge-create-api";
 
 type GoalType = "DISTANCE" | "FREQUENCY" | "STREAK" | "PACE";
 
@@ -91,10 +92,7 @@ export default function NewChallengePage() {
       };
       if (description.trim()) body.description = description.trim();
 
-      const created = await api.fetch<{ id: string }>("/challenges", {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
+      const created = await createChallenge(body);
       queryClient.invalidateQueries({ queryKey: challengeKeys.all });
       toast.success("챌린지가 생성되었습니다.");
       navigate(`/challenges/${created.id}`);

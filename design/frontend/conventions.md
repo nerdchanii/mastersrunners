@@ -18,7 +18,8 @@ This document defines the preferred frontend coding style for `apps/web`. Some l
 
 - Keep route entry files thin.
 - `pages/**/index.tsx` should mostly compose hooks, sections, and presentational components.
-- Route files should not perform direct `api.fetch` calls. Move request logic into route-local hooks or shared hooks.
+- Route files should not perform direct `api.fetch` calls. Move request logic into route-local hooks, helper modules, or shared hooks.
+- Route entry files should not import `@/lib/api-client` or TanStack Query primitives directly. Compose route-local or shared data helpers instead.
 - Default exports are allowed for route entry files. Prefer named exports everywhere else.
 
 ## Data and State

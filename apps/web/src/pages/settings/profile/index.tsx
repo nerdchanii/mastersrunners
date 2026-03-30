@@ -17,13 +17,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useDeleteAccount } from "@/hooks/useAccount";
-import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
 
 import { useProfileEditForm } from "./use-profile-edit-form";
 
 export default function EditProfilePage() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const deleteAccount = useDeleteAccount();
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0); // 0=closed, 1=경고, 2=최종확인
@@ -49,8 +50,7 @@ export default function EditProfilePage() {
     try {
       await deleteAccount.mutateAsync();
       toast.success("계정이 삭제되었습니다.");
-      api.clearTokens();
-      window.location.href = "/login";
+      logout();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "계정 삭제에 실패했습니다.");
       setDeleteStep(0);

@@ -19,8 +19,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCrewChat } from "@/hooks/useGroupChat";
-import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+
+import { fetchCrewDetail, joinCrew, leaveCrew } from "./crew-detail-api";
 
 interface CrewMember {
   id: string;
@@ -72,7 +73,7 @@ export default function CrewDetailClient() {
     if (!crewId || crewId === "_") return;
     try {
       setIsLoading(true);
-      const data = await api.fetch<CrewDetail>(`/crews/${crewId}`);
+      const data = await fetchCrewDetail(crewId);
       setCrew(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "크루를 불러올 수 없습니다.");
@@ -94,7 +95,7 @@ export default function CrewDetailClient() {
     if (!crewId) return;
     setIsJoining(true);
     try {
-      await api.fetch(`/crews/${crewId}/join`, { method: "POST" });
+      await joinCrew(crewId);
       await fetchCrew();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "가입에 실패했습니다.");
@@ -106,7 +107,7 @@ export default function CrewDetailClient() {
   const handleLeave = async () => {
     if (!crewId) return;
     try {
-      await api.fetch(`/crews/${crewId}/leave`, { method: "DELETE" });
+      await leaveCrew(crewId);
       setShowLeaveDialog(false);
       navigate("/crews");
     } catch (err) {

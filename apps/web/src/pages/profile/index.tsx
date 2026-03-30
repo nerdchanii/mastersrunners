@@ -4,8 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { LoadingPage } from "@/components/common/LoadingPage";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
-import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+
+import {
+  fetchMyProfile,
+  fetchMyProfileCrews,
+  fetchMyProfilePosts,
+  fetchMyProfileWorkouts,
+} from "./profile-api";
 
 interface Post {
   id: string;
@@ -100,7 +106,7 @@ export default function ProfilePage() {
 
     const fetchProfile = async () => {
       try {
-        const data = await api.fetch<ProfileApiResponse>("/profile");
+        const data = await fetchMyProfile();
         if (!data) return;
         setProfileUser(data.user);
         setProfileStats({
@@ -126,18 +132,14 @@ export default function ProfilePage() {
       setIsTabDataLoading(true);
       try {
         if (activeTab === "posts") {
-          const data = await api.fetch<Post[] | { data: Post[] }>(
-            `/posts?userId=${user.id}&limit=12`,
-          );
-          setPosts(Array.isArray(data) ? data : (data?.data ?? []));
+          const data = await fetchMyProfilePosts(user.id);
+          setPosts(data);
         } else if (activeTab === "workouts") {
-          const data = await api.fetch<Workout[] | { data: Workout[] }>(
-            `/workouts?userId=${user.id}`,
-          );
-          setWorkouts(Array.isArray(data) ? data : (data?.data ?? []));
+          const data = await fetchMyProfileWorkouts(user.id);
+          setWorkouts(data);
         } else if (activeTab === "crews") {
-          const data = await api.fetch<Crew[] | { data: Crew[] }>("/crews/my");
-          setCrews(Array.isArray(data) ? data : (data?.data ?? []));
+          const data = await fetchMyProfileCrews();
+          setCrews(data);
         }
       } catch (err) {
         console.error("Failed to fetch tab data:", err);

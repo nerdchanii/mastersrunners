@@ -5,18 +5,21 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { api, API_BASE } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+
+import {
+  fetchAuthProviders,
+  isLocalApiBase,
+  type LoginProviders,
+  performDevLogin,
+  startOAuthLogin,
+} from "./login-api";
 
 function LoginContent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isAuthenticated, isLoading, refreshUser } = useAuth();
-  const [providers, setProviders] = useState<{
-    kakao: boolean;
-    google: boolean;
-    naver: boolean;
-  } | null>(null);
+  const [providers, setProviders] = useState<LoginProviders | null>(null);
   const error = searchParams.get("error");
 
   useEffect(() => {
@@ -28,22 +31,18 @@ function LoginContent() {
   useEffect(() => {
     const loadProviderConfig = async () => {
       try {
-        const data = await api.fetch<{
-          kakao: boolean;
-          google: boolean;
-          naver: boolean;
-        }>("/auth/providers");
+        const data = await fetchAuthProviders();
         setProviders(data);
       } catch {
         setProviders(null);
       }
     };
 
-    loadProviderConfig();
+    void loadProviderConfig();
   }, []);
 
   const handleOAuth = (provider: string) => {
-    window.location.href = `${API_BASE}/auth/${provider}`;
+    startOAuthLogin(provider);
   };
 
   if (isLoading) {
@@ -126,7 +125,7 @@ function LoginContent() {
             </p>
           )}
 
-          {API_BASE.includes("localhost") && (
+          {isLocalApiBase() && (
             <>
               <Separator className="my-4" />
 
@@ -135,12 +134,7 @@ function LoginContent() {
                 <Button
                   onClick={async () => {
                     try {
-                      const res = await fetch(`${API_BASE}/auth/dev-login`, {
-                        method: "POST",
-                      });
-                      if (!res.ok) throw new Error("Dev login failed");
-                      const data = await res.json();
-                      api.setTokens(data.accessToken, data.refreshToken);
+                      await performDevLogin();
                       await refreshUser();
                       navigate("/", { replace: true });
                     } catch {

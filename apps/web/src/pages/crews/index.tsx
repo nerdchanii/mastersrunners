@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { MapPin, Plus, Users } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -14,16 +13,8 @@ import {
   useRegions,
   useSubRegions,
 } from "@/hooks/useCrewExplore";
-import { api } from "@/lib/api-client";
+import { type Crew, useMyCrews } from "@/hooks/useCrews";
 import { useAuth } from "@/lib/auth-context";
-
-// My crews query
-function useMyCrews() {
-  return useQuery({
-    queryKey: ["crews", "my"],
-    queryFn: () => api.fetch<any[]>("/crews/my"),
-  });
-}
 
 // Korean regions data
 const KOREA_REGIONS = [
@@ -105,7 +96,7 @@ function MyCrewsList() {
 
   return (
     <div className="space-y-3">
-      {crews.map((crew: any) => (
+      {crews.map((crew: Crew) => (
         <Link key={crew.id} to={`/crews/${crew.id}`}>
           <Card className="hover:bg-accent/50 transition-colors">
             <CardContent className="py-4 flex items-center gap-4">

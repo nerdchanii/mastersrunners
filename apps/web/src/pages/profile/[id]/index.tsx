@@ -4,8 +4,16 @@ import { useNavigate, useParams } from "react-router-dom";
 import { LoadingPage } from "@/components/common/LoadingPage";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
-import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+
+import {
+  fetchUserCrews,
+  fetchUserPosts,
+  fetchUserProfile,
+  fetchUserWorkouts,
+  startConversation,
+  toggleFollowUser,
+} from "./profile-api";
 
 interface User {
   id: string;
@@ -50,22 +58,6 @@ interface Crew {
   _count: {
     members: number;
   };
-}
-
-interface ProfileApiResponse {
-  user: User;
-  stats: {
-    postCount: number;
-    totalWorkouts: number;
-    totalDistance: number;
-    totalDuration: number;
-    averagePace: number;
-  };
-  followersCount: number;
-  followingCount: number;
-  isFollowing?: boolean;
-  isPending?: boolean;
-  isPrivate?: boolean;
 }
 
 interface ProfileData {
@@ -115,7 +107,7 @@ export default function UserProfilePage() {
 
     const fetchProfile = async () => {
       try {
-        const data = await api.fetch<ProfileApiResponse>(`/profile/${userId}`);
+        const data = await fetchUserProfile(userId);
         if (!data) return;
         setProfileData({
           user: data.user,
@@ -146,18 +138,14 @@ export default function UserProfilePage() {
       setIsTabDataLoading(true);
       try {
         if (activeTab === "posts") {
-          const data = await api.fetch<Post[] | { data: Post[] }>(
-            `/posts?userId=${userId}&limit=12`,
-          );
-          setPosts(Array.isArray(data) ? data : (data?.data ?? []));
+          const data = await fetchUserPosts(userId);
+          setPosts(data);
         } else if (activeTab === "workouts") {
-          const data = await api.fetch<Workout[] | { data: Workout[] }>(
-            `/workouts?userId=${userId}`,
-          );
-          setWorkouts(Array.isArray(data) ? data : (data?.data ?? []));
+          const data = await fetchUserWorkouts(userId);
+          setWorkouts(data);
         } else if (activeTab === "crews") {
-          const data = await api.fetch<Crew[] | { data: Crew[] }>(`/crews?userId=${userId}`);
-          setCrews(Array.isArray(data) ? data : (data?.data ?? []));
+          const data = await fetchUserCrews(userId);
+          setCrews(data);
         }
       } catch (err) {
         console.error("Failed to fetch tab data:", err);
@@ -175,7 +163,7 @@ export default function UserProfilePage() {
     setIsFollowLoading(true);
     try {
       if (profileData.isFollowing) {
-        await api.fetch(`/follow/${userId}`, { method: "DELETE" });
+        await toggleFollowUser(userId, true);
         setProfileData({
           ...profileData,
           isFollowing: false,
@@ -187,7 +175,7 @@ export default function UserProfilePage() {
           });
         }
       } else {
-        await api.fetch(`/follow/${userId}`, { method: "POST" });
+        await toggleFollowUser(userId, false);
         const newState = profileData.isPrivate
           ? { isFollowing: false, isPending: true }
           : { isFollowing: true, isPending: false };
@@ -213,10 +201,7 @@ export default function UserProfilePage() {
     if (isMessageLoading) return;
     setIsMessageLoading(true);
     try {
-      const conversation = await api.fetch<{ id: string }>("/conversations", {
-        method: "POST",
-        body: JSON.stringify({ participantId: userId }),
-      });
+      const conversation = await startConversation(userId);
       if (!conversation?.id) {
         throw new Error("대화를 시작할 수 없습니다.");
       }

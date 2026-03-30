@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useChallenge } from "@/hooks/useChallenges";
 import { challengeKeys } from "@/hooks/useChallenges";
-import { api } from "@/lib/api-client";
+
+import { updateChallenge } from "./challenge-edit-api";
 
 type GoalType = "DISTANCE" | "FREQUENCY" | "STREAK" | "PACE";
 
@@ -86,24 +87,26 @@ export default function EditChallengePage() {
       return;
     }
 
+    const challengeId = id;
+    if (!challengeId) {
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await api.fetch(`/challenges/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          title: title.trim(),
-          description: description.trim() || undefined,
-          type,
-          targetValue: Number(targetValue),
-          targetUnit: currentGoalOption.targetUnit,
-          startDate: new Date(startDate).toISOString(),
-          endDate: new Date(endDate).toISOString(),
-          isPublic,
-        }),
+      await updateChallenge(challengeId, {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        type,
+        targetValue: Number(targetValue),
+        targetUnit: currentGoalOption.targetUnit,
+        startDate: new Date(startDate).toISOString(),
+        endDate: new Date(endDate).toISOString(),
+        isPublic,
       });
       queryClient.invalidateQueries({ queryKey: challengeKeys.all });
       toast.success("챌린지가 수정되었습니다.");
-      navigate(`/challenges/${id}`);
+      navigate(`/challenges/${challengeId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "수정에 실패했습니다.");
     } finally {

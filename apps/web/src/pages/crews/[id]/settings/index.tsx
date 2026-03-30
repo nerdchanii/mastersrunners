@@ -14,8 +14,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+
+import {
+  deleteCrew,
+  fetchCrewBans,
+  fetchCrewSettingsDetail,
+  unbanCrewUser,
+  updateCrewSettings,
+} from "./crew-settings-api";
 
 interface CrewMember {
   id: string;
@@ -79,7 +86,7 @@ export default function CrewSettingsClient() {
     if (!crewId || crewId === "_") return;
     try {
       setIsLoading(true);
-      const data = await api.fetch<CrewDetail>(`/crews/${crewId}`);
+      const data = await fetchCrewSettingsDetail(crewId);
       setCrew(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "크루를 불러올 수 없습니다.");
@@ -91,7 +98,7 @@ export default function CrewSettingsClient() {
   const fetchBans = useCallback(async () => {
     if (!crewId || crewId === "_") return;
     try {
-      const data = await api.fetch<BannedUser[]>(`/crews/${crewId}/bans`);
+      const data = await fetchCrewBans(crewId);
       setBans(Array.isArray(data) ? data : []);
     } catch {
       // Bans may fail if user isn't authorized; ignore silently
@@ -122,10 +129,7 @@ export default function CrewSettingsClient() {
   }) => {
     setIsSubmitting(true);
     try {
-      await api.fetch(`/crews/${crewId}`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      });
+      await updateCrewSettings(crewId, data);
       await fetchCrew();
       toast.success("크루 정보가 수정되었습니다.");
     } catch (err) {
@@ -139,7 +143,7 @@ export default function CrewSettingsClient() {
   const handleDelete = async () => {
     setIsSubmitting(true);
     try {
-      await api.fetch(`/crews/${crewId}`, { method: "DELETE" });
+      await deleteCrew(crewId);
       navigate("/crews");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "삭제에 실패했습니다.");
@@ -151,9 +155,7 @@ export default function CrewSettingsClient() {
   const handleUnban = async (userId: string) => {
     setIsSubmitting(true);
     try {
-      await api.fetch(`/crews/${crewId}/bans/${userId}`, {
-        method: "DELETE",
-      });
+      await unbanCrewUser(crewId, userId);
       await fetchBans();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "차단 해제에 실패했습니다.");

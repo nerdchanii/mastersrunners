@@ -2,7 +2,7 @@ import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-import { api } from "@/lib/api-client";
+import { applyAuthCallbackTokens } from "./auth-callback-session";
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ export default function AuthCallbackPage() {
     const refreshToken = searchParams.get("refreshToken");
 
     if (accessToken && refreshToken) {
-      api.setTokens(accessToken, refreshToken);
+      applyAuthCallbackTokens(accessToken, refreshToken);
       navigate("/", { replace: true });
     } else {
       navigate("/login?error=auth_failed", { replace: true });

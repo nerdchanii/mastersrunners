@@ -2,11 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import CrewForm from "@/components/crew/CrewForm";
-import { api } from "@/lib/api-client";
 
-interface CreatedCrew {
-  id: string;
-}
+import { createCrew } from "./crew-create-api";
 
 export default function NewCrewPage() {
   const navigate = useNavigate();
@@ -23,10 +20,7 @@ export default function NewCrewPage() {
   }) => {
     setIsSubmitting(true);
     try {
-      const crew = await api.fetch<CreatedCrew>("/crews", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const crew = await createCrew(data);
       navigate(`/crews/${crew.id}`);
     } catch (err) {
       setIsSubmitting(false);

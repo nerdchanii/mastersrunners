@@ -10,9 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkoutTypes } from "@/hooks/useMessages";
-import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+
+import { updateOnboardingProfile } from "./onboarding-api";
 
 const STEPS = [
   { icon: User, label: "프로필" },
@@ -53,13 +54,10 @@ export default function OnboardingPage() {
     }
     setIsSubmitting(true);
     try {
-      await api.fetch("/profile", {
-        method: "PATCH",
-        body: JSON.stringify({
-          name: name.trim(),
-          bio: bio.trim() || undefined,
-          isPrivate: isPrivate,
-        }),
+      await updateOnboardingProfile({
+        name: name.trim(),
+        bio: bio.trim() || undefined,
+        isPrivate,
       });
       await refreshUser();
       toast.success("프로필 설정이 완료되었습니다!");
