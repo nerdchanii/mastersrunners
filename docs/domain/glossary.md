@@ -21,6 +21,7 @@ sources:
 | 챌린지      | Challenge        | 목표 기반 참여 이벤트                                        |
 | 이벤트      | Event            | 대회/이벤트 레코드                                           |
 | 이벤트 참가 | EventParticipant | 이벤트 등록, 결과, 워크아웃 연결을 담는 참가 기록            |
+| 연결 플랫폼 | ConnectedPlatform | 외부 플랫폼 연결 토큰/상태를 담는 스키마 모델               |
 | 신발        | Shoe             | 개인 소유 러닝화 레코드                                      |
 | 대화        | Conversation     | DIRECT, CREW, ACTIVITY 대화방                                |
 | 메시지      | Message          | 대화방 안의 개별 메시지                                      |

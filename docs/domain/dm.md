@@ -4,23 +4,30 @@ owner: product
 last_verified: 2026-03-30
 sources:
   - packages/database/prisma/schema.prisma
-  - apps/api/src
+  - apps/api/src/conversations/conversations.controller.ts
+  - apps/api/src/conversations/conversations.service.ts
+  - apps/api/src/conversations/repositories/conversations.repository.ts
 ---
 
 # 메시지와 대화 (Messaging)
 
 ## 정의
 
-메시징은 `Conversation`, `ConversationParticipant`, `Message`를 중심으로 동작한다. 현재 canonical 모델은 DM 전용이 아니라 direct, crew, activity 대화를 모두 포함한다.
+현재 메시징 모델은 direct message만 따로 분리하지 않고 `Conversation`, `ConversationParticipant`, `Message`로 통합 관리한다.
 
-## 핵심 모델
+## Conversation 타입
+
+| 값 | 의미 |
+| --- | --- |
+| `DIRECT` | 사용자 1:1 대화 |
+| `CREW` | 크루 대화 |
+| `ACTIVITY` | 크루 활동 대화 |
+
+## 현재 핵심 모델
 
 ### Conversation
 
 - `type`
-  - `DIRECT`
-  - `CREW`
-  - `ACTIVITY`
 - `name`
 - `crewId`
 - `activityId`
@@ -39,25 +46,33 @@ sources:
 - `conversationId`
 - `senderId`
 - `content`
-- `isDeleted`
+- `deletedAt`
 - `createdAt`
-- `updatedAt`
+
+현재 메시지 삭제 표시는 `isDeleted`가 아니라 `deletedAt` 기반이다.
 
 ## 현재 동작
 
 - 프로필에서 direct conversation을 시작할 수 있다.
-- 크루 전체 채팅과 활동 채팅도 같은 conversation 모델을 쓴다.
-- direct message detail은 SSE 기반 실시간 수신을 사용한다.
-- 헤더 unread listener와 DM 상세 화면은 같은 사용자에 대해 동시에 SSE를 구독할 수 있다.
-- 일부 그룹 채팅 흐름은 polling 기반이다.
+- 이미 있는 direct conversation이 있으면 재사용하고, 없으면 새로 만든다.
+- direct, crew, activity conversation이 같은 목록 모델에 섞여 나온다.
+- conversation 참여자가 아니면 조회/전송/읽음 처리할 수 없다.
+- 차단 관계면 direct conversation 시작, 조회, 전송이 막힌다.
 
-## 읽음 상태
+## unread 처리
 
-- 안읽음 계산은 `lastReadAt` 기반이다.
-- 헤더와 모바일 하단 네비는 같은 unread source를 소비한다.
-- `/messages`와 `/messages/:id`에서는 unread badge를 감추고, read mutation 이후 같은 source를 무효화한다.
+- unread 계산은 `lastReadAt` 기준이다.
+- conversation 목록에서 각 대화별 unread count를 계산한다.
+- 읽음 처리 시 participant의 `lastReadAt`를 갱신한다.
 
-## 현재 제약
+## 메시지 삭제
 
-- 과거 문서의 “DM은 DIRECT만 가진다” 설명은 더 이상 충분하지 않다.
-- direct와 group 대화의 실시간 전달 방식이 아직 완전히 통일되지 않았다.
+- 본인이 보낸 메시지만 삭제할 수 있다.
+- 삭제는 메시지 hard delete가 아니라 `deletedAt` 기록으로 처리된다.
+- 이미 삭제된 메시지는 다시 조작할 수 없다.
+
+## 전달 방식
+
+- direct message는 SSE 기반 실시간 전달을 사용한다.
+- 일부 group conversation 흐름은 여전히 polling/조회 기반 UI와 함께 동작한다.
+- 따라서 “모든 대화 타입이 완전히 동일한 실시간 계약을 가진다”고 문서화하지 않는다.

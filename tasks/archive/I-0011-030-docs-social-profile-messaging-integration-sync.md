@@ -43,11 +43,11 @@ Bring the social, profile, messaging, and external-integration domain docs back 
 
 ## Self Review
 
-- Scope and intent:
-- Source of truth:
-- Design divergence:
-- Verification:
-- Review routing:
+- Scope and intent: social/profile/DM/external integration 문서를 현재 schema, UI, API surface에 맞춰 축소·정렬하고 과장된 future surface를 current truth에서 제거했다.
+- Source of truth: `packages/database/prisma/schema.prisma`, `apps/api/src/profile/**`, `apps/api/src/conversations/**`, `apps/api/src/uploads/**`, `apps/api/src/follow/**`, `apps/web/src/components/profile/ProfileTabs.tsx`, `apps/web/src/pages/settings/profile/use-profile-edit-form.ts`, `design/backend/upload-ingestion.md`
+- Design divergence: `ConnectedPlatform`와 `SyncLog`는 스키마에 남아 있지만 현재 사용자-facing integration flow로는 확정할 수 없어 “메타데이터는 존재하지만 완성된 연동 surface는 아님”으로 정리했다.
+- Verification: `bash scripts/check-task-review-metadata.sh`; `bash scripts/check-doc-frontmatter.sh`; `rg -n "workoutSharingDefault|isPrivate|DIRECT|CREW|ACTIVITY|ConnectedPlatform|Presigned URL|disk fallback" docs/domain/social.md docs/domain/user-profile.md docs/domain/dm.md docs/domain/external-integration.md packages/database/prisma/schema.prisma design/backend/upload-ingestion.md apps/web/src/components/profile/ProfileTabs.tsx apps/web/src/pages/settings/profile/use-profile-edit-form.ts`
+- Review routing: `docs-reviewer`, `backend-reviewer`, `frontend-reviewer`, `po-reviewer`
 
 ## Review Focus
 
@@ -60,13 +60,14 @@ Bring the social, profile, messaging, and external-integration domain docs back 
 
 ## Design Divergence
 
-- If a doc must mention a not-yet-built surface to preserve product intent, split it into a `target` design artifact and link that follow-up here.
+- Connected platform sync UX와 richer profile/notification settings surface는 current truth로 승격하지 않았다. 필요하면 별도 `target` 설계 task로 다뤄야 한다.
 
 ## Attempt Log
 
 - 2026-03-30: created after multi-review findings showed that social/profile/DM/integration rules had drifted into a mix of current behavior and future product ideas.
+- 2026-03-30: current UI/API/schema 기준으로 profile tabs, notification behavior, DM delete/read contracts, upload/integration boundary를 다시 정리했다.
 
 ## Review Notes
 
-- Specialist review:
-- PO review:
+- Specialist review: 2026-03-30 `docs-reviewer`, `backend-reviewer`, `frontend-reviewer` pass. 네 문서 모두 현재 UI/API/runtime surface와 모순되지 않으며 unimplemented surface를 current truth로 남기지 않는다.
+- PO review: 2026-03-30 `po-reviewer` pass. 문서가 더 보수적으로 바뀌었지만 실제 제공 기능과 제품 용어는 더 명확해졌다.
