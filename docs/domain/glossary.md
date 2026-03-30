@@ -18,7 +18,9 @@ sources:
 | 크루        | Crew             | 멤버십, 활동, 게시판, 채팅을 가진 그룹                       |
 | 크루 활동   | CrewActivity     | 공식 모임 또는 번개 모임                                     |
 | 크루 출석   | CrewAttendance   | RSVP/체크인/노쇼 상태를 가진 활동 참석 기록                  |
-| 챌린지      | Challenge        | 목표 기반 참여 이벤트                                        |
+| 챌린지      | Challenge        | 목표값과 기간을 가진 참여형 기록 이벤트                      |
+| 챌린지 참여 | ChallengeParticipant | 사용자별 현재 누적값, 완료 여부, 팀 연결을 담는 참여 기록 |
+| 챌린지 팀   | ChallengeTeam    | 챌린지 내부에서만 쓰는 임시 팀 단위                          |
 | 이벤트      | Event            | 대회/이벤트 레코드                                           |
 | 이벤트 참가 | EventParticipant | 이벤트 등록, 결과, 워크아웃 연결을 담는 참가 기록            |
 | 연결 플랫폼 | ConnectedPlatform | 외부 플랫폼 연결 토큰/상태를 담는 스키마 모델               |
