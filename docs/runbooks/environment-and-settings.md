@@ -32,7 +32,7 @@ This document is intentionally an index. It does not duplicate every environment
 
 - Storage adapter selection is controlled by `STORAGE_TYPE`.
 - R2 and disk-storage details are documented in `docs/runbooks/deployment.md`.
-- Module-specific upload configuration notes live in `apps/api/src/uploads/README.md`.
+- Upload request flow, file-type rules, and storage ownership boundaries live in `design/backend/upload-ingestion.md`.
 
 ## Update Rules
 

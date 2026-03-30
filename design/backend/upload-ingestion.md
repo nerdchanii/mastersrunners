@@ -1,13 +1,15 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-03-12
+last_verified: 2026-03-30
 sources:
   - apps/api/src/uploads/uploads.module.ts
   - apps/api/src/uploads/uploads.service.ts
   - apps/api/src/uploads/uploads.controller.ts
   - apps/api/src/uploads/disk-upload.controller.ts
   - apps/api/src/uploads/disk-files.controller.ts
+  - apps/api/src/uploads/parsers/fit-parser.service.ts
+  - apps/api/src/uploads/parsers/gpx-parser.service.ts
   - apps/api/src/uploads/storage/storage-adapter.interface.ts
   - apps/api/src/uploads/storage/disk-storage.adapter.ts
   - apps/api/src/uploads/storage/r2-storage.adapter.ts
@@ -28,6 +30,23 @@ Uploads are handled inside the API through a storage-adapter abstraction, with d
 - Disk mode is the current default unless production-style R2 configuration is present.
 - `/uploads/presign` is a shared upload boundary used beyond workouts, including profile and post-image flows.
 
+## Upload Request Flow
+
+1. The client requests a signed upload target from `/uploads/presign`.
+2. The API validates the folder intent and content type.
+3. The selected adapter returns an upload URL, storage key, and public URL.
+4. The client uploads bytes directly to the storage target.
+5. Downstream modules persist only the returned storage key and derived public URL.
+
+In disk mode the app also exposes public `PUT /uploads/disk/*` and `GET /disk-files/*` handlers for local development and production-like verification flows.
+
+## File-Type and Key Rules
+
+- Image uploads accept `image/jpeg`, `image/png`, `image/webp`, and `image/gif`.
+- File uploads additionally accept `application/octet-stream` for workout file ingestion paths such as FIT or GPX.
+- Storage keys follow `{folder}/{userId}/{timestamp}-{sanitizedFilename}`.
+- Ownership checks rely on the user-specific key path. Downstream code must not invent keys or bypass the adapter-generated format.
+
 ## Workout File Ingestion
 
 `UploadsService.parseAndCreateWorkout()` owns the ingestion pipeline:
@@ -40,8 +59,14 @@ Uploads are handled inside the API through a storage-adapter abstraction, with d
 
 GPS routes are downsampled before persistence to control payload size.
 
+## Security and Ownership
+
+- Signed upload URLs are time-limited and adapter-controlled.
+- Delete operations validate that the acting user owns the storage key path.
+- Public URL generation stays behind the adapter boundary so services do not hand-roll CDN or bucket URLs.
+- File-type restrictions exist to keep the shared upload boundary from becoming a generic arbitrary-file ingress path.
+
 ## Current Constraints
 
 - The upload boundary is shared, but the parse-and-create ingestion pipeline is still workout-specific rather than a generic asset-processing platform.
-- In disk mode the app exposes public `PUT /uploads/disk/*` and `GET /disk-files/*` handlers for local file writing and serving.
 - Public URL generation happens inside the adapter boundary, so downstream services should not build storage URLs manually.

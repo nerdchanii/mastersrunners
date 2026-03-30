@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: harness
-last_verified: 2026-03-12
+last_verified: 2026-03-30
 sources:
   - AGENTS.md
   - tasks/README.md
@@ -32,13 +32,13 @@ main worktree may be dirty
    ↓
 create dedicated worktree from clean HEAD
    ↓
-move task todo -> active in that worktree
+move task tasks/todo -> tasks/active in that worktree
    ↓
 implement + self-review + verify
    ↓
 specialist review + PO review
    ↓
-move task active -> archive
+move task tasks/active -> tasks/archive
    ↓
 commit in the worktree branch
    ↓

@@ -29,9 +29,9 @@ Lint is currently broken, CI does not enforce enough invariants, and generated a
 
 ## Task Breakdown
 
-- Archived foundation tasks live in `tasks/I-0002-harness-verification/archive/`
+- Archived foundation tasks live in `tasks/archive/`
 - Completed follow-up cleanup:
-  - `tasks/I-0002-harness-verification/archive/I-0002-060-web-react-hook-warning-burndown.md`
+  - `tasks/archive/I-0002-060-web-react-hook-warning-burndown.md`
 
 ## Success Criteria
 

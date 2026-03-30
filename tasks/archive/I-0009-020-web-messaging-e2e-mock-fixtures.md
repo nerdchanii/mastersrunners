@@ -18,7 +18,7 @@ artifacts:
   - apps/web/e2e/helpers/messaging-fixtures.ts
   - apps/web/e2e/crew-group-chat.spec.ts
   - apps/web/e2e/messages.spec.ts
-  - tasks/I-0009-crew-messaging-ux/archive/I-0009-020-web-messaging-e2e-mock-fixtures.md
+  - tasks/archive/I-0009-020-web-messaging-e2e-mock-fixtures.md
 ---
 
 ## Goal

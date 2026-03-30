@@ -59,7 +59,7 @@ Add an explicit CI typecheck step instead of relying on build side effects alone
 ## Design Divergence
 
 - API and database packages still need dedicated explicit typecheck rollout.
-- Track that remaining work in `tasks/I-0006-guardrail-hardening/todo/I-0006-090-ci-api-database-typecheck-rollout.md`.
+- Track that remaining work in `tasks/todo/I-0006-090-ci-api-database-typecheck-rollout.md`.
 
 ## Attempt Log
 

@@ -38,8 +38,8 @@ The earlier PR lane added a second workflow truth on top of the task-centric har
 
 ## Task Breakdown
 
-- Historical record: archived tasks under `tasks/I-0003-review-harness/archive/`
-- Retirement cleanup: `tasks/I-0003-review-harness/active/I-0003-210-meta-retire-pr-harness.md`
+- Historical record: archived tasks under `tasks/archive/`
+- Retirement cleanup: `tasks/active/I-0003-210-meta-retire-pr-harness.md`
 
 ## Success Criteria
 

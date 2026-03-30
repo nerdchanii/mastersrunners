@@ -42,16 +42,16 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 
 ## Task Breakdown
 
-- `tasks/I-0006-guardrail-hardening/archive/I-0006-010-meta-formatting-import-order.md`
-- `tasks/I-0006-guardrail-hardening/archive/I-0006-020-meta-boundary-cycle-enforcement.md`
-- `tasks/I-0006-guardrail-hardening/archive/I-0006-030-ci-api-coverage-gate.md`
-- `tasks/I-0006-guardrail-hardening/archive/I-0006-040-meta-dependency-security-automation.md`
-- `tasks/I-0006-guardrail-hardening/archive/I-0006-050-meta-dead-code-guard.md`
-- `tasks/I-0006-guardrail-hardening/archive/I-0006-060-meta-pr-template-test-stability.md`
-- `tasks/I-0006-guardrail-hardening/archive/I-0006-070-api-logging-monitoring-scaffold.md`
-- `tasks/I-0006-guardrail-hardening/archive/I-0006-080-ci-explicit-typecheck-guard.md`
-- `tasks/I-0006-guardrail-hardening/archive/I-0006-090-ci-api-database-typecheck-rollout.md`
-- `tasks/I-0006-guardrail-hardening/archive/I-0006-100-ci-cloudflare-pages-preview-failure.md`
+- `tasks/archive/I-0006-010-meta-formatting-import-order.md`
+- `tasks/archive/I-0006-020-meta-boundary-cycle-enforcement.md`
+- `tasks/archive/I-0006-030-ci-api-coverage-gate.md`
+- `tasks/archive/I-0006-040-meta-dependency-security-automation.md`
+- `tasks/archive/I-0006-050-meta-dead-code-guard.md`
+- `tasks/archive/I-0006-060-meta-pr-template-test-stability.md`
+- `tasks/archive/I-0006-070-api-logging-monitoring-scaffold.md`
+- `tasks/archive/I-0006-080-ci-explicit-typecheck-guard.md`
+- `tasks/archive/I-0006-090-ci-api-database-typecheck-rollout.md`
+- `tasks/archive/I-0006-100-ci-cloudflare-pages-preview-failure.md`
 
 ## Success Criteria
 

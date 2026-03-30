@@ -11,7 +11,7 @@ while IFS= read -r file; do
   task_files+=("$file")
 done < <(
   find tasks -type f -name '*.md' \
-    \( -path 'tasks/*/todo/*.md' -o -path 'tasks/*/active/*.md' \) |
+    \( -path 'tasks/todo/*.md' -o -path 'tasks/active/*.md' \) |
     LC_ALL=C sort
 )
 
@@ -129,7 +129,7 @@ done
 
 if [ "${#errors[@]}" -gt 0 ]; then
   printf 'Task review metadata check failed.\n'
-  printf 'Expected every task under tasks/*/{todo,active}/ to declare a non-empty reviewers list and po_review: required.\n'
+  printf 'Expected every task under tasks/{todo,active}/ to declare a non-empty reviewers list and po_review: required.\n'
   printf ' - %s\n' "${errors[@]}"
   exit 1
 fi

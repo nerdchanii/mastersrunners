@@ -1,10 +1,11 @@
 ---
 doc_state: current
 owner: harness
-last_verified: 2026-03-12
+last_verified: 2026-03-30
 sources:
   - AGENTS.md
   - docs/runbooks/harness-diagnostics.md
+  - docs/reports/history/README.md
 ---
 
 # Document States
@@ -33,7 +34,7 @@ All new `design/**/*.md` and synced `docs/domain/*.md` must include:
 - `docs/domain/`: current business rules and terms
 - `docs/runbooks/`: current operational procedures
 - `docs/reports/`: historical audits, QA, upgrade summaries
-- `docs/plans/archive/`: preserved historical plans and legacy backlogs
+- `docs/reports/history/`: preserved historical plans and legacy backlogs
 
 ## Authoring Rules
 

@@ -7,7 +7,7 @@ This repository is being reshaped into an agent-friendly engineering harness for
 Read in this order:
 
 1. `AGENTS.md`
-2. `tasks/` for the active initiative or assigned task
+2. `tasks/active/` for in-flight work, or `tasks/` to inspect the queue
 3. `design/` for technical design and architecture
 4. `docs/domain/` for business rules
 5. `docs/runbooks/environment-and-settings.md`
@@ -24,7 +24,7 @@ Read in this order:
 - Readability budget registry: `scripts/check-size-budgets.targets.json`
 - Operating rules and exceptions: `design/operating-rules/`
 - Large change framing: `design/initiatives/`
-- Execution state: `tasks/`
+- Execution state: `tasks/todo/`, `tasks/active/`, `tasks/archive/`
 - Operational guidance: `docs/runbooks/`
 - Runtime environment and settings index: `docs/runbooks/environment-and-settings.md`
 - Executable deployment/test automation: `.github/workflows/`, `scripts/`
@@ -79,25 +79,35 @@ Read in this order:
 Task path pattern:
 
 ```text
-tasks/<initiative-slug>/{todo,active,archive}/<initiative-id>-<order>-<scope>-<slug>.md
+tasks/<status>/<initiative-id>-<order>-<scope>-<slug>.md
 ```
 
 Example:
 
 ```text
-tasks/I-0002-harness-verification/todo/I-0002-010-meta-eslint-repair.md
+tasks/todo/I-0002-010-meta-eslint-repair.md
 ```
 
 Lifecycle:
 
-1. Move a task from `todo/` to `active/` when work starts
-2. Update the task notes while working
-3. Run the self-review checklist in `docs/guides/agent-self-review.md`
-4. Run the task's `verify` commands
-5. Get the required specialist review
-6. Get PO review
-7. Move the task from `active/` to `archive/` in the same changeset that finalizes the work
-8. Commit only after review and verify gates are satisfied
+1. Create a task in `tasks/todo/`
+2. Move the task to `tasks/active/` when work starts
+3. Keep the matching initiative document's `Task Breakdown` in sync with the task path
+4. Update the task notes while working
+5. Run the self-review checklist in `docs/guides/agent-self-review.md`
+6. Run the task's `verify` commands
+7. Get the required specialist review
+8. Get PO review
+9. Move the task from `tasks/active/` to `tasks/archive/` in the same changeset that finalizes the work
+10. Commit only after review and verify gates are satisfied
+
+Initiative and ADR order:
+
+1. Create or update a matching file in `design/initiatives/` when the change is larger than one task
+2. Create tasks under `tasks/todo/` and link them from the initiative's `Task Breakdown`
+3. Update `design/` docs as current technical truth while implementing
+4. Update `docs/domain/` or `docs/runbooks/` when business or operational truth changes
+5. Add an ADR in `design/adr/` only when a technical choice needs a durable decision record
 
 ## Review Routing
 
@@ -113,7 +123,7 @@ Lifecycle:
 - Install dependencies: `pnpm install`
 - Run dev: `pnpm dev`
 - Build workspace: `pnpm build`
-- Create a new task by copying `tasks/_templates/TASK-TEMPLATE.md` into the right initiative and state folder
+- Create a new task by copying `tasks/_templates/TASK-TEMPLATE.md` into `tasks/todo/`
 - Run workspace lint: `pnpm lint`
 - Run explicit workspace typecheck: `pnpm typecheck`
 - Run local CI approximation: `pnpm ci:local`

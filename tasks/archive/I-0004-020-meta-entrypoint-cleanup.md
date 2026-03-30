@@ -12,12 +12,12 @@ depends_on:
   - I-0004-010
 blocked_by: []
 verify:
-  - rg -n "phase7-plan|I-0002-060" README.md AGENTS.md docs/README.md docs/plans/README.md
+  - rg -n "phase7-plan|I-0002-060" README.md AGENTS.md docs/README.md docs/reports/README.md
 artifacts:
   - README.md
   - AGENTS.md
   - docs/README.md
-  - docs/plans/README.md
+  - docs/reports/README.md
 ---
 
 ## Goal

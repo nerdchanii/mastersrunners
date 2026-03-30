@@ -12,12 +12,11 @@ depends_on:
   - I-0004-010
 blocked_by: []
 verify:
-  - test -d docs/plans/archive
+  - test -d docs/reports/history
   - test -f docs/reports/pre-phase5-fixes.md
   - test -f docs/reports/phase6-qa-report.md
 artifacts:
-  - docs/plans/README.md
-  - docs/plans/archive/
+  - docs/reports/history/
   - docs/reports/pre-phase5-fixes.md
   - docs/reports/phase6-qa-report.md
 ---
@@ -29,8 +28,8 @@ Make `docs/plans/` clearly legacy-oriented by introducing archive/report boundar
 ## Done Criteria
 
 - report-like docs live under `docs/reports/`
-- historical phase/decision docs are archived under `docs/plans/archive/`
-- remaining root `docs/plans/` content is explicitly treated as migration input, not current source of truth
+- historical phase/decision docs are archived under `docs/reports/history/`
+- remaining historical planning content is explicitly treated as migration input, not current source of truth
 
 ## Notes
 
@@ -43,13 +42,13 @@ Make `docs/plans/` clearly legacy-oriented by introducing archive/report boundar
 
 ## Handoff
 
-- I-0005 should extract durable design from archived plan material and then reduce further reliance on `docs/plans/`.
+- I-0005 should extract durable design from archived plan material and then reduce further reliance on legacy planning inputs.
 
 ## Attempt Log
 
-- 2026-03-12: introduced `docs/plans/archive/`, moved report-like docs to `docs/reports/`, and marked remaining plan files as migration-only legacy inputs.
+- 2026-03-12: introduced `docs/reports/history/`, moved report-like docs to `docs/reports/`, and marked remaining plan files as migration-only legacy inputs.
 
 ## Review Notes
 
-- Specialist review: docs-reviewer requested repaired links inside archived plans and an in-file legacy banner on `docs/plans/crew-system-v2-design.md`; both were added before acceptance.
+- Specialist review: docs-reviewer requested repaired links inside archived plans and an in-file legacy banner on `docs/reports/history/crew-system-v2-design-legacy-input.md`; both were added before acceptance.
 - PO review: accepted after open release-history work was moved to live follow-up task I-0004-070 instead of pointing readers at archived cleanup tasks.

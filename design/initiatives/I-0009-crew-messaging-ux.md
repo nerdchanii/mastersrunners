@@ -53,8 +53,8 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 
 ## Task Breakdown
 
-- `tasks/I-0009-crew-messaging-ux/archive/I-0009-010-web-crew-messaging-ux-polish.md`
-- `tasks/I-0009-crew-messaging-ux/archive/I-0009-020-web-messaging-e2e-mock-fixtures.md`
+- `tasks/archive/I-0009-010-web-crew-messaging-ux-polish.md`
+- `tasks/archive/I-0009-020-web-messaging-e2e-mock-fixtures.md`
 
 ## Success Criteria
 

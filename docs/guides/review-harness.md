@@ -53,7 +53,7 @@ Before commit, the task must satisfy all of these:
 4. Required specialist review has been completed.
 5. PO review has been completed.
 6. The task file has been updated with review notes.
-7. The task is moved to `archive/` in the same changeset that finalizes the work.
+7. The task is moved from `tasks/active/` to `tasks/archive/` in the same changeset that finalizes the work.
 
 ## Manual PR Use
 
@@ -75,4 +75,4 @@ Record review outcomes in the task file.
 
 - specialist review should note the reviewer role and the main concern checked
 - PO review should note whether acceptance criteria and scope are satisfied
-- if review finds issues, reopen or keep the task in `active/` rather than archiving it
+- if review finds issues, reopen or keep the task in `tasks/active/` rather than archiving it

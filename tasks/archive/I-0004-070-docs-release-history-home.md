@@ -15,7 +15,7 @@ verify:
   - test -f docs/reports/README.md
 artifacts:
   - docs/reports/README.md
-  - docs/plans/README.md
+  - docs/reports/history/README.md
 ---
 
 ## Goal
@@ -34,7 +34,7 @@ Create a durable release-history and milestone index so scorecard readers do not
 ## Self Review
 
 - Scope and intent: limited to release-history navigation and report-home semantics, without turning `docs/reports/` into a new design source of truth.
-- Source of truth: `docs/reports/README.md` now defines the release-history home while `docs/plans/README.md` still treats plans as legacy inputs.
+- Source of truth: `docs/reports/README.md` now defines the release-history home while `docs/reports/history/README.md` keeps legacy planning material clearly non-canonical.
 - Design divergence: none; the task closes an open documentation gap in the existing truth model.
 - Verification: file-presence check and markdown formatting check cover the touched files.
 - Review routing: `docs-reviewer`, `harness-reviewer`, and `po-reviewer` match the docs/process scope.

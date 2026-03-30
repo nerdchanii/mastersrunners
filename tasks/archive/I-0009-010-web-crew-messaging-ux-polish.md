@@ -31,7 +31,7 @@ artifacts:
   - apps/web/src/pages/messages/[id]/useMessageDetailPage.ts
   - apps/web/e2e/crew-group-chat.spec.ts
   - apps/web/e2e/messages.spec.ts
-  - tasks/I-0009-crew-messaging-ux/archive/I-0009-010-web-crew-messaging-ux-polish.md
+  - tasks/archive/I-0009-010-web-crew-messaging-ux-polish.md
 ---
 
 ## Goal
