@@ -37,12 +37,6 @@ Create reusable Playwright messaging mock fixtures and refactor messaging UX spe
 - Keep the scope on Playwright/E2E mock reuse; do not add an app-runtime demo/mock mode in this task.
 - Prefer scenario builders over one-off constants so future UX tests can describe state instead of rewriting payloads.
 
-## Runtime
-
-- Runtime sidecar: `I-0009-020.runtime.yaml` when the task is in `active/`
-- Next safe action: add shared messaging fixture helpers, then refactor `crew-group-chat` and `messages` specs onto them.
-- Branch / worktree notes: `task-i-0009-crew-messaging-ux`
-
 ## Self Review
 
 - Scope and intent: limited to Playwright messaging fixtures and spec reuse; no app-runtime mock mode or backend seed changes were added.
@@ -68,7 +62,7 @@ Create reusable Playwright messaging mock fixtures and refactor messaging UX spe
 
 ## Attempt Log
 
-- 2026-03-21: scaffolded by `pnpm task:intake`.
+- 2026-03-21: scaffolded as a focused follow-up to reuse messaging Playwright fixtures across the initiative.
 - 2026-03-21: added `apps/web/e2e/helpers/messaging-fixtures.ts` with deterministic builders for DM, crew chat, and activity chat scenarios plus shared route setup.
 - 2026-03-21: refactored `apps/web/e2e/messages.spec.ts` and `apps/web/e2e/crew-group-chat.spec.ts` to declare scenarios via shared fixtures instead of duplicating inline payloads.
 - 2026-03-21: verified with `pnpm --filter @masters/web lint`, `pnpm --filter @masters/web build`, `pnpm --filter @masters/web exec playwright test e2e/crew-group-chat.spec.ts e2e/messages.spec.ts --project=chromium`, and `bash scripts/check-task-review-metadata.sh`.

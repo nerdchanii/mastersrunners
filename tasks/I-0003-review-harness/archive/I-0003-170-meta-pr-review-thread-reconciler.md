@@ -28,7 +28,7 @@ artifacts:
 
 ## Goal
 
-Give the `I-0008` delivery subflow a repo-standard way to export actionable PR review threads and reconcile them with reply-and-resolve behavior through `gh`.
+Give the branch-level PR delivery subflow a repo-standard way to export actionable PR review threads and reconcile them with reply-and-resolve behavior through `gh`.
 
 ## Done Criteria
 
@@ -39,7 +39,7 @@ Give the `I-0008` delivery subflow a repo-standard way to export actionable PR r
 
 ## Notes
 
-- This remains a live branch-level PR lane task under `I-0008-agent-company-workflow`; it does not redefine the repo-wide task supervisor model.
+- This remained a branch-level PR lane task and did not redefine the repo-wide task supervisor model.
 - Thread reconciliation must work for both Gemini and human current-head review threads.
 - Literal suggestion blocks should be extracted into the review bundle for deterministic apply when possible.
 - Superseded by `I-0003-210` on 2026-03-24 when the repository retired the PR-specific harness.
@@ -69,10 +69,10 @@ Give the `I-0008` delivery subflow a repo-standard way to export actionable PR r
 ## Attempt Log
 
 - 2026-03-14: created to standardize review-thread export and reply-plus-resolve reconciliation for the agent-first PR lane.
-- 2026-03-16: reaffirmed as a live near-term task after `I-0008` merged the repo-wide task-supervisor model.
+- 2026-03-16: reaffirmed as a live near-term task after the repo adopted the task-first workflow model.
 - 2026-03-24: archived as superseded after the repository removed the PR-specific harness instead of continuing the branch-level lane.
 
 ## Review Notes
 
 - Specialist review: `harness-reviewer` internal review pass on 2026-03-17. No blocking findings; current-head actionable thread export/reconcile stays branch-scoped and the reply-after-review regression is covered by spec.
-- PO review: `po-reviewer` internal review pass on 2026-03-17. No blocking findings; this remains a narrow PR delivery subflow improvement under `I-0008` and does not overclaim connector maturity.
+- PO review: `po-reviewer` internal review pass on 2026-03-17. No blocking findings; this remained a narrow PR delivery subflow improvement and did not overclaim connector maturity.

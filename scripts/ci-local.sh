@@ -40,7 +40,6 @@ run_step "Check harness structure" bash -c '
   test -d docs
   test -d tasks
   bash scripts/check-generated-artifacts.sh
-  node --test scripts/task-runtime-lib.test.mjs scripts/task-commands.test.mjs
 '
 
 if [ "$CI_LOCAL_INSTALL" = "1" ]; then

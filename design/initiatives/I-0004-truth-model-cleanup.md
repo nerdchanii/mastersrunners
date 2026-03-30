@@ -69,4 +69,4 @@ The repository has a useful harness shape, but source-of-truth boundaries, excep
 
 - `I-0004-070` now turns `docs/reports/README.md` into the durable release-history home for milestone summaries, QA reports, and future release notes.
 - `I-0004-080` retires the legacy diagnostics surface, moves readability budget metadata into a committed JSON registry, and routes future harness checks through `docs/runbooks/harness-diagnostics.md`.
-- `I-0004-090` is now superseded by the repo-native intake transition in `I-0008-agent-company-workflow` so intake defaults no longer split across two live task units.
+- `I-0004-090` is now superseded by the current task-first intake guidance in `AGENTS.md` and `tasks/README.md`, so intake defaults no longer split across two live task units.

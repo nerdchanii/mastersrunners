@@ -26,7 +26,7 @@ artifacts:
 
 ## Goal
 
-Make the `I-0008` delivery subflow's `PR Merge Readiness` block merge until current-head actionable review threads are clean, regardless of whether the feedback came from Gemini or a human reviewer.
+Make the branch-level PR delivery subflow's `PR Merge Readiness` block merge until current-head actionable review threads are clean, regardless of whether the feedback came from Gemini or a human reviewer.
 
 ## Done Criteria
 
@@ -67,7 +67,7 @@ Make the `I-0008` delivery subflow's `PR Merge Readiness` block merge until curr
 ## Attempt Log
 
 - 2026-03-14: created to fold review-thread hygiene into the machine-readable merge gate for dev PRs.
-- 2026-03-16: kept live after `I-0008` because current-head thread hygiene is part of the near-term PR delivery subflow.
+- 2026-03-16: kept live because current-head thread hygiene was part of the near-term PR delivery subflow.
 - 2026-03-24: archived as superseded after the repository removed the PR-specific harness instead of keeping a merge-readiness lane.
 
 ## Review Notes

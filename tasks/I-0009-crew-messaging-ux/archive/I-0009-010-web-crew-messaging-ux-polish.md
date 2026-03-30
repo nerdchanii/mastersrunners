@@ -51,12 +51,6 @@ Polish crew, activity chat, direct messages, and unread badge UX with stronger b
 - Prioritize crew/activity chat awkwardness first, then close the adjacent DM unread issues in the same flow.
 - Keep the current chat transport unchanged; if SSE parity becomes necessary, create a follow-up task instead of widening this batch.
 
-## Runtime
-
-- Runtime sidecar: `I-0009-010.runtime.yaml` when the task is in `active/`
-- Next safe action: collect `frontend-reviewer`, `ui-ux-reviewer`, and `po-reviewer` feedback before archive.
-- Branch / worktree notes: `task-i-0009-crew-messaging-ux`
-
 ## Self Review
 
 - Scope and intent: crew/activity chat presentation, DM unread ownership, browser regressions, and the minimal backend SSE multiplexing fix required for DM unread/detail UAT reliability.
@@ -80,7 +74,7 @@ Polish crew, activity chat, direct messages, and unread badge UX with stronger b
 
 ## Attempt Log
 
-- 2026-03-20: scaffolded by `pnpm task:intake`.
+- 2026-03-20: scaffolded as an initiative task for crew/activity chat polish, DM unread cleanup, and stronger browser coverage.
 - 2026-03-20: task claimed for crew/activity chat polish, DM unread cleanup, and stronger Playwright coverage.
 - 2026-03-21: replaced duplicated shell unread logic with shared unread hooks and route-aware badge hiding for `/messages` and `/notifications`.
 - 2026-03-21: added contextual crew/activity chat copy, aligned activity chat CTA and route gating, and softened polling scroll behavior plus send-failure feedback.

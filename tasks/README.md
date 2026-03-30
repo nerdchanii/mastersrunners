@@ -18,8 +18,6 @@ tasks/
 - Status is represented by folder location only.
 - Do not duplicate task status inside file metadata.
 - One Markdown file equals one executable task.
-- Active tasks may have one sidecar runtime file named `<task-id>.runtime.yaml` in the same folder.
-- The sidecar runtime file is continuity-only. It may mirror branch, worktree, lease, and PR observations, but it never decides task completion, review satisfaction, or archive state.
 - A task should usually have one clear scope such as `api`, `web`, `db`, `docs`, `ci`, or `meta`.
 - Every task must declare its required specialist reviewers.
 - Every task requires PO review before commit.
@@ -41,19 +39,13 @@ I-0002-010-meta-eslint-repair.md
 
 1. Claim from `todo/`
 2. Move to `active/`
-3. If the task uses repo-native continuity, create or refresh `<task-id>.runtime.yaml`
-4. Implement and update notes
-5. Run self-review
-6. Run `verify`
-7. Complete specialist review
-8. Complete PO review
-9. Move to `archive/` in the same changeset that finalizes the task
-10. Commit after review and verify are both satisfied
-
-Bootstrap note:
-
-- `pnpm task:intake` defaults to scaffolding new work in `todo/`.
-- `--state active` is only for a supervising agent that is claiming the task immediately in the same session and will follow with `pnpm task:start`.
+3. Implement and update notes
+4. Run self-review
+5. Run `verify`
+6. Complete specialist review
+7. Complete PO review
+8. Move to `archive/` in the same changeset that finalizes the task
+9. Commit after review and verify are both satisfied
 
 ## Divergence Rule
 
@@ -76,4 +68,3 @@ Bootstrap note:
 - `docs/guides/parallel-worktree-workflow.md`
 - `docs/guides/reviewer-taxonomy.md`
 - `docs/guides/review-harness.md`
-- `docs/runbooks/task-supervisor.md`

@@ -52,7 +52,6 @@ Read in this order:
 - Every task also needs a PO review before commit, including docs-only work.
 - Multi-scope changes need the union of the relevant specialist reviewers, not just one reviewer.
 - Review requirements live in the task file. Do not treat a task as done until review and verify are both complete.
-- Active tasks may carry a task-sidecar runtime file named `<task-id>.runtime.yaml` in the same folder. It is continuity-only and must never replace task folder state, task review notes, or verify truth.
 - Pull requests are optional collaboration artifacts. Do not treat PR state, comments, or approvals as the repository's completion truth.
 - Do not commit free-floating `TODO` or `FIXME` markers. Link them to a task as described in `docs/guides/todo-fixme-policy.md`.
 
@@ -66,7 +65,6 @@ Read in this order:
 - Reviewer-role guidance lives in `docs/guides/reviewer-taxonomy.md`.
 - Commit message subjects are validated in the `commit-msg` hook, not the `pre-commit` hook.
 - Parallel split and merge workflow lives in `design/operating-rules/parallel-worktree-lifecycle.md` and `docs/guides/parallel-worktree-workflow.md`.
-- Task supervisor runtime and repo-native task commands live in `docs/runbooks/task-supervisor.md`.
 
 ## Design Divergence Handling
 
@@ -115,10 +113,7 @@ Lifecycle:
 - Install dependencies: `pnpm install`
 - Run dev: `pnpm dev`
 - Build workspace: `pnpm build`
-- Intake a new repo-native task scaffold: `pnpm task:intake --goal "<goal>" --parent <initiative-slug> --order <NNN> --scope <scope> --slug <slug>` (supervising agent entrypoint)
-- Start task runtime continuity for an active task: `pnpm task:start --task <task_id>`
-- Resume an interrupted active task: `pnpm task:resume --task <task_id>`
-- Show canonical task status plus runtime observations: `pnpm task:status --task <task_id>`
+- Create a new task by copying `tasks/_templates/TASK-TEMPLATE.md` into the right initiative and state folder
 - Run workspace lint: `pnpm lint`
 - Run explicit workspace typecheck: `pnpm typecheck`
 - Run local CI approximation: `pnpm ci:local`

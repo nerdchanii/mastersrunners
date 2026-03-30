@@ -17,22 +17,19 @@ The earlier PR lane added a second workflow truth on top of the task-centric har
 ## Non-Goals
 
 - removing the repository's task review rules
-- redefining task/supervisor/intake semantics that are already owned by `I-0008`
+- redefining the repo-native task/supervisor/intake semantics already documented in the live runbooks
 - treating pull requests as canonical execution truth
 
 ## Scope
 
 - `AGENTS.md`
 - `docs/guides/review-harness.md`
-- `docs/runbooks/task-supervisor.md`
-- `design/initiatives/I-0008-agent-company-workflow.md`
 - `tasks/I-0003-review-harness/`
 
 ## Design References
 
 - `AGENTS.md`
 - `docs/guides/review-harness.md`
-- `design/initiatives/I-0008-agent-company-workflow.md`
 
 ## Review Plan
 
@@ -54,4 +51,4 @@ The earlier PR lane added a second workflow truth on top of the task-centric har
 
 - `I-0003-010` through `I-0003-160` remain as historical evidence of the earlier PR-specific harness work.
 - On 2026-03-24, the repository retired the live PR lane and archived the remaining open `I-0003` tasks as superseded by `I-0003-210`.
-- Further work on task-sidecar continuity and optional PR attachment semantics belongs to `I-0008-agent-company-workflow`, not `I-0003`.
+- Further workflow changes should keep tasks as the only execution truth and avoid rebuilding a PR-specific control surface under `I-0003`.

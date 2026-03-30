@@ -8,7 +8,6 @@ Current runbooks:
 - `harness-diagnostics.md`
 - `deployment.md`
 - `rollback.md`
-- `task-supervisor.md`
 
 Rule:
 

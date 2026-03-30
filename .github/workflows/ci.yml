@@ -47,7 +47,6 @@ jobs:
           test -d docs
           test -d tasks
           bash scripts/check-generated-artifacts.sh
-          node --test scripts/task-runtime-lib.test.mjs scripts/task-commands.test.mjs
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
