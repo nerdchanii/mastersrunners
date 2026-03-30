@@ -51,13 +51,13 @@ The repository now has a strong design corpus, but several high-value domain doc
 ## Task Breakdown
 
 - `tasks/archive/I-0011-005-meta-backlog-seed.md`
-- `tasks/todo/I-0011-010-meta-domain-doc-state-normalization.md`
-- `tasks/todo/I-0011-020-docs-challenge-current-sync.md`
-- `tasks/todo/I-0011-030-docs-social-profile-messaging-integration-sync.md`
-- `tasks/todo/I-0011-040-docs-delete-lifecycle-matrix.md`
-- `tasks/todo/I-0011-050-web-route-fetch-boundary-enforcement.md`
-- `tasks/todo/I-0011-060-api-transport-boundary-hardening.md`
-- `tasks/todo/I-0011-070-api-persistence-and-runtime-logging-boundary.md`
+- `tasks/archive/I-0011-010-meta-domain-doc-state-normalization.md`
+- `tasks/archive/I-0011-020-docs-challenge-current-sync.md`
+- `tasks/archive/I-0011-030-docs-social-profile-messaging-integration-sync.md`
+- `tasks/archive/I-0011-040-docs-delete-lifecycle-matrix.md`
+- `tasks/archive/I-0011-050-web-route-fetch-boundary-enforcement.md`
+- `tasks/archive/I-0011-060-api-transport-boundary-hardening.md`
+- `tasks/archive/I-0011-070-api-persistence-and-runtime-logging-boundary.md`
 
 ## Success Criteria
 
