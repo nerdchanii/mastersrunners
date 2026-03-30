@@ -5,22 +5,14 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 
-import { DatabaseService } from "../database/database.service.js";
-
 import { CrewBoardsRepository } from "./crew-boards.repository.js";
 
 @Injectable()
 export class CrewBoardsService {
-  constructor(
-    private readonly repo: CrewBoardsRepository,
-    private readonly db: DatabaseService,
-  ) {}
+  constructor(private readonly repo: CrewBoardsRepository) {}
 
   private async getMemberRole(crewId: string, userId: string): Promise<string | null> {
-    const member = await this.db.prisma.crewMember.findFirst({
-      where: { crewId, userId, status: "ACTIVE" },
-    });
-    return member?.role ?? null;
+    return this.repo.findMemberRole(crewId, userId);
   }
 
   private isAdmin(role: string | null): boolean {

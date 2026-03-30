@@ -12,6 +12,25 @@ export class BlockRepository {
     });
   }
 
+  async blockAndRemoveFollows(blockerId: string, blockedId: string) {
+    return this.db.prisma.$transaction(async (tx) => {
+      const block = await tx.block.create({
+        data: { blockerId, blockedId },
+      });
+
+      await tx.follow.deleteMany({
+        where: {
+          OR: [
+            { followerId: blockerId, followingId: blockedId },
+            { followerId: blockedId, followingId: blockerId },
+          ],
+        },
+      });
+
+      return block;
+    });
+  }
+
   async unblock(blockerId: string, blockedId: string) {
     return this.db.prisma.block.delete({
       where: {

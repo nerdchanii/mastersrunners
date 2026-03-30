@@ -6,6 +6,15 @@ import { DatabaseService } from "../database/database.service.js";
 export class CrewBoardsRepository {
   constructor(private readonly db: DatabaseService) {}
 
+  async findMemberRole(crewId: string, userId: string) {
+    const member = await this.db.prisma.crewMember.findFirst({
+      where: { crewId, userId, status: "ACTIVE" },
+      select: { role: true },
+    });
+
+    return member?.role ?? null;
+  }
+
   // ============ Boards ============
 
   async createBoard(

@@ -1,6 +1,8 @@
 import { Injectable } from "@nestjs/common";
 
 import { ChallengeAggregationService } from "../challenges/challenge-aggregation.service.js";
+import { StructuredLoggerService } from "../common/logging/structured-logger.service.js";
+import { MonitoringService } from "../common/monitoring/monitoring.service.js";
 import { ShoeRepository } from "../shoes/repositories/shoe.repository.js";
 
 import type { CreateWorkoutDto } from "./dto/create-workout.dto.js";
@@ -13,6 +15,8 @@ export class WorkoutsService {
     private readonly workoutRepo: WorkoutRepository,
     private readonly challengeAggregation: ChallengeAggregationService,
     private readonly shoeRepo: ShoeRepository,
+    private readonly logger: StructuredLoggerService,
+    private readonly monitoring: MonitoringService,
   ) {}
 
   async findAll(
@@ -48,7 +52,18 @@ export class WorkoutsService {
       try {
         await this.shoeRepo.addDistance(dto.shoeId, dto.distance);
       } catch (error) {
-        console.error("Failed to update shoe distance:", error);
+        this.logger.errorWithFields("Failed to update shoe distance", "WorkoutsService", {
+          error,
+          operation: "create",
+          shoeId: dto.shoeId,
+          userId,
+        });
+        this.monitoring.captureException(error, {
+          context: "WorkoutsService.create",
+          operation: "shoe_distance_increment",
+          shoeId: dto.shoeId,
+          userId,
+        });
       }
     }
 
@@ -61,8 +76,16 @@ export class WorkoutsService {
         date: new Date(dto.date),
       });
     } catch (error) {
-      // Log error but don't fail workout creation
-      console.error("Failed to aggregate challenge progress:", error);
+      this.logger.errorWithFields("Failed to aggregate challenge progress", "WorkoutsService", {
+        error,
+        operation: "create",
+        userId,
+      });
+      this.monitoring.captureException(error, {
+        context: "WorkoutsService.create",
+        operation: "challenge_aggregation",
+        userId,
+      });
     }
 
     return workout;
@@ -159,7 +182,18 @@ export class WorkoutsService {
       try {
         await this.shoeRepo.removeDistance(workout.shoeId, workout.distance);
       } catch (error) {
-        console.error("Failed to decrement shoe distance:", error);
+        this.logger.errorWithFields("Failed to decrement shoe distance", "WorkoutsService", {
+          error,
+          operation: "remove",
+          shoeId: workout.shoeId,
+          workoutId: id,
+        });
+        this.monitoring.captureException(error, {
+          context: "WorkoutsService.remove",
+          operation: "shoe_distance_decrement",
+          shoeId: workout.shoeId,
+          workoutId: id,
+        });
       }
     }
 

@@ -2,7 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/commo
 
 import { UserRepository } from "../auth/repositories/user.repository.js";
 import { BlockRepository } from "../block/repositories/block.repository.js";
-import { DatabaseService } from "../database/database.service.js";
+import { CrewMemberRepository } from "../crews/repositories/crew-member.repository.js";
 import { FollowRepository } from "../follow/repositories/follow.repository.js";
 import { WorkoutRepository } from "../workouts/repositories/workout.repository.js";
 
@@ -15,7 +15,7 @@ export class ProfileService {
     private readonly workoutRepo: WorkoutRepository,
     private readonly blockRepo: BlockRepository,
     private readonly followRepo: FollowRepository,
-    private readonly db: DatabaseService,
+    private readonly crewMemberRepo: CrewMemberRepository,
   ) {}
 
   async getProfile(userId: string, currentUserId?: string) {
@@ -36,7 +36,7 @@ export class ProfileService {
       this.workoutRepo.aggregateByUser(userId),
       this.followRepo.countFollowers(userId),
       this.followRepo.countFollowing(userId),
-      this.db.prisma.post.count({ where: { userId, deletedAt: null } }),
+      this.userRepo.countPostsByUser(userId),
     ]);
 
     const totalWorkouts = stats._count;
@@ -73,17 +73,8 @@ export class ProfileService {
   }
 
   async deleteAccount(userId: string) {
-    // 팔로우 관계 삭제
-    await this.db.prisma.follow.deleteMany({
-      where: {
-        OR: [{ followerId: userId }, { followingId: userId }],
-      },
-    });
-
-    // 크루 멤버십 삭제
-    await this.db.prisma.crewMember.deleteMany({
-      where: { userId },
-    });
+    await this.followRepo.deleteAllForUser(userId);
+    await this.crewMemberRepo.deleteAllForUser(userId);
 
     // User soft delete + 개인정보 익명화
     await this.userRepo.softDelete(userId);

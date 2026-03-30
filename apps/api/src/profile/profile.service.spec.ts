@@ -3,7 +3,7 @@ import { Test } from "@nestjs/testing";
 
 import { UserRepository } from "../auth/repositories/user.repository";
 import { BlockRepository } from "../block/repositories/block.repository";
-import { DatabaseService } from "../database/database.service";
+import { CrewMemberRepository } from "../crews/repositories/crew-member.repository";
 import { FollowRepository } from "../follow/repositories/follow.repository";
 import { WorkoutRepository } from "../workouts/repositories/workout.repository";
 
@@ -14,6 +14,7 @@ const mockUserRepo = {
   findByIdBasicSelect: jest.fn(),
   update: jest.fn(),
   searchByName: jest.fn(),
+  countPostsByUser: jest.fn(),
 };
 
 const mockWorkoutRepo = {
@@ -29,14 +30,11 @@ const mockFollowRepo = {
   countFollowers: jest.fn(),
   countFollowing: jest.fn(),
   findFollow: jest.fn(),
+  deleteAllForUser: jest.fn(),
 };
 
-const mockDb = {
-  prisma: {
-    post: {
-      count: jest.fn(),
-    },
-  },
+const mockCrewMemberRepo = {
+  deleteAllForUser: jest.fn(),
 };
 
 describe("ProfileService", () => {
@@ -49,7 +47,9 @@ describe("ProfileService", () => {
     mockFollowRepo.countFollowers.mockResolvedValue(0);
     mockFollowRepo.countFollowing.mockResolvedValue(0);
     mockFollowRepo.findFollow.mockResolvedValue(null);
-    mockDb.prisma.post.count.mockResolvedValue(0);
+    mockFollowRepo.deleteAllForUser.mockResolvedValue(undefined);
+    mockUserRepo.countPostsByUser.mockResolvedValue(0);
+    mockCrewMemberRepo.deleteAllForUser.mockResolvedValue(undefined);
 
     const module = await Test.createTestingModule({
       providers: [
@@ -58,7 +58,7 @@ describe("ProfileService", () => {
         { provide: WorkoutRepository, useValue: mockWorkoutRepo },
         { provide: BlockRepository, useValue: mockBlockRepository },
         { provide: FollowRepository, useValue: mockFollowRepo },
-        { provide: DatabaseService, useValue: mockDb },
+        { provide: CrewMemberRepository, useValue: mockCrewMemberRepo },
       ],
     }).compile();
 

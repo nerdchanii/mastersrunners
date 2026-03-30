@@ -1,6 +1,8 @@
 import { Test } from "@nestjs/testing";
 
 import { ChallengeAggregationService } from "../challenges/challenge-aggregation.service";
+import { StructuredLoggerService } from "../common/logging/structured-logger.service";
+import { MonitoringService } from "../common/monitoring/monitoring.service";
 import { ShoeRepository } from "../shoes/repositories/shoe.repository";
 
 import { WorkoutRepository } from "./repositories/workout.repository";
@@ -25,6 +27,14 @@ const mockShoeRepo = {
   findById: jest.fn(),
 };
 
+const mockLogger = {
+  errorWithFields: jest.fn(),
+};
+
+const mockMonitoring = {
+  captureException: jest.fn(),
+};
+
 describe("WorkoutsService", () => {
   let service: WorkoutsService;
 
@@ -37,6 +47,8 @@ describe("WorkoutsService", () => {
         { provide: WorkoutRepository, useValue: mockWorkoutRepo },
         { provide: ChallengeAggregationService, useValue: mockChallengeAggregation },
         { provide: ShoeRepository, useValue: mockShoeRepo },
+        { provide: StructuredLoggerService, useValue: mockLogger },
+        { provide: MonitoringService, useValue: mockMonitoring },
       ],
     }).compile();
 
@@ -148,17 +160,26 @@ describe("WorkoutsService", () => {
       mockWorkoutRepo.create.mockResolvedValue(workout);
       mockChallengeAggregation.onWorkoutCreated.mockRejectedValue(new Error("Aggregation failed"));
 
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
-
       const result = await service.create("u1", dto);
 
       expect(result).toEqual(workout);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Failed to aggregate challenge progress:",
-        expect.any(Error),
+      expect(mockLogger.errorWithFields).toHaveBeenCalledWith(
+        "Failed to aggregate challenge progress",
+        "WorkoutsService",
+        expect.objectContaining({
+          operation: "create",
+          userId: "u1",
+          error: expect.any(Error),
+        }),
       );
-
-      consoleErrorSpy.mockRestore();
+      expect(mockMonitoring.captureException).toHaveBeenCalledWith(
+        expect.any(Error),
+        expect.objectContaining({
+          context: "WorkoutsService.create",
+          operation: "challenge_aggregation",
+          userId: "u1",
+        }),
+      );
     });
   });
 

@@ -85,4 +85,10 @@ export class CrewMemberRepository {
       orderBy: { joinedAt: "asc" },
     });
   }
+
+  async deleteAllForUser(userId: string) {
+    return this.db.prisma.crewMember.deleteMany({
+      where: { userId },
+    });
+  }
 }

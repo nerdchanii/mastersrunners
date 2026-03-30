@@ -19,6 +19,7 @@ This document defines the preferred backend coding style for `apps/api`. Some mo
 - Business rules belong in services.
 - Persistence access belongs behind repositories or explicit persistence boundaries.
 - Controllers must not call Prisma directly.
+- `DatabaseService` should live in repositories or explicit persistence services, not in feature services that also own product rules.
 
 ## DTO and Validation
 
@@ -42,6 +43,7 @@ This document defines the preferred backend coding style for `apps/api`. Some mo
 
 - Reuse shared guards, filters, and decorators before inventing module-local variants.
 - Keep API contract, auth, validation, and failure handling consistent with NestJS module boundaries.
+- Runtime `console.*` calls are not an accepted API logging boundary. Use `StructuredLoggerService` and optional `MonitoringService` capture instead.
 
 ## Naming
 

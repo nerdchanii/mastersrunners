@@ -59,6 +59,12 @@ export class UserRepository {
     });
   }
 
+  async countPostsByUser(id: string) {
+    return this.db.prisma.post.count({
+      where: { userId: id, deletedAt: null },
+    });
+  }
+
   async findByEmail(email: string) {
     return this.db.prisma.user.findUnique({
       where: { email },
