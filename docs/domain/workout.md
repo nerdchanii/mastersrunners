@@ -90,3 +90,9 @@ sources:
 
 - 워크아웃 상세와 생성 UX는 풍부하지만 route 파일이 여전히 크다.
 - 외부 동기화 모델은 스키마에 있지만, 모든 플랫폼이 동일 성숙도로 구현된 것은 아니다.
+
+## 삭제 규칙
+
+- 현재 workout 삭제는 hard delete가 아니라 `deletedAt`을 채우는 soft delete다.
+- 삭제 후 shoe 거리 차감이 비동기 보정처럼 시도되지만, 실패해도 workout 삭제 자체는 유지된다.
+- 현재 전용 restore API는 없다.

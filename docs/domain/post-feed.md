@@ -70,3 +70,9 @@ sources:
 
 - 피드 집계와 interaction write는 서로 다른 모듈에 분리돼 있다.
 - 프론트엔드에서는 포스트/워크아웃 피드가 같은 화면에 있지만 데이터 패턴은 아직 완전히 통일되지 않았다.
+
+## 삭제 규칙
+
+- `Post` 삭제는 `deletedAt` 기반 soft delete다.
+- `PostComment`와 `WorkoutComment`도 `deletedAt` 기반 soft delete를 사용한다.
+- deleted post/workout에 연결된 like/comment/image/link 레코드는 바로 hard delete 하지 않고 조회 필터로 숨기는 현재 구현이 많다.

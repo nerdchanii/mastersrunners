@@ -11,40 +11,49 @@ sources:
 
 ## 삭제 규칙
 
-### Soft Delete 원칙
+### 현재 삭제/복원 매트릭스
 
-모든 주요 엔티티는 `deletedAt` 타임스탬프로 soft delete 한다.
+| 엔티티 | 현재 삭제 방식 | 복원 | 현재 연쇄/가시성 효과 |
+| --- | --- | --- | --- |
+| `User` | soft delete (`deletedAt`) + 개인정보 익명화 | 로그인 복귀 시 `restoreDeletedUser()` 경로 존재 | follow/crew membership은 계정 삭제 전에 hard delete |
+| `Workout` | soft delete (`deletedAt`) | 현재 전용 restore API 없음 | shoe 거리 차감은 시도되지만 실패해도 삭제는 유지, feed/public 조회에서 제외 |
+| `Post` | soft delete (`deletedAt`) | 현재 restore API 없음 | `PostWorkout`, `PostImage`, `PostLike`, `PostComment` 레코드는 남지만 deleted post 기준으로 숨겨짐 |
+| `PostComment` | soft delete (`deletedAt`) | 현재 restore API 없음 | 대댓글은 남고, UI에서 deleted comment 취급 가능 |
+| `WorkoutComment` | soft delete (`deletedAt`) | 현재 restore API 없음 | 답글 구조는 남고, deleted comment는 필터링된다 |
+| `Conversation.Message` | soft delete (`deletedAt`) | 현재 restore API 없음 | unread 계산과 목록 조회에서 제외 |
+| `Crew` | soft delete (`deletedAt`) | 현재 restore API 없음 | crew 자체는 숨겨지지만 membership/activity/tag/ban 레코드 전체를 soft delete 하지는 않는다 |
+| `Challenge` | soft delete (`deletedAt`) | 현재 restore API 없음 | challenge 조회에서 제외 |
+| `Event` | hard delete | 복원 없음 | `EventParticipant`는 cascade delete, 연결된 `Workout`은 `SetNull` 규칙만 가짐 |
+| `CrewActivity` | hard delete | 복원 없음 | attendance/chat 연계는 현재 문서에선 hard delete 기준으로 읽는다 |
+| `Follow` | hard delete | 복원 없음 | 재팔로우 시 새 레코드 생성 |
+| `Block` | hard delete on unblock | 복원 없음 | 차단 시 양방향 follow 삭제 |
+| `CrewMember` | hard delete 또는 status 전환 혼용 | 일부 status 복원만 존재 | 탈퇴/추방/승인 흐름에 따라 delete와 status update가 섞여 있다 |
 
-### Workout 삭제 시 연쇄 효과
+### Workout 삭제 시 현재 연쇄 효과
 
-| 대상                  | 동작                                               |
-| --------------------- | -------------------------------------------------- |
-| Shoe.totalDistance    | 해당 거리만큼 차감                                 |
-| Challenge progress    | 해당 기록만큼 차감                                 |
-| PostWorkout 연결      | 연결 해제 (Post는 유지)                            |
-| WorkoutLike           | 숨김 처리 (삭제된 워크아웃과 연결)                 |
-| WorkoutComment        | 숨김 처리 (삭제된 워크아웃과 연결)                 |
-| EventParticipant 연결 | 연결 해제 (참가 결과 값은 별도 자동 복원하지 않음) |
+| 대상 | 현재 동작 |
+| --- | --- |
+| `Shoe.totalDistance` | 삭제 시 차감을 시도하지만 실패해도 workout soft delete는 유지 |
+| `Challenge progress` | 현재 delete 시 자동 롤백 규칙이 보장되지 않는다 |
+| `PostWorkout` | 연결 레코드는 남을 수 있다. deleted workout 기준으로 노출이 줄어든다 |
+| `WorkoutLike` / `WorkoutComment` | 레코드는 남고 `deletedAt` 필터로 숨겨진다 |
+| `EventParticipant.workoutId` | workout relation은 스키마상 `SetNull`이지만, 현재 workout은 soft delete라 자동 null 복원 흐름은 없다 |
 
-### Workout 복원 시
+### Post 삭제 시 현재 연쇄 효과
 
-- 유저가 **무엇을 다시 연결할지 선택** (신발, 챌린지, 포스트, 대회)
-- 자동 복원하지 않음
+| 대상 | 현재 동작 |
+| --- | --- |
+| `PostWorkout` | 자동 detach 하지 않는다 |
+| `PostLike` | 레코드는 남고 deleted post 기준으로 숨겨진다 |
+| `PostComment` | 레코드는 남고 deleted post 기준으로 숨겨진다 |
+| `PostImage` | 레코드는 남고 deleted post 기준으로 숨겨진다 |
 
-### Post 삭제 시 연쇄 효과
+### 현재 구현이 드러내는 중요한 불일치
 
-| 대상             | 동작                             |
-| ---------------- | -------------------------------- |
-| PostWorkout 연결 | 연결 해제 (Workout은 유지)       |
-| PostLike         | 숨김 처리 (삭제된 포스트와 연결) |
-| PostComment      | 숨김 처리 (삭제된 포스트와 연결) |
-| PostImage        | 숨김 처리                        |
-
-### 기타 삭제 규칙
-
-- Comment 삭제: Soft delete, 대댓글은 유지 ("삭제된 댓글입니다" 표시)
-- User 탈퇴: Soft delete, 일정 기간 후 hard delete (기간 TBD)
-- Crew 삭제: OWNER만 가능, 모든 멤버십/활동/출석 데이터 soft delete
+- “모든 주요 엔티티가 soft delete”라는 규칙은 현재 truth가 아니다.
+- `Crew`는 soft delete지만 관련 membership/activity/tag/ban이 모두 같이 soft delete 되는 것은 아니다.
+- `Event`와 일부 crew 하위 엔티티는 hard delete다.
+- `Workout` 삭제 시 challenge progress나 linked relation이 자동으로 복원되는 현재 보장은 없다.
 
 ## 차단 규칙 (Block Filtering)
 

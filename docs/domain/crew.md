@@ -101,3 +101,9 @@ sources:
 
 - 크루 상세 화면은 멤버·활동·태그·통계·게시판·채팅을 한 route에 모은다.
 - 도메인 모델은 풍부하지만 UX와 코드 경계는 여전히 무겁다.
+
+## 삭제 규칙
+
+- `Crew` 삭제는 현재 `deletedAt` 기반 soft delete다.
+- 반면 `CrewActivity`, `CrewTag`, 일부 membership/ban 조작은 hard delete 경로를 쓴다.
+- 즉, “크루를 지우면 하위 엔티티도 모두 soft delete 된다”는 현재 truth가 아니다.
