@@ -1,9 +1,9 @@
-import type { SignOptions } from "jsonwebtoken";
+import type { JwtSignOptions } from "@nestjs/jwt";
 
 export function resolveJwtExpiresIn(
   value: string | number | undefined,
   fallbackSeconds: number,
-): SignOptions["expiresIn"] {
+): JwtSignOptions["expiresIn"] {
   if (typeof value === "number") {
     return value;
   }
@@ -17,5 +17,5 @@ export function resolveJwtExpiresIn(
     return Number(trimmed);
   }
 
-  return trimmed as SignOptions["expiresIn"];
+  return trimmed as JwtSignOptions["expiresIn"];
 }
