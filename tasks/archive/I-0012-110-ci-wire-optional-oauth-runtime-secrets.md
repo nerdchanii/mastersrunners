@@ -12,7 +12,7 @@ depends_on:
   - I-0012-060
 blocked_by: []
 verify:
-  - pnpm exec prettier --check .github/workflows/deploy.yml docs/runbooks/deployment.md docs/runbooks/environment-and-settings.md design/initiatives/I-0012-supabase-postgres-rollout.md tasks/active/I-0012-110-ci-wire-optional-oauth-runtime-secrets.md
+  - pnpm exec prettier --check .github/workflows/deploy.yml docs/runbooks/deployment.md docs/runbooks/environment-and-settings.md design/initiatives/I-0012-supabase-postgres-rollout.md tasks/archive/I-0012-110-ci-wire-optional-oauth-runtime-secrets.md
   - gh api repos/nerdchanii/mastersrunners/environments/dev/variables | rg 'KAKAO_CALLBACK_URL|GOOGLE_CALLBACK_URL|NAVER_CALLBACK_URL'
   - gh api repos/nerdchanii/mastersrunners/environments/production/variables | rg 'KAKAO_CALLBACK_URL|GOOGLE_CALLBACK_URL|NAVER_CALLBACK_URL'
 artifacts:

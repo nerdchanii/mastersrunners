@@ -13,7 +13,7 @@ depends_on:
   - I-0012-060
 blocked_by: []
 verify:
-  - pnpm exec prettier --check .github/workflows/deploy.yml docs/runbooks/deployment.md docs/runbooks/environment-and-settings.md design/initiatives/I-0012-supabase-postgres-rollout.md tasks/active/I-0012-090-ci-cloud-run-runtime-service-account-rollout.md
+  - pnpm exec prettier --check .github/workflows/deploy.yml docs/runbooks/deployment.md docs/runbooks/environment-and-settings.md design/initiatives/I-0012-supabase-postgres-rollout.md tasks/archive/I-0012-090-ci-cloud-run-runtime-service-account-rollout.md
   - gh api repos/nerdchanii/mastersrunners/environments/dev/variables | rg 'CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT'
   - gh api repos/nerdchanii/mastersrunners/environments/production/variables | rg 'CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT'
   - gcloud run services describe masters-runners-api-dev --project mastersrunners-dev-20260331 --region asia-northeast3 --format='value(status.url)'
@@ -41,11 +41,11 @@ Keep branch-aware API deploys from falling back to the default Compute Engine se
 
 ## Self Review
 
-- Scope and intent:
-- Source of truth:
-- Design divergence:
-- Verification:
-- Review routing:
+- Scope and intent: keep the change on deploy-lane identity wiring so first-time Cloud Run creation never falls back to the default Compute Engine service account.
+- Source of truth: `.github/workflows/deploy.yml`, `docs/runbooks/deployment.md`, and `docs/runbooks/environment-and-settings.md` define the runtime identity contract.
+- Design divergence: none intended; the task makes the documented GCP bootstrap contract explicit inside the deploy workflow.
+- Verification: `pnpm exec prettier --check ...`, `gh api` checks for dev/production environment variables, and `gcloud run services describe masters-runners-api-dev ... --format='value(status.url,spec.template.spec.serviceAccountName)'` all passed on 2026-04-01.
+- Review routing: `harness-reviewer` covers workflow/runtime identity correctness, `docs-reviewer` covers operator clarity, and `po-reviewer` covers rollout usability.
 
 ## Review Focus
 
@@ -66,8 +66,9 @@ Keep branch-aware API deploys from falling back to the default Compute Engine se
 
 - 2026-03-31: observed dev deploy failures after DB bootstrap succeeded because `gcloud run deploy` tried to act as `407655598720-compute@developer.gserviceaccount.com` instead of the dedicated `cloud-run-runtime@...` identity.
 - 2026-03-31: added `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT` to both GitHub environments so branch deploy lanes can target `cloud-run-runtime@mastersrunners-dev-20260331.iam.gserviceaccount.com` and `cloud-run-runtime@mastersrunners-prod-20260331.iam.gserviceaccount.com`.
+- 2026-04-01: re-verified the repo contract and external lane state. GitHub environments expose `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT`, and `masters-runners-api-dev` now reports `cloud-run-runtime@mastersrunners-dev-20260331.iam.gserviceaccount.com` as the live Cloud Run runtime identity.
 
 ## Review Notes
 
-- Specialist review:
-- PO review:
+- Specialist review: harness-reviewer and docs-reviewer lenses say the deploy workflow now validates and uses the explicit runtime identity, and the runbooks explain that contract without leaving first-service creation behavior implicit.
+- PO review: deploy operators now have a clearer bootstrap contract with no product-facing behavior change beyond removing a fragile first-deploy failure mode.
