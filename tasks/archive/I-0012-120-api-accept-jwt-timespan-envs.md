@@ -14,7 +14,7 @@ blocked_by: []
 verify:
   - pnpm --filter @masters/api test -- --runTestsByPath src/auth/auth.service.spec.ts
   - pnpm --filter @masters/api build
-  - pnpm exec prettier --check apps/api/src/auth/auth.module.ts apps/api/src/auth/auth.service.ts apps/api/src/auth/jwt-ttl.ts apps/api/src/auth/auth.service.spec.ts .env.production.example docs/runbooks/deployment.md design/initiatives/I-0012-supabase-postgres-rollout.md tasks/active/I-0012-120-api-accept-jwt-timespan-envs.md
+  - pnpm exec prettier --check apps/api/src/auth/auth.module.ts apps/api/src/auth/auth.service.ts apps/api/src/auth/jwt-ttl.ts apps/api/src/auth/auth.service.spec.ts .env.production.example docs/runbooks/deployment.md design/initiatives/I-0012-supabase-postgres-rollout.md tasks/archive/I-0012-120-api-accept-jwt-timespan-envs.md
 artifacts:
   - apps/api/src/auth/auth.module.ts
   - apps/api/src/auth/auth.service.ts
@@ -66,6 +66,7 @@ Allow JWT TTL environment values to use either numeric seconds or jsonwebtoken-s
 ## Attempt Log
 
 - 2026-03-31: Cloud Run logs showed `\"expiresIn\" should be a number of seconds or string representing a timespan` during Kakao callback because the runtime cast string TTL env values to `Number(...)` before signing tokens.
+- 2026-04-01: reverified the auth spec, API build, and formatting checks after confirming the code and docs already accept numeric seconds and string timespans.
 
 ## Review Notes
 

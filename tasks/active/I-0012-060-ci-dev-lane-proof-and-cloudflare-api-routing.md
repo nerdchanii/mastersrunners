@@ -1,6 +1,6 @@
 ---
 id: I-0012-060
-title: Bootstrap GitHub deploy environments and external proof for dual API lanes
+title: Capture dev-lane deploy proof and Cloudflare same-domain API routing
 parent: I-0012-supabase-postgres-rollout
 scope: ci
 owner: unassigned
@@ -13,7 +13,7 @@ depends_on:
 blocked_by: []
 verify:
   - bash -n scripts/bootstrap-gcp-secrets.sh
-  - pnpm exec prettier --check docs/runbooks/deployment.md docs/runbooks/environment-and-settings.md design/operating-rules/exceptions.md design/initiatives/I-0012-supabase-postgres-rollout.md tasks/active/I-0012-060-ci-github-environment-bootstrap-proof.md
+  - pnpm exec prettier --check docs/runbooks/deployment.md docs/runbooks/environment-and-settings.md design/operating-rules/exceptions.md design/initiatives/I-0012-supabase-postgres-rollout.md tasks/active/I-0012-060-ci-dev-lane-proof-and-cloudflare-api-routing.md
 artifacts:
   - docs/runbooks/deployment.md
   - docs/runbooks/environment-and-settings.md
@@ -24,37 +24,38 @@ artifacts:
 
 ## Goal
 
-Prove and record the external GitHub/GCP environment bootstrap needed for the branch-aware API deploy lanes.
+Prove and record the external dev-lane bootstrap and same-domain API routing needed for the current pre-launch environment.
 
 ## Done Criteria
 
-- GitHub environments `dev` and `production` exist with the expected branch protections
-- each environment has the required secrets and variables for its API deploy lane
-- any remaining unproven dashboard-only state is captured as a durable exception instead of chat-only knowledge
+- the `dev` GitHub/GCP environment and Cloud Run service proof is explicit and durable
+- Cloudflare same-domain routing from `dev.mastersrunners.com` to the dev API is externally checked and recorded
+- intentionally deferred `main` or apex cutover work is called out as future rollout work instead of being mixed into current dev acceptance
 
 ## Notes
 
 - This task is intentionally external-state heavy.
 - The repo-side workflow/docs contract is already tracked in `I-0012-050`.
+- The current rollout phase treats `dev` as the live verification lane while `mastersrunners.com` stays on the placeholder host.
 
 ## Self Review
 
-- Scope and intent: this task is now in progress for external bootstrap proof only; repo-side branch-aware deploy logic already shipped in `I-0012-050`.
-- Source of truth: the task records external GCP and GitHub environment bootstrap facts without committing secret values.
-- Design divergence: none intended yet; the remaining gap is unproven GitHub environment settings and missing Secret Manager/Cloud Run runtime state.
-- Verification: pending targeted `prettier --check` once the proof notes and any matching exception updates settle.
-- Review routing: `harness-reviewer` and `docs-reviewer` remain appropriate because the task is about durable external-state proof and operator-facing evidence.
+- Scope and intent: the task now focuses on the current dev lane and its same-domain API routing instead of treating deferred production rollout work as an immediate blocker.
+- Source of truth: the task records external GitHub, GCP, and Cloudflare state without committing secret values.
+- Design divergence: none intended; the remaining gap is Cloudflare routing proof and health-path alignment for the dev host.
+- Verification: pending targeted `prettier --check` once the narrowed scope notes settle.
+- Review routing: `harness-reviewer` and `docs-reviewer` remain appropriate because this is operator-facing proof and rollout evidence.
 
 ## Review Focus
 
 - Specialist reviewer should check:
-  - external bootstrap proof is explicit and does not leak secret values
+  - dev-lane proof is explicit, current, and does not leak secret values
 - PO reviewer should check:
-  - the deploy environments match the intended dev/main release process
+  - the task reflects the current rollout strategy where dev proof comes first and apex launch is intentionally deferred
 
 ## Handoff
 
-- Complete this task while creating the actual GitHub environments, GCP project(s), service accounts, Secret Manager entries, and Cloud Run services.
+- Follow-up health-path alignment is tracked separately in `I-0012-140`; future `main` or apex launch proof should be handled when the placeholder host is retired.
 
 ## Design Divergence
 
@@ -76,7 +77,8 @@ Prove and record the external GitHub/GCP environment bootstrap needed for the br
 - 2026-03-31: added `scripts/bootstrap-gcp-secrets.sh` so local operator env files can upsert the required Secret Manager values into `mastersrunners-dev-20260331` and `mastersrunners-prod-20260331` without committing or sharing raw secrets.
 - 2026-03-31: synced the dev Secret Manager lane with corrected Supabase transaction/session pooler URLs after proving locally that `pnpm db:migrate:deploy` and `pnpm db:seed` require `uselibpqcompat=true` in both connection strings.
 - 2026-03-31: first `dev` branch deploy created Cloud Run service `masters-runners-api-dev` and published stable URL `https://masters-runners-api-dev-e2m534vcpa-du.a.run.app`; `scripts/verify-deployment.sh` now passes against that service.
-- 2026-03-31: remaining external work is OAuth provider secret population per lane, Cloudflare `/api/*` proxy wiring, production-lane proof, and optional cleanup/deletion of the old `mastersrunners` project after cutover.
+- 2026-04-01: confirmed `https://dev.mastersrunners.com/api/v1/auth/providers` returns provider availability, so OAuth provider secret population is no longer an open dev-lane blocker.
+- 2026-04-01: narrowed the task to current dev-lane proof and Cloudflare same-domain API routing because `mastersrunners.com` intentionally remains on the placeholder host until later rollout work.
 
 ## Review Notes
 
