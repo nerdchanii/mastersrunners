@@ -54,6 +54,7 @@ The repository currently documents generic PostgreSQL deployment assumptions, bu
 - `tasks/archive/I-0012-050-ci-dual-branch-api-deploy-lanes.md`
 - `tasks/todo/I-0012-060-ci-github-environment-bootstrap-proof.md`
 - `tasks/archive/I-0012-070-ci-fix-dev-pipeline-regressions.md`
+- `tasks/archive/I-0012-080-api-stabilize-challenge-coverage-dates.md`
 - `tasks/todo/I-0012-030-db-supabase-pro-upgrade-readiness.md`
 
 ## Success Criteria
