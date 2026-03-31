@@ -61,11 +61,12 @@ This document defines the intended deployment shape for the repository. Runbooks
 ### Current Rollout Phase
 
 - The active app host is expected to be `dev.mastersrunners.com` on the `dev` branch while apex/www remain on a placeholder site.
+- The `dev` branch is the only automated API deploy branch during the current prelaunch phase.
 - The `main` branch remains the intended production branch for the eventual `mastersrunners.com` app launch.
 
 ## Rollout Model
 
-1. Commit lands on `main`
+1. Commit lands on `dev`
 2. CI validates build and tests
 3. Deploy workflow validates deploy vars and additive-only migration safety
 4. Deploy workflow builds and pushes the API image

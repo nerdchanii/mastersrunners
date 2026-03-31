@@ -5,7 +5,7 @@ This runbook explains how deployment works in this repository, what to verify be
 ## Source of Execution
 
 - CI test gate: `.github/workflows/ci.yml`
-- Production deploy workflow: `.github/workflows/deploy.yml`
+- Current dev deploy workflow: `.github/workflows/deploy.yml`
 - Automated migration safety guard: `scripts/check-safe-production-migrations.sh`
 - Production-like local stack: `docker-compose.prod.yml`
 - Post-deploy verification script: `scripts/verify-deployment.sh`
@@ -13,11 +13,12 @@ This runbook explains how deployment works in this repository, what to verify be
 
 ## Deployment Surfaces
 
-### Production API
+### Current API Rollout
 
 - Target: Google Cloud Run
-- Trigger: push to `main`
+- Trigger: push to `dev`
 - Artifact: Docker image built from `apps/api/Dockerfile`
+- Service: `masters-runners-api-dev`
 - Database target: Supabase Postgres via `DATABASE_URL`
 
 ### Production-like Local Verification
@@ -63,7 +64,7 @@ This runbook explains how deployment works in this repository, what to verify be
 - `DIRECT_URL` is intentionally not injected into Cloud Run because the API runtime should not need the migration/operator URL.
 - Current beta deploy posture also keeps Cloud Run at `min-instances=0` and `max-instances=1`.
 - The deploy workflow still needs Secret Manager access to `DIRECT_URL` so it can run `prisma migrate deploy` and `prisma db seed` before shipping a new revision.
-- Automated main-branch migrations intentionally allow only a narrow additive SQL subset; anything outside that subset must use a manual rollout task instead of relying on regex guesses about backward compatibility.
+- Automated dev-branch migrations intentionally allow only a narrow additive SQL subset; anything outside that subset must use a manual rollout task instead of relying on regex guesses about backward compatibility.
 - `FRONTEND_URL` is required for production boot because the API uses it for CORS and OAuth redirect targets.
 - If a social provider is enabled with `<PROVIDER>_CLIENT_ID`, the matching `<PROVIDER>_CALLBACK_URL` must also be present.
 - The deploy workflow only validates repo-managed variables. OAuth provider client IDs and secrets still live in external Cloud Run or Secret Manager state, so API boot-time validation remains the final guard against stale provider callback config.
@@ -142,15 +143,17 @@ docker compose --env-file .env.production -f docker-compose.prod.yml logs -f api
 docker compose --env-file .env.production -f docker-compose.prod.yml down
 ```
 
-## Production Deploy Flow
+## Current Dev Deploy Flow
 
-1. Merge or push the release commit to `main`.
+1. Merge or push the release commit to `dev`.
 2. GitHub Actions validates repo-managed deploy vars and additive-only migration safety.
 3. GitHub Actions builds and pushes the API image.
 4. GitHub Actions loads `DIRECT_URL` from Secret Manager.
 5. GitHub Actions runs `pnpm db:migrate:deploy` and `pnpm db:seed`.
 6. GitHub Actions deploys that image to Cloud Run.
 7. GitHub Actions runs `scripts/verify-deployment.sh` against the deployed service URL.
+
+`main` remains the intended future production branch, but automated API deploy is intentionally disabled there during the current prelaunch phase.
 
 ## Cloudflare Pages Build Contract
 

@@ -2,11 +2,11 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [dev]
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  SERVICE_NAME: masters-runners-api
+  SERVICE_NAME: masters-runners-api-dev
   REGION: asia-northeast3
   FRONTEND_URL: ${{ vars.FRONTEND_URL }}
   API_PUBLIC_URL: ${{ vars.API_PUBLIC_URL }}
@@ -17,7 +17,7 @@ env:
 jobs:
   deploy-api:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/dev'
 
     permissions:
       contents: read
@@ -50,10 +50,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate production env contract
+      - name: Validate dev deploy env contract
         run: |
           if [ -z "${FRONTEND_URL}" ]; then
-            echo "::error::GitHub variable FRONTEND_URL must be set for Cloud Run deploys."
+            echo "::error::GitHub variable FRONTEND_URL must be set for dev Cloud Run deploys."
             exit 1
           fi
 
@@ -75,11 +75,11 @@ jobs:
           echo "::add-mask::$DIRECT_URL"
           echo "DIRECT_URL=$DIRECT_URL" >> "$GITHUB_ENV"
           if [ -z "${DIRECT_URL}" ]; then
-            echo "::error::Secret Manager secret DIRECT_URL must be set for production migrations."
+            echo "::error::Secret Manager secret DIRECT_URL must be set for automated dev deploy migrations."
             exit 1
           fi
 
-      - name: Run production migrations and seed
+      - name: Run automated dev migrations and seed
         run: |
           pnpm db:migrate:deploy
           pnpm db:seed
