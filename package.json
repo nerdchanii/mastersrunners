@@ -18,7 +18,9 @@
     "depcruise": "dependency-cruiser --config .dependency-cruiser.cjs apps packages",
     "deploy:verify": "bash scripts/verify-deployment.sh",
     "db:migrate": "pnpm --filter @masters/database db:migrate",
+    "db:migrate:deploy": "pnpm --filter @masters/database db:migrate:deploy",
     "db:push": "pnpm --filter @masters/database db:push",
+    "db:seed": "pnpm --filter @masters/database db:seed",
     "db:studio": "pnpm --filter @masters/database db:studio",
     "db:generate": "pnpm --filter @masters/database db:generate",
     "clean": "pnpm -r run clean"

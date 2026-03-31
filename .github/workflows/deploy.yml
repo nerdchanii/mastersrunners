@@ -36,6 +36,30 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate production env contract
+        run: |
+          if [ -z "${FRONTEND_URL}" ]; then
+            echo "::error::GitHub variable FRONTEND_URL must be set for Cloud Run deploys."
+            exit 1
+          fi
+
+      - name: Check automated migration safety
+        run: bash scripts/check-safe-production-migrations.sh "${{ github.event.before }}" "${{ github.sha }}"
+
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
@@ -45,12 +69,20 @@ jobs:
           docker build -t "$IMAGE" -f apps/api/Dockerfile .
           docker push "$IMAGE"
 
-      - name: Validate production env contract
+      - name: Load migration URL from Secret Manager
         run: |
-          if [ -z "${FRONTEND_URL}" ]; then
-            echo "::error::GitHub variable FRONTEND_URL must be set for Cloud Run deploys."
+          DIRECT_URL=$(gcloud secrets versions access latest --secret=DIRECT_URL)
+          echo "::add-mask::$DIRECT_URL"
+          echo "DIRECT_URL=$DIRECT_URL" >> "$GITHUB_ENV"
+          if [ -z "${DIRECT_URL}" ]; then
+            echo "::error::Secret Manager secret DIRECT_URL must be set for production migrations."
             exit 1
           fi
+
+      - name: Run production migrations and seed
+        run: |
+          pnpm db:migrate:deploy
+          pnpm db:seed
 
       - name: Deploy to Cloud Run
         run: |
@@ -77,7 +109,7 @@ jobs:
             --memory 512Mi \
             --cpu 1 \
             --min-instances 0 \
-            --max-instances 3 \
+            --max-instances 1 \
             --set-env-vars "$(IFS=,; echo "${env_vars[*]}")" \
             --set-secrets "DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest,JWT_ACCESS_TTL=JWT_ACCESS_TTL:latest,JWT_REFRESH_TTL=JWT_REFRESH_TTL:latest,R2_ACCOUNT_ID=R2_ACCOUNT_ID:latest,R2_ACCESS_KEY_ID=R2_ACCESS_KEY_ID:latest,R2_SECRET_ACCESS_KEY=R2_SECRET_ACCESS_KEY:latest,R2_BUCKET_NAME=R2_BUCKET_NAME:latest,R2_PUBLIC_URL=R2_PUBLIC_URL:latest"
 

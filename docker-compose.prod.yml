@@ -9,7 +9,7 @@ services:
       - "4000:4000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://masters:masters@db:5432/masters_runners
+      - DATABASE_URL=${DATABASE_URL:-postgresql://masters:masters@db:5432/masters_runners}
       - API_PORT=4000
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
       - REDIS_URL=redis://redis:6379

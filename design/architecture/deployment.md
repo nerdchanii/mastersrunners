@@ -21,7 +21,7 @@ This document defines the intended deployment shape for the repository. Runbooks
 
 - API: NestJS container on Google Cloud Run
 - Web: static Vite SPA on Cloudflare Pages
-- Database: PostgreSQL
+- Database: Supabase Postgres
 - File storage: Cloudflare R2
 
 ## Execution Boundaries
@@ -46,6 +46,7 @@ This document defines the intended deployment shape for the repository. Runbooks
 
 - Runtime config is injected by the deploy workflow through env vars and secrets
 - Web runtime config for Cloudflare Pages is injected through Pages environment variables such as `VITE_API_URL`
+- API runtime should use the pooled Supabase `DATABASE_URL`, while Prisma CLI/operator flows should use `DIRECT_URL` when available
 - Non-development web builds intentionally fail when `VITE_API_URL` is missing instead of silently falling back to localhost
 - Production deploys should be immutable by commit SHA
 - Redis appears in environment and compose-level deployment assumptions, but the current repo implementation does not use a shared Redis runtime for app logic or realtime fan-out
@@ -54,7 +55,7 @@ This document defines the intended deployment shape for the repository. Runbooks
 
 ### Local Production-Like
 
-- Runtime config is read from `.env.production` and `docker-compose.prod.yml`
+- Runtime config is read from `.env.production` via `docker compose --env-file` and `docker-compose.prod.yml`
 - This path exists to validate the containerized runtime before or alongside production rollout work
 
 ### Current Rollout Phase
@@ -66,9 +67,12 @@ This document defines the intended deployment shape for the repository. Runbooks
 
 1. Commit lands on `main`
 2. CI validates build and tests
-3. Deploy workflow builds and pushes the API image
-4. Cloud Run receives the new revision
-5. Verification script checks service health
+3. Deploy workflow validates deploy vars and additive-only migration safety
+4. Deploy workflow builds and pushes the API image
+5. Deploy workflow loads `DIRECT_URL` from Secret Manager
+6. Deploy workflow applies additive-only automated migrations and seed data
+7. Cloud Run receives the new revision
+8. Verification script checks service health
 
 ## Rollback Model
 

@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-03-12
+last_verified: 2026-03-31
 sources:
   - packages/database/package.json
   - packages/database/src/index.ts
@@ -18,6 +18,8 @@ sources:
 ## Summary
 
 PostgreSQL persistence is centralized through Prisma in `packages/database`, and the API consumes that client through `DatabaseService`.
+
+For the Supabase-backed deployment path, the API runtime uses `DATABASE_URL` and Prisma CLI/operator flows prefer `DIRECT_URL` when it is present.
 
 ## Ownership
 
@@ -47,4 +49,7 @@ The schema currently concentrates multiple domains in one relational model:
 ## Current Constraints
 
 - Generated client code under `packages/database/generated` is build output, not editable source.
+- Runtime and Prisma CLI may intentionally use different connection URLs in deployment environments:
+  - `DATABASE_URL` for pooled runtime access
+  - `DIRECT_URL` for migrations, seed, and operator commands
 - Most domain contracts still live close to Prisma models and Nest DTO/service logic. There is not yet a separate repository-wide domain-model package.
