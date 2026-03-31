@@ -4,6 +4,7 @@ import { JwtService } from "@nestjs/jwt";
 
 import { AccountRepository } from "./repositories/account.repository.js";
 import { UserRepository } from "./repositories/user.repository.js";
+import { resolveJwtExpiresIn } from "./jwt-ttl.js";
 
 export interface OAuthProfile {
   provider: string;
@@ -38,7 +39,7 @@ export class AuthService {
     const accessToken = this.jwt.sign(payload);
 
     const refreshToken = this.jwt.sign(payload, {
-      expiresIn: Number(this.config.get("JWT_REFRESH_TTL", 604800)),
+      expiresIn: resolveJwtExpiresIn(this.config.get<string>("JWT_REFRESH_TTL"), 604800),
     });
 
     return { accessToken, refreshToken };

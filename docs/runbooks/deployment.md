@@ -86,6 +86,7 @@ This runbook explains how deployment works in this repository, what to verify be
   - `NAVER_CLIENT_ID`
   - `NAVER_CLIENT_SECRET`
 - `DATABASE_URL` should be the Supabase transaction-pooler runtime URL for Cloud Run.
+- `JWT_ACCESS_TTL` and `JWT_REFRESH_TTL` may be either numeric seconds or jsonwebtoken-style timespan strings such as `15m` and `30d`.
 - `DIRECT_URL` is intentionally not injected into Cloud Run because the API runtime should not need the migration/operator URL.
 - Current beta deploy posture also keeps Cloud Run at `min-instances=0` and `max-instances=1`.
 - `CLOUD_RUN_SERVICE_NAME` must be provided per GitHub environment so the deploy lane can target the correct Cloud Run service.

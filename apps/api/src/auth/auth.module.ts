@@ -14,6 +14,7 @@ import { KakaoStrategy } from "./strategies/kakao.strategy.js";
 import { NaverStrategy } from "./strategies/naver.strategy.js";
 import { AuthController } from "./auth.controller.js";
 import { AuthService } from "./auth.service.js";
+import { resolveJwtExpiresIn } from "./jwt-ttl.js";
 
 // Only register OAuth strategies when credentials are configured.
 // dotenv/config runs synchronously before module loading, so process.env is safe here.
@@ -32,7 +33,7 @@ if (process.env.NAVER_CLIENT_ID) oauthStrategies.push(NaverStrategy);
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>("JWT_SECRET"),
         signOptions: {
-          expiresIn: Number(config.get("JWT_ACCESS_TTL", 900)),
+          expiresIn: resolveJwtExpiresIn(config.get<string>("JWT_ACCESS_TTL"), 900),
         },
       }),
     }),

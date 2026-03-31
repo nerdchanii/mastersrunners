@@ -65,6 +65,19 @@ describe("AuthService", () => {
       );
       expect(result).toEqual({ accessToken: "access-token", refreshToken: "refresh-token" });
     });
+
+    it("should preserve string timespans for refresh token expiry", () => {
+      mockJwtService.sign.mockReturnValueOnce("access-token").mockReturnValueOnce("refresh-token");
+      mockConfigService.get.mockReturnValue("30d");
+
+      service.generateTokens({ id: "u1", email: "t@t.com" });
+
+      expect(mockJwtService.sign).toHaveBeenNthCalledWith(
+        2,
+        { sub: "u1", email: "t@t.com" },
+        { expiresIn: "30d" },
+      );
+    });
   });
 
   describe("upsertOAuthUser", () => {
