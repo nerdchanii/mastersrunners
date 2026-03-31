@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: architecture
-last_verified: 2026-03-31
+last_verified: 2026-04-01
 sources:
   - .github/workflows/deploy.yml
   - scripts/verify-deployment.sh
@@ -36,9 +36,9 @@ This document defines the intended deployment shape for the repository. Runbooks
 
 ## Health Contract
 
-- Public health endpoint: `GET /health`
-- This endpoint is intentionally excluded from the `/api/v1` global prefix
-- Any deployment verification must use `/health`, not `/api/v1/health`
+- Canonical deployment verification endpoint: `GET /api/v1/health`
+- Legacy compatibility endpoint: `GET /health`
+- Both paths are intentionally exposed so same-domain `/api/*` routing can be verified without breaking older direct-origin checks
 
 ## Environment Boundaries
 

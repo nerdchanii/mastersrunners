@@ -3,7 +3,7 @@
 set -euo pipefail
 
 BASE_URL="${1:-http://localhost:4000}"
-HEALTH_PATH="${HEALTH_PATH:-/health}"
+HEALTH_PATH="${HEALTH_PATH:-/api/v1/health}"
 MAX_ATTEMPTS="${MAX_ATTEMPTS:-10}"
 SLEEP_SECONDS="${SLEEP_SECONDS:-3}"
 

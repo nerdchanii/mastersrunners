@@ -2,7 +2,7 @@
 
 ## Summary
 
-Move the managed database target from an unspecified PostgreSQL host to Supabase Postgres while preserving the current Cloud Run API and Cloudflare Pages/R2 hosting split.
+Move the managed database target from an unspecified PostgreSQL host to Supabase Postgres while preserving the current Cloud Run API and Cloudflare Pages/R2 hosting split, with the current dev lane intentionally staying on Supabase Free until a later posture change is explicitly chosen.
 
 ## Problem
 
@@ -60,8 +60,8 @@ The repository currently documents generic PostgreSQL deployment assumptions, bu
 - `tasks/archive/I-0012-110-ci-wire-optional-oauth-runtime-secrets.md`
 - `tasks/archive/I-0012-120-api-accept-jwt-timespan-envs.md`
 - `tasks/archive/I-0012-130-ci-skip-markdown-only-runs.md`
-- `tasks/todo/I-0012-030-docs-supabase-free-tier-rollout-posture.md`
-- `tasks/todo/I-0012-140-api-prefixed-health-endpoint-alignment.md`
+- `tasks/archive/I-0012-030-docs-supabase-free-tier-rollout-posture.md`
+- `tasks/archive/I-0012-140-api-prefixed-health-endpoint-alignment.md`
 
 ## Success Criteria
 

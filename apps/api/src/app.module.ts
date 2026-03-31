@@ -38,8 +38,6 @@ import { UploadsModule } from "./uploads/uploads.module.js";
 import { WorkoutSocialModule } from "./workout-social/workout-social.module.js";
 import { WorkoutTypesModule } from "./workout-types/workout-types.module.js";
 import { WorkoutsModule } from "./workouts/workouts.module.js";
-import { AppController } from "./app.controller.js";
-import { AppService } from "./app.service.js";
 
 @Module({
   imports: [
@@ -69,9 +67,8 @@ import { AppService } from "./app.service.js";
     NotificationsModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
   ],
-  controllers: [AppController, PublicConfigController],
+  controllers: [PublicConfigController],
   providers: [
-    AppService,
     StructuredLoggerService,
     MonitoringService,
     FeatureFlagsService,

@@ -70,7 +70,8 @@ Exceptions are only for repository controls that cannot be fully proven or close
 - `repo_control`: `supabase-project-runtime-credentials-and-plan`
 - `reason_not_repo_controllable`: Supabase project plan, database password, connect-page URLs, and billing posture are dashboard-managed external state and must not be committed to the repository.
 - `external_owner`: project owner
-- `required_external_proof`: dashboard evidence showing the intended Supabase project (`mastersrunners-dev`, ref `ziocdlargynmjxjhijqj`) remains in `ap-northeast-2`, runtime and migration URLs are copied into the right secret/operator surfaces, and the chosen plan matches the expected uptime posture.
+- `required_external_proof`: dashboard evidence showing the intended Supabase project (`mastersrunners-dev`, ref `ziocdlargynmjxjhijqj`) remains in `ap-northeast-2`, runtime and migration URLs are copied into the right secret/operator surfaces, and the chosen `free` plan posture is still intentional for the current dev lane.
+- `latest_observed_external_state`: 2026-04-01 checks show organization `nerdchanii's Org` on the `free` plan with `mastersrunners-dev` active in `ap-northeast-2`.
 - `revisit_date`: 2026-04-15
 - `unblock_condition`: Supabase runtime credentials and plan proof are externally verified and no longer depend on undocumented dashboard state
 

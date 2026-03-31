@@ -34,6 +34,7 @@ This document is intentionally an index. It does not duplicate every environment
 - Runtime database connectivity is anchored on `DATABASE_URL`.
 - Prisma CLI and operator commands should prefer `DIRECT_URL` when it is available.
 - For the Supabase rollout, treat `DATABASE_URL` as the Supabase transaction-pooler runtime URL and `DIRECT_URL` as the Supabase session-pooler migration/operator URL.
+- Current rollout posture keeps the live dev lane on Supabase Free; operational limits such as project pausing should be treated as an explicit launch constraint, not an implicit uptime guarantee.
 - Prisma CLI in this repo auto-loads repo-root `.env`; if you keep operator URLs only in `.env.production`, export `DIRECT_URL` into the shell before running host-side Prisma commands.
 - JWT and OAuth settings are documented in `docs/runbooks/deployment.md` and exemplified in `.env.production.example`. Public feature defaults live in the repo-tracked runtime config module.
 

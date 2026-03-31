@@ -43,7 +43,7 @@ This runbook explains how deployment works in this repository, what to verify be
 - `DIRECT_URL` exists in Secret Manager for the migration job.
 - Database migrations required by the release are already prepared.
 - Any migration SQL in the release stays inside the additive-only automated subset: new tables, new non-unique indexes, new nullable or default-backed columns, or default-relaxing alters. Renames, drops, unique/constraint-tightening changes, `SET NOT NULL`, and unconstrained `ADD COLUMN ... NOT NULL` changes need a separate manual rollout task.
-- Health endpoint contract is still `GET /health`.
+- Health verification should target `GET /api/v1/health`; legacy `GET /health` remains available for compatibility.
 - Runbook and workflow still describe the same deployment path.
 
 ## Environment Contract
@@ -188,7 +188,10 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
   - append `connection_limit=1`
   - keep `sslmode=require`
 - Use the Supabase session pooler URL on port `5432` for Prisma CLI tasks such as migrate, db push, seed, and Studio.
-- Supabase Free is acceptable for initial bring-up and internal verification, but it is not the target for dependable public beta uptime because projects can be paused.
+- Current verified rollout posture on 2026-04-01:
+  - organization `nerdchanii's Org` is on the Supabase `free` plan
+  - active dev project is `mastersrunners-dev` (`ziocdlargynmjxjhijqj`) in `ap-northeast-2`
+- Supabase Free is acceptable for the current dev-lane rollout and internal verification, but it is not a dependable public-beta uptime promise because projects can be paused.
 
 ## Local Production-Like Verification
 

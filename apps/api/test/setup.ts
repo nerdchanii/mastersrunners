@@ -40,7 +40,7 @@ export async function createTestApp(): Promise<INestApplication> {
 
   app.useGlobalFilters(new AllExceptionsFilter());
   app.setGlobalPrefix("api/v1", {
-    exclude: ["health"],
+    exclude: ["health", "api/v1/health"],
   });
 
   await app.init();

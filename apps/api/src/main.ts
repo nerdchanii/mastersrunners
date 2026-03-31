@@ -59,7 +59,7 @@ async function bootstrap() {
   );
 
   app.setGlobalPrefix("api/v1", {
-    exclude: ["health"],
+    exclude: ["health", "api/v1/health"],
   });
 
   const swaggerConfig = new DocumentBuilder()
