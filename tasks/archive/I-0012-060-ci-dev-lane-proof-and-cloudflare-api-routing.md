@@ -13,7 +13,10 @@ depends_on:
 blocked_by: []
 verify:
   - bash -n scripts/bootstrap-gcp-secrets.sh
-  - pnpm exec prettier --check docs/runbooks/deployment.md docs/runbooks/environment-and-settings.md design/operating-rules/exceptions.md design/initiatives/I-0012-supabase-postgres-rollout.md tasks/active/I-0012-060-ci-dev-lane-proof-and-cloudflare-api-routing.md
+  - curl --silent --show-error --fail https://dev.mastersrunners.com/api/v1/health
+  - curl --silent --show-error --fail https://dev.mastersrunners.com/api/v1/auth/providers
+  - gcloud run services describe masters-runners-api-dev --project mastersrunners-dev-20260331 --region asia-northeast3 --format='value(status.url,status.latestReadyRevisionName,spec.template.spec.serviceAccountName)'
+  - pnpm exec prettier --check docs/runbooks/deployment.md docs/runbooks/environment-and-settings.md design/operating-rules/exceptions.md design/initiatives/I-0012-supabase-postgres-rollout.md tasks/archive/I-0012-060-ci-dev-lane-proof-and-cloudflare-api-routing.md
 artifacts:
   - docs/runbooks/deployment.md
   - docs/runbooks/environment-and-settings.md
@@ -42,8 +45,8 @@ Prove and record the external dev-lane bootstrap and same-domain API routing nee
 
 - Scope and intent: the task now focuses on the current dev lane and its same-domain API routing instead of treating deferred production rollout work as an immediate blocker.
 - Source of truth: the task records external GitHub, GCP, and Cloudflare state without committing secret values.
-- Design divergence: none intended; the remaining gap is Cloudflare routing proof and health-path alignment for the dev host.
-- Verification: pending targeted `prettier --check` once the narrowed scope notes settle.
+- Design divergence: none intended; the repo now records dev-lane proof separately from the intentionally deferred apex launch.
+- Verification: `bash -n scripts/bootstrap-gcp-secrets.sh`, same-domain `curl` checks for `/api/v1/health` and `/api/v1/auth/providers`, `gcloud run services describe ...`, and targeted `prettier --check` all passed on 2026-04-01.
 - Review routing: `harness-reviewer` and `docs-reviewer` remain appropriate because this is operator-facing proof and rollout evidence.
 
 ## Review Focus
@@ -55,7 +58,7 @@ Prove and record the external dev-lane bootstrap and same-domain API routing nee
 
 ## Handoff
 
-- Follow-up health-path alignment is tracked separately in `I-0012-140`; future `main` or apex launch proof should be handled when the placeholder host is retired.
+- Future `main` or apex launch proof should be handled when the placeholder host is retired; this task closes the current dev-lane proof without treating that later cutover as an immediate blocker.
 
 ## Design Divergence
 
@@ -79,8 +82,10 @@ Prove and record the external dev-lane bootstrap and same-domain API routing nee
 - 2026-03-31: first `dev` branch deploy created Cloud Run service `masters-runners-api-dev` and published stable URL `https://masters-runners-api-dev-e2m534vcpa-du.a.run.app`; `scripts/verify-deployment.sh` now passes against that service.
 - 2026-04-01: confirmed `https://dev.mastersrunners.com/api/v1/auth/providers` returns provider availability, so OAuth provider secret population is no longer an open dev-lane blocker.
 - 2026-04-01: narrowed the task to current dev-lane proof and Cloudflare same-domain API routing because `mastersrunners.com` intentionally remains on the placeholder host until later rollout work.
+- 2026-04-01: confirmed same-domain dev routing on the live host by checking `https://dev.mastersrunners.com/api/v1/health` and `https://dev.mastersrunners.com/api/v1/auth/providers`; both reached the dev API lane successfully through Cloudflare.
+- 2026-04-01: re-verified Cloud Run service `masters-runners-api-dev` on revision `masters-runners-api-dev-00011-scj`, still using runtime identity `cloud-run-runtime@mastersrunners-dev-20260331.iam.gserviceaccount.com`, while keeping `mastersrunners.com` on the placeholder host by design.
 
 ## Review Notes
 
-- Specialist review:
-- PO review:
+- Specialist review: harness/docs lenses say the repo now records the current dev-lane routing and Cloud Run identity proof explicitly, without pretending the deferred apex launch is already part of today's acceptance.
+- PO review: the rollout story matches product reality. `dev.mastersrunners.com` is the live verification lane, and `mastersrunners.com` intentionally stays placeholder until later stabilization work.

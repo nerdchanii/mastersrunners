@@ -13,17 +13,21 @@ depends_on:
   - I-0009-020
 blocked_by: []
 verify:
-  - pnpm --filter @masters/api test -- --runTestsByPath src/conversations/conversations-sse.service.spec.ts src/notifications/notifications-sse.service.spec.ts src/notifications/notifications.service.spec.ts
+  - pnpm --filter @masters/api test -- --runTestsByPath src/conversations/conversations.controller.spec.ts src/conversations/conversations-sse.service.spec.ts src/notifications/notifications.controller.spec.ts src/notifications/notifications-sse.service.spec.ts src/notifications/notifications.service.spec.ts
   - pnpm --filter @masters/api build
-  - pnpm exec prettier --check apps/api/src/conversations/conversations.controller.ts apps/api/src/conversations/conversations-sse.service.ts apps/api/src/conversations/conversations-sse.service.spec.ts apps/api/src/notifications/notifications.controller.ts apps/api/src/notifications/notifications-sse.service.ts apps/api/src/notifications/notifications-sse.service.spec.ts apps/api/src/common/filters/http-exception.filter.ts design/backend/messaging-realtime.md tasks/active/I-0009-030-api-sse-stream-stability.md
+  - pnpm --filter @masters/api lint
+  - pnpm exec prettier --check apps/api/src/conversations/conversations.controller.ts apps/api/src/conversations/conversations.controller.spec.ts apps/api/src/conversations/conversations-sse.service.ts apps/api/src/conversations/conversations-sse.service.spec.ts apps/api/src/notifications/notifications.controller.ts apps/api/src/notifications/notifications.controller.spec.ts apps/api/src/notifications/notifications-sse.service.ts apps/api/src/notifications/notifications-sse.service.spec.ts apps/api/src/common/filters/http-exception.filter.ts apps/api/src/common/logging/request-logging.interceptor.ts design/backend/messaging-realtime.md tasks/archive/I-0009-030-api-sse-stream-stability.md
 artifacts:
   - apps/api/src/conversations/conversations.controller.ts
+  - apps/api/src/conversations/conversations.controller.spec.ts
   - apps/api/src/conversations/conversations-sse.service.ts
   - apps/api/src/conversations/conversations-sse.service.spec.ts
   - apps/api/src/notifications/notifications.controller.ts
+  - apps/api/src/notifications/notifications.controller.spec.ts
   - apps/api/src/notifications/notifications-sse.service.ts
   - apps/api/src/notifications/notifications-sse.service.spec.ts
   - apps/api/src/common/filters/http-exception.filter.ts
+  - apps/api/src/common/logging/request-logging.interceptor.ts
   - design/backend/messaging-realtime.md
 ---
 
@@ -48,7 +52,7 @@ Stop DM and notification SSE connections from failing with `Cannot set headers a
 - Scope and intent: limited to SSE connection lifecycle and shared API error handling; no frontend route or transport redesign was mixed in.
 - Source of truth: the fix lives in the API SSE services/controllers and the matching backend realtime design doc.
 - Design divergence: none intended; the current SSE transport stays in place and is being stabilized rather than replaced.
-- Verification: targeted SSE specs, API build, and targeted Prettier checks passed locally; deployed dev verification is still pending until the updated API is redeployed.
+- Verification: targeted controller and SSE specs, API lint/build, targeted Prettier checks, and deployed same-domain SSE smoke against `https://dev.mastersrunners.com/api/v1/*` all passed on 2026-04-01.
 - Review routing: `backend-reviewer` and `frontend-reviewer` remain appropriate because the bug appears in the browser but the first fix pass is in the shared API runtime.
 
 ## Review Focus
@@ -64,16 +68,17 @@ Stop DM and notification SSE connections from failing with `Cannot set headers a
 
 ## Design Divergence
 
-- Current design treats SSE as the active realtime transport, but the dev runtime is currently surfacing stream-breaking errors for both DM and notification listeners.
+- None intended.
 
 ## Attempt Log
 
 - 2026-04-01: created after observing repeated `Cannot set headers after they are sent to the client` errors from both DM and notification `EventSource` subscriptions on `https://dev.mastersrunners.com`.
 - 2026-04-01: initial code inspection showed the shared API runtime applies one global exception filter and request interceptor to all HTTP requests, including SSE endpoints, so the failure likely crosses module boundaries rather than living in one frontend listener alone.
 - 2026-04-01: moved to `tasks/active/` and narrowed the first fix pass to explicit SSE connection cleanup, heartbeat keepalive, multi-connection notification support, and headers-sent-safe exception handling.
-- 2026-04-01: local verification passed with targeted conversations/notifications SSE specs, API build, and formatting checks; the remaining proof step is redeploying the API and observing the dev browser console/runtime logs.
+- 2026-04-01: local verification passed with targeted conversations/notifications controller and SSE specs, API lint/build, and formatting checks before shipping the fix.
+- 2026-04-01: deployed same-domain smoke checks opened one DM SSE stream and two concurrent notification SSE streams on `https://dev.mastersrunners.com/api/v1/*`; all three returned `HTTP 200 text/event-stream` with no `event: error` or `Cannot set headers after they are sent to the client` markers.
 
 ## Review Notes
 
-- Specialist review:
-- PO review:
+- Specialist review: backend/frontend lenses say the shared interceptor and controller cleanup now respect SSE response lifetime, and concurrent listeners stay within the existing transport contract instead of tripping stream-breaking header writes.
+- PO review: DM and notification realtime surfaces no longer spam the browser with repeated SSE failures, so the current messaging UX feels stable again without a transport redesign.

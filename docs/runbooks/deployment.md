@@ -177,6 +177,9 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
 - Same-domain API routing is an external Cloudflare dashboard responsibility.
 - Current expected routing:
   - `dev.mastersrunners.com/api/*` -> dev API origin
+- 2026-04-01 runtime checks confirmed the current same-domain dev host reaches the API successfully on:
+  - `https://dev.mastersrunners.com/api/v1/health`
+  - `https://dev.mastersrunners.com/api/v1/auth/providers`
 - Deferred routing after the placeholder host is retired:
   - `mastersrunners.com/api/*` -> production API origin
 - Local non-development web builds should provide `VITE_API_URL` through the shell environment or an env file resolved from `apps/web`.

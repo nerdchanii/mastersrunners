@@ -52,7 +52,7 @@ The repository currently documents generic PostgreSQL deployment assumptions, bu
 - `tasks/archive/I-0012-020-docs-supabase-rollout-and-proof.md`
 - `tasks/archive/I-0012-040-ci-dev-only-deploy-gating.md`
 - `tasks/archive/I-0012-050-ci-dual-branch-api-deploy-lanes.md`
-- `tasks/active/I-0012-060-ci-dev-lane-proof-and-cloudflare-api-routing.md`
+- `tasks/archive/I-0012-060-ci-dev-lane-proof-and-cloudflare-api-routing.md`
 - `tasks/archive/I-0012-070-ci-fix-dev-pipeline-regressions.md`
 - `tasks/archive/I-0012-080-api-stabilize-challenge-coverage-dates.md`
 - `tasks/archive/I-0012-090-ci-cloud-run-runtime-service-account-rollout.md`

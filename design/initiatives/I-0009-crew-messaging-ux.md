@@ -55,7 +55,7 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 
 - `tasks/archive/I-0009-010-web-crew-messaging-ux-polish.md`
 - `tasks/archive/I-0009-020-web-messaging-e2e-mock-fixtures.md`
-- `tasks/active/I-0009-030-api-sse-stream-stability.md`
+- `tasks/archive/I-0009-030-api-sse-stream-stability.md`
 
 ## Success Criteria
 
