@@ -114,7 +114,10 @@ jobs:
           append_secret_if_present() {
             local secret_name="$1"
 
-            if gcloud secrets describe "$secret_name" >/dev/null 2>&1; then
+            if gcloud secrets versions access latest \
+              --secret "$secret_name" \
+              --project "${PROJECT_ID}" \
+              >/dev/null 2>&1; then
               secret_mappings+=("${secret_name}=${secret_name}:latest")
             fi
           }

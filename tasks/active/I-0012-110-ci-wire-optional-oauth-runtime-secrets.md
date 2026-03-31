@@ -65,6 +65,7 @@ Make branch deploy lanes capable of exposing configured OAuth providers by wirin
 - 2026-03-31: dev Cloud Run boot and `/health` verification succeeded, but the login page still showed no providers because the deploy workflow did not pass optional OAuth credentials through to runtime.
 - 2026-03-31: confirmed `mastersrunners-dev-20260331` Secret Manager currently contains only DB/JWT/R2 secrets, so `/auth/providers` on the dev lane cannot expose Kakao, Google, or Naver until the operator adds `*_CLIENT_ID` and `*_CLIENT_SECRET` entries.
 - 2026-03-31: added branch-scoped `KAKAO_CALLBACK_URL`, `GOOGLE_CALLBACK_URL`, and `NAVER_CALLBACK_URL` variables to both GitHub environments so the remaining external work is limited to provider credentials.
+- 2026-03-31: after provider secrets were added, Cloud Run still reported all providers unavailable because the deploy workflow probed optional secret existence with `gcloud secrets describe`, which the GitHub deployer identity did not effectively use for this branch lane. Switched the probe to `gcloud secrets versions access latest --project "${PROJECT_ID}" >/dev/null` so it matches the granted Secret Accessor capability.
 
 ## Review Notes
 
