@@ -2,22 +2,24 @@ name: Deploy
 
 on:
   push:
-    branches: [dev]
-
-env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  SERVICE_NAME: masters-runners-api-dev
-  REGION: asia-northeast3
-  FRONTEND_URL: ${{ vars.FRONTEND_URL }}
-  API_PUBLIC_URL: ${{ vars.API_PUBLIC_URL }}
-  KAKAO_CALLBACK_URL: ${{ vars.KAKAO_CALLBACK_URL }}
-  GOOGLE_CALLBACK_URL: ${{ vars.GOOGLE_CALLBACK_URL }}
-  NAVER_CALLBACK_URL: ${{ vars.NAVER_CALLBACK_URL }}
+    branches: [dev, main]
 
 jobs:
   deploy-api:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+    environment: ${{ github.ref_name == 'main' && 'production' || 'dev' }}
+
+    env:
+      DEPLOY_LANE: ${{ github.ref_name == 'main' && 'production' || 'dev' }}
+      PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      SERVICE_NAME: ${{ vars.CLOUD_RUN_SERVICE_NAME }}
+      REGION: asia-northeast3
+      FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+      API_PUBLIC_URL: ${{ vars.API_PUBLIC_URL }}
+      KAKAO_CALLBACK_URL: ${{ vars.KAKAO_CALLBACK_URL }}
+      GOOGLE_CALLBACK_URL: ${{ vars.GOOGLE_CALLBACK_URL }}
+      NAVER_CALLBACK_URL: ${{ vars.NAVER_CALLBACK_URL }}
 
     permissions:
       contents: read
@@ -50,10 +52,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate dev deploy env contract
+      - name: Validate branch deploy env contract
         run: |
+          if [ -z "${SERVICE_NAME}" ]; then
+            echo "::error::GitHub environment variable CLOUD_RUN_SERVICE_NAME must be set for ${DEPLOY_LANE} deploys."
+            exit 1
+          fi
           if [ -z "${FRONTEND_URL}" ]; then
-            echo "::error::GitHub variable FRONTEND_URL must be set for dev Cloud Run deploys."
+            echo "::error::GitHub environment variable FRONTEND_URL must be set for ${DEPLOY_LANE} Cloud Run deploys."
             exit 1
           fi
 
@@ -75,11 +81,11 @@ jobs:
           echo "::add-mask::$DIRECT_URL"
           echo "DIRECT_URL=$DIRECT_URL" >> "$GITHUB_ENV"
           if [ -z "${DIRECT_URL}" ]; then
-            echo "::error::Secret Manager secret DIRECT_URL must be set for automated dev deploy migrations."
+            echo "::error::Secret Manager secret DIRECT_URL must be set for automated ${DEPLOY_LANE} deploy migrations."
             exit 1
           fi
 
-      - name: Run automated dev migrations and seed
+      - name: Run automated branch migrations and seed
         run: |
           pnpm db:migrate:deploy
           pnpm db:seed

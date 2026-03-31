@@ -45,6 +45,9 @@ This document defines the intended deployment shape for the repository. Runbooks
 ### Production
 
 - Runtime config is injected by the deploy workflow through env vars and secrets
+- The deploy workflow selects a branch-matched GitHub environment:
+  - `dev` branch -> `dev`
+  - `main` branch -> `production`
 - Web runtime config for Cloudflare Pages is injected through Pages environment variables such as `VITE_API_URL`
 - API runtime should use the pooled Supabase `DATABASE_URL`, while Prisma CLI/operator flows should use `DIRECT_URL` when available
 - Non-development web builds intentionally fail when `VITE_API_URL` is missing instead of silently falling back to localhost
@@ -61,19 +64,22 @@ This document defines the intended deployment shape for the repository. Runbooks
 ### Current Rollout Phase
 
 - The active app host is expected to be `dev.mastersrunners.com` on the `dev` branch while apex/www remain on a placeholder site.
-- The `dev` branch is the only automated API deploy branch during the current prelaunch phase.
+- The API has two automated deploy lanes:
+  - `dev` branch -> `masters-runners-api-dev`
+  - `main` branch -> `masters-runners-api`
 - The `main` branch remains the intended production branch for the eventual `mastersrunners.com` app launch.
 
 ## Rollout Model
 
-1. Commit lands on `dev`
+1. Commit lands on `dev` or `main`
 2. CI validates build and tests
-3. Deploy workflow validates deploy vars and additive-only migration safety
-4. Deploy workflow builds and pushes the API image
-5. Deploy workflow loads `DIRECT_URL` from Secret Manager
-6. Deploy workflow applies additive-only automated migrations and seed data
-7. Cloud Run receives the new revision
-8. Verification script checks service health
+3. Deploy workflow selects the matching GitHub environment and Cloud Run service
+4. Deploy workflow validates deploy vars and additive-only migration safety
+5. Deploy workflow builds and pushes the API image
+6. Deploy workflow loads `DIRECT_URL` from Secret Manager
+7. Deploy workflow applies additive-only automated migrations and seed data
+8. Cloud Run receives the new revision
+9. Verification script checks service health
 
 ## Rollback Model
 

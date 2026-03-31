@@ -5,7 +5,7 @@ This runbook explains how deployment works in this repository, what to verify be
 ## Source of Execution
 
 - CI test gate: `.github/workflows/ci.yml`
-- Current dev deploy workflow: `.github/workflows/deploy.yml`
+- Current branch-aware deploy workflow: `.github/workflows/deploy.yml`
 - Automated migration safety guard: `scripts/check-safe-production-migrations.sh`
 - Production-like local stack: `docker-compose.prod.yml`
 - Post-deploy verification script: `scripts/verify-deployment.sh`
@@ -13,12 +13,14 @@ This runbook explains how deployment works in this repository, what to verify be
 
 ## Deployment Surfaces
 
-### Current API Rollout
+### API Rollout Lanes
 
 - Target: Google Cloud Run
-- Trigger: push to `dev`
+- Trigger: push to `dev` and `main`
 - Artifact: Docker image built from `apps/api/Dockerfile`
-- Service: `masters-runners-api-dev`
+- Branch-to-service mapping:
+  - `dev` -> `masters-runners-api-dev`
+  - `main` -> `masters-runners-api`
 - Database target: Supabase Postgres via `DATABASE_URL`
 
 ### Production-like Local Verification
@@ -47,6 +49,13 @@ This runbook explains how deployment works in this repository, what to verify be
 
 ### Cloud Run
 
+- The deploy workflow selects a GitHub environment by branch:
+  - `dev` branch -> `dev` GitHub environment
+  - `main` branch -> `production` GitHub environment
+- Each GitHub environment should provide the lane-scoped deployment contract:
+  - secrets: `GCP_PROJECT_ID`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT`
+  - variables: `CLOUD_RUN_SERVICE_NAME`, `FRONTEND_URL`
+  - optional variables: `API_PUBLIC_URL`, `KAKAO_CALLBACK_URL`, `GOOGLE_CALLBACK_URL`, `NAVER_CALLBACK_URL`
 - Deployment workflow injects:
   - `NODE_ENV=production`
   - `FRONTEND_URL`
@@ -63,9 +72,10 @@ This runbook explains how deployment works in this repository, what to verify be
 - `DATABASE_URL` should be the Supabase transaction-pooler runtime URL for Cloud Run.
 - `DIRECT_URL` is intentionally not injected into Cloud Run because the API runtime should not need the migration/operator URL.
 - Current beta deploy posture also keeps Cloud Run at `min-instances=0` and `max-instances=1`.
+- `CLOUD_RUN_SERVICE_NAME` must be provided per GitHub environment so the deploy lane can target the correct Cloud Run service.
 - The deploy workflow still needs Secret Manager access to `DIRECT_URL` so it can run `prisma migrate deploy` and `prisma db seed` before shipping a new revision.
-- Automated dev-branch migrations intentionally allow only a narrow additive SQL subset; anything outside that subset must use a manual rollout task instead of relying on regex guesses about backward compatibility.
-- `FRONTEND_URL` is required for production boot because the API uses it for CORS and OAuth redirect targets.
+- Automated branch deploy migrations intentionally allow only a narrow additive SQL subset; anything outside that subset must use a manual rollout task instead of relying on regex guesses about backward compatibility.
+- `FRONTEND_URL` is required for branch deploy boot because the API uses it for CORS and OAuth redirect targets.
 - If a social provider is enabled with `<PROVIDER>_CLIENT_ID`, the matching `<PROVIDER>_CALLBACK_URL` must also be present.
 - The deploy workflow only validates repo-managed variables. OAuth provider client IDs and secrets still live in external Cloud Run or Secret Manager state, so API boot-time validation remains the final guard against stale provider callback config.
 
@@ -99,7 +109,11 @@ This runbook explains how deployment works in this repository, what to verify be
 - Current placeholder hosts:
   - `mastersrunners.com`
   - `www.mastersrunners.com`
-- Same-domain API routing is an external Cloudflare dashboard responsibility. For the current phase, only `dev.mastersrunners.com/api/*` needs to proxy to the API origin.
+- Same-domain API routing is an external Cloudflare dashboard responsibility.
+- Current expected routing:
+  - `dev.mastersrunners.com/api/*` -> dev API origin
+- Deferred routing after the placeholder host is retired:
+  - `mastersrunners.com/api/*` -> production API origin
 - Local non-development web builds should provide `VITE_API_URL` through the shell environment or an env file resolved from `apps/web`.
 
 ### Supabase Connection Contract
@@ -143,17 +157,20 @@ docker compose --env-file .env.production -f docker-compose.prod.yml logs -f api
 docker compose --env-file .env.production -f docker-compose.prod.yml down
 ```
 
-## Current Dev Deploy Flow
+## Branch-Aware API Deploy Flow
 
-1. Merge or push the release commit to `dev`.
-2. GitHub Actions validates repo-managed deploy vars and additive-only migration safety.
-3. GitHub Actions builds and pushes the API image.
-4. GitHub Actions loads `DIRECT_URL` from Secret Manager.
-5. GitHub Actions runs `pnpm db:migrate:deploy` and `pnpm db:seed`.
-6. GitHub Actions deploys that image to Cloud Run.
-7. GitHub Actions runs `scripts/verify-deployment.sh` against the deployed service URL.
+1. Merge or push the release commit to `dev` or `main`.
+2. GitHub Actions selects the matching GitHub environment:
+   - `dev` -> `dev`
+   - `main` -> `production`
+3. GitHub Actions validates repo-managed deploy vars and additive-only migration safety.
+4. GitHub Actions builds and pushes the API image.
+5. GitHub Actions loads `DIRECT_URL` from Secret Manager.
+6. GitHub Actions runs `pnpm db:migrate:deploy` and `pnpm db:seed`.
+7. GitHub Actions deploys that image to the branch-mapped Cloud Run service.
+8. GitHub Actions runs `scripts/verify-deployment.sh` against the deployed service URL.
 
-`main` remains the intended future production branch, but automated API deploy is intentionally disabled there during the current prelaunch phase.
+The existence of a `main` API deploy lane does not by itself mean the public main web host is live. Cloudflare host switching still controls when `mastersrunners.com` stops serving the placeholder site.
 
 ## Cloudflare Pages Build Contract
 

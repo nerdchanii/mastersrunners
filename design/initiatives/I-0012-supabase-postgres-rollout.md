@@ -51,12 +51,14 @@ The repository currently documents generic PostgreSQL deployment assumptions, bu
 - `tasks/archive/I-0012-010-db-supabase-runtime-contract.md`
 - `tasks/archive/I-0012-020-docs-supabase-rollout-and-proof.md`
 - `tasks/archive/I-0012-040-ci-dev-only-deploy-gating.md`
+- `tasks/archive/I-0012-050-ci-dual-branch-api-deploy-lanes.md`
+- `tasks/todo/I-0012-060-ci-github-environment-bootstrap-proof.md`
 - `tasks/todo/I-0012-030-db-supabase-pro-upgrade-readiness.md`
 
 ## Success Criteria
 
 - repo runtime and Prisma CLI use the intended Supabase connection paths
-- current dev-branch deploys apply only additive automated migrations and seed data before rollout
+- current branch deploy lanes apply only additive automated migrations and seed data before rollout
 - deployment docs and env examples match the Supabase rollout
 - Cloud Run beta posture is capped to a low-cost default
 - external platform proof is tracked without committing secrets
