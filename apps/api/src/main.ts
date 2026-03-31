@@ -4,8 +4,8 @@ import "reflect-metadata";
 import { ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import express from "express";
 
 import { StructuredLoggerService } from "./common/logging/structured-logger.service.js";
 import { MonitoringService } from "./common/monitoring/monitoring.service.js";
@@ -13,7 +13,11 @@ import { validateProductionRuntimeEnv } from "./config/runtime-env.js";
 import { AppModule } from "./app.module.js";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bodyParser: false, bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+    rawBody: true,
+    bufferLogs: true,
+  });
   const config = app.get(ConfigService);
   validateProductionRuntimeEnv(config);
   const logger = app.get(StructuredLoggerService);
@@ -21,14 +25,12 @@ async function bootstrap() {
 
   app.useLogger(logger);
 
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
-  app.use(
-    express.raw({
-      type: ["application/octet-stream", "image/*", "application/gpx+xml"],
-      limit: "50mb",
-    }),
-  );
+  app.useBodyParser("json", { limit: "50mb" });
+  app.useBodyParser("urlencoded", { extended: true, limit: "50mb" });
+  app.useBodyParser("raw", {
+    type: ["application/octet-stream", "image/*", "application/gpx+xml"],
+    limit: "50mb",
+  });
 
   const frontendUrl = config.get<string>("FRONTEND_URL", "http://localhost:3000");
   app.enableCors({

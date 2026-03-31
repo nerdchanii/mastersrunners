@@ -56,6 +56,7 @@ The repository currently documents generic PostgreSQL deployment assumptions, bu
 - `tasks/archive/I-0012-070-ci-fix-dev-pipeline-regressions.md`
 - `tasks/archive/I-0012-080-api-stabilize-challenge-coverage-dates.md`
 - `tasks/active/I-0012-090-ci-cloud-run-runtime-service-account-rollout.md`
+- `tasks/active/I-0012-100-api-use-nest-body-parser-api.md`
 - `tasks/todo/I-0012-030-db-supabase-pro-upgrade-readiness.md`
 
 ## Success Criteria
