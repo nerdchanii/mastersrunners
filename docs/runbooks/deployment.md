@@ -55,7 +55,7 @@ This runbook explains how deployment works in this repository, what to verify be
 - Each GitHub environment should provide the lane-scoped deployment contract:
   - secrets: `GCP_PROJECT_ID`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT`
   - variables: `CLOUD_RUN_SERVICE_NAME`, `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT`, `FRONTEND_URL`
-  - optional variables: `API_PUBLIC_URL`, `KAKAO_CALLBACK_URL`, `GOOGLE_CALLBACK_URL`, `NAVER_CALLBACK_URL`
+  - optional variables: `API_PUBLIC_URL`, `KAKAO_CALLBACK_URL`, `GOOGLE_CALLBACK_URL`
 - Expected GitHub environment variable values for the current rollout:
   - `dev` environment:
     - `CLOUD_RUN_SERVICE_NAME=masters-runners-api-dev`
@@ -77,14 +77,11 @@ This runbook explains how deployment works in this repository, what to verify be
   - `API_PUBLIC_URL`
   - `KAKAO_CALLBACK_URL`
   - `GOOGLE_CALLBACK_URL`
-  - `NAVER_CALLBACK_URL`
 - If matching Secret Manager entries exist, the deploy workflow also forwards optional OAuth provider credentials:
   - `KAKAO_CLIENT_ID`
   - `KAKAO_CLIENT_SECRET`
   - `GOOGLE_CLIENT_ID`
   - `GOOGLE_CLIENT_SECRET`
-  - `NAVER_CLIENT_ID`
-  - `NAVER_CLIENT_SECRET`
 - `DATABASE_URL` should be the Supabase transaction-pooler runtime URL for Cloud Run.
 - `JWT_ACCESS_TTL` and `JWT_REFRESH_TTL` may be either numeric seconds or jsonwebtoken-style timespan strings such as `15m` and `30d`.
 - `DIRECT_URL` is intentionally not injected into Cloud Run because the API runtime should not need the migration/operator URL.
@@ -94,9 +91,17 @@ This runbook explains how deployment works in this repository, what to verify be
 - The deploy workflow still needs Secret Manager access to `DIRECT_URL` so it can run `prisma migrate deploy` and `prisma db seed` before shipping a new revision.
 - Automated branch deploy migrations intentionally allow only a narrow additive SQL subset; anything outside that subset must use a manual rollout task instead of relying on regex guesses about backward compatibility.
 - `FRONTEND_URL` is required for branch deploy boot because the API uses it for CORS and OAuth redirect targets.
-- If a social provider is enabled with `<PROVIDER>_CLIENT_ID`, the matching `<PROVIDER>_CALLBACK_URL` must also be present.
-- The deploy workflow only validates repo-managed variables. OAuth provider client IDs and secrets still live in external Cloud Run or Secret Manager state, so API boot-time validation remains the final guard against stale provider callback config.
-- The login page reads `/auth/providers`; if every provider is unavailable, first confirm that the lane has the matching `*_CLIENT_ID` secret in Secret Manager and the matching callback URL variable in GitHub.
+- Public feature exposure is controlled by the repo-tracked runtime config module at `apps/api/src/config/feature-flags.ts`.
+- Provider credentials still live in Secret Manager and callback URLs still live in GitHub environment variables.
+- If Kakao is enabled in the repo-tracked runtime config, `KAKAO_CALLBACK_URL` must be present in GitHub vars and the runtime must also receive `KAKAO_CLIENT_ID`.
+- If Google is enabled in the repo-tracked runtime config, `GOOGLE_CALLBACK_URL` must be present in GitHub vars and the runtime must also receive `GOOGLE_CLIENT_ID` plus `GOOGLE_CLIENT_SECRET`.
+- The API exposes `GET /config/public` as the public runtime contract used by the web for feature and auth-provider availability.
+- Current repo defaults are:
+  - Kakao auth enabled
+  - Google auth disabled
+  - challenges disabled
+  - events disabled
+- If Kakao or Google is missing from `/config/public`, first confirm the repo-tracked runtime config enables it, then confirm the matching callback URL variable exists in GitHub and the matching credentials exist in Secret Manager.
 
 ### Secret Manager Bootstrap
 
@@ -136,8 +141,6 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
   - `KAKAO_CLIENT_SECRET`
   - `GOOGLE_CLIENT_ID`
   - `GOOGLE_CLIENT_SECRET`
-  - `NAVER_CLIENT_ID`
-  - `NAVER_CLIENT_SECRET`
 - Keep callback URLs in GitHub environment variables, not in Secret Manager.
 
 ### Local Docker Compose
@@ -279,7 +282,7 @@ pnpm deploy:verify -- https://<service-url>
 ```
 
 - Swagger UI is reachable at `/api-docs`
-- Critical env-backed features boot correctly:
+- Critical runtime integrations boot correctly:
   - auth provider availability
   - database connectivity
   - storage adapter selection

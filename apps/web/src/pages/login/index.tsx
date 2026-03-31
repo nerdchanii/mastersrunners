@@ -1,45 +1,28 @@
 import { Loader2 } from "lucide-react";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/lib/auth-context";
+import { defaultPublicRuntimeConfig, usePublicRuntimeConfig } from "@/lib/public-config";
 
-import {
-  fetchAuthProviders,
-  isLocalApiBase,
-  type LoginProviders,
-  performDevLogin,
-  startOAuthLogin,
-} from "./login-api";
+import { isLocalApiBase, performDevLogin, startOAuthLogin } from "./login-api";
 
 function LoginContent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isAuthenticated, isLoading, refreshUser } = useAuth();
-  const [providers, setProviders] = useState<LoginProviders | null>(null);
+  const { data: runtimeConfig, isPending: isRuntimeConfigPending } = usePublicRuntimeConfig();
   const error = searchParams.get("error");
+  const providers = runtimeConfig?.authProviders ?? defaultPublicRuntimeConfig.authProviders;
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       navigate("/", { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate]);
-
-  useEffect(() => {
-    const loadProviderConfig = async () => {
-      try {
-        const data = await fetchAuthProviders();
-        setProviders(data);
-      } catch {
-        setProviders(null);
-      }
-    };
-
-    void loadProviderConfig();
-  }, []);
 
   const handleOAuth = (provider: string) => {
     startOAuthLogin(provider);
@@ -88,7 +71,7 @@ function LoginContent() {
             </div>
           )}
 
-          {(!providers || providers.kakao) && (
+          {providers.kakao && (
             <Button
               onClick={() => handleOAuth("kakao")}
               className="w-full bg-[#FEE500] text-[#191919] hover:bg-[#FEE500]/90"
@@ -98,7 +81,7 @@ function LoginContent() {
             </Button>
           )}
 
-          {(!providers || providers.google) && (
+          {providers.google && (
             <Button
               onClick={() => handleOAuth("google")}
               variant="outline"
@@ -109,20 +92,16 @@ function LoginContent() {
             </Button>
           )}
 
-          {(!providers || providers.naver) && (
-            <Button
-              onClick={() => handleOAuth("naver")}
-              className="w-full bg-[#03C75A] text-white hover:bg-[#03C75A]/90"
-              size="lg"
-            >
-              네이버로 시작하기
-            </Button>
-          )}
-
-          {providers && !providers.kakao && !providers.google && !providers.naver && (
+          {!isRuntimeConfigPending && !providers.kakao && !providers.google && (
             <p className="text-center text-xs text-muted-foreground">
               현재 사용 가능한 소셜 로그인이 없습니다.
             </p>
+          )}
+
+          {isRuntimeConfigPending && (
+            <div className="flex items-center justify-center py-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </div>
           )}
 
           {isLocalApiBase() && (

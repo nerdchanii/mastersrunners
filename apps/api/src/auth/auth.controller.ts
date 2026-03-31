@@ -9,15 +9,19 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { AuthGuard } from "@nestjs/passport";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 
 import { Public } from "../common/decorators/public.decorator.js";
+import { FeatureFlagsService } from "../config/feature-flags.service.js";
 
 import { RefreshTokenDto } from "./dto/refresh-token.dto.js";
+import { OAuthProviderGuard } from "./guards/oauth-provider.guard.js";
 import type { OAuthProfile } from "./auth.service.js";
 import { AuthService } from "./auth.service.js";
+
+const KakaoOAuthGuard = OAuthProviderGuard("kakao");
+const GoogleOAuthGuard = OAuthProviderGuard("google");
 
 @ApiTags("Auth")
 @Controller("auth")
@@ -25,6 +29,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly config: ConfigService,
+    private readonly featureFlags: FeatureFlagsService,
   ) {}
 
   // ─── Kakao ──────────────────────────────────────────
@@ -32,23 +37,19 @@ export class AuthController {
   @Public()
   @Get("providers")
   getProviders() {
-    return {
-      kakao: !!process.env.KAKAO_CLIENT_ID,
-      google: !!process.env.GOOGLE_CLIENT_ID,
-      naver: !!process.env.NAVER_CLIENT_ID,
-    };
+    return this.featureFlags.getAuthProviders();
   }
 
   @Public()
   @Get("kakao")
-  @UseGuards(AuthGuard("kakao"))
+  @UseGuards(KakaoOAuthGuard)
   kakaoLogin() {
     // Passport redirects to Kakao
   }
 
   @Public()
   @Get("kakao/callback")
-  @UseGuards(AuthGuard("kakao"))
+  @UseGuards(KakaoOAuthGuard)
   async kakaoCallback(@Req() req: Request, @Res() res: Response) {
     return this.handleOAuthCallback(req.user as OAuthProfile, res);
   }
@@ -57,31 +58,15 @@ export class AuthController {
 
   @Public()
   @Get("google")
-  @UseGuards(AuthGuard("google"))
+  @UseGuards(GoogleOAuthGuard)
   googleLogin() {
     // Passport redirects to Google
   }
 
   @Public()
   @Get("google/callback")
-  @UseGuards(AuthGuard("google"))
+  @UseGuards(GoogleOAuthGuard)
   async googleCallback(@Req() req: Request, @Res() res: Response) {
-    return this.handleOAuthCallback(req.user as OAuthProfile, res);
-  }
-
-  // ─── Naver ──────────────────────────────────────────
-
-  @Public()
-  @Get("naver")
-  @UseGuards(AuthGuard("naver"))
-  naverLogin() {
-    // Passport redirects to Naver
-  }
-
-  @Public()
-  @Get("naver/callback")
-  @UseGuards(AuthGuard("naver"))
-  async naverCallback(@Req() req: Request, @Res() res: Response) {
     return this.handleOAuthCallback(req.user as OAuthProfile, res);
   }
 

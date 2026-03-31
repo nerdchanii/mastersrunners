@@ -18,7 +18,8 @@ This document is intentionally an index. It does not duplicate every environment
 - Local and container runs should treat repo-root `.env` or `.env.local` as the default development entrypoints.
 - Production-like Docker verification should pass `.env.production` explicitly with `docker compose --env-file .env.production`.
 - Branch deploy lanes also depend on GitHub environment metadata documented in `docs/runbooks/deployment.md`, including `CLOUD_RUN_SERVICE_NAME`, `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT`, and `FRONTEND_URL`.
-- If a branch lane should expose social login, keep callback URLs in GitHub environment variables and provider credentials in Secret Manager so Cloud Run can receive them at deploy time.
+- Repo-tracked public feature exposure lives in `apps/api/src/config/feature-flags.ts`.
+- If a branch lane should expose social login, keep callback URLs in GitHub environment variables and keep provider credentials in Secret Manager so Cloud Run can receive them at deploy time.
 
 ### Web Runtime and Build Settings
 
@@ -34,7 +35,7 @@ This document is intentionally an index. It does not duplicate every environment
 - Prisma CLI and operator commands should prefer `DIRECT_URL` when it is available.
 - For the Supabase rollout, treat `DATABASE_URL` as the Supabase transaction-pooler runtime URL and `DIRECT_URL` as the Supabase session-pooler migration/operator URL.
 - Prisma CLI in this repo auto-loads repo-root `.env`; if you keep operator URLs only in `.env.production`, export `DIRECT_URL` into the shell before running host-side Prisma commands.
-- JWT and OAuth settings are documented in `docs/runbooks/deployment.md` and exemplified in `.env.production.example`.
+- JWT and OAuth settings are documented in `docs/runbooks/deployment.md` and exemplified in `.env.production.example`. Public feature defaults live in the repo-tracked runtime config module.
 
 ### Storage
 

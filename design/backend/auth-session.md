@@ -1,11 +1,13 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-03-12
+last_verified: 2026-04-01
 sources:
   - apps/api/src/auth/auth.module.ts
   - apps/api/src/auth/auth.controller.ts
   - apps/api/src/auth/auth.service.ts
+  - apps/api/src/config/feature-flags.ts
+  - apps/api/src/config/public-config.controller.ts
   - apps/api/src/auth/strategies/jwt.strategy.ts
   - apps/api/src/auth/guards/jwt-sse.guard.ts
   - apps/api/src/common/decorators/public.decorator.ts
@@ -19,12 +21,14 @@ sources:
 
 ## Summary
 
-The API owns OAuth provider handoff, user/account linking, JWT issuance, refresh, and authenticated identity lookup.
+The API owns OAuth provider handoff, user/account linking, JWT issuance, refresh, authenticated identity lookup, and public runtime feature/config disclosure.
 
 ## Provider Flow
 
-- The controller exposes `/auth/{provider}` and callback endpoints for Kakao, Google, and Naver.
-- OAuth strategies are only registered when matching credentials exist.
+- The API exposes `GET /config/public` for web-facing feature and auth-provider availability.
+- The auth controller exposes `/auth/{provider}` and callback endpoints for Kakao and Google.
+- OAuth strategies are only registered when the repo-tracked runtime config enables the provider and the required runtime credentials exist.
+- `GET /auth/providers` is the auth-only projection of the same provider availability contract.
 - `AuthService.upsertOAuthUser()` links by provider account first, then by email, then creates a new user/account pair.
 
 ## Token Model
@@ -47,3 +51,4 @@ The API owns OAuth provider handoff, user/account linking, JWT issuance, refresh
 
 - The repo still contains `Session` and `VerificationToken` models in Prisma, but the active auth path is JWT plus OAuth account linkage.
 - Browser token storage and callback-token delivery are handled by the SPA rather than cookies or server-managed sessions.
+- Feature availability for public product surfaces is repo-tracked in code and not stored in the database.

@@ -9,14 +9,19 @@ import { notificationKeys } from "@/hooks/useNotifications";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { API_BASE } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import {
+  defaultPublicRuntimeConfig,
+  type PublicFeatureName,
+  usePublicRuntimeConfig,
+} from "@/lib/public-config";
 import { useTheme } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
   { href: "/feed", label: "피드" },
   { href: "/crews", label: "크루" },
-  { href: "/events", label: "대회" },
-  { href: "/challenges", label: "챌린지" },
+  { href: "/events", label: "대회", feature: "events" as PublicFeatureName },
+  { href: "/challenges", label: "챌린지", feature: "challenges" as PublicFeatureName },
   { href: "/workouts", label: "내 기록" },
 ];
 
@@ -24,10 +29,13 @@ export default function Header() {
   const { isAuthenticated, isLoading, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const { pathname } = useLocation();
+  const { data: runtimeConfig } = usePublicRuntimeConfig();
   const queryClient = useQueryClient();
   const { messages: unreadMessageCount, notifications: unreadNotifCount } = useUnreadCounts();
+  const config = runtimeConfig ?? defaultPublicRuntimeConfig;
 
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + "/");
+  const visibleNavLinks = navLinks.filter((link) => !link.feature || config.features[link.feature]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -77,7 +85,7 @@ export default function Header() {
         </Link>
 
         <nav className="flex items-center gap-1">
-          {navLinks.map((link) => (
+          {visibleNavLinks.map((link) => (
             <Link
               key={link.href}
               to={link.href}

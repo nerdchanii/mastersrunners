@@ -3,9 +3,23 @@ import { Link, useLocation } from "react-router-dom";
 
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { useAuth } from "@/lib/auth-context";
+import {
+  defaultPublicRuntimeConfig,
+  type PublicFeatureName,
+  usePublicRuntimeConfig,
+} from "@/lib/public-config";
 import { cn } from "@/lib/utils";
 
-const baseNavItems = [
+type NavItem = {
+  auth: boolean;
+  badge: "messages" | "notifications" | null;
+  feature?: PublicFeatureName;
+  href: string;
+  icon: typeof Home;
+  label: string;
+};
+
+const baseNavItems: NavItem[] = [
   {
     href: "/feed",
     label: "홈",
@@ -26,6 +40,7 @@ const baseNavItems = [
     icon: Trophy,
     auth: false,
     badge: null as "messages" | "notifications" | null,
+    feature: "challenges" as PublicFeatureName,
   },
   {
     href: "/messages",
@@ -48,14 +63,18 @@ const baseNavItems = [
     auth: true,
     badge: null as "messages" | "notifications" | null,
   },
-] as const;
+];
 
 export function BottomNav() {
   const { pathname } = useLocation();
   const { isAuthenticated } = useAuth();
+  const { data: runtimeConfig } = usePublicRuntimeConfig();
   const unread = useUnreadCounts();
+  const config = runtimeConfig ?? defaultPublicRuntimeConfig;
 
-  const visibleItems = baseNavItems.filter((item) => !item.auth || isAuthenticated);
+  const visibleItems = baseNavItems.filter(
+    (item) => (!item.auth || isAuthenticated) && (!item.feature || config.features[item.feature]),
+  );
 
   return (
     <>

@@ -28,8 +28,6 @@ Optional env names:
   KAKAO_CLIENT_SECRET
   GOOGLE_CLIENT_ID
   GOOGLE_CLIENT_SECRET
-  NAVER_CLIENT_ID
-  NAVER_CLIENT_SECRET
 
 Examples:
   bash scripts/bootstrap-gcp-secrets.sh mastersrunners-dev-20260331 .env.gcp.dev
@@ -80,8 +78,6 @@ OPTIONAL_SECRETS=(
   KAKAO_CLIENT_SECRET
   GOOGLE_CLIENT_ID
   GOOGLE_CLIENT_SECRET
-  NAVER_CLIENT_ID
-  NAVER_CLIENT_SECRET
 )
 
 set -a

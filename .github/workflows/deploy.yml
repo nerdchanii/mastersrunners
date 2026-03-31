@@ -20,7 +20,6 @@ jobs:
       API_PUBLIC_URL: ${{ vars.API_PUBLIC_URL }}
       KAKAO_CALLBACK_URL: ${{ vars.KAKAO_CALLBACK_URL }}
       GOOGLE_CALLBACK_URL: ${{ vars.GOOGLE_CALLBACK_URL }}
-      NAVER_CALLBACK_URL: ${{ vars.NAVER_CALLBACK_URL }}
 
     permissions:
       contents: read
@@ -131,15 +130,10 @@ jobs:
           if [ -n "${GOOGLE_CALLBACK_URL}" ]; then
             env_vars+=("GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}")
           fi
-          if [ -n "${NAVER_CALLBACK_URL}" ]; then
-            env_vars+=("NAVER_CALLBACK_URL=${NAVER_CALLBACK_URL}")
-          fi
           append_secret_if_present "KAKAO_CLIENT_ID"
           append_secret_if_present "KAKAO_CLIENT_SECRET"
           append_secret_if_present "GOOGLE_CLIENT_ID"
           append_secret_if_present "GOOGLE_CLIENT_SECRET"
-          append_secret_if_present "NAVER_CLIENT_ID"
-          append_secret_if_present "NAVER_CLIENT_SECRET"
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --image "$IMAGE" \
             --region ${{ env.REGION }} \

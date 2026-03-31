@@ -1,15 +1,5 @@
 import { api, API_BASE } from "@/lib/api-client";
 
-export interface LoginProviders {
-  kakao: boolean;
-  google: boolean;
-  naver: boolean;
-}
-
-export async function fetchAuthProviders() {
-  return api.fetch<LoginProviders>("/auth/providers");
-}
-
 export function startOAuthLogin(provider: string) {
   window.location.href = `${API_BASE}/auth/${provider}`;
 }

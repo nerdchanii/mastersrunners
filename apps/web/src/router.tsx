@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 
 import { BottomNav } from "@/components/common/BottomNav";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { FeatureRoute } from "@/components/common/FeatureRoute";
 import { LoadingPage } from "@/components/common/LoadingPage";
 import Header from "@/components/layout/Header";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
@@ -10,6 +11,7 @@ import { ThemeProvider } from "@/lib/theme-context";
 import AuthCallbackPage from "@/pages/auth/callback";
 // Auth pages (small, load eagerly)
 import LoginPage from "@/pages/login";
+import NotFoundPage from "@/pages/not-found";
 
 // Lazy-loaded pages
 const FeedPage = lazy(() => import("@/pages/feed"));
@@ -46,7 +48,6 @@ const EditProfilePage = lazy(() => import("@/pages/settings/profile"));
 const NotificationsPage = lazy(() => import("@/pages/notifications"));
 const SearchPage = lazy(() => import("@/pages/search"));
 const OnboardingPage = lazy(() => import("@/pages/onboarding"));
-const NotFoundPage = lazy(() => import("@/pages/not-found"));
 
 /** 인증 가드 - 미인증 시 /login으로 리다이렉트 */
 function ProtectedRoute() {
@@ -127,10 +128,38 @@ export const router = createBrowserRouter([
           { path: "/feed", element: <FeedPage /> },
           { path: "/crews", element: <CrewsPage /> },
           { path: "/crews/:id", element: <CrewDetailPage /> },
-          { path: "/challenges", element: <ChallengesPage /> },
-          { path: "/challenges/:id", element: <ChallengeDetailPage /> },
-          { path: "/events", element: <EventsPage /> },
-          { path: "/events/:id", element: <EventDetailPage /> },
+          {
+            path: "/challenges",
+            element: (
+              <FeatureRoute feature="challenges">
+                <ChallengesPage />
+              </FeatureRoute>
+            ),
+          },
+          {
+            path: "/challenges/:id",
+            element: (
+              <FeatureRoute feature="challenges">
+                <ChallengeDetailPage />
+              </FeatureRoute>
+            ),
+          },
+          {
+            path: "/events",
+            element: (
+              <FeatureRoute feature="events">
+                <EventsPage />
+              </FeatureRoute>
+            ),
+          },
+          {
+            path: "/events/:id",
+            element: (
+              <FeatureRoute feature="events">
+                <EventDetailPage />
+              </FeatureRoute>
+            ),
+          },
           { path: "/posts/:id", element: <PostDetailPage /> },
           { path: "/profile/:id", element: <UserProfilePage /> },
           { path: "/profile/:id/followers", element: <FollowersPage /> },
@@ -145,8 +174,22 @@ export const router = createBrowserRouter([
               { path: "/workouts/new", element: <NewWorkoutPage /> },
               { path: "/workouts/:id", element: <WorkoutDetailPage /> },
               { path: "/workouts/:id/edit", element: <EditWorkoutPage /> },
-              { path: "/challenges/:id/edit", element: <EditChallengePage /> },
-              { path: "/events/:id/edit", element: <EditEventPage /> },
+              {
+                path: "/challenges/:id/edit",
+                element: (
+                  <FeatureRoute feature="challenges">
+                    <EditChallengePage />
+                  </FeatureRoute>
+                ),
+              },
+              {
+                path: "/events/:id/edit",
+                element: (
+                  <FeatureRoute feature="events">
+                    <EditEventPage />
+                  </FeatureRoute>
+                ),
+              },
               { path: "/posts/new", element: <PostNewPage /> },
               { path: "/posts/:id/edit", element: <EditPostPage /> },
               { path: "/profile", element: <ProfilePage /> },
@@ -157,8 +200,22 @@ export const router = createBrowserRouter([
               { path: "/crews/:id/activities/:activityId/qr-check-in", element: <QrCheckInPage /> },
               { path: "/crews/:id/activities/:activityId/edit", element: <CrewActivityEditPage /> },
               { path: "/crews/:id/activities/:activityId", element: <CrewActivityDetailPage /> },
-              { path: "/challenges/new", element: <ChallengeNewPage /> },
-              { path: "/events/new", element: <EventNewPage /> },
+              {
+                path: "/challenges/new",
+                element: (
+                  <FeatureRoute feature="challenges">
+                    <ChallengeNewPage />
+                  </FeatureRoute>
+                ),
+              },
+              {
+                path: "/events/new",
+                element: (
+                  <FeatureRoute feature="events">
+                    <EventNewPage />
+                  </FeatureRoute>
+                ),
+              },
               { path: "/messages", element: <MessagesPage /> },
               { path: "/messages/:id", element: <MessageDetailPage /> },
               { path: "/notifications", element: <NotificationsPage /> },
