@@ -1,11 +1,14 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-03-27
+last_verified: 2026-04-01
 sources:
   - apps/api/src/conversations/conversations.controller.ts
   - apps/api/src/conversations/conversations.service.ts
   - apps/api/src/conversations/conversations-sse.service.ts
+  - apps/api/src/notifications/notifications.controller.ts
+  - apps/api/src/notifications/notifications-sse.service.ts
+  - apps/api/src/common/filters/http-exception.filter.ts
   - apps/api/src/conversations/repositories/conversations.repository.ts
   - apps/api/src/auth/guards/jwt-sse.guard.ts
   - apps/api/src/block/repositories/block.repository.ts
@@ -51,6 +54,8 @@ Direct messaging is implemented as an authenticated conversations module with cu
 - SSE endpoints are public at the route layer but protected by query-token auth through `JwtSseGuard`.
 - Message creation persists first, then fan-out happens as a non-blocking side effect.
 - One caller may hold multiple concurrent SSE subscriptions for the same user, such as the shell unread listener plus the direct-message detail stream.
+- SSE registries now keep per-connection heartbeat traffic and explicit close cleanup so Cloudflare or Cloud Run idle/reconnect behavior does not leave stale in-memory listeners behind.
+- Shared exception handling must not try to write a JSON error body after an SSE response has already started streaming.
 
 ## Current Constraints
 

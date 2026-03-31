@@ -22,12 +22,15 @@ describe("ConversationsSseService", () => {
   describe("addConnection", () => {
     it("should create a connection for a user", (done) => {
       const userId = "user-1";
-      const observable = service.addConnection(userId);
+      const connection = service.addConnection(userId);
 
-      expect(observable).toBeDefined();
-      observable.subscribe({
-        next: () => {
-          // Should receive events
+      expect(connection).toBeDefined();
+      connection.stream.subscribe({
+        next: (event: MessageEvent) => {
+          if (event.type === "heartbeat") {
+            return;
+          }
+
           done();
         },
       });
@@ -42,9 +45,13 @@ describe("ConversationsSseService", () => {
       let secondCallCount = 0;
       let completedCount = 0;
 
-      const firstObs = service.addConnection(userId);
-      firstObs.subscribe({
-        next: () => {
+      const firstConnection = service.addConnection(userId);
+      firstConnection.stream.subscribe({
+        next: (event) => {
+          if (event.type !== "new-message") {
+            return;
+          }
+
           firstCallCount++;
         },
         complete: () => {
@@ -52,9 +59,13 @@ describe("ConversationsSseService", () => {
         },
       });
 
-      const secondObs = service.addConnection(userId);
-      secondObs.subscribe({
-        next: () => {
+      const secondConnection = service.addConnection(userId);
+      secondConnection.stream.subscribe({
+        next: (event) => {
+          if (event.type !== "new-message") {
+            return;
+          }
+
           secondCallCount++;
         },
         complete: () => {
@@ -74,8 +85,8 @@ describe("ConversationsSseService", () => {
 
     it("should clean up connection on unsubscribe", () => {
       const userId = "user-1";
-      const observable = service.addConnection(userId);
-      const subscription = observable.subscribe();
+      const connection = service.addConnection(userId);
+      const subscription = connection.stream.subscribe();
 
       expect(service.hasConnection(userId)).toBe(true);
 
@@ -86,8 +97,8 @@ describe("ConversationsSseService", () => {
 
     it("should keep the user connected until the last subscription unsubscribes", () => {
       const userId = "user-1";
-      const firstSubscription = service.addConnection(userId).subscribe();
-      const secondSubscription = service.addConnection(userId).subscribe();
+      const firstSubscription = service.addConnection(userId).stream.subscribe();
+      const secondSubscription = service.addConnection(userId).stream.subscribe();
 
       expect(service.hasConnection(userId)).toBe(true);
 
@@ -104,12 +115,12 @@ describe("ConversationsSseService", () => {
       const userId = "user-1";
       let completedCount = 0;
 
-      service.addConnection(userId).subscribe({
+      service.addConnection(userId).stream.subscribe({
         complete: () => {
           completedCount++;
         },
       });
-      service.addConnection(userId).subscribe({
+      service.addConnection(userId).stream.subscribe({
         complete: () => {
           completedCount++;
         },
@@ -138,9 +149,13 @@ describe("ConversationsSseService", () => {
         content: "Hello",
       };
 
-      const observable = service.addConnection(userId);
-      observable.subscribe({
+      const connection = service.addConnection(userId);
+      connection.stream.subscribe({
         next: (event: MessageEvent) => {
+          if (event.type === "heartbeat") {
+            return;
+          }
+
           expect(event.type).toBe("new-message");
           expect(event.data).toEqual(testData);
           done();
@@ -165,16 +180,24 @@ describe("ConversationsSseService", () => {
       let user1Received = false;
       let user2Received = false;
 
-      service.addConnection(user1).subscribe({
+      service.addConnection(user1).stream.subscribe({
         next: (event: MessageEvent) => {
+          if (event.type !== "new-message") {
+            return;
+          }
+
           expect(event.data).toEqual(data1);
           user1Received = true;
           if (user1Received && user2Received) done();
         },
       });
 
-      service.addConnection(user2).subscribe({
+      service.addConnection(user2).stream.subscribe({
         next: (event: MessageEvent) => {
+          if (event.type !== "new-message") {
+            return;
+          }
+
           expect(event.data).toEqual(data2);
           user2Received = true;
           if (user1Received && user2Received) done();

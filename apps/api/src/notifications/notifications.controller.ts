@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { SkipThrottle } from "@nestjs/throttler";
+import type { Request } from "express";
 import { Observable } from "rxjs";
 
 import { JwtSseGuard } from "../auth/guards/jwt-sse.guard.js";
@@ -57,7 +58,10 @@ export class NotificationsController {
   @Public()
   @UseGuards(JwtSseGuard)
   @SkipThrottle()
-  sse(@Req() req: { user: { userId: string } }): Observable<MessageEvent> {
-    return this.sseService.addConnection(req.user.userId);
+  sse(@Req() req: Request & { user: { userId: string } }): Observable<MessageEvent> {
+    const connection = this.sseService.addConnection(req.user.userId);
+    req.once("close", connection.close);
+    req.once("end", connection.close);
+    return connection.stream;
   }
 }

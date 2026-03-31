@@ -1,24 +1,59 @@
 import { Injectable, MessageEvent } from "@nestjs/common";
 import { Observable, Subject } from "rxjs";
 
+const SSE_HEARTBEAT_INTERVAL_MS = 25_000;
+
+export interface ConversationsSseConnection {
+  close: () => void;
+  stream: Observable<MessageEvent>;
+}
+
 @Injectable()
 export class ConversationsSseService {
   private connections = new Map<string, Set<Subject<MessageEvent>>>();
 
-  addConnection(userId: string): Observable<MessageEvent> {
+  addConnection(userId: string): ConversationsSseConnection {
     const subject = new Subject<MessageEvent>();
     const subjects = this.connections.get(userId) ?? new Set<Subject<MessageEvent>>();
     subjects.add(subject);
     this.connections.set(userId, subjects);
 
-    return new Observable<MessageEvent>((subscriber) => {
+    let closed = false;
+    const close = () => {
+      if (closed) {
+        return;
+      }
+
+      closed = true;
+      clearInterval(heartbeat);
+      this.removeSubject(userId, subject);
+      subject.complete();
+    };
+
+    const heartbeat = setInterval(() => {
+      if (!this.connections.get(userId)?.has(subject)) {
+        clearInterval(heartbeat);
+        return;
+      }
+
+      subject.next({ type: "heartbeat", data: "" });
+    }, SSE_HEARTBEAT_INTERVAL_MS);
+    subject.subscribe({
+      complete: () => {
+        clearInterval(heartbeat);
+      },
+    });
+
+    const stream = new Observable<MessageEvent>((subscriber) => {
       const subscription = subject.subscribe(subscriber);
 
       return () => {
         subscription.unsubscribe();
-        this.removeSubject(userId, subject);
+        close();
       };
     });
+
+    return { close, stream };
   }
 
   removeConnection(userId: string): void {
