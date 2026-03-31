@@ -61,7 +61,6 @@ export class ConversationsController {
   sse(@Req() req: Request & { user: { userId: string } }): Observable<MessageEvent> {
     const connection = this.sseService.addConnection(req.user.userId);
     req.once("close", connection.close);
-    req.once("end", connection.close);
     return connection.stream;
   }
 
