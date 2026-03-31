@@ -78,6 +78,13 @@ This runbook explains how deployment works in this repository, what to verify be
   - `KAKAO_CALLBACK_URL`
   - `GOOGLE_CALLBACK_URL`
   - `NAVER_CALLBACK_URL`
+- If matching Secret Manager entries exist, the deploy workflow also forwards optional OAuth provider credentials:
+  - `KAKAO_CLIENT_ID`
+  - `KAKAO_CLIENT_SECRET`
+  - `GOOGLE_CLIENT_ID`
+  - `GOOGLE_CLIENT_SECRET`
+  - `NAVER_CLIENT_ID`
+  - `NAVER_CLIENT_SECRET`
 - `DATABASE_URL` should be the Supabase transaction-pooler runtime URL for Cloud Run.
 - `DIRECT_URL` is intentionally not injected into Cloud Run because the API runtime should not need the migration/operator URL.
 - Current beta deploy posture also keeps Cloud Run at `min-instances=0` and `max-instances=1`.
@@ -88,6 +95,7 @@ This runbook explains how deployment works in this repository, what to verify be
 - `FRONTEND_URL` is required for branch deploy boot because the API uses it for CORS and OAuth redirect targets.
 - If a social provider is enabled with `<PROVIDER>_CLIENT_ID`, the matching `<PROVIDER>_CALLBACK_URL` must also be present.
 - The deploy workflow only validates repo-managed variables. OAuth provider client IDs and secrets still live in external Cloud Run or Secret Manager state, so API boot-time validation remains the final guard against stale provider callback config.
+- The login page reads `/auth/providers`; if every provider is unavailable, first confirm that the lane has the matching `*_CLIENT_ID` secret in Secret Manager and the matching callback URL variable in GitHub.
 
 ### Secret Manager Bootstrap
 

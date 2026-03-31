@@ -75,7 +75,8 @@ Prove and record the external GitHub/GCP environment bootstrap needed for the br
 - 2026-03-31: set GitHub environment variables `CLOUD_RUN_SERVICE_NAME=masters-runners-api-dev` and `FRONTEND_URL=https://dev.mastersrunners.com` for `dev`, plus `CLOUD_RUN_SERVICE_NAME=masters-runners-api` and `FRONTEND_URL=https://mastersrunners.com` for `production`.
 - 2026-03-31: added `scripts/bootstrap-gcp-secrets.sh` so local operator env files can upsert the required Secret Manager values into `mastersrunners-dev-20260331` and `mastersrunners-prod-20260331` without committing or sharing raw secrets.
 - 2026-03-31: synced the dev Secret Manager lane with corrected Supabase transaction/session pooler URLs after proving locally that `pnpm db:migrate:deploy` and `pnpm db:seed` require `uselibpqcompat=true` in both connection strings.
-- 2026-03-31: remaining external work is Secret Manager value population, first Cloud Run service creation by branch deploy, and optional cleanup/deletion of the old `mastersrunners` project after cutover.
+- 2026-03-31: first `dev` branch deploy created Cloud Run service `masters-runners-api-dev` and published stable URL `https://masters-runners-api-dev-e2m534vcpa-du.a.run.app`; `scripts/verify-deployment.sh` now passes against that service.
+- 2026-03-31: remaining external work is OAuth provider secret population per lane, Cloudflare `/api/*` proxy wiring, production-lane proof, and optional cleanup/deletion of the old `mastersrunners` project after cutover.
 
 ## Review Notes
 

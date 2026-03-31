@@ -99,6 +99,26 @@ jobs:
         run: |
           IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/masters-runners/${{ env.SERVICE_NAME }}:${{ github.sha }}"
           env_vars=("NODE_ENV=production" "FRONTEND_URL=${FRONTEND_URL}")
+          secret_mappings=(
+            "DATABASE_URL=DATABASE_URL:latest"
+            "JWT_SECRET=JWT_SECRET:latest"
+            "JWT_ACCESS_TTL=JWT_ACCESS_TTL:latest"
+            "JWT_REFRESH_TTL=JWT_REFRESH_TTL:latest"
+            "R2_ACCOUNT_ID=R2_ACCOUNT_ID:latest"
+            "R2_ACCESS_KEY_ID=R2_ACCESS_KEY_ID:latest"
+            "R2_SECRET_ACCESS_KEY=R2_SECRET_ACCESS_KEY:latest"
+            "R2_BUCKET_NAME=R2_BUCKET_NAME:latest"
+            "R2_PUBLIC_URL=R2_PUBLIC_URL:latest"
+          )
+
+          append_secret_if_present() {
+            local secret_name="$1"
+
+            if gcloud secrets describe "$secret_name" >/dev/null 2>&1; then
+              secret_mappings+=("${secret_name}=${secret_name}:latest")
+            fi
+          }
+
           if [ -n "${API_PUBLIC_URL}" ]; then
             env_vars+=("API_PUBLIC_URL=${API_PUBLIC_URL}")
           fi
@@ -111,6 +131,12 @@ jobs:
           if [ -n "${NAVER_CALLBACK_URL}" ]; then
             env_vars+=("NAVER_CALLBACK_URL=${NAVER_CALLBACK_URL}")
           fi
+          append_secret_if_present "KAKAO_CLIENT_ID"
+          append_secret_if_present "KAKAO_CLIENT_SECRET"
+          append_secret_if_present "GOOGLE_CLIENT_ID"
+          append_secret_if_present "GOOGLE_CLIENT_SECRET"
+          append_secret_if_present "NAVER_CLIENT_ID"
+          append_secret_if_present "NAVER_CLIENT_SECRET"
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --image "$IMAGE" \
             --region ${{ env.REGION }} \
@@ -123,7 +149,7 @@ jobs:
             --min-instances 0 \
             --max-instances 1 \
             --set-env-vars "$(IFS=,; echo "${env_vars[*]}")" \
-            --set-secrets "DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest,JWT_ACCESS_TTL=JWT_ACCESS_TTL:latest,JWT_REFRESH_TTL=JWT_REFRESH_TTL:latest,R2_ACCOUNT_ID=R2_ACCOUNT_ID:latest,R2_ACCESS_KEY_ID=R2_ACCESS_KEY_ID:latest,R2_SECRET_ACCESS_KEY=R2_SECRET_ACCESS_KEY:latest,R2_BUCKET_NAME=R2_BUCKET_NAME:latest,R2_PUBLIC_URL=R2_PUBLIC_URL:latest"
+            --set-secrets "$(IFS=,; echo "${secret_mappings[*]}")"
 
       - name: Verify deployment
         run: |

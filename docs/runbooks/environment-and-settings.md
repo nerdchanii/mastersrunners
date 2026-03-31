@@ -18,6 +18,7 @@ This document is intentionally an index. It does not duplicate every environment
 - Local and container runs should treat repo-root `.env` or `.env.local` as the default development entrypoints.
 - Production-like Docker verification should pass `.env.production` explicitly with `docker compose --env-file .env.production`.
 - Branch deploy lanes also depend on GitHub environment metadata documented in `docs/runbooks/deployment.md`, including `CLOUD_RUN_SERVICE_NAME`, `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT`, and `FRONTEND_URL`.
+- If a branch lane should expose social login, keep callback URLs in GitHub environment variables and provider credentials in Secret Manager so Cloud Run can receive them at deploy time.
 
 ### Web Runtime and Build Settings
 
