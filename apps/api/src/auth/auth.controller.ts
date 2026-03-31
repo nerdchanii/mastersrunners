@@ -13,7 +13,7 @@ import { ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 
 import { Public } from "../common/decorators/public.decorator.js";
-import { FeatureFlagsService } from "../config/feature-flags.service.js";
+import { resolvePublicAuthProviders } from "../config/feature-flags.js";
 
 import { RefreshTokenDto } from "./dto/refresh-token.dto.js";
 import { OAuthProviderGuard } from "./guards/oauth-provider.guard.js";
@@ -29,7 +29,6 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly config: ConfigService,
-    private readonly featureFlags: FeatureFlagsService,
   ) {}
 
   // ─── Kakao ──────────────────────────────────────────
@@ -37,7 +36,7 @@ export class AuthController {
   @Public()
   @Get("providers")
   getProviders() {
-    return this.featureFlags.getAuthProviders();
+    return resolvePublicAuthProviders(process.env);
   }
 
   @Public()

@@ -3,7 +3,7 @@ import { Observable, Subject } from "rxjs";
 
 const SSE_HEARTBEAT_INTERVAL_MS = 25_000;
 
-export interface ConversationsSseConnection {
+interface ConversationsSseConnection {
   close: () => void;
   stream: Observable<MessageEvent>;
 }
