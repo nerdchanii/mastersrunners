@@ -8,6 +8,11 @@ env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   SERVICE_NAME: masters-runners-api
   REGION: asia-northeast3
+  FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+  API_PUBLIC_URL: ${{ vars.API_PUBLIC_URL }}
+  KAKAO_CALLBACK_URL: ${{ vars.KAKAO_CALLBACK_URL }}
+  GOOGLE_CALLBACK_URL: ${{ vars.GOOGLE_CALLBACK_URL }}
+  NAVER_CALLBACK_URL: ${{ vars.NAVER_CALLBACK_URL }}
 
 jobs:
   deploy-api:
@@ -40,9 +45,29 @@ jobs:
           docker build -t "$IMAGE" -f apps/api/Dockerfile .
           docker push "$IMAGE"
 
+      - name: Validate production env contract
+        run: |
+          if [ -z "${FRONTEND_URL}" ]; then
+            echo "::error::GitHub variable FRONTEND_URL must be set for Cloud Run deploys."
+            exit 1
+          fi
+
       - name: Deploy to Cloud Run
         run: |
           IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/masters-runners/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+          env_vars=("NODE_ENV=production" "FRONTEND_URL=${FRONTEND_URL}")
+          if [ -n "${API_PUBLIC_URL}" ]; then
+            env_vars+=("API_PUBLIC_URL=${API_PUBLIC_URL}")
+          fi
+          if [ -n "${KAKAO_CALLBACK_URL}" ]; then
+            env_vars+=("KAKAO_CALLBACK_URL=${KAKAO_CALLBACK_URL}")
+          fi
+          if [ -n "${GOOGLE_CALLBACK_URL}" ]; then
+            env_vars+=("GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}")
+          fi
+          if [ -n "${NAVER_CALLBACK_URL}" ]; then
+            env_vars+=("NAVER_CALLBACK_URL=${NAVER_CALLBACK_URL}")
+          fi
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --image "$IMAGE" \
             --region ${{ env.REGION }} \
@@ -53,7 +78,7 @@ jobs:
             --cpu 1 \
             --min-instances 0 \
             --max-instances 3 \
-            --set-env-vars "NODE_ENV=production" \
+            --set-env-vars "$(IFS=,; echo "${env_vars[*]}")" \
             --set-secrets "DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest,JWT_ACCESS_TTL=JWT_ACCESS_TTL:latest,JWT_REFRESH_TTL=JWT_REFRESH_TTL:latest,R2_ACCOUNT_ID=R2_ACCOUNT_ID:latest,R2_ACCESS_KEY_ID=R2_ACCESS_KEY_ID:latest,R2_SECRET_ACCESS_KEY=R2_SECRET_ACCESS_KEY:latest,R2_BUCKET_NAME=R2_BUCKET_NAME:latest,R2_PUBLIC_URL=R2_PUBLIC_URL:latest"
 
       - name: Verify deployment

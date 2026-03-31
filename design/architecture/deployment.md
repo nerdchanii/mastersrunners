@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: architecture
-last_verified: 2026-03-13
+last_verified: 2026-03-31
 sources:
   - .github/workflows/deploy.yml
   - scripts/verify-deployment.sh
@@ -46,14 +46,21 @@ This document defines the intended deployment shape for the repository. Runbooks
 
 - Runtime config is injected by the deploy workflow through env vars and secrets
 - Web runtime config for Cloudflare Pages is injected through Pages environment variables such as `VITE_API_URL`
+- Non-development web builds intentionally fail when `VITE_API_URL` is missing instead of silently falling back to localhost
 - Production deploys should be immutable by commit SHA
 - Redis appears in environment and compose-level deployment assumptions, but the current repo implementation does not use a shared Redis runtime for app logic or realtime fan-out
 - The Pages project itself is external state, so its build command and output directory must match `docs/runbooks/deployment.md`
+- Branch aliases, custom domains, and `/api/*` proxy rules for Pages are also external state and are tracked under `EX-0004`
 
 ### Local Production-Like
 
 - Runtime config is read from `.env.production` and `docker-compose.prod.yml`
 - This path exists to validate the containerized runtime before or alongside production rollout work
+
+### Current Rollout Phase
+
+- The active app host is expected to be `dev.mastersrunners.com` on the `dev` branch while apex/www remain on a placeholder site.
+- The `main` branch remains the intended production branch for the eventual `mastersrunners.com` app launch.
 
 ## Rollout Model
 

@@ -44,11 +44,20 @@ This runbook explains how deployment works in this repository, what to verify be
 
 - Deployment workflow injects:
   - `NODE_ENV=production`
+  - `FRONTEND_URL`
   - `DATABASE_URL`
   - `JWT_SECRET`
   - `JWT_ACCESS_TTL`
   - `JWT_REFRESH_TTL`
   - R2 credentials and bucket/public URL values
+- Optional runtime values:
+  - `API_PUBLIC_URL`
+  - `KAKAO_CALLBACK_URL`
+  - `GOOGLE_CALLBACK_URL`
+  - `NAVER_CALLBACK_URL`
+- `FRONTEND_URL` is required for production boot because the API uses it for CORS and OAuth redirect targets.
+- If a social provider is enabled with `<PROVIDER>_CLIENT_ID`, the matching `<PROVIDER>_CALLBACK_URL` must also be present.
+- The deploy workflow only validates repo-managed variables. OAuth provider client IDs and secrets still live in external Cloud Run or Secret Manager state, so API boot-time validation remains the final guard against stale provider callback config.
 
 ### Local Docker Compose
 
@@ -63,6 +72,22 @@ This runbook explains how deployment works in this repository, what to verify be
 
 - Set the Pages build command to `pnpm build:web`
 - Set the Pages build output directory to `apps/web/dist`
+- Treat Pages environment variables as public build-time config.
+- Required Pages variable for every non-local deployment:
+  - `VITE_API_URL`
+- Never store OAuth secrets, JWT secrets, database credentials, or R2 secrets in Pages env.
+
+### Current Host Matrix
+
+- Current pre-launch app host:
+  - `dev` branch -> `dev.mastersrunners.com`
+- Deferred launch host:
+  - `main` branch -> `mastersrunners.com`
+- Current placeholder hosts:
+  - `mastersrunners.com`
+  - `www.mastersrunners.com`
+- Same-domain API routing is an external Cloudflare dashboard responsibility. For the current phase, only `dev.mastersrunners.com/api/*` needs to proxy to the API origin.
+- Local non-development web builds should provide `VITE_API_URL` through the shell environment or an env file resolved from `apps/web`.
 
 ## Local Production-Like Verification
 
@@ -127,14 +152,18 @@ The confirmed Pages contract for this repository is:
 
 - Keep the project configured so workspace installs continue to resolve the root `pnpm-workspace.yaml` and shared packages.
 - If you change install or root-directory settings later, verify that `@masters/types` still resolves during the Pages build.
-- After the build is restored, set `VITE_API_URL` for preview and production environments; the local fallback in `apps/web/src/lib/api-client.ts` is only safe for local development.
+- Set `VITE_API_URL` for every preview and production environment before triggering a Pages deployment. Non-development builds now fail fast when it is missing.
+- Use environment-specific values:
+  - `dev` branch / `dev.mastersrunners.com` -> `https://dev.mastersrunners.com/api/v1`
+  - `main` branch / `mastersrunners.com` -> `https://mastersrunners.com/api/v1` when launch switches to the app host
 
 ### Recovery Steps
 
 1. Open the Cloudflare Pages project build settings.
 2. Replace the stale build command with `pnpm build:web`.
 3. Confirm the output directory is `apps/web/dist`.
-4. Re-run the failed preview deployment or push a no-op commit after the settings change.
+4. Add `VITE_API_URL` for the target branch environment before re-running the deployment.
+5. Re-run the failed preview deployment or push a no-op commit after the settings change.
 
 ## Post-Deploy Checks
 

@@ -9,11 +9,13 @@ import express from "express";
 
 import { StructuredLoggerService } from "./common/logging/structured-logger.service.js";
 import { MonitoringService } from "./common/monitoring/monitoring.service.js";
+import { validateProductionRuntimeEnv } from "./config/runtime-env.js";
 import { AppModule } from "./app.module.js";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false, bufferLogs: true });
   const config = app.get(ConfigService);
+  validateProductionRuntimeEnv(config);
   const logger = app.get(StructuredLoggerService);
   const monitoring = app.get(MonitoringService);
 
@@ -68,10 +70,12 @@ async function bootstrap() {
   SwaggerModule.setup("api-docs", app as any, document);
 
   const port = config.get<number>("API_PORT", 4000);
+  const apiPublicUrl = config.get<string>("API_PUBLIC_URL")?.trim() || undefined;
   await app.listen(port);
   logger.logEvent("log", "api_bootstrap_complete", "Bootstrap", {
     port,
-    apiBaseUrl: `http://localhost:${port}/api/v1`,
+    apiPublicUrl,
+    listenAddress: `http://0.0.0.0:${port}/api/v1`,
     monitoringEnabled: monitoring.isEnabled(),
   });
 }

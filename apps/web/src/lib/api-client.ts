@@ -1,4 +1,20 @@
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api/v1";
+const LOCAL_API_BASE = "http://localhost:4000/api/v1";
+
+function resolveApiBase() {
+  const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+
+  if (configuredApiUrl) {
+    return configuredApiUrl.replace(/\/$/, "");
+  }
+
+  if (import.meta.env.DEV) {
+    return LOCAL_API_BASE;
+  }
+
+  throw new Error("VITE_API_URL must be set for non-development web builds.");
+}
+
+const API_BASE = resolveApiBase();
 
 export class ApiError extends Error {
   constructor(
