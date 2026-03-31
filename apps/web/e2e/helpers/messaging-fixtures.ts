@@ -4,7 +4,7 @@ import { mockUser } from "./mock-auth";
 
 export const API_BASE = "http://localhost:4000/api/v1";
 
-export const messagingFixtureIds = {
+const messagingFixtureIds = {
   activityConversationId: "conv-activity-1",
   activityId: "activity-1",
   crewConversationId: "conv-crew-1",
@@ -12,7 +12,7 @@ export const messagingFixtureIds = {
   directConversationId: "conv-direct-1",
 };
 
-export const messagingFixtureUsers = {
+const messagingFixtureUsers = {
   crewOwner: {
     id: "user-2",
     name: "러닝맨",
@@ -172,7 +172,7 @@ function json(value: unknown, status = 200) {
   };
 }
 
-export function buildMessage(overrides: Partial<FixtureMessage> = {}): FixtureMessage {
+function buildMessage(overrides: Partial<FixtureMessage> = {}): FixtureMessage {
   return {
     content: "오늘도 달리시나요?",
     conversationId: messagingFixtureIds.directConversationId,
@@ -185,7 +185,7 @@ export function buildMessage(overrides: Partial<FixtureMessage> = {}): FixtureMe
   };
 }
 
-export function buildDirectConversation(
+function buildDirectConversation(
   overrides: Partial<FixtureConversationSummary> = {},
 ): FixtureConversationSummary {
   const id = overrides.id ?? messagingFixtureIds.directConversationId;
@@ -219,7 +219,7 @@ export function buildDirectConversation(
   };
 }
 
-export function buildCrewConversation(
+function buildCrewConversation(
   overrides: Partial<FixtureChatConversation> = {},
 ): FixtureChatConversation {
   return {
@@ -246,7 +246,7 @@ export function buildCrewConversation(
   };
 }
 
-export function buildActivityConversation(
+function buildActivityConversation(
   overrides: Partial<FixtureChatConversation> = {},
 ): FixtureChatConversation {
   return {
@@ -267,7 +267,7 @@ export function buildActivityConversation(
   };
 }
 
-export function buildCrew(
+function buildCrew(
   overrides: Partial<FixtureCrew> = {},
   viewerRole: FixtureCrewMember["role"] = "MEMBER",
 ): FixtureCrew {

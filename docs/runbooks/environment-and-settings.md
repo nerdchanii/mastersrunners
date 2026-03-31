@@ -22,6 +22,7 @@ This document is intentionally an index. It does not duplicate every environment
 
 - The web app reads `VITE_API_URL` in `apps/web/src/lib/api-client.ts`.
 - Non-development web builds must provide `VITE_API_URL`; only local Vite development may fall back to `http://localhost:4000/api/v1`.
+- Repository analysis/build automation may inject a placeholder `VITE_API_URL=http://localhost:4000` so tools such as `knip` and workspace-wide builds can load the Vite config without weakening the runtime deployment contract.
 - `VITE_*` values are public build-time configuration, not secret storage. Keep OAuth, JWT, database, and storage secrets out of Pages environment variables.
 - If a user-facing environment-specific web setting changes, update both the relevant runbook and the web design doc if the behavior contract changes.
 
