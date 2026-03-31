@@ -54,8 +54,17 @@ This runbook explains how deployment works in this repository, what to verify be
   - `main` branch -> `production` GitHub environment
 - Each GitHub environment should provide the lane-scoped deployment contract:
   - secrets: `GCP_PROJECT_ID`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT`
-  - variables: `CLOUD_RUN_SERVICE_NAME`, `FRONTEND_URL`
+  - variables: `CLOUD_RUN_SERVICE_NAME`, `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT`, `FRONTEND_URL`
   - optional variables: `API_PUBLIC_URL`, `KAKAO_CALLBACK_URL`, `GOOGLE_CALLBACK_URL`, `NAVER_CALLBACK_URL`
+- Expected GitHub environment variable values for the current rollout:
+  - `dev` environment:
+    - `CLOUD_RUN_SERVICE_NAME=masters-runners-api-dev`
+    - `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT=cloud-run-runtime@mastersrunners-dev-20260331.iam.gserviceaccount.com`
+    - `FRONTEND_URL=https://dev.mastersrunners.com`
+  - `production` environment:
+    - `CLOUD_RUN_SERVICE_NAME=masters-runners-api`
+    - `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT=cloud-run-runtime@mastersrunners-prod-20260331.iam.gserviceaccount.com`
+    - `FRONTEND_URL=https://mastersrunners.com`
 - Deployment workflow injects:
   - `NODE_ENV=production`
   - `FRONTEND_URL`
@@ -73,11 +82,54 @@ This runbook explains how deployment works in this repository, what to verify be
 - `DIRECT_URL` is intentionally not injected into Cloud Run because the API runtime should not need the migration/operator URL.
 - Current beta deploy posture also keeps Cloud Run at `min-instances=0` and `max-instances=1`.
 - `CLOUD_RUN_SERVICE_NAME` must be provided per GitHub environment so the deploy lane can target the correct Cloud Run service.
+- `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT` must also be provided per GitHub environment so first-time service creation does not fall back to the default Compute Engine service account.
 - The deploy workflow still needs Secret Manager access to `DIRECT_URL` so it can run `prisma migrate deploy` and `prisma db seed` before shipping a new revision.
 - Automated branch deploy migrations intentionally allow only a narrow additive SQL subset; anything outside that subset must use a manual rollout task instead of relying on regex guesses about backward compatibility.
 - `FRONTEND_URL` is required for branch deploy boot because the API uses it for CORS and OAuth redirect targets.
 - If a social provider is enabled with `<PROVIDER>_CLIENT_ID`, the matching `<PROVIDER>_CALLBACK_URL` must also be present.
 - The deploy workflow only validates repo-managed variables. OAuth provider client IDs and secrets still live in external Cloud Run or Secret Manager state, so API boot-time validation remains the final guard against stale provider callback config.
+
+### Secret Manager Bootstrap
+
+- Use `scripts/bootstrap-gcp-secrets.sh` to upsert Secret Manager values from a local env file without pasting secrets into chat or the repo.
+- The script expects a shell-style env file that stays local to your machine, for example `.env.gcp.dev` or `.env.gcp.prod`.
+- Example `dev` bootstrap:
+
+```bash
+bash scripts/bootstrap-gcp-secrets.sh mastersrunners-dev-20260331 .env.gcp.dev
+```
+
+- Example `production` bootstrap:
+
+```bash
+bash scripts/bootstrap-gcp-secrets.sh mastersrunners-prod-20260331 .env.gcp.prod
+```
+
+- Dry-run before the real write if you want to validate the secret names only:
+
+```bash
+bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env.gcp.dev
+```
+
+- Required secret names for the current workflow:
+  - `DATABASE_URL`
+  - `DIRECT_URL`
+  - `JWT_SECRET`
+  - `JWT_ACCESS_TTL`
+  - `JWT_REFRESH_TTL`
+  - `R2_ACCOUNT_ID`
+  - `R2_ACCESS_KEY_ID`
+  - `R2_SECRET_ACCESS_KEY`
+  - `R2_BUCKET_NAME`
+  - `R2_PUBLIC_URL`
+- Optional social-login secrets can also be stored if they are present in the env file:
+  - `KAKAO_CLIENT_ID`
+  - `KAKAO_CLIENT_SECRET`
+  - `GOOGLE_CLIENT_ID`
+  - `GOOGLE_CLIENT_SECRET`
+  - `NAVER_CLIENT_ID`
+  - `NAVER_CLIENT_SECRET`
+- Keep callback URLs in GitHub environment variables, not in Secret Manager.
 
 ### Local Docker Compose
 

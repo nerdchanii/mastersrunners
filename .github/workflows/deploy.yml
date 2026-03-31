@@ -14,6 +14,7 @@ jobs:
       DEPLOY_LANE: ${{ github.ref_name == 'main' && 'production' || 'dev' }}
       PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       SERVICE_NAME: ${{ vars.CLOUD_RUN_SERVICE_NAME }}
+      RUNTIME_SERVICE_ACCOUNT: ${{ vars.CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT }}
       REGION: asia-northeast3
       FRONTEND_URL: ${{ vars.FRONTEND_URL }}
       API_PUBLIC_URL: ${{ vars.API_PUBLIC_URL }}
@@ -56,6 +57,10 @@ jobs:
         run: |
           if [ -z "${SERVICE_NAME}" ]; then
             echo "::error::GitHub environment variable CLOUD_RUN_SERVICE_NAME must be set for ${DEPLOY_LANE} deploys."
+            exit 1
+          fi
+          if [ -z "${RUNTIME_SERVICE_ACCOUNT}" ]; then
+            echo "::error::GitHub environment variable CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT must be set for ${DEPLOY_LANE} Cloud Run deploys."
             exit 1
           fi
           if [ -z "${FRONTEND_URL}" ]; then
@@ -111,6 +116,7 @@ jobs:
             --region ${{ env.REGION }} \
             --platform managed \
             --allow-unauthenticated \
+            --service-account "${RUNTIME_SERVICE_ACCOUNT}" \
             --port 4000 \
             --memory 512Mi \
             --cpu 1 \

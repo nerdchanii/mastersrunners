@@ -73,3 +73,13 @@ Exceptions are only for repository controls that cannot be fully proven or close
 - `required_external_proof`: dashboard evidence showing the intended Supabase project (`mastersrunners-dev`, ref `ziocdlargynmjxjhijqj`) remains in `ap-northeast-2`, runtime and migration URLs are copied into the right secret/operator surfaces, and the chosen plan matches the expected uptime posture.
 - `revisit_date`: 2026-04-15
 - `unblock_condition`: Supabase runtime credentials and plan proof are externally verified and no longer depend on undocumented dashboard state
+
+### EX-0006
+
+- `related_principles`: `P3`, `P8`, `P10`
+- `repo_control`: `github-gcp-dual-lane-deploy-environment-bootstrap`
+- `reason_not_repo_controllable`: GitHub environment secrets/vars, Cloud Run service creation, Secret Manager secret values, and any eventual deletion of the old `mastersrunners` GCP project are external project settings and credentials that the repo must not embed.
+- `external_owner`: project owner
+- `required_external_proof`: evidence that GitHub environments `dev` and `production` contain the intended GCP project/WIF/service-account values plus `FRONTEND_URL=https://dev.mastersrunners.com` and `FRONTEND_URL=https://mastersrunners.com`, Cloud Run services `masters-runners-api-dev` and `masters-runners-api` exist in projects `mastersrunners-dev-20260331` and `mastersrunners-prod-20260331`, and the required Secret Manager values are populated without leaking credentials.
+- `revisit_date`: 2026-04-15
+- `unblock_condition`: branch-aware GitHub/GCP deploy environments are externally verified end-to-end and no longer depend on undocumented dashboard or credential state

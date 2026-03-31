@@ -17,6 +17,7 @@ This document is intentionally an index. It does not duplicate every environment
 - The NestJS API loads env files through `ConfigModule` in `apps/api/src/app.module.ts`.
 - Local and container runs should treat repo-root `.env` or `.env.local` as the default development entrypoints.
 - Production-like Docker verification should pass `.env.production` explicitly with `docker compose --env-file .env.production`.
+- Branch deploy lanes also depend on GitHub environment metadata documented in `docs/runbooks/deployment.md`, including `CLOUD_RUN_SERVICE_NAME`, `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT`, and `FRONTEND_URL`.
 
 ### Web Runtime and Build Settings
 
