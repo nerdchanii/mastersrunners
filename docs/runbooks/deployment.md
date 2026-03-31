@@ -17,6 +17,7 @@ This runbook explains how deployment works in this repository, what to verify be
 
 - Target: Google Cloud Run
 - Trigger: push to `dev` and `main`
+- Markdown-only pushes are ignored by the deploy workflow; at least one non-`*.md` file change is required to trigger rollout.
 - Artifact: Docker image built from `apps/api/Dockerfile`
 - Branch-to-service mapping:
   - `dev` -> `masters-runners-api-dev`

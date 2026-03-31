@@ -59,6 +59,7 @@ The repository currently documents generic PostgreSQL deployment assumptions, bu
 - `tasks/active/I-0012-100-api-use-nest-body-parser-api.md`
 - `tasks/active/I-0012-110-ci-wire-optional-oauth-runtime-secrets.md`
 - `tasks/active/I-0012-120-api-accept-jwt-timespan-envs.md`
+- `tasks/archive/I-0012-130-ci-skip-markdown-only-runs.md`
 - `tasks/todo/I-0012-030-db-supabase-pro-upgrade-readiness.md`
 
 ## Success Criteria
