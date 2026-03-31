@@ -17,13 +17,18 @@ export class GpxParserService {
     const duration = (endTime.getTime() - startTime.getTime()) / 1000;
 
     let totalDistance = 0;
-    for (let i = 1; i < enrichedPoints.length; i++) {
-      totalDistance += this.haversineDistance(
-        enrichedPoints[i - 1].lat,
-        enrichedPoints[i - 1].lon,
-        enrichedPoints[i].lat,
-        enrichedPoints[i].lon,
-      );
+    const lastPoint = enrichedPoints[enrichedPoints.length - 1];
+    if (lastPoint.distance !== undefined && lastPoint.distance > 0) {
+      totalDistance = lastPoint.distance;
+    } else {
+      for (let i = 1; i < enrichedPoints.length; i++) {
+        totalDistance += this.haversineDistance(
+          enrichedPoints[i - 1].lat,
+          enrichedPoints[i - 1].lon,
+          enrichedPoints[i].lat,
+          enrichedPoints[i].lon,
+        );
+      }
     }
 
     const avgPace = duration / (totalDistance / 1000); // seconds per km
@@ -96,6 +101,7 @@ export class GpxParserService {
     elevation?: number;
     heartRate?: number;
     cadence?: number;
+    distance?: number;
   }> {
     const points: Array<{
       lat: number;
@@ -104,6 +110,7 @@ export class GpxParserService {
       elevation?: number;
       heartRate?: number;
       cadence?: number;
+      distance?: number;
     }> = [];
 
     const trkptRegex =
@@ -122,18 +129,28 @@ export class GpxParserService {
 
       // Extract optional elevation
       const eleMatch = /<ele>([^<]+)<\/ele>/.exec(content);
-      const elevation = eleMatch ? parseFloat(eleMatch[1]) : undefined;
+      const elevation = eleMatch ? this.parseOptionalFloat(eleMatch[1]) : undefined;
 
       // Extract optional heart rate (multiple namespace patterns)
-      const hrMatch = /<(?:gpxtpx:)?(?:ns3:)?hr>([^<]+)<\/(?:gpxtpx:)?(?:ns3:)?hr>/.exec(content);
-      const heartRate = hrMatch ? parseInt(hrMatch[1], 10) : undefined;
+      const hrMatch =
+        /<(?:gpxdata:)?(?:gpxtpx:)?(?:ns3:)?hr>([^<]+)<\/(?:gpxdata:)?(?:gpxtpx:)?(?:ns3:)?hr>/.exec(
+          content,
+        );
+      const heartRate = hrMatch ? this.parseOptionalInt(hrMatch[1]) : undefined;
 
       // Extract optional cadence (multiple namespace patterns)
       const cadMatch =
-        /<(?:gpxtpx:)?(?:ns3:)?(?:cad|RunCadence)>([^<]+)<\/(?:gpxtpx:)?(?:ns3:)?(?:cad|RunCadence)>/.exec(
+        /<(?:gpxdata:)?(?:gpxtpx:)?(?:ns3:)?(?:cad|cadence|RunCadence)>([^<]+)<\/(?:gpxdata:)?(?:gpxtpx:)?(?:ns3:)?(?:cad|cadence|RunCadence)>/.exec(
           content,
         );
-      const cadence = cadMatch ? parseInt(cadMatch[1], 10) : undefined;
+      const cadence = cadMatch ? this.parseOptionalInt(cadMatch[1]) : undefined;
+
+      // Extract optional distance
+      const distMatch =
+        /<(?:gpxdata:)?(?:gpxtpx:)?(?:ns3:)?(?:distance|Distance)>([^<]+)<\/(?:gpxdata:)?(?:gpxtpx:)?(?:ns3:)?(?:distance|Distance)>/.exec(
+          content,
+        );
+      const distance = distMatch ? this.parseOptionalFloat(distMatch[1]) : undefined;
 
       points.push({
         lat,
@@ -142,6 +159,7 @@ export class GpxParserService {
         elevation,
         heartRate,
         cadence,
+        distance,
       });
     }
     return points;
@@ -163,5 +181,15 @@ export class GpxParserService {
 
   private toRad(deg: number): number {
     return deg * (Math.PI / 180);
+  }
+
+  private parseOptionalFloat(raw: string): number | undefined {
+    const value = parseFloat(raw);
+    return Number.isFinite(value) ? value : undefined;
+  }
+
+  private parseOptionalInt(raw: string): number | undefined {
+    const value = parseInt(raw, 10);
+    return Number.isFinite(value) ? value : undefined;
   }
 }

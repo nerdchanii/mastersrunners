@@ -111,6 +111,39 @@ describe("FitParserService", () => {
       });
     });
 
+    it("should preserve parser-normalized GPS coordinates without re-converting them", async () => {
+      const fitBuffer = Buffer.alloc(100);
+      fitBuffer[0] = 12;
+
+      jest.spyOn(service as any, "parseFitBuffer").mockResolvedValueOnce({
+        sessions: [
+          {
+            total_distance: 1000,
+            total_timer_time: 300,
+            start_time: new Date("2026-02-16T10:00:00Z"),
+            timestamp: new Date("2026-02-16T10:05:00Z"),
+          },
+        ],
+        records: [
+          {
+            position_lat: 37.5665,
+            position_long: 126.978,
+            timestamp: new Date("2026-02-16T10:00:00Z"),
+          },
+        ],
+      });
+
+      const result = await service.parse(fitBuffer);
+
+      expect(result.gpsTrack).toEqual([
+        {
+          lat: 37.5665,
+          lon: 126.978,
+          timestamp: new Date("2026-02-16T10:00:00Z"),
+        },
+      ]);
+    });
+
     it("should handle FIT file with no GPS data", async () => {
       const fitBuffer = Buffer.alloc(100);
       fitBuffer[0] = 12;

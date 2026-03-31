@@ -200,7 +200,7 @@ export function useWorkoutEntry() {
       await api.fetch("/workouts", {
         method: "POST",
         body: JSON.stringify({
-          distance: parseFloat(distance),
+          distance: parseFloat(distance) * 1000,
           duration,
           date,
           memo: memo.trim() || undefined,

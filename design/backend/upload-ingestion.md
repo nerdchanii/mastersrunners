@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-03-30
+last_verified: 2026-03-31
 sources:
   - apps/api/src/uploads/uploads.module.ts
   - apps/api/src/uploads/uploads.service.ts
@@ -58,6 +58,12 @@ In disk mode the app also exposes public `PUT /uploads/disk/*` and `GET /disk-fi
 5. derive route bounds, encoded polyline, and lap records
 
 GPS routes are downsampled before persistence to control payload size.
+
+Parser normalization details:
+
+- FIT ingestion trusts the coordinate values already normalized by `fit-file-parser` and preserves per-point elevation, heart rate, and cadence when available.
+- GPX ingestion prefers native cumulative distance from `<distance>` extensions when present, then falls back to Haversine distance if the file does not expose cumulative distance.
+- GPX heart rate and cadence extraction supports both `gpxtpx`-style and `gpxdata`-style extension namespaces used by watch exports.
 
 ## Security and Ownership
 

@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: frontend
-last_verified: 2026-03-12
+last_verified: 2026-03-31
 sources:
   - apps/web/src/pages/workouts/index.tsx
   - apps/web/src/pages/workouts/new/index.tsx
@@ -33,6 +33,7 @@ All workout routes are protected.
 
 - `file` mode uploads FIT or GPX files, parses them, and previews normalized metrics
 - `manual` mode captures distance, duration, date, memo, and visibility directly
+- manual distance input is collected in kilometers for the UI, then normalized to meters before the API request is sent
 
 The page state is orchestrated by `useWorkoutEntry`, which owns:
 

@@ -15,7 +15,7 @@ export interface WorkoutLap {
   lapNumber: number;
   distance: number; // meters
   duration: number; // seconds
-  avgPace: number; // sec/km
+  pace: number; // sec/km
   avgHeartRate?: number | null;
   maxHeartRate?: number | null;
   avgCadence?: number | null;
@@ -58,7 +58,7 @@ export function LapsTable({ laps, className }: LapsTableProps) {
                 <TableCell className="font-medium tabular-nums">{lap.lapNumber}</TableCell>
                 <TableCell className="tabular-nums">{formatDistance(lap.distance)} km</TableCell>
                 <TableCell className="tabular-nums">{formatDuration(lap.duration)}</TableCell>
-                <TableCell className="tabular-nums">{formatPace(lap.avgPace)}/km</TableCell>
+                <TableCell className="tabular-nums">{formatPace(lap.pace)}/km</TableCell>
                 {hasHr && (
                   <TableCell className="tabular-nums">
                     {lap.avgHeartRate != null ? `${lap.avgHeartRate} bpm` : "-"}
