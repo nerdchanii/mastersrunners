@@ -46,6 +46,7 @@ This runbook explains how deployment works in this repository, what to verify be
 - Any migration SQL in the release stays inside the additive-only automated subset: new tables, new non-unique indexes, new nullable or default-backed columns, or default-relaxing alters. Renames, drops, unique/constraint-tightening changes, `SET NOT NULL`, and unconstrained `ADD COLUMN ... NOT NULL` changes need a separate manual rollout task.
 - Health verification should target `GET /api/v1/health`; legacy `GET /health` remains available for compatibility.
 - Deployment verification should prove repo-tracked response headers on the direct API origin and, when `WEB_VERIFY_URL` is available, on the Pages web root.
+- Browser direct uploads require the target R2 bucket to allow preflight requests from the active frontend host; on the current dev lane that means `https://dev.mastersrunners.com`, plus `http://localhost:3000` for local Vite development.
 - Runbook and workflow still describe the same deployment path.
 
 ## Environment Contract
@@ -147,6 +148,10 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
   - `R2_PUBLIC_URL`
 - The API derives the standard Cloudflare R2 S3 endpoint from `R2_ACCOUNT_ID`, so `R2_ENDPOINT` does not need to be stored as a separate secret for the normal Cloudflare R2 path.
 - Only set `R2_ENDPOINT` explicitly when you need to override the standard Cloudflare R2 host shape for a non-default environment.
+- Bucket-side CORS is a separate external setting from the runtime secrets above. The current browser direct-upload contract expects the target bucket to allow:
+  - origins: the lane frontend host plus supported local development origins
+  - methods: at least `PUT`
+  - headers: `Content-Type`, `x-amz-checksum-crc32`, and `x-amz-sdk-checksum-algorithm`
 - Optional social-login secrets can also be stored if they are present in the env file:
   - `KAKAO_CLIENT_ID`
   - `KAKAO_CLIENT_SECRET`
@@ -190,6 +195,12 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
   - `mastersrunners.com`
   - `www.mastersrunners.com`
 - Same-domain API routing is an external Cloudflare dashboard responsibility.
+- The dev R2 bucket `mastersrunners-dev-assets` also needs a browser-upload CORS rule aligned to the dev web host. Verified rule shape on 2026-04-01:
+  - origins: `https://dev.mastersrunners.com`, `http://localhost:3000`
+  - methods: `PUT`, `GET`, `HEAD`, `DELETE`
+  - headers: `Content-Type`, `x-amz-checksum-crc32`, `x-amz-sdk-checksum-algorithm`, `x-amz-content-sha256`
+  - expose headers: `ETag`
+  - max age: `3600`
 - Current expected routing:
   - `dev.mastersrunners.com/api/*` -> dev API origin
 - 2026-04-01 runtime checks confirmed the current same-domain dev host reaches the API successfully on:
