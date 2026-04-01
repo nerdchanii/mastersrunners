@@ -69,5 +69,6 @@ close or prune the worktree
 ## Notes
 
 - Worktree lifecycle is an execution rule, not a substitute for the task system.
+- When local dev ports or env files matter, prefer the repo bootstrap entrypoint (`pnpm worktree:bootstrap -- ...`) over handwritten setup.
 - Review and verification still happen per task before integration.
 - GitHub PR auto-fix loops operate on the PR head branch. They are not a replacement for dedicated worktree isolation when multiple agents split implementation work.

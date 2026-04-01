@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "NODE_ENV=development nest start --watch",
+    "dev": "NODE_ENV=development CHOKIDAR_USEPOLLING=${CHOKIDAR_USEPOLLING:-1} nest start --watch",
     "build": "nest build",
     "start": "node dist/main.js",
     "start:prod": "node dist/main.js",

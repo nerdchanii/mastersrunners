@@ -17,6 +17,8 @@
     "ci:local": "bash scripts/ci-local.sh",
     "depcruise": "dependency-cruiser --config .dependency-cruiser.cjs apps packages",
     "deploy:verify": "bash scripts/verify-deployment.sh",
+    "worktree:bootstrap": "bash scripts/bootstrap-worktree.sh",
+    "worktree:bootstrap:test": "bash scripts/test-bootstrap-worktree.sh",
     "db:migrate": "pnpm --filter @masters/database db:migrate",
     "db:migrate:deploy": "pnpm --filter @masters/database db:migrate:deploy",
     "db:push": "pnpm --filter @masters/database db:push",

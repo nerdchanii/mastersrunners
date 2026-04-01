@@ -32,9 +32,12 @@ Lint is currently broken, CI does not enforce enough invariants, and generated a
 - Archived foundation tasks live in `tasks/archive/`
 - Completed follow-up cleanup:
   - `tasks/archive/I-0002-060-web-react-hook-warning-burndown.md`
+- Archived follow-up:
+  - `tasks/archive/I-0002-070-meta-worktree-bootstrap-and-port-allocation.md`
 
 ## Success Criteria
 
 - `pnpm lint` works
 - local verification command mirrors CI closely enough for agent use
 - CI blocks obvious repository invariant violations
+- parallel worktree setup is bootstrapped through one repo entrypoint instead of ad hoc install, env, and port juggling
