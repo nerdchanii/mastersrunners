@@ -159,6 +159,7 @@ export default function NewPostPage() {
       {step === 2 && (
         <PostComposerTextStep
           content={content}
+          images={images}
           onContentChange={setContent}
           hashtagsInput={hashtagsInput}
           onHashtagsChange={setHashtagsInput}

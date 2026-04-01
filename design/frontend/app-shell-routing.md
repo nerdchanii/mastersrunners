@@ -80,4 +80,7 @@ Most route modules are lazy loaded with `lazy(() => import(...))`.
   - both creation routes expose a lightweight switch so users can correct the chosen flow without backing out to the shell
 - Composer routes keep their own local shell rails above mobile navigation:
   - `/posts/new` uses a top progress bar without step labels and a sticky bottom action rail
+  - `/posts/new` photo selection is gallery-first within browser limits:
+    - the photo step should foreground opening the device photo picker instead of a generic upload prompt
+    - selected media should land in a 3-column grid and stay visible in later composer steps
   - `/workouts/new` keeps cancel/save actions in the same bottom rail zone instead of leaving them at the end of the scroll
