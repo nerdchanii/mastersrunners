@@ -29,7 +29,7 @@ sources:
 - API는 파일 타입과 folder intent를 검증한다.
 - 저장소 adapter가 업로드 URL, storage key, public URL을 만든다.
 - 클라이언트는 그 URL로 직접 업로드한다.
-- R2 direct upload를 쓰는 lane에서는 버킷 CORS allowlist가 현재 프런트엔드 origin을 허용해야 한다.
+- R2 direct upload를 쓰는 lane에서는 버킷 CORS allowlist가 현재 프런트엔드 origin을 허용해야 하며, localhost 같은 추가 origin은 명시적으로 지원하기로 결정한 경우에만 연다.
 
 ### 저장소 adapter
 

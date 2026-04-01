@@ -29,7 +29,7 @@ Uploads are handled inside the API through a storage-adapter abstraction, with d
 - `UploadsModule` chooses either `DiskStorageAdapter` or `R2StorageAdapter` at startup.
 - Disk mode is the current default unless production-style R2 configuration is present.
 - Production-style R2 configuration uses `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and the derived standard Cloudflare R2 endpoint unless `R2_ENDPOINT` is explicitly overridden.
-- Browser direct uploads to R2 also depend on a bucket-side CORS allowlist that includes the active frontend origin and any supported local development origin.
+- Browser direct uploads to R2 also depend on a bucket-side CORS allowlist that includes the active frontend origin; localhost or other extra origins should only be added by explicit decision.
 - `/uploads/presign` is a shared upload boundary used beyond workouts, including profile and post-image flows.
 
 ## Upload Request Flow
@@ -70,7 +70,7 @@ Parser normalization details:
 ## Security and Ownership
 
 - Signed upload URLs are time-limited and adapter-controlled.
-- The R2 bucket CORS policy must stay aligned with `FRONTEND_URL` and local browser-development origins or presigned upload preflights will fail before the signed request reaches the object endpoint.
+- The R2 bucket CORS policy must stay aligned with `FRONTEND_URL`; extra browser origins such as localhost should not be allowed by default, and presigned upload preflights will fail when the origin is outside the bucket allowlist.
 - Delete operations validate that the acting user owns the storage key path.
 - Public URL generation stays behind the adapter boundary so services do not hand-roll CDN or bucket URLs.
 - File-type restrictions exist to keep the shared upload boundary from becoming a generic arbitrary-file ingress path.
