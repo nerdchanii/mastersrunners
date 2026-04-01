@@ -78,3 +78,6 @@ Most route modules are lazy loaded with `lazy(() => import(...))`.
   - the detached post-only FAB is removed
   - the center create trigger opens a bottom-sheet chooser for `/posts/new` or `/workouts/new`
   - both creation routes expose a lightweight switch so users can correct the chosen flow without backing out to the shell
+- Composer routes keep their own local shell rails above mobile navigation:
+  - `/posts/new` uses a top progress bar without step labels and a sticky bottom action rail
+  - `/workouts/new` keeps cancel/save actions in the same bottom rail zone instead of leaving them at the end of the scroll

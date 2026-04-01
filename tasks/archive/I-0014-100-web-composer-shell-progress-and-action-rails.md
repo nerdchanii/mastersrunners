@@ -36,11 +36,11 @@ Make the post and workout composer shells feel lighter by simplifying progress f
 
 ## Self Review
 
-- Scope and intent:
-- Source of truth:
-- Design divergence:
-- Verification:
-- Review routing:
+- Scope and intent: post/workout composer의 shell framing만 다뤘고, progress 표현과 bottom action rail 위치만 정리했다.
+- Source of truth: `design/frontend/app-shell-routing.md`, 현재 `/posts/new`와 `/workouts/new` shell behavior를 함께 맞췄다.
+- Design divergence: 없음. 기존 step label-heavy progress와 content-embedded actions를 shell-owned rail로 정리했다.
+- Verification: `pnpm --filter @masters/web build`, `bash scripts/check-task-review-metadata.sh`
+- Review routing: user-facing UI 변경이므로 `frontend-reviewer`, `ui-ux-reviewer`, `po-reviewer`
 
 ## Review Focus
 
@@ -58,8 +58,9 @@ Make the post and workout composer shells feel lighter by simplifying progress f
 ## Attempt Log
 
 - 2026-04-01: created after product requested progress-bar-only feedback and better placement for composer navigation buttons.
+- 2026-04-01: moved post composer actions into a sticky shell rail, removed redundant step labels, and aligned workout create actions to the same bottom action zone.
 
 ## Review Notes
 
-- Specialist review:
-- PO review:
+- Specialist review: composer actions now live in one stable rail, and the post flow keeps only a visual progress bar instead of repeating stage labels.
+- PO review: the composer now feels lighter and closer to the intended step flow, especially on mobile where skip/next actions no longer sit inside each content panel.

@@ -62,7 +62,7 @@ export default function NewWorkoutPage() {
   } = useWorkoutEntry();
 
   return (
-    <div className="container max-w-3xl py-6">
+    <div className="container max-w-3xl py-6 pb-32">
       <PageHeader
         title="새 기록 추가"
         description="훈련 파일을 업로드하거나 직접 기록을 입력하세요."
@@ -456,16 +456,19 @@ export default function NewWorkoutPage() {
           </Card>
         )}
 
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting}>
-            취소
-          </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting || (activeTab === "file" && !workoutCreated && !parsedData)}
-          >
-            {isSubmitting ? "저장 중..." : workoutCreated ? "완료" : "저장"}
-          </Button>
+        <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-20 rounded-3xl border border-border/60 bg-background/95 p-3 shadow-lg backdrop-blur md:bottom-4">
+          <div className="flex gap-3">
+            <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting}>
+              취소
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={isSubmitting || (activeTab === "file" && !workoutCreated && !parsedData)}
+            >
+              {isSubmitting ? "저장 중..." : workoutCreated ? "완료" : "저장"}
+            </Button>
+          </div>
         </div>
       </form>
     </div>

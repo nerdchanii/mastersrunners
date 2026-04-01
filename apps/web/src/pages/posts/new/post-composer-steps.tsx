@@ -1,8 +1,7 @@
-import { Check, Dumbbell, Eye, Image as ImageIcon, Loader2, X } from "lucide-react";
+import { Check, Dumbbell, Image as ImageIcon, Loader2, X } from "lucide-react";
 
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,13 +25,9 @@ export const POST_COMPOSER_STEPS = ["워크아웃", "사진", "내용", "미리�
 export function PostComposerWorkoutStep({
   selectedIds,
   onToggle,
-  onSkip,
-  onNext,
 }: {
   selectedIds: string[];
   onToggle: (id: string) => void;
-  onSkip: () => void;
-  onNext: () => void;
 }) {
   const { data: workouts = [], isLoading } = useWorkouts();
 
@@ -91,20 +86,6 @@ export function PostComposerWorkoutStep({
           })}
         </div>
       )}
-
-      <div className="flex gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onSkip} className="flex-1">
-          워크아웃 없이 진행
-        </Button>
-        <Button type="button" onClick={onNext} className="flex-1">
-          다음
-          {selectedIds.length > 0 && (
-            <Badge variant="secondary" className="ml-2">
-              {selectedIds.length}
-            </Badge>
-          )}
-        </Button>
-      </div>
     </div>
   );
 }
@@ -114,17 +95,12 @@ export function PostComposerPhotosStep({
   maxImages,
   onAddImages,
   onRemoveImage,
-  onSkip,
-  onNext,
 }: {
   images: ImageUpload[];
   maxImages: number;
   onAddImages: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: (preview: string) => void;
-  onSkip: () => void;
-  onNext: () => void;
 }) {
-  const isUploading = images.some((image) => image.uploading);
   const hasError = images.some((image) => image.error);
 
   return (
@@ -202,38 +178,6 @@ export function PostComposerPhotosStep({
           업로드 실패한 이미지가 있습니다. 제거 후 다시 시도해주세요.
         </p>
       )}
-
-      <div className="flex gap-2 pt-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onSkip}
-          className="flex-1"
-          disabled={isUploading}
-        >
-          사진 없이 진행
-        </Button>
-        <Button
-          type="button"
-          onClick={onNext}
-          className="flex-1"
-          disabled={isUploading || hasError}
-        >
-          {isUploading ? (
-            <>
-              <Loader2 className="mr-2 size-4 animate-spin" />
-              업로드 중...
-            </>
-          ) : (
-            "다음"
-          )}
-          {images.length > 0 && !isUploading && (
-            <Badge variant="secondary" className="ml-2">
-              {images.length}
-            </Badge>
-          )}
-        </Button>
-      </div>
     </div>
   );
 }
@@ -245,7 +189,6 @@ export function PostComposerTextStep({
   onContentChange,
   onHashtagsChange,
   onVisibilityChange,
-  onNext,
 }: {
   content: string;
   hashtagsInput: string;
@@ -253,7 +196,6 @@ export function PostComposerTextStep({
   onContentChange: (value: string) => void;
   onHashtagsChange: (value: string) => void;
   onVisibilityChange: (value: Visibility) => void;
-  onNext: () => void;
 }) {
   const maxChars = 2000;
   const charsLeft = maxChars - content.length;
@@ -325,11 +267,6 @@ export function PostComposerTextStep({
           </SelectContent>
         </Select>
       </div>
-
-      <Button type="button" onClick={onNext} className="w-full">
-        미리보기
-        <Eye className="ml-2 size-4" />
-      </Button>
     </div>
   );
 }
@@ -341,8 +278,6 @@ export function PostComposerPreviewStep({
   images,
   selectedWorkoutIds,
   workouts,
-  onSubmit,
-  isSubmitting,
 }: {
   content: string;
   hashtags: string[];
@@ -356,8 +291,6 @@ export function PostComposerPreviewStep({
     date: string;
     workoutType?: { name: string };
   }>;
-  onSubmit: () => void;
-  isSubmitting: boolean;
 }) {
   const { user } = useAuth();
   const selectedWorkouts = workouts.filter((workout) => selectedWorkoutIds.includes(workout.id));
@@ -366,8 +299,6 @@ export function PostComposerPreviewStep({
     FOLLOWERS: "팔로워 공개",
     PUBLIC: "전체 공개",
   }[visibility];
-  const canPost = content.trim() || images.length > 0 || selectedWorkoutIds.length > 0;
-
   return (
     <div className="space-y-4">
       <div>
@@ -437,28 +368,11 @@ export function PostComposerPreviewStep({
         </CardContent>
       </Card>
 
-      {!canPost && (
+      {!content.trim() && images.length === 0 && selectedWorkoutIds.length === 0 && (
         <p className="text-center text-sm text-destructive">
           내용, 이미지, 워크아웃 중 하나 이상을 추가해야 합니다.
         </p>
       )}
-
-      <Button
-        type="button"
-        onClick={onSubmit}
-        disabled={isSubmitting || !canPost}
-        className="w-full"
-        size="lg"
-      >
-        {isSubmitting ? (
-          <>
-            <Loader2 className="mr-2 size-4 animate-spin" />
-            게시 중...
-          </>
-        ) : (
-          "게시하기"
-        )}
-      </Button>
     </div>
   );
 }
