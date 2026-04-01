@@ -251,7 +251,7 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6 px-4 pb-8">
       <ProfileHeader
         user={profileData.user}
         stats={profileStats}

@@ -180,7 +180,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6 px-4 pb-8">
       <ProfileHeader
         user={profileUser || user}
         stats={profileStats}

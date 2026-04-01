@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: frontend
-last_verified: 2026-03-12
+last_verified: 2026-04-01
 sources:
   - apps/web/src/pages/profile/index.tsx
   - apps/web/src/pages/profile/[id]/index.tsx
@@ -18,6 +18,8 @@ sources:
 ## Summary
 
 The profile surface is split between a protected self-profile route and a protected public-profile route for other users. It combines follow state, profile editing, direct-message entry, and tabbed content browsing.
+
+The shipped header is now a flat identity surface rather than a cover-image hero. Profiles should prioritize avatar, name, bio, actions, and counts without inventing decorative fallback cover media.
 
 ## Route Model
 
@@ -63,3 +65,4 @@ Each tab fetches its own list when activated instead of using a shared route-lev
 - the profile surface still uses page-local `api.fetch()` calls instead of a dedicated hook/query layer
 - private-account visibility is enforced by API response shape, so the route needs defensive handling for partial profile data
 - self-profile and other-user profile do not yet share one unified view-model
+- background-image editing still exists in the dedicated settings form, but the public profile header no longer treats that field as required presentation chrome

@@ -61,43 +61,40 @@ export function ProfileHeader({
   const initials = user.name.charAt(0).toUpperCase();
 
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
-      {/* Cover Image */}
-      <div className="relative aspect-[3/1] w-full">
-        {user.backgroundImage ? (
-          <img
-            src={user.backgroundImage}
-            alt="커버 이미지"
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="h-full w-full bg-gradient-to-r from-blue-500 to-purple-600" />
-        )}
-      </div>
+    <section
+      data-testid="profile-header"
+      className="rounded-3xl border border-border/60 bg-background px-4 py-5 shadow-sm sm:px-6"
+    >
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex items-start gap-4">
+            <Avatar
+              data-testid="profile-header-avatar"
+              className="size-20 shrink-0 border border-border/60 bg-muted sm:size-24"
+            >
+              {user.profileImage && <AvatarImage src={user.profileImage} alt={user.name} />}
+              <AvatarFallback className="bg-muted text-2xl font-semibold sm:text-3xl">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
 
-      {/* Profile Info Section */}
-      <div className="relative px-4 pb-5 sm:px-6">
-        {/* Avatar overlapping cover */}
-        <div className="-mt-12 sm:-mt-14 mb-3">
-          <Avatar className="size-24 sm:size-28 ring-4 ring-card">
-            {user.profileImage && <AvatarImage src={user.profileImage} alt={user.name} />}
-            <AvatarFallback className="text-3xl sm:text-4xl bg-muted">{initials}</AvatarFallback>
-          </Avatar>
-        </div>
-
-        {/* Name + Actions Row */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold text-foreground truncate sm:text-2xl">{user.name}</h1>
-            {user.bio && (
-              <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap line-clamp-3">
-                {user.bio}
-              </p>
-            )}
+            <div className="min-w-0 space-y-2 pt-1">
+              <div className="space-y-1">
+                <h1 className="truncate text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                  {user.name}
+                </h1>
+                {user.bio ? (
+                  <p className="max-w-2xl whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                    {user.bio}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">아직 자기소개가 없습니다.</p>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2">
             {isOwnProfile ? (
               <Button variant="outline" size="sm" asChild>
                 <Link to="/settings/profile">
@@ -113,9 +110,9 @@ export function ProfileHeader({
                   onClick={onFollowToggle}
                   disabled={isFollowLoading || isPending}
                   className={cn(
-                    "min-w-[80px]",
+                    "min-w-[88px]",
                     isFollowing &&
-                      "hover:bg-destructive hover:text-destructive-foreground hover:border-destructive",
+                      "hover:border-destructive hover:bg-destructive hover:text-destructive-foreground",
                   )}
                 >
                   {isFollowLoading ? "처리 중..." : getFollowButtonText()}
@@ -128,11 +125,10 @@ export function ProfileHeader({
                     disabled={isMessageLoading}
                   >
                     <MessageCircle className="size-4" />
-                    <span className="hidden sm:inline">메시지</span>
-                    <span className="sr-only sm:hidden">메시지</span>
+                    <span>메시지</span>
                   </Button>
                 )}
-                <Button variant="ghost" size="icon-sm">
+                <Button variant="ghost" size="icon-sm" aria-label="더보기">
                   <MoreHorizontal className="size-4" />
                 </Button>
               </>
@@ -140,24 +136,46 @@ export function ProfileHeader({
           </div>
         </div>
 
-        {/* Stats Row */}
         {stats && (
-          <div className="mt-4 flex items-center gap-5">
-            <div className="text-sm">
-              <span className="font-bold text-foreground tabular-nums">{stats.postCount}</span>{" "}
-              <span className="text-muted-foreground">게시물</span>
-            </div>
-            <button type="button" onClick={onFollowersClick} className="text-sm hover:underline">
-              <span className="font-bold text-foreground tabular-nums">{stats.followerCount}</span>{" "}
-              <span className="text-muted-foreground">팔로워</span>
-            </button>
-            <button type="button" onClick={onFollowingClick} className="text-sm hover:underline">
-              <span className="font-bold text-foreground tabular-nums">{stats.followingCount}</span>{" "}
-              <span className="text-muted-foreground">팔로잉</span>
-            </button>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border/60 pt-4 sm:grid-cols-4">
+            <ProfileStat label="게시물" value={stats.postCount} />
+            <ProfileStat label="팔로워" value={stats.followerCount} onClick={onFollowersClick} />
+            <ProfileStat label="팔로잉" value={stats.followingCount} onClick={onFollowingClick} />
+            <ProfileStat label="워크아웃" value={stats.workoutCount} />
           </div>
         )}
       </div>
-    </div>
+    </section>
+  );
+}
+
+function ProfileStat({
+  label,
+  value,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  onClick?: () => void;
+}) {
+  const body = (
+    <>
+      <span className="text-lg font-semibold tabular-nums text-foreground">{value}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
+    </>
+  );
+
+  if (!onClick) {
+    return <div className="flex min-w-0 flex-col gap-1">{body}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-w-0 flex-col gap-1 text-left transition-opacity hover:opacity-75"
+    >
+      {body}
+    </button>
   );
 }
