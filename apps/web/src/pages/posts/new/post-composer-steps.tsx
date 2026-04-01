@@ -5,7 +5,6 @@ import { UserAvatar } from "@/components/common/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -23,6 +22,48 @@ import { cn } from "@/lib/utils";
 import type { ImageUpload, Visibility } from "./use-post-composer";
 
 export const POST_COMPOSER_STEPS = ["워크아웃", "사진", "내용", "미리보기"] as const;
+
+function ComposerFormattedText({ content, emptyText }: { content: string; emptyText: string }) {
+  if (!content.trim()) {
+    return <p className="text-sm text-muted-foreground">{emptyText}</p>;
+  }
+
+  const segments = content.split(/(#[\w가-힣]+|@[\w가-힣._]+)/g);
+
+  return (
+    <p className="whitespace-pre-wrap break-words text-sm text-foreground">
+      {segments.map((segment, index) => {
+        if (!segment) {
+          return null;
+        }
+
+        if (segment.startsWith("#")) {
+          return (
+            <span
+              key={`${segment}-${index}`}
+              className="font-medium text-foreground underline decoration-primary/50 underline-offset-4"
+            >
+              {segment}
+            </span>
+          );
+        }
+
+        if (segment.startsWith("@")) {
+          return (
+            <span
+              key={`${segment}-${index}`}
+              className="font-medium text-sky-600 dark:text-sky-400"
+            >
+              {segment}
+            </span>
+          );
+        }
+
+        return <span key={`${segment}-${index}`}>{segment}</span>;
+      })}
+    </p>
+  );
+}
 
 function ComposerSelectedMediaStrip({
   images,
@@ -290,45 +331,43 @@ export function PostComposerPhotosStep({
 
 export function PostComposerTextStep({
   content,
+  hashtags,
   images,
-  hashtagsInput,
+  mentions,
   visibility,
   onContentChange,
-  onHashtagsChange,
   onVisibilityChange,
 }: {
   content: string;
+  hashtags: string[];
   images: ImageUpload[];
-  hashtagsInput: string;
+  mentions: string[];
   visibility: Visibility;
   onContentChange: (value: string) => void;
-  onHashtagsChange: (value: string) => void;
   onVisibilityChange: (value: Visibility) => void;
 }) {
   const maxChars = 2000;
   const charsLeft = maxChars - content.length;
-  const hashtags = hashtagsInput
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter((tag) => tag.length > 0);
 
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold">내용 작성</h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">게시글 내용을 입력해주세요.</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          내용, 해시태그, 멘션을 한 입력창에서 작성하세요.
+        </p>
       </div>
 
       <ComposerSelectedMediaStrip images={images} title="이 게시글에 첨부될 사진" />
 
       <div className="space-y-1.5">
-        <Label htmlFor="content">내용</Label>
+        <Label htmlFor="content">텍스트 작성</Label>
         <Textarea
           id="content"
           value={content}
           onChange={(event) => onContentChange(event.target.value)}
-          rows={6}
-          placeholder="무슨 생각을 하고 계신가요?"
+          rows={8}
+          placeholder="오늘 러닝 어땠나요? #한강 @러너김"
           maxLength={maxChars}
           autoFocus
         />
@@ -342,24 +381,51 @@ export function PostComposerTextStep({
         </p>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="hashtags">해시태그 (선택)</Label>
-        <Input
-          id="hashtags"
-          value={hashtagsInput}
-          onChange={(event) => onHashtagsChange(event.target.value)}
-          placeholder="러닝, 마라톤, 훈련 (쉼표로 구분)"
-        />
-        {hashtags.length > 0 && (
-          <div className="flex flex-wrap gap-1 pt-1">
-            {hashtags.map((tag, index) => (
-              <Badge key={`${tag}-${index}`} variant="secondary">
-                #{tag}
+      <section className="rounded-3xl border border-border/60 bg-muted/30 p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-foreground">자동 인식된 태그</p>
+            <p className="text-xs text-muted-foreground">
+              해시태그와 멘션은 입력문에서 자동으로 추출됩니다.
+            </p>
+          </div>
+          <Badge variant="outline">
+            #{hashtags.length} · @{mentions.length}
+          </Badge>
+        </div>
+
+        {hashtags.length > 0 || mentions.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {mentions.map((mention) => (
+              <Badge key={mention} variant="outline" className="border-sky-500/40 text-sky-700">
+                {mention}
+              </Badge>
+            ))}
+            {hashtags.map((tag) => (
+              <Badge key={tag} variant="secondary">
+                {tag}
               </Badge>
             ))}
           </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            아직 감지된 해시태그나 멘션이 없습니다. `#태그`, `@이름` 형식으로 입력해보세요.
+          </p>
         )}
-      </div>
+      </section>
+
+      <section className="rounded-3xl border border-border/60 bg-background p-4 shadow-sm">
+        <div className="mb-3 space-y-1">
+          <p className="text-sm font-semibold text-foreground">실시간 미리보기</p>
+          <p className="text-xs text-muted-foreground">
+            해시태그와 멘션이 실제 게시물 톤으로 어떻게 보일지 바로 확인합니다.
+          </p>
+        </div>
+        <ComposerFormattedText
+          content={content}
+          emptyText="작성한 텍스트가 여기에 미리보기로 나타납니다."
+        />
+      </section>
 
       <div className="space-y-1.5">
         <Label>공개 설정</Label>
@@ -384,6 +450,7 @@ export function PostComposerTextStep({
 export function PostComposerPreviewStep({
   content,
   hashtags,
+  mentions,
   visibility,
   images,
   selectedWorkoutIds,
@@ -391,6 +458,7 @@ export function PostComposerPreviewStep({
 }: {
   content: string;
   hashtags: string[];
+  mentions: string[];
   visibility: Visibility;
   images: ImageUpload[];
   selectedWorkoutIds: string[];
@@ -442,13 +510,26 @@ export function PostComposerPreviewStep({
             </div>
           )}
 
-          {content && <p className="whitespace-pre-wrap text-sm">{content}</p>}
+          <ComposerFormattedText
+            content={content}
+            emptyText="텍스트 없이도 사진과 워크아웃만으로 게시할 수 있습니다."
+          />
+
+          {mentions.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {mentions.map((mention) => (
+                <Badge key={mention} variant="outline" className="border-sky-500/40 text-sky-700">
+                  {mention}
+                </Badge>
+              ))}
+            </div>
+          )}
 
           {hashtags.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {hashtags.map((tag, index) => (
-                <Badge key={`${tag}-${index}`} variant="secondary">
-                  #{tag}
+              {hashtags.map((tag) => (
+                <Badge key={tag} variant="secondary">
+                  {tag}
                 </Badge>
               ))}
             </div>

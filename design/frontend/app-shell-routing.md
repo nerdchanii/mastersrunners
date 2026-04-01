@@ -83,4 +83,7 @@ Most route modules are lazy loaded with `lazy(() => import(...))`.
   - `/posts/new` photo selection is gallery-first within browser limits:
     - the photo step should foreground opening the device photo picker instead of a generic upload prompt
     - selected media should land in a 3-column grid and stay visible in later composer steps
+  - `/posts/new` text authoring should use one primary textarea for body, hashtags, and lightweight mentions:
+    - hashtags are parsed from the same text input instead of a second field
+    - lightweight mentions can be previewed without autocomplete-backed tagging in the first pass
   - `/workouts/new` keeps cancel/save actions in the same bottom rail zone instead of leaving them at the end of the scroll

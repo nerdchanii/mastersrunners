@@ -23,14 +23,13 @@ export default function NewPostPage() {
     handleAddImages,
     handleSubmit,
     hashtags,
-    hashtagsInput,
     images,
     isSubmitting,
     maxImages,
+    mentions,
     removeImage,
     selectedWorkoutIds,
     setContent,
-    setHashtagsInput,
     setVisibility,
     step,
     toggleWorkout,
@@ -159,10 +158,10 @@ export default function NewPostPage() {
       {step === 2 && (
         <PostComposerTextStep
           content={content}
+          hashtags={hashtags}
           images={images}
+          mentions={mentions}
           onContentChange={setContent}
-          hashtagsInput={hashtagsInput}
-          onHashtagsChange={setHashtagsInput}
           visibility={visibility}
           onVisibilityChange={setVisibility}
         />
@@ -172,6 +171,7 @@ export default function NewPostPage() {
         <PostComposerPreviewStep
           content={content}
           hashtags={hashtags}
+          mentions={mentions}
           visibility={visibility}
           images={images}
           selectedWorkoutIds={selectedWorkoutIds}

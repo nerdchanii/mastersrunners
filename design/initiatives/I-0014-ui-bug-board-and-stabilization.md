@@ -105,7 +105,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - `tasks/archive/I-0014-140-web-crew-settings-basic-info-shell-cleanup.md`
 - `tasks/archive/I-0014-170-web-date-picker-modernization.md`
 - `tasks/archive/I-0014-180-web-post-composer-media-selection.md`
-- `tasks/todo/I-0014-190-web-post-composer-text-tagging-and-preview.md`
+- `tasks/archive/I-0014-190-web-post-composer-text-tagging-and-preview.md`
 
 ### Product Checkpoint Required
 

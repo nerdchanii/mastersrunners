@@ -17,6 +17,16 @@ export type Visibility = "PRIVATE" | "FOLLOWERS" | "PUBLIC";
 export type Step = 0 | 1 | 2 | 3;
 
 const MAX_IMAGES = 5;
+const HASHTAG_PATTERN = /(^|\s)#([\w가-힣]+)/g;
+const MENTION_PATTERN = /(^|\s)@([\w가-힣._]+)/g;
+
+function extractUniqueMatches(content: string, pattern: RegExp, prefix: string) {
+  const matches = Array.from(content.matchAll(pattern), (match) => match[2]?.trim()).filter(
+    (value): value is string => Boolean(value),
+  );
+
+  return Array.from(new Set(matches)).map((value) => `${prefix}${value}`);
+}
 
 export function usePostComposer() {
   const navigate = useNavigate();
@@ -30,14 +40,11 @@ export function usePostComposer() {
   );
   const [images, setImages] = useState<ImageUpload[]>([]);
   const [content, setContent] = useState("");
-  const [hashtagsInput, setHashtagsInput] = useState("");
   const [visibility, setVisibility] = useState<Visibility>("PUBLIC");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const hashtags = hashtagsInput
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter((tag) => tag.length > 0);
+  const hashtags = extractUniqueMatches(content, HASHTAG_PATTERN, "#");
+  const mentions = extractUniqueMatches(content, MENTION_PATTERN, "@");
 
   const stepRef = useRef(step);
   stepRef.current = step;
@@ -148,7 +155,7 @@ export function usePostComposer() {
       await createPost.mutateAsync({
         content: content.trim(),
         visibility,
-        hashtags: hashtags.length > 0 ? hashtags : undefined,
+        hashtags: hashtags.length > 0 ? hashtags.map((tag) => tag.replace(/^#/, "")) : undefined,
         workoutIds: selectedWorkoutIds.length > 0 ? selectedWorkoutIds : undefined,
         imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
       });
@@ -167,12 +174,11 @@ export function usePostComposer() {
     selectedWorkoutIds,
     images,
     content,
-    hashtagsInput,
     hashtags,
+    mentions,
     visibility,
     isSubmitting,
     setContent,
-    setHashtagsInput,
     setVisibility,
     toggleWorkout,
     goNext,
