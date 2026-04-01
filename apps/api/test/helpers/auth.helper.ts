@@ -3,11 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import request from "supertest";
 
-import {
-  ACCESS_TOKEN_COOKIE,
-  buildAuthCookieHeader,
-  REFRESH_TOKEN_COOKIE,
-} from "../../src/auth/auth-cookie.util";
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "../../src/auth/auth-cookie.util";
 import { resolveJwtExpiresIn } from "../../src/auth/jwt-ttl";
 import { getDbService } from "../setup";
 
@@ -82,7 +78,10 @@ export async function createTestUser(
 
   return {
     accessToken: tokens.accessToken,
-    cookies: buildAuthCookieHeader(tokens),
+    cookies: [
+      `${ACCESS_TOKEN_COOKIE}=${encodeURIComponent(tokens.accessToken)}`,
+      `${REFRESH_TOKEN_COOKIE}=${encodeURIComponent(tokens.refreshToken)}`,
+    ],
     refreshToken: tokens.refreshToken,
     userId: user.id,
   };

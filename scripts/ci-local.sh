@@ -24,6 +24,7 @@ JWT_ACCESS_TTL="${JWT_ACCESS_TTL:-900}"
 JWT_REFRESH_TTL="${JWT_REFRESH_TTL:-604800}"
 REDIS_URL="${REDIS_URL:-redis://localhost:6379}"
 VITE_API_URL="${VITE_API_URL:-http://localhost:4000}"
+export VITE_API_URL
 
 run_step() {
   local name="$1"

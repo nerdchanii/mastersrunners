@@ -54,6 +54,7 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `tasks/archive/I-0006-100-ci-cloudflare-pages-preview-failure.md`
 - `tasks/archive/I-0006-110-ci-deployment-env-contract-hardening.md`
 - `tasks/archive/I-0006-120-api-auth-token-transport-hardening.md`
+- `tasks/archive/I-0006-130-ci-knip-cookie-session-followup.md`
 
 ## Success Criteria
 
@@ -74,4 +75,5 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `I-0006-100` captured the Cloudflare Pages preview failure, codified the repo-side build contract, passed preview deploys on PR #7 after the Pages dashboard was aligned to `pnpm build:web` and `apps/web/dist`, and is now archived with closeout verification plus recorded backend review.
 - `I-0006-110` now archives the deployment env contract hardening so public web bundles and Cloud Run runtime config fail fast instead of silently falling back to localhost.
 - `I-0006-120` now closes the browser auth transport hardening by moving OAuth callback, refresh, logout, and SSE browser auth to `HttpOnly` cookies instead of query-string or `localStorage` token transport.
+- `I-0006-130` closes the immediate CI follow-up by removing unused cookie helper exports and making local `ci:local` pass the same `VITE_API_URL` contract into `knip` as GitHub Actions.
 - In-repo guardrail hardening is effectively complete; the remaining blockers are external platform settings and the exceptions recorded in `design/operating-rules/exceptions.md`.

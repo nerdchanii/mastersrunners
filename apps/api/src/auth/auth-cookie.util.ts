@@ -24,14 +24,14 @@ function getCookieBaseOptions(config: ConfigService): CookieOptions {
   };
 }
 
-export function getAccessTokenCookieOptions(config: ConfigService): CookieOptions {
+function getAccessTokenCookieOptions(config: ConfigService): CookieOptions {
   return {
     ...getCookieBaseOptions(config),
     maxAge: resolveJwtExpiresInMilliseconds(config.get<string>("JWT_ACCESS_TTL"), 900),
   };
 }
 
-export function getRefreshTokenCookieOptions(config: ConfigService): CookieOptions {
+function getRefreshTokenCookieOptions(config: ConfigService): CookieOptions {
   return {
     ...getCookieBaseOptions(config),
     maxAge: resolveJwtExpiresInMilliseconds(config.get<string>("JWT_REFRESH_TTL"), 604800),
@@ -75,11 +75,4 @@ export function extractAccessTokenFromRequest(request: Request) {
 
 export function extractRefreshTokenFromRequest(request: Request) {
   return extractCookie(request, REFRESH_TOKEN_COOKIE);
-}
-
-export function buildAuthCookieHeader(tokens: AuthTokens) {
-  return [
-    `${ACCESS_TOKEN_COOKIE}=${encodeURIComponent(tokens.accessToken)}`,
-    `${REFRESH_TOKEN_COOKIE}=${encodeURIComponent(tokens.refreshToken)}`,
-  ];
 }
