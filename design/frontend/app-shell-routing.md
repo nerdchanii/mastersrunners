@@ -74,3 +74,7 @@ Most route modules are lazy loaded with `lazy(() => import(...))`.
   - desktop header exposes a direct `/search` link
   - mobile bottom navigation keeps `/search` visible without requiring route knowledge
   - the search page mirrors user queries into the URL so re-entry and back-navigation preserve context
+- Authenticated mobile navigation now owns the create entry directly:
+  - the detached post-only FAB is removed
+  - the center create trigger opens a bottom-sheet chooser for `/posts/new` or `/workouts/new`
+  - both creation routes expose a lightweight switch so users can correct the chosen flow without backing out to the shell

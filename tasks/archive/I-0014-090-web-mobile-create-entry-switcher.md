@@ -37,11 +37,11 @@ Replace the detached mobile create FAB with a navigation-native create entry tha
 
 ## Self Review
 
-- Scope and intent:
-- Source of truth:
-- Design divergence:
-- Verification:
-- Review routing:
+- Scope and intent: mobile GNB의 detached post-only FAB를 nav-owned create trigger로 바꾸고, post/workout 선택 및 route 간 전환만 추가했다.
+- Source of truth: `design/frontend/app-shell-routing.md`와 현재 `BottomNav`, `posts/new`, `workouts/new` 흐름을 함께 맞췄다.
+- Design divergence: 없음. 기존 detached FAB drift를 bottom-nav owned create sheet로 정리했다.
+- Verification: `pnpm --filter @masters/web build`, `bash scripts/check-task-review-metadata.sh`
+- Review routing: user-facing UI 변경이므로 `frontend-reviewer`, `ui-ux-reviewer`, `po-reviewer`
 
 ## Review Focus
 
@@ -59,8 +59,9 @@ Replace the detached mobile create FAB with a navigation-native create entry tha
 ## Attempt Log
 
 - 2026-04-01: created after product requested the mobile plus action move into GNB with a post-vs-workout choice.
+- 2026-04-01: replaced the floating post FAB with a center create trigger in the mobile nav, added a bottom-sheet chooser, and exposed a lightweight post/workout switch inside both creation routes.
 
 ## Review Notes
 
-- Specialist review:
-- PO review:
+- Specialist review: the create action now belongs to the mobile nav model, and the switcher keeps post/workout branching clear without dragging composer internals into this task.
+- PO review: tapping the mobile plus action now clearly answers “게시글이냐 운동기록이냐” instead of forcing a post-first path.

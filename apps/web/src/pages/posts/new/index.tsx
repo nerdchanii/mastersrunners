@@ -1,4 +1,5 @@
 import { ChevronLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { useWorkouts } from "@/hooks/useWorkouts";
@@ -44,6 +45,21 @@ export default function NewPostPage() {
             <ChevronLeft className="size-5" />
           </Button>
           <h1 className="text-xl font-bold">새 게시글</h1>
+        </div>
+
+        <div className="mb-4 inline-flex rounded-full bg-muted p-1">
+          <Link
+            to="/posts/new"
+            className="rounded-full bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm"
+          >
+            게시글
+          </Link>
+          <Link
+            to="/workouts/new"
+            className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            운동 기록
+          </Link>
         </div>
 
         <div className="flex gap-1">

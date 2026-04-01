@@ -11,6 +11,7 @@ import {
   Route,
   Upload,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 import { useWorkoutEntry } from "./use-workout-entry";
 
@@ -65,6 +67,23 @@ export default function NewWorkoutPage() {
         title="새 기록 추가"
         description="훈련 파일을 업로드하거나 직접 기록을 입력하세요."
       />
+
+      <div className="mt-4 inline-flex rounded-full bg-muted p-1">
+        <Link
+          to="/posts/new"
+          className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          게시글
+        </Link>
+        <Link
+          to="/workouts/new"
+          className={cn(
+            "rounded-full bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm",
+          )}
+        >
+          운동 기록
+        </Link>
+      </div>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         {error && (
