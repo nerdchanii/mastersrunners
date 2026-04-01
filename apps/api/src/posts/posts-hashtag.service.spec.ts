@@ -91,7 +91,7 @@ describe("PostsService - hashtag", () => {
         limit: undefined,
         currentUserId,
       });
-      expect(result).toEqual(mockPosts);
+      expect(result).toEqual(mockPosts.map((post) => ({ ...post, images: [] })));
     });
 
     it("should pass cursor and limit options", async () => {
