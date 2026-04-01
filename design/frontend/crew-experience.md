@@ -65,6 +65,12 @@ Crew activities are split from the main crew hub into route-specific detail and 
 
 The activity detail route was slimmed down in `I-0007`, but it still orchestrates several member and attendance behaviors around a route-local view model.
 
+Current attendance entry points are intentionally split:
+
+- RSVP members use the QR check-in route for their own check-in
+- owners/admins, plus popup hosts with manage permission, can still perform manual/operator check-in actions
+- the activity detail page should not expose self manual check-in to ordinary members
+
 ## Chat and Realtime
 
 - direct crew chat and activity chat are built on the group-chat hooks

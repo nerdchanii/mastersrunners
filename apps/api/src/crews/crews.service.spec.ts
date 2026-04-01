@@ -1413,12 +1413,17 @@ describe("CrewsService", () => {
   });
 
   describe("checkIn", () => {
-    it("should check in member to activity", async () => {
+    it("should allow manual self check-in for operators", async () => {
       const activityId = "activity-1";
-      const userId = "user-member";
+      const userId = "user-owner";
       const crewId = "crew-123";
-      const mockActivity = { id: activityId, crewId, status: "SCHEDULED" };
-      const mockMember = { crewId, userId, role: "MEMBER" };
+      const mockActivity = {
+        id: activityId,
+        crewId,
+        status: "SCHEDULED",
+        activityType: "OFFICIAL",
+      };
+      const mockMember = { crewId, userId, role: "OWNER" };
       const mockRsvp = { id: "attendance-1", activityId, userId, status: "RSVP" };
       const mockAttendance = { id: "attendance-1", activityId, userId, method: "MANUAL" };
 
@@ -1433,11 +1438,36 @@ describe("CrewsService", () => {
       expect(result).toEqual(mockAttendance);
     });
 
-    it("should throw BadRequestException if no RSVP exists", async () => {
+    it("should throw ForbiddenException if a member attempts manual self check-in", async () => {
       const activityId = "activity-1";
       const userId = "user-member";
-      const mockActivity = { id: activityId, crewId: "crew-123", status: "SCHEDULED" };
-      const mockMember = { crewId: "crew-123", userId };
+      const crewId = "crew-123";
+      const mockActivity = {
+        id: activityId,
+        crewId,
+        status: "SCHEDULED",
+        activityType: "OFFICIAL",
+      };
+      const mockMember = { crewId, userId, role: "MEMBER" };
+
+      mockCrewActivityRepository.findById.mockResolvedValue(mockActivity);
+      mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
+
+      await expect(service.checkIn(activityId, userId)).rejects.toThrow(ForbiddenException);
+      expect(mockCrewActivityRepository.findAttendance).not.toHaveBeenCalled();
+      expect(mockCrewActivityRepository.checkIn).not.toHaveBeenCalled();
+    });
+
+    it("should throw BadRequestException if no RSVP exists", async () => {
+      const activityId = "activity-1";
+      const userId = "user-owner";
+      const mockActivity = {
+        id: activityId,
+        crewId: "crew-123",
+        status: "SCHEDULED",
+        activityType: "OFFICIAL",
+      };
+      const mockMember = { crewId: "crew-123", userId, role: "OWNER" };
 
       mockCrewActivityRepository.findById.mockResolvedValue(mockActivity);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
@@ -1449,12 +1479,34 @@ describe("CrewsService", () => {
     it("should throw ForbiddenException if not a crew member", async () => {
       const activityId = "activity-1";
       const userId = "user-outsider";
-      const mockActivity = { id: activityId, crewId: "crew-123", status: "SCHEDULED" };
+      const mockActivity = {
+        id: activityId,
+        crewId: "crew-123",
+        status: "SCHEDULED",
+        activityType: "OFFICIAL",
+      };
 
       mockCrewActivityRepository.findById.mockResolvedValue(mockActivity);
       mockCrewMemberRepository.findMember.mockResolvedValue(null);
 
       await expect(service.checkIn(activityId, userId)).rejects.toThrow(ForbiddenException);
+    });
+
+    it("should throw BadRequestException for non-manual check-in methods on the manual path", async () => {
+      const activityId = "activity-1";
+      const userId = "user-owner";
+      const mockActivity = {
+        id: activityId,
+        crewId: "crew-123",
+        status: "SCHEDULED",
+        activityType: "OFFICIAL",
+      };
+
+      mockCrewActivityRepository.findById.mockResolvedValue(mockActivity);
+
+      await expect(service.checkIn(activityId, userId, "QR")).rejects.toThrow(BadRequestException);
+      expect(mockCrewMemberRepository.findMember).not.toHaveBeenCalled();
+      expect(mockCrewActivityRepository.checkIn).not.toHaveBeenCalled();
     });
   });
 

@@ -155,7 +155,7 @@ export default function QrCheckInPage() {
         </Card>
       )}
 
-      {/* 수동 체크인 fallback */}
+      {/* detail return link */}
       {!urlQrCode && (
         <div className="text-center">
           <p className="text-sm text-muted-foreground mb-2">카메라를 사용할 수 없나요?</p>
@@ -163,7 +163,7 @@ export default function QrCheckInPage() {
             variant="link"
             onClick={() => navigate(`/crews/${crewId}/activities/${activityId}`)}
           >
-            수동 체크인으로 이동
+            활동 상세로 돌아가기
           </Button>
         </div>
       )}

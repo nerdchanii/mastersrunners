@@ -159,10 +159,21 @@ export class CrewActivitiesService {
   async checkIn(activityId: string, userId: string, method: string = "MANUAL") {
     const activity = await this.getActivityOrThrow(activityId);
     this.ensureActivityOpenForAttendance(activity, "체크인이 불가능한 활동입니다.");
+    const normalizedMethod = method || "MANUAL";
+
+    if (normalizedMethod !== "MANUAL") {
+      throw new BadRequestException("수동 체크인 전용 경로입니다.");
+    }
 
     const member = await this.crewMemberRepo.findMember(activity.crewId, userId);
     if (!member) {
       throw new ForbiddenException("크루 멤버만 체크인할 수 있습니다.");
+    }
+
+    const isAdmin = member.role === "OWNER" || member.role === "ADMIN";
+    const isHost = activity.createdBy === userId;
+    if (!isAdmin && !(activity.activityType === "POP_UP" && isHost)) {
+      throw new ForbiddenException("운영진만 수동 체크인할 수 있습니다.");
     }
 
     const existing = await this.crewActivityRepo.findAttendance(activityId, userId);
@@ -170,7 +181,7 @@ export class CrewActivitiesService {
       throw new BadRequestException("먼저 참석 신청을 해주세요.");
     }
 
-    return this.crewActivityRepo.checkIn(activityId, userId, method);
+    return this.crewActivityRepo.checkIn(activityId, userId, normalizedMethod);
   }
 
   async qrCheckIn(activityId: string, crewId: string, userId: string, qrCode: string) {

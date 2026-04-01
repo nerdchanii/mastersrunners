@@ -65,6 +65,7 @@ export default function CrewActivityDetailPage() {
     goBackToCrew,
     goToChat,
     goToEdit,
+    goToQrCheckIn,
     handleAdminCheckIn,
     handleCancelActivity,
     handleCancelRsvp,
@@ -310,16 +311,22 @@ export default function CrewActivityDetailPage() {
           {/* RSVP 상태: 체크인 + 참석 취소 */}
           {isActivityActive && myStatus === "RSVP" && (
             <div className="flex items-center gap-3">
-              <Button onClick={handleCheckIn} disabled={checkIn.isPending}>
-                {checkIn.isPending ? (
-                  <>
-                    <Loader2 className="size-4 mr-2 animate-spin" />
-                    체크인 중...
-                  </>
-                ) : (
-                  "수동 체크인"
-                )}
-              </Button>
+              {canManage ? (
+                <Button onClick={handleCheckIn} disabled={checkIn.isPending}>
+                  {checkIn.isPending ? (
+                    <>
+                      <Loader2 className="size-4 mr-2 animate-spin" />
+                      체크인 중...
+                    </>
+                  ) : (
+                    "수동 체크인"
+                  )}
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={goToQrCheckIn}>
+                  QR 체크인
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -329,6 +336,12 @@ export default function CrewActivityDetailPage() {
                 참석 취소
               </Button>
             </div>
+          )}
+
+          {isActivityActive && myStatus === "RSVP" && !canManage && (
+            <p className="text-sm text-muted-foreground">
+              멤버 체크인은 현장 QR 코드로 진행됩니다.
+            </p>
           )}
 
           {/* 체크인 완료 */}
