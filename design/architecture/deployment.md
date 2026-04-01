@@ -33,12 +33,21 @@ This document defines the intended deployment shape for the repository. Runbooks
 - Deployment automation: `.github/workflows/deploy.yml`
 - Local production-like runtime: `docker-compose.prod.yml`
 - Post-deploy verification: `scripts/verify-deployment.sh`
+- Web response-header source of truth: `apps/web/public/_headers`
 
 ## Health Contract
 
 - Canonical deployment verification endpoint: `GET /api/v1/health`
 - Legacy compatibility endpoint: `GET /health`
 - Both paths are intentionally exposed so same-domain `/api/*` routing can be verified without breaking older direct-origin checks
+
+## Response Header Contract
+
+- Cloudflare Pages HTML and static responses use the repo-tracked `_headers` file at `apps/web/public/_headers`.
+- The API applies a centralized bootstrap-level response-header policy before route handling.
+- API JSON surfaces use a deny-by-default CSP, while Swagger UI uses a narrower Swagger-safe CSP instead of inheriting an accidental default.
+- Current HSTS posture is `max-age=31536000` only.
+- `includeSubDomains` and `preload` are intentionally deferred because `mastersrunners.com` and `www.mastersrunners.com` still serve placeholder content outside the active app rollout.
 
 ## Environment Boundaries
 
@@ -55,6 +64,7 @@ This document defines the intended deployment shape for the repository. Runbooks
 - Redis appears in environment and compose-level deployment assumptions, but the current repo implementation does not use a shared Redis runtime for app logic or realtime fan-out
 - The Pages project itself is external state, so its build command and output directory must match `docs/runbooks/deployment.md`
 - Branch aliases, custom domains, and `/api/*` proxy rules for Pages are also external state and are tracked under `EX-0004`
+- The deployment verify script should check repo-controlled API headers on the direct API origin and web headers on the Pages host, rather than treating same-domain proxy routing as the only proof path
 
 ### Local Production-Like
 
@@ -79,7 +89,7 @@ This document defines the intended deployment shape for the repository. Runbooks
 6. Deploy workflow loads `DIRECT_URL` from Secret Manager
 7. Deploy workflow applies additive-only automated migrations and seed data
 8. Cloud Run receives the new revision
-9. Verification script checks service health
+9. Verification script checks service health plus the repo-tracked header contract on the direct API and web surfaces
 
 ## Rollback Model
 
