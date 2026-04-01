@@ -9,6 +9,10 @@ reviewers:
 po_review: required
 depends_on: []
 blocked_by: []
+execution_status: blocked
+review_status: approved
+verification_status: partial
+closeout_blocker: same-domain /api-docs currently resolves to Pages HTML instead of the Swagger API surface expected by the task proof.
 verify:
   - pnpm --filter @masters/api test:e2e -- --runTestsByPath test/security-headers.e2e-spec.ts
   - curl -I https://dev.mastersrunners.com/api/v1/health
@@ -68,6 +72,7 @@ Apply a centralized API response-header policy at bootstrap so public API and Sw
 - 2026-04-01: follow-up created after live header probes on `/api/v1/health` and `/api-docs` confirmed the missing header set reported by the security scan.
 - 2026-04-01: extracted shared bootstrap wiring for runtime and E2E, added centralized response-header middleware with Swagger-aware CSP handling, added focused E2E coverage for `/api/v1/health` plus `/api-docs`, and aligned the E2E Jest mapper to the workspace `@masters/database` source so the new verify path can execute locally; live host verification is pending deployment.
 - 2026-04-01: `pnpm --filter @masters/api test:e2e -- --runTestsByPath test/security-headers.e2e-spec.ts` passed after the shared bootstrap and E2E mapper adjustments.
+- 2026-04-02: live `curl -I https://dev.mastersrunners.com/api/v1/health` now shows the intended API header set, but `curl -I https://dev.mastersrunners.com/api-docs` still returns the Pages HTML surface and CSP instead of Swagger, so closeout remains blocked on the same-domain docs route.
 
 ## Review Notes
 

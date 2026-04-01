@@ -101,6 +101,15 @@ Lifecycle:
 9. Move the task from `tasks/active/` to `tasks/archive/` in the same changeset that finalizes the work
 10. Commit only after review and verify gates are satisfied
 
+Active tasks also need machine-readable closeout state in frontmatter:
+
+- `execution_status`: `in_progress`, `blocked`, or `ready_for_archive`
+- `review_status`: `pending` or `approved`
+- `verification_status`: `pending`, `partial`, or `passed`
+- `closeout_blocker`: required when `execution_status: blocked`
+
+`bash scripts/check-active-task-closeout.sh` is the deterministic gate for this state. A task that is ready to archive must not remain in `tasks/active/`.
+
 Initiative and ADR order:
 
 1. Create or update a matching file in `design/initiatives/` when the change is larger than one task

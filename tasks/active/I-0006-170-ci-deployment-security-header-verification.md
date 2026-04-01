@@ -11,6 +11,10 @@ depends_on:
   - I-0006-150
   - I-0006-160
 blocked_by: []
+execution_status: blocked
+review_status: approved
+verification_status: partial
+closeout_blocker: deploy verification still fails on same-domain /api-docs because the route serves Pages HTML instead of the Swagger API surface.
 verify:
   - pnpm deploy:verify -- https://dev.mastersrunners.com
   - curl -I https://dev.mastersrunners.com
@@ -67,6 +71,7 @@ Extend deployment verification so it proves the expected security-header contrac
 - 2026-04-01: extended `scripts/verify-deployment.sh` to assert the required header set on the direct API health/docs surfaces and, when a Pages host is available, the web root. The first deploy attempt showed that the externally managed Pages host currently returns `403` to GitHub Actions, so the automated deploy gate was narrowed back to the direct API origin while preserving manual `WEB_VERIFY_URL` proof for operators.
 - 2026-04-01: added a defensive `--` argument shim so `pnpm deploy:verify -- <url>` still works, then proved the local API-only path with `pnpm deploy:verify -- http://localhost:4100`, which now checks `/api/v1/health`, `/api-docs`, and skips the web-root probe when `WEB_VERIFY_URL` is absent.
 - 2026-04-01: branch CI recovery temporarily added a `knip` `types` ignore for the conversations repository; the structural cleanup is tracked separately in `I-0006-210` instead of being folded into this deploy verification task.
+- 2026-04-02: live `pnpm deploy:verify -- https://dev.mastersrunners.com` now proves API health and web-root headers, but it still fails on `/api-docs` because the same-domain route currently resolves to the Pages HTML surface instead of Swagger.
 
 ## Review Notes
 

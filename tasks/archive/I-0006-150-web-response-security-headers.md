@@ -62,6 +62,7 @@ Version the Cloudflare Pages response-header policy in the repo so the dev web h
 - 2026-04-01: follow-up created after a live `curl -I https://dev.mastersrunners.com` probe confirmed the missing header set reported by the security scan.
 - 2026-04-01: added `apps/web/public/_headers` with a repo-tracked CSP, HSTS, anti-framing, and Permissions-Policy contract for the current SPA asset model; local web build proof is now available and live dev-host proof is pending deployment.
 - 2026-04-01: `VITE_API_URL=https://dev.mastersrunners.com/api/v1 pnpm --filter @masters/web build` passed and confirmed the generated Pages artifact includes `apps/web/dist/_headers`.
+- 2026-04-02: live `curl -I https://dev.mastersrunners.com` now confirms the intended Pages header contract, including `Content-Security-Policy`, `Permissions-Policy`, `Strict-Transport-Security`, and `X-Frame-Options`, so the task can close and move to archive.
 
 ## Review Notes
 

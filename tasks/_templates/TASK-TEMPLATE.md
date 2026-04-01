@@ -9,6 +9,10 @@ reviewers:
 po_review: required
 depends_on: []
 blocked_by: []
+execution_status: in_progress
+review_status: pending
+verification_status: pending
+closeout_blocker:
 verify:
   - pnpm --filter @masters/api test -- --runTestsByPath src/example.spec.ts
 artifacts:

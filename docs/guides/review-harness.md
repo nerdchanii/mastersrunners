@@ -55,6 +55,24 @@ Before commit, the task must satisfy all of these:
 6. The task file has been updated with review notes.
 7. The task is moved from `tasks/active/` to `tasks/archive/` in the same changeset that finalizes the work.
 
+## Deterministic Active-State Gate
+
+Active tasks now carry machine-readable closeout fields in frontmatter:
+
+- `execution_status`: `in_progress`, `blocked`, or `ready_for_archive`
+- `review_status`: `pending` or `approved`
+- `verification_status`: `pending`, `partial`, or `passed`
+- `closeout_blocker`: required when `execution_status: blocked`
+
+The repository check `bash scripts/check-active-task-closeout.sh` enforces these rules:
+
+- every task under `tasks/active/` must declare the fields above
+- blocked tasks must explain the blocker in `closeout_blocker`
+- `execution_status: ready_for_archive` is not allowed to remain in `tasks/active/`
+- `review_status: approved` plus `verification_status: passed` cannot remain `execution_status: in_progress`
+
+This turns “forgot to archive a finished task” into a failing CI/pre-push signal instead of a doc hygiene suggestion.
+
 ## Manual PR Use
 
 - Pull requests are optional collaboration artifacts, not a second completion workflow.

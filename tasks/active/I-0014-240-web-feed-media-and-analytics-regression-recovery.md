@@ -12,6 +12,10 @@ reviewers:
 po_review: required
 depends_on: []
 blocked_by: []
+execution_status: blocked
+review_status: approved
+verification_status: partial
+closeout_blocker: live /feed confirmation still requires an authenticated browser session; the current unauthenticated dev-lane probe redirects to /login before feed images can be checked.
 verify:
   - VITE_API_URL=https://dev.mastersrunners.com/api/v1 pnpm --filter @masters/web build
   - pnpm --filter @masters/api test:e2e -- --runTestsByPath test/feed.e2e-spec.ts
@@ -74,6 +78,7 @@ Restore image-bearing posts on `/feed` and align the deployed web CSP with Cloud
 - 2026-04-02: created after deployed `/feed` still showed image-bearing posts without usable image `src` values and the live dev lane reported CSP violations for inline analytics injection plus the Cloudflare Insights beacon host.
 - 2026-04-02: `pnpm --filter @masters/api test:e2e -- --runTestsByPath test/feed.e2e-spec.ts` was attempted but remains blocked by the pre-existing Prisma/Jest ESM runtime issue around `@prisma/client/runtime/query_compiler_fast_bg.postgresql.mjs`; targeted API unit tests, web build, and Playwright regression coverage still ran for this task.
 - 2026-04-02: review-ready snapshot prepared with passing targeted verification for API build, feed/posts service specs, web production build, `/feed` and `/posts/:id` Playwright coverage, task metadata validation, and `git diff --check`.
+- 2026-04-02: live browser verification on `https://dev.mastersrunners.com/feed` now redirects unauthenticated sessions to `/login?next=%2Ffeed`; deploy proof and the root CSP are healthy, but final feed-image confirmation still needs an authenticated operator session.
 
 ## Review Notes
 
