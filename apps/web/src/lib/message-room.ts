@@ -1,0 +1,150 @@
+export interface ConversationUser {
+  id: string;
+  name: string;
+  profileImage: string | null;
+}
+
+export interface ConversationParticipant {
+  userId: string;
+  lastReadAt: string | null;
+  user: ConversationUser;
+}
+
+export interface ConversationCrewContext {
+  id: string;
+  name: string;
+}
+
+export interface ConversationActivityContext {
+  id: string;
+  title: string;
+  crewId: string;
+  crew: ConversationCrewContext | null;
+}
+
+export interface ConversationSummaryMessage {
+  id: string;
+  content: string;
+  senderId: string;
+  createdAt: string;
+}
+
+export interface ConversationRoom {
+  id: string;
+  type: "DIRECT" | "CREW" | "ACTIVITY";
+  name: string | null;
+  crewId: string | null;
+  activityId: string | null;
+  crew: ConversationCrewContext | null;
+  activity: ConversationActivityContext | null;
+  updatedAt: string;
+  participants: ConversationParticipant[];
+}
+
+export interface ConversationListItem extends ConversationRoom {
+  messages: ConversationSummaryMessage[];
+  unreadCount: number;
+}
+
+export type ConversationRoomKind = ConversationListItem["type"];
+
+export interface ConversationRoomMeta {
+  href: string;
+  kindLabel: string;
+  subtitle: string;
+  title: string;
+}
+
+export function getConversationOtherUser(
+  conversation: Pick<ConversationRoom, "participants">,
+  currentUserId?: string,
+) {
+  if (!currentUserId) {
+    return conversation.participants[0]?.user ?? null;
+  }
+
+  return (
+    conversation.participants.find((participant) => participant.userId !== currentUserId)?.user ??
+    conversation.participants[0]?.user ??
+    null
+  );
+}
+
+export function getConversationRoomMeta(
+  conversation: ConversationRoom,
+  currentUserId?: string,
+): ConversationRoomMeta {
+  if (conversation.type === "ACTIVITY") {
+    const crewName =
+      conversation.activity?.crew?.name ??
+      conversation.crew?.name ??
+      (conversation.name?.trim() || null) ??
+      "크루";
+    const activityTitle =
+      conversation.activity?.title ?? (conversation.name?.trim() || null) ?? "활동 채팅";
+    const title = `${crewName} / ${activityTitle}`;
+
+    return {
+      href:
+        conversation.activityId && (conversation.crewId ?? conversation.activity?.crewId)
+          ? `/crews/${conversation.crewId ?? conversation.activity?.crewId}/activities/${conversation.activityId}/chat`
+          : `/messages/${conversation.id}`,
+      kindLabel: "활동",
+      subtitle: "활동 채팅",
+      title,
+    };
+  }
+
+  if (conversation.type === "CREW") {
+    const title =
+      conversation.crew?.name ??
+      conversation.activity?.crew?.name ??
+      conversation.name ??
+      "크루 채팅";
+
+    return {
+      href: conversation.crewId ? `/crews/${conversation.crewId}` : `/messages/${conversation.id}`,
+      kindLabel: "크루",
+      subtitle: "크루 단체톡",
+      title,
+    };
+  }
+
+  const otherUser = getConversationOtherUser(conversation, currentUserId);
+
+  return {
+    href: `/messages/${conversation.id}`,
+    kindLabel: "1:1",
+    subtitle: "1:1 메시지",
+    title: otherUser?.name ?? conversation.name ?? "대화",
+  };
+}
+
+export function matchesConversationQuery(
+  conversation: ConversationListItem,
+  currentUserId: string | undefined,
+  rawQuery: string,
+) {
+  const query = rawQuery.trim().toLowerCase();
+  if (!query) {
+    return true;
+  }
+
+  const roomMeta = getConversationRoomMeta(conversation, currentUserId);
+  const haystack = [
+    roomMeta.title,
+    roomMeta.subtitle,
+    roomMeta.kindLabel,
+    conversation.name,
+    conversation.crew?.name,
+    conversation.activity?.title,
+    conversation.activity?.crew?.name,
+    ...conversation.participants.map((participant) => participant.user.name),
+    ...conversation.messages.map((message) => message.content),
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join(" ")
+    .toLowerCase();
+
+  return haystack.includes(query);
+}

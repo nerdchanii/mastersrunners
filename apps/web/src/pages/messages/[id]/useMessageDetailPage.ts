@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { messageKeys } from "@/hooks/useMessages";
 import { api, API_BASE } from "@/lib/api-client";
+import type { ConversationRoom } from "@/lib/message-room";
 
 export interface Message {
   id: string;
@@ -14,16 +15,7 @@ export interface Message {
   sender: { id: string; name: string; profileImage: string | null };
 }
 
-export interface Conversation {
-  id: string;
-  type: "DIRECT";
-  updatedAt: string;
-  participants: Array<{
-    userId: string;
-    lastReadAt: string | null;
-    user: { id: string; name: string; profileImage: string | null };
-  }>;
-}
+export type Conversation = ConversationRoom;
 
 interface ConversationDetailResponse {
   conversation: Conversation;

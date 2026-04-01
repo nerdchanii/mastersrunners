@@ -10,6 +10,8 @@ sources:
   - apps/api/src/notifications/notifications-sse.service.ts
   - apps/api/src/common/filters/http-exception.filter.ts
   - apps/api/src/conversations/repositories/conversations.repository.ts
+  - apps/api/src/crews/internal/crew-read.service.ts
+  - apps/api/src/crews/internal/crew-activities.service.ts
   - apps/api/src/auth/guards/jwt-sse.guard.ts
   - apps/api/src/block/repositories/block.repository.ts
 ---
@@ -18,14 +20,14 @@ sources:
 
 ## Summary
 
-Direct messaging is implemented as an authenticated conversations module with cursor pagination, soft-delete semantics, and SSE fan-out for new messages.
+Messaging is implemented as an authenticated conversations module with cursor pagination, soft-delete semantics, and SSE fan-out for new direct messages, while crew and activity chat rooms share the same conversation storage model.
 
 ## Public API Boundaries
 
 - `POST /conversations`
   - start or find a direct conversation with another user
 - `GET /conversations`
-  - list the caller's conversations with unread counts
+  - list the caller's DM, crew, and activity conversations with unread counts plus room-identity context
 - `GET /conversations/:id`
   - fetch one conversation plus paginated messages
 - `POST /conversations/:id/messages`
@@ -44,7 +46,7 @@ Direct messaging is implemented as an authenticated conversations module with cu
 - `ConversationsService`
   - participant authorization, block checks, and write orchestration
 - `ConversationsRepository`
-  - durable conversation, participant, and message persistence
+  - durable conversation, participant, and message persistence, plus room-identity context hydration for crew/activity rooms
 - `ConversationsSseService`
   - in-process connection registry and message fan-out
 
@@ -59,6 +61,6 @@ Direct messaging is implemented as an authenticated conversations module with cu
 
 ## Current Constraints
 
-- The current repo only models direct conversations in the user-facing API.
+- The main `/conversations` API now returns mixed room types, but only direct-message routes use the dedicated `/messages/:id` detail screen today.
 - Presence, typing indicators, and reconnect replay are not first-class realtime features in the current implementation.
 - Realtime delivery is process-local; multi-instance fan-out would need extra infrastructure beyond the repo.

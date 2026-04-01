@@ -3,9 +3,102 @@ import { Injectable } from "@nestjs/common";
 
 import { DatabaseService } from "../../database/database.service.js";
 
+export interface ConversationCrewContext {
+  id: string;
+  name: string;
+}
+
+export interface ConversationActivityContext {
+  id: string;
+  title: string;
+  crewId: string;
+  crew: ConversationCrewContext | null;
+}
+
+export type ConversationWithContext<
+  TConversation extends { id: string; activityId: string | null; crewId: string | null },
+> = TConversation & {
+  activity: ConversationActivityContext | null;
+  crew: ConversationCrewContext | null;
+};
+
 @Injectable()
 export class ConversationsRepository {
   constructor(private readonly db: DatabaseService) {}
+
+  private async attachConversationContext<
+    TConversation extends { id: string; activityId: string | null; crewId: string | null },
+  >(conversations: TConversation[]): Promise<Array<ConversationWithContext<TConversation>>> {
+    if (conversations.length === 0) {
+      return conversations.map(
+        (conversation): ConversationWithContext<TConversation> => ({
+          ...conversation,
+          activity: null,
+          crew: null,
+        }),
+      );
+    }
+
+    const crewIds = Array.from(
+      new Set(
+        conversations
+          .map((conversation) => conversation.crewId)
+          .filter((crewId): crewId is string => Boolean(crewId)),
+      ),
+    );
+    const activityIds = Array.from(
+      new Set(
+        conversations
+          .map((conversation) => conversation.activityId)
+          .filter((activityId): activityId is string => Boolean(activityId)),
+      ),
+    );
+
+    const crews: ConversationCrewContext[] =
+      crewIds.length === 0
+        ? []
+        : await this.db.prisma.crew.findMany({
+            where: { id: { in: crewIds } },
+            select: { id: true, name: true },
+          });
+    const activities: ConversationActivityContext[] =
+      activityIds.length === 0
+        ? []
+        : await this.db.prisma.crewActivity.findMany({
+            where: { id: { in: activityIds } },
+            select: {
+              id: true,
+              title: true,
+              crewId: true,
+              crew: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          });
+
+    const crewMap = new Map(crews.map((crew: ConversationCrewContext) => [crew.id, crew] as const));
+    const activityMap = new Map(
+      activities.map((activity: ConversationActivityContext) => [activity.id, activity] as const),
+    );
+
+    return conversations.map((conversation): ConversationWithContext<TConversation> => {
+      const activity =
+        conversation.activityId === null
+          ? null
+          : (activityMap.get(conversation.activityId) ?? null);
+      const crewFromConversation =
+        conversation.crewId === null ? null : (crewMap.get(conversation.crewId) ?? null);
+
+      return {
+        ...conversation,
+        activity,
+        crew: crewFromConversation ?? activity?.crew ?? null,
+      };
+    });
+  }
 
   async findOrCreateDirect(userId1: string, userId2: string) {
     return this.db.prisma.$transaction(async (tx: TransactionClient) => {
@@ -47,7 +140,7 @@ export class ConversationsRepository {
   }
 
   async findByUserId(userId: string, cursor?: string, limit: number = 20) {
-    return this.db.prisma.conversation.findMany({
+    const conversations = await this.db.prisma.conversation.findMany({
       where: {
         participants: {
           some: { userId },
@@ -78,10 +171,12 @@ export class ConversationsRepository {
         cursor: { id: cursor },
       }),
     });
+
+    return this.attachConversationContext(conversations);
   }
 
   async findById(conversationId: string) {
-    return this.db.prisma.conversation.findUnique({
+    const conversation = await this.db.prisma.conversation.findUnique({
       where: { id: conversationId },
       include: {
         participants: {
@@ -97,6 +192,13 @@ export class ConversationsRepository {
         },
       },
     });
+
+    if (!conversation) {
+      return null;
+    }
+
+    const [conversationWithContext] = await this.attachConversationContext([conversation]);
+    return conversationWithContext ?? null;
   }
 
   async isParticipant(conversationId: string, userId: string): Promise<boolean> {

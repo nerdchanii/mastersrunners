@@ -157,6 +157,56 @@ describe("ConversationsService", () => {
       expect(result.nextCursor).toBeNull();
     });
 
+    it("preserves crew and activity room identity metadata", async () => {
+      const userId = "user-1";
+      const conversations = [
+        {
+          id: "conv-crew",
+          type: "CREW",
+          crewId: "crew-1",
+          activityId: null,
+          crew: { id: "crew-1", name: "서울 러닝 크루" },
+          activity: null,
+          updatedAt: new Date(),
+          participants: [],
+          messages: [],
+        },
+        {
+          id: "conv-activity",
+          type: "ACTIVITY",
+          crewId: "crew-1",
+          activityId: "activity-1",
+          crew: { id: "crew-1", name: "서울 러닝 크루" },
+          activity: {
+            id: "activity-1",
+            title: "월요일 아침 러닝",
+            crewId: "crew-1",
+            crew: { id: "crew-1", name: "서울 러닝 크루" },
+          },
+          updatedAt: new Date(),
+          participants: [],
+          messages: [],
+        },
+      ];
+
+      mockConversationsRepository.findByUserId.mockResolvedValue(conversations);
+      mockConversationsRepository.getUnreadCount.mockResolvedValue(0);
+
+      const result = await service.getConversations(userId);
+
+      expect(result.data[0]).toMatchObject({
+        type: "CREW",
+        crew: { id: "crew-1", name: "서울 러닝 크루" },
+      });
+      expect(result.data[1]).toMatchObject({
+        type: "ACTIVITY",
+        activity: {
+          id: "activity-1",
+          title: "월요일 아침 러닝",
+        },
+      });
+    });
+
     it("should return nextCursor if more items exist", async () => {
       const userId = "user-1";
       const limit = 2;

@@ -1,4 +1,4 @@
-import { ChevronLeft } from "lucide-react";
+import { CalendarDays, ChevronLeft, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
+import { getConversationOtherUser, getConversationRoomMeta } from "@/lib/message-room";
 import { cn } from "@/lib/utils";
 
 import { type Message, useMessageDetailPage } from "./useMessageDetailPage";
@@ -60,11 +61,6 @@ export default function MessageDetailPage() {
 
   const handleLoadMore = () => {
     loadMore();
-  };
-
-  const getOtherUser = () => {
-    if (!conversation) return null;
-    return conversation.participants.find((p) => p.userId !== user?.id)?.user;
   };
 
   const formatTime = (dateString: string) => {
@@ -128,9 +124,10 @@ export default function MessageDetailPage() {
     );
   }
 
-  const otherUser = getOtherUser();
+  const otherUser = conversation ? getConversationOtherUser(conversation, user?.id) : null;
+  const roomMeta = conversation ? getConversationRoomMeta(conversation, user?.id) : null;
 
-  if (!conversation || !otherUser) {
+  if (!conversation || !roomMeta) {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-7.5rem)] md:h-[calc(100vh-4rem)] p-4">
         <p className="text-muted-foreground">대화를 찾을 수 없습니다</p>
@@ -154,13 +151,26 @@ export default function MessageDetailPage() {
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <Avatar className="h-10 w-10">
-            {otherUser.profileImage && (
-              <AvatarImage src={otherUser.profileImage} alt={otherUser.name} />
-            )}
-            <AvatarFallback>{otherUser.name[0]}</AvatarFallback>
-          </Avatar>
-          <h2 className="font-semibold text-lg">{otherUser.name}</h2>
+          {conversation.type === "DIRECT" && otherUser ? (
+            <Avatar className="h-10 w-10">
+              {otherUser.profileImage && (
+                <AvatarImage src={otherUser.profileImage} alt={otherUser.name} />
+              )}
+              <AvatarFallback>{otherUser.name[0]}</AvatarFallback>
+            </Avatar>
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-muted text-foreground">
+              {conversation.type === "ACTIVITY" ? (
+                <CalendarDays className="h-4 w-4" />
+              ) : (
+                <Users className="h-4 w-4" />
+              )}
+            </div>
+          )}
+          <div className="min-w-0">
+            <h2 className="truncate text-lg font-semibold">{roomMeta.title}</h2>
+            <p className="text-xs text-muted-foreground">{roomMeta.subtitle}</p>
+          </div>
         </div>
       </div>
 

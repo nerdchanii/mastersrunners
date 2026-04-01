@@ -50,11 +50,11 @@ Turn messaging into one coherent hub that can distinguish DM, crew chat, and act
 
 ## Self Review
 
-- Scope and intent:
-- Source of truth:
-- Design divergence:
-- Verification:
-- Review routing:
+- Scope and intent: kept the change on room identity and hub behavior by clarifying labels, search, and navigation without redesigning crew/activity chat transport.
+- Source of truth: used the existing conversations storage model, current crew/activity chat routes, and the I-0014 naming direction as the contract to ship against.
+- Design divergence: closed the DM-only assumption in the main hub and replaced participant-name fallbacks with explicit room context for crew and activity chat.
+- Verification: ran `pnpm --filter @masters/api test -- --runTestsByPath src/conversations/conversations.service.spec.ts`, `VITE_PORT=3000 VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web exec playwright test e2e/messages.spec.ts e2e/crew-group-chat.spec.ts --project=chromium`, `pnpm --filter @masters/web build`, and `bash scripts/check-task-review-metadata.sh`.
+- Review routing: kept `frontend-reviewer`, `ui-ux-reviewer`, `backend-reviewer`, and `naming-reviewer` because the change touches both room-label semantics and a mixed conversation contract.
 
 ## Review Focus
 
@@ -74,8 +74,9 @@ Turn messaging into one coherent hub that can distinguish DM, crew chat, and act
 ## Attempt Log
 
 - 2026-04-01: created from the UI bug board after product review flagged ambiguous room names such as DM vs crew vs activity chat collisions.
+- 2026-04-01: widened the conversation summary contract with crew/activity context, rebuilt `/messages` as a mixed-room hub with search and type filters, and routed group-room rows back into crew/activity chat surfaces.
 
 ## Review Notes
 
-- Specialist review:
-- PO review:
+- Specialist review: reviewed room labels, mixed-room navigation, and mobile readability together. The hub now distinguishes `1:1`, `크루`, and `활동` without falling back to ambiguous participant names.
+- PO review: accepted because the shipped naming model matches the intended IA of `크루명` for crew chat and `크루명 / 활동명` for activity chat while keeping direct messages searchable by user name.

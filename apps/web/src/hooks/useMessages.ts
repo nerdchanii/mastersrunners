@@ -1,26 +1,13 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
+import type {
+  ConversationListItem,
+  ConversationParticipant,
+  ConversationRoom,
+} from "@/lib/message-room";
 
-interface ConversationParticipant {
-  userId: string;
-  lastReadAt: string | null;
-  user: { id: string; name: string; profileImage: string | null };
-}
-
-export interface Conversation {
-  id: string;
-  type: "DIRECT";
-  updatedAt: string;
-  participants: ConversationParticipant[];
-  messages: Array<{
-    id: string;
-    content: string;
-    senderId: string;
-    createdAt: string;
-  }>;
-  unreadCount: number;
-}
+export type { ConversationListItem as Conversation, ConversationParticipant };
 
 export interface Message {
   id: string;
@@ -33,12 +20,12 @@ export interface Message {
 }
 
 interface ConversationsResponse {
-  data: Conversation[];
+  data: ConversationListItem[];
   nextCursor: string | null;
 }
 
 interface ConversationDetailResponse {
-  conversation: Omit<Conversation, "messages" | "unreadCount">;
+  conversation: ConversationRoom;
   messages: Message[];
   nextCursor: string | null;
 }

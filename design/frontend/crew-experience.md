@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: frontend
-last_verified: 2026-03-21
+last_verified: 2026-04-01
 sources:
   - apps/web/src/pages/crews/index.tsx
   - apps/web/src/pages/crews/new/index.tsx
@@ -10,12 +10,14 @@ sources:
   - apps/web/src/pages/crews/[id]/activities/[activityId]/index.tsx
   - apps/web/src/pages/crews/[id]/activities/[activityId]/chat.tsx
   - apps/web/src/pages/crews/[id]/activities/[activityId]/qr-check-in.tsx
+  - apps/web/src/pages/messages/index.tsx
   - apps/web/src/components/crew/CrewActivityList.tsx
   - apps/web/src/components/crew/CrewBoardList.tsx
   - apps/web/src/components/crew/CrewMemberList.tsx
   - apps/web/src/components/crew/GroupChat.tsx
   - apps/web/src/hooks/useCrewActivities.ts
   - apps/web/src/hooks/useCrews.ts
+  - apps/web/src/hooks/useMessages.ts
   - apps/web/src/hooks/useGroupChat.ts
 ---
 
@@ -76,6 +78,10 @@ Current attendance entry points are intentionally split:
 - direct crew chat and activity chat are built on the group-chat hooks
 - direct messages use SSE, but crew and activity chat still rely on the group-chat polling model
 - crew chat and activity chat now use route-owned labels and copy instead of generic room names
+- the main `/messages` hub now keeps crew and activity chat rooms visible with explicit room identity:
+  - crew rooms render as `크루명`
+  - activity rooms render as `크루명 / 활동명`
+- selecting a crew or activity room from the message hub routes the user back into the matching crew or activity chat surface instead of pretending every room is a DM thread
 - raw `crewId`, `activityId`, or fallback conversation ids should not surface in crew-facing chat headers or empty states
 - activity chat route access is intentionally aligned with the activity detail CTA:
   - `RSVP`
