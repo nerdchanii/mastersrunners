@@ -54,6 +54,9 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `tasks/archive/I-0006-100-ci-cloudflare-pages-preview-failure.md`
 - `tasks/archive/I-0006-110-ci-deployment-env-contract-hardening.md`
 - `tasks/todo/I-0006-120-api-auth-token-transport-hardening.md`
+- `tasks/todo/I-0006-130-web-response-security-headers.md`
+- `tasks/todo/I-0006-140-api-response-security-headers.md`
+- `tasks/todo/I-0006-150-ci-deployment-security-header-verification.md`
 
 ## Success Criteria
 
@@ -73,4 +76,4 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `I-0006-080` originally split API/database rollout out of the first explicit typecheck lane, and `I-0006-090` closed the remaining explicit API/database typecheck rollout.
 - `I-0006-100` captured the Cloudflare Pages preview failure, codified the repo-side build contract, passed preview deploys on PR #7 after the Pages dashboard was aligned to `pnpm build:web` and `apps/web/dist`, and is now archived with closeout verification plus recorded backend review.
 - `I-0006-110` now archives the deployment env contract hardening so public web bundles and Cloud Run runtime config fail fast instead of silently falling back to localhost.
-- In-repo guardrail hardening is effectively complete; the remaining blockers are external platform settings and the exceptions recorded in `design/operating-rules/exceptions.md`.
+- 2026-04-01 live header probes on `https://dev.mastersrunners.com`, `https://dev.mastersrunners.com/api-docs`, and `https://dev.mastersrunners.com/api/v1/health` confirmed that `Strict-Transport-Security`, `Content-Security-Policy`, `X-Frame-Options`, and `Permissions-Policy` are still missing on repo-controlled response surfaces, so the initiative now carries follow-up tasks `I-0006-130` through `I-0006-150` for Pages HTML, API runtime, and deployment verification hardening.
