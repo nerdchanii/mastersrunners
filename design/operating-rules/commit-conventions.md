@@ -82,6 +82,7 @@ Verify: bash scripts/check-size-budgets.sh
 - Repository automation validates commit subjects in the `commit-msg` hook.
 - `pre-commit` is for file-content checks. Commit message validation belongs in `commit-msg`.
 - `pre-commit` escalates to `bash scripts/run-typecheck.sh` when staged changes touch TypeScript-sensitive files or configs.
+- `pre-push` runs `pnpm ci:local` so the full local CI mirror executes before changes leave the workstation.
 - The enforced rules currently cover:
   - allowed commit `type`
   - required non-empty `scope`

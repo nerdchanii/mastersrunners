@@ -55,6 +55,7 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `tasks/archive/I-0006-110-ci-deployment-env-contract-hardening.md`
 - `tasks/archive/I-0006-120-api-auth-token-transport-hardening.md`
 - `tasks/archive/I-0006-130-ci-knip-cookie-session-followup.md`
+- `tasks/archive/I-0006-140-ci-pre-push-local-ci-gate.md`
 
 ## Success Criteria
 
@@ -76,4 +77,5 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `I-0006-110` now archives the deployment env contract hardening so public web bundles and Cloud Run runtime config fail fast instead of silently falling back to localhost.
 - `I-0006-120` now closes the browser auth transport hardening by moving OAuth callback, refresh, logout, and SSE browser auth to `HttpOnly` cookies instead of query-string or `localStorage` token transport.
 - `I-0006-130` closes the immediate CI follow-up by removing unused cookie helper exports and making local `ci:local` pass the same `VITE_API_URL` contract into `knip` as GitHub Actions.
+- `I-0006-140` adds a `pre-push` gate so `pnpm ci:local` runs before publishing changes, reducing the chance of pushing commits that only fail in remote CI.
 - In-repo guardrail hardening is effectively complete; the remaining blockers are external platform settings and the exceptions recorded in `design/operating-rules/exceptions.md`.
