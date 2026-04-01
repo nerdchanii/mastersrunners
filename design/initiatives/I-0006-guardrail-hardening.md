@@ -59,7 +59,7 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `tasks/active/I-0006-150-web-response-security-headers.md`
 - `tasks/active/I-0006-160-api-response-security-headers.md`
 - `tasks/active/I-0006-170-ci-deployment-security-header-verification.md`
-- `tasks/active/I-0006-180-api-r2-runtime-endpoint-derivation.md`
+- `tasks/archive/I-0006-180-api-r2-runtime-endpoint-derivation.md`
 
 ## Success Criteria
 
@@ -84,5 +84,5 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `I-0006-140` adds a `pre-push` gate so `pnpm ci:local` runs before publishing changes, reducing the chance of pushing commits that only fail in remote CI.
 - 2026-04-01 live header probes on `https://dev.mastersrunners.com`, `https://dev.mastersrunners.com/api-docs`, and `https://dev.mastersrunners.com/api/v1/health` confirmed that `Strict-Transport-Security`, `Content-Security-Policy`, `X-Frame-Options`, and `Permissions-Policy` are still missing on repo-controlled response surfaces, so the initiative now carries follow-up tasks `I-0006-150` through `I-0006-170` for Pages HTML, API runtime, and deployment verification hardening.
 - 2026-04-01 follow-up implementation is now active: the repo adds a versioned Pages `_headers` contract, centralized API bootstrap header middleware with Swagger-aware CSP coverage, and deployment verification that checks direct API plus web-root header surfaces. Live dev-host proof remains pending until the branch is deployed.
-- 2026-04-01 dev upload triage found that the Cloud Run runtime carries the R2 account/public URL secrets but not `R2_ENDPOINT`, so `I-0006-180` now closes the resulting disk-storage fallback by deriving the standard R2 endpoint from `R2_ACCOUNT_ID` instead of treating the missing explicit endpoint as a localhost-worthy runtime.
+- 2026-04-01 dev upload triage found that the Cloud Run runtime carries the R2 account/public URL secrets but not `R2_ENDPOINT`, and `I-0006-180` is now closed after deriving the standard R2 endpoint from `R2_ACCOUNT_ID`, redeploying dev, and confirming live `/api/v1/uploads/presign` returns R2-backed URLs instead of localhost disk fallbacks.
 - In-repo guardrail hardening is effectively complete; the remaining blockers are external platform settings and the exceptions recorded in `design/operating-rules/exceptions.md`.

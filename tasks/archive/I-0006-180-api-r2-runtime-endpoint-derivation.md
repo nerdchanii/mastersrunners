@@ -65,6 +65,7 @@ Keep production-like lanes on the R2 adapter when the runtime has the standard C
 
 - 2026-04-01: created after confirming the dev Cloud Run runtime lacks `R2_ENDPOINT` even though the repo only wires the other R2 values through Secret Manager and the deploy workflow.
 - 2026-04-01: added a shared R2 runtime helper that derives the standard Cloudflare endpoint from `R2_ACCOUNT_ID`, switched adapter selection to the derived-runtime check, added focused unit coverage for endpoint derivation plus adapter construction, and updated the storage/deployment docs to match the runtime contract.
+- 2026-04-01: deployed commit `20dfe0c` to the dev Cloud Run lane, then confirmed live `/api/v1/uploads/presign` now returns an R2 signed upload URL plus `https://pub-554fa59edea143768fe7d87a16310baf.r2.dev/...` as `publicUrl` instead of the old localhost-style disk URL fallback. The deploy workflow still failed on the unrelated Pages web-root `403` header check.
 
 ## Review Notes
 
