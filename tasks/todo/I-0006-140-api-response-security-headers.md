@@ -10,13 +10,14 @@ po_review: required
 depends_on: []
 blocked_by: []
 verify:
-  - pnpm --filter @masters/api test -- --runTestsByPath src/health/health.controller.spec.ts
+  - pnpm --filter @masters/api test:e2e -- --runTestsByPath test/security-headers.e2e-spec.ts
   - curl -I https://dev.mastersrunners.com/api/v1/health
   - curl -I https://dev.mastersrunners.com/api-docs
 artifacts:
   - apps/api/src/main.ts
   - apps/api/package.json
-  - apps/api/src/health/health.controller.spec.ts
+  - apps/api/test/setup.ts
+  - apps/api/test/security-headers.e2e-spec.ts
   - docs/runbooks/deployment.md
 ---
 
@@ -34,6 +35,8 @@ Apply a centralized API response-header policy at bootstrap so public API and Sw
 
 - Current evidence from 2026-04-01: `curl -I https://dev.mastersrunners.com/api/v1/health` and `curl -I https://dev.mastersrunners.com/api-docs` show no `Strict-Transport-Security`, `Content-Security-Policy`, `X-Frame-Options`, or `Permissions-Policy`.
 - `apps/api/src/main.ts` currently configures body parsers, CORS, validation, global prefixing, and Swagger, but no centralized security-header middleware.
+- Bootstrap-level header behavior should be verified with a bootstrap-aware E2E path, not a controller unit test, because header middleware will likely live above controller scope.
+- The current E2E harness in `apps/api/test/setup.ts` also bootstraps the app separately from `main.ts`, so this task may need to extract shared bootstrap wiring rather than asserting headers from a partially configured test app.
 - Keep CORS, OAuth redirects, SSE, and Swagger UI behavior working; avoid a blanket header policy that breaks preflight requests or blocks required docs assets.
 - Prefer one bootstrap-level policy with documented exceptions over per-controller ad hoc header setting.
 
