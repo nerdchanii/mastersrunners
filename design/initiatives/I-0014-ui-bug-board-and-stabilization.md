@@ -117,6 +117,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - `tasks/todo/I-0014-160-web-crew-detail-tab-hierarchy-cleanup.md`
 - `tasks/todo/I-0014-200-web-workout-attachment-deeplink-and-visuals.md`
 - `tasks/todo/I-0014-210-docs-post-video-upload-scope.md`
+- `tasks/todo/I-0014-230-web-feedback-backoffice-access-boundary.md`
 
 ## Success Criteria
 
@@ -132,3 +133,4 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 ## Progress Notes
 
 - 2026-04-02: follow-up `I-0014-220` synced the conversations repository unit spec with the room-context fields shipped by `I-0014-020`, removing stale DM-only expectations that were failing local CI during push.
+- 2026-04-02: seeded `I-0014-230` for the remaining `UI-014` operator-tooling gap so the future feedback backoffice ships on a dedicated ops hostname with Cloudflare Access at the edge and API-side staff RBAC behind it.

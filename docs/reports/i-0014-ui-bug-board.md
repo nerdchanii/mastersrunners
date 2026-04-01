@@ -530,6 +530,7 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
   - The first implementation can prioritize authenticated submission, durable storage, and clear confirmation states before building a full backoffice.
   - Status update, 2026-04-01: `I-0014-040` adds an authenticated `/feedback` route plus durable `FeedbackSubmission` persistence so users can submit product bugs without waiting for a staff backoffice.
   - Remaining gap: operator review tooling is still a follow-up and should read the same intake stream instead of creating a second inbox.
+  - Status update, 2026-04-02: `I-0014-230` now tracks a dedicated ops hostname plus Cloudflare Access plus API RBAC approach so the future backoffice is not exposed as a public app route.
 
 ### UI-015 Post Media Visibility and Detail Parity
 
