@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth-context";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
+import { shareLink } from "@/lib/share-link";
 
 interface PostFeedCardProps {
   post: {
@@ -60,10 +61,17 @@ export default function PostFeedCard({ post, onDelete }: PostFeedCardProps) {
   const handleShare = async () => {
     const url = `${window.location.origin}/posts/${post.id}`;
     try {
-      await navigator.clipboard.writeText(url);
-      toast.success("링크가 클립보드에 복사되었습니다.");
+      const result = await shareLink({
+        title: `${post.user.name}님의 게시글`,
+        text: post.content.slice(0, 120),
+        url,
+      });
+
+      if (result === "copied") {
+        toast.success("링크가 클립보드에 복사되었습니다.");
+      }
     } catch {
-      toast.error("링크 복사에 실패했습니다.");
+      toast.error("공유에 실패했습니다.");
     }
   };
 

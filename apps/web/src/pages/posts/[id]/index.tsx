@@ -1,6 +1,6 @@
 import { ArrowLeft, Edit } from "lucide-react";
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
@@ -8,10 +8,10 @@ import { LoadingPage } from "@/components/common/LoadingPage";
 import { CommentSection } from "@/components/post/CommentSection";
 import { PostCard } from "@/components/post/PostCard";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDeletePost, usePost } from "@/hooks/usePosts";
 import { useAuth } from "@/lib/auth-context";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
+import { shareLink } from "@/lib/share-link";
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -36,6 +36,24 @@ export default function PostDetailPage() {
     setConfirmDeleteOpen(false);
   };
 
+  const handleShare = async () => {
+    const url = `${window.location.origin}/posts/${postId}`;
+
+    try {
+      const result = await shareLink({
+        title: `${post?.user.name ?? "러너"}님의 게시글`,
+        text: post?.content.slice(0, 120),
+        url,
+      });
+
+      if (result === "copied") {
+        toast.success("링크가 클립보드에 복사되었습니다.");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "공유에 실패했습니다.");
+    }
+  };
+
   if (!postId || postId === "_") {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
@@ -53,18 +71,16 @@ export default function PostDetailPage() {
 
   if (error || !post) {
     return (
-      <div className="max-w-2xl mx-auto">
-        <Card className="border-destructive/50">
-          <CardContent className="p-6">
-            <h2 className="text-lg font-semibold text-destructive mb-2">오류</h2>
-            <p className="text-destructive/80">
-              {error instanceof Error ? error.message : "게시글을 찾을 수 없습니다."}
-            </p>
-            <Button onClick={() => navigate(-1)} variant="outline" className="mt-4">
-              돌아가기
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="mx-auto max-w-2xl px-4 py-6">
+        <div className="rounded-3xl border border-destructive/40 bg-destructive/5 px-5 py-5">
+          <h2 className="mb-2 text-lg font-semibold text-destructive">오류</h2>
+          <p className="text-destructive/80">
+            {error instanceof Error ? error.message : "게시글을 찾을 수 없습니다."}
+          </p>
+          <Button onClick={() => navigate(-1)} variant="outline" className="mt-4">
+            돌아가기
+          </Button>
+        </div>
       </div>
     );
   }
@@ -89,7 +105,7 @@ export default function PostDetailPage() {
   const commentsCount = post._count?.comments ?? 0;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="mx-auto max-w-2xl px-4 py-6">
       <ConfirmDialog
         open={confirmDeleteOpen}
         onOpenChange={setConfirmDeleteOpen}
@@ -101,100 +117,119 @@ export default function PostDetailPage() {
         loading={deletePost.isPending}
       />
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between">
-        <Button onClick={() => navigate(-1)} variant="ghost" size="sm">
-          <ArrowLeft className="size-4" />
-          돌아가기
-        </Button>
-        {isOwner && (
-          <div className="flex gap-2">
-            <Button onClick={() => navigate(`/posts/${postId}/edit`)} variant="outline" size="sm">
-              <Edit className="size-4" />
-              수정
-            </Button>
-            <Button
-              onClick={() => setConfirmDeleteOpen(true)}
-              variant="destructive"
-              size="sm"
-              disabled={deletePost.isPending}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Button onClick={() => navigate(-1)} variant="ghost" size="sm" className="-ml-3">
+            <ArrowLeft className="size-4" />
+            피드
+          </Button>
+          {isOwner && (
+            <div className="flex gap-2">
+              <Button onClick={() => navigate(`/posts/${postId}/edit`)} variant="outline" size="sm">
+                <Edit className="size-4" />
+                수정
+              </Button>
+              <Button
+                onClick={() => setConfirmDeleteOpen(true)}
+                variant="destructive"
+                size="sm"
+                disabled={deletePost.isPending}
+              >
+                {deletePost.isPending ? "삭제 중..." : "삭제"}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <article
+          data-testid="post-detail-document"
+          className="overflow-hidden border-y border-border/60 bg-background"
+        >
+          <section className="px-1 py-5 sm:px-2">
+            <PostCard
+              id={post.id}
+              user={post.user}
+              content={post.content}
+              hashtags={post.hashtags}
+              images={post.images}
+              likesCount={likesCount}
+              commentsCount={commentsCount}
+              isLiked={post.isLiked ?? false}
+              createdAt={post.createdAt}
+              onShare={handleShare}
+            />
+          </section>
+
+          {flatWorkouts.length > 0 && (
+            <section
+              data-testid="post-detail-workouts"
+              className="border-t border-border/60 px-1 py-5 sm:px-2"
             >
-              {deletePost.isPending ? "삭제 중..." : "삭제"}
-            </Button>
-          </div>
-        )}
-      </div>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-base font-semibold text-foreground">첨부된 훈련 기록</h2>
+                <span className="text-xs text-muted-foreground">
+                  {flatWorkouts.length.toLocaleString()}개
+                </span>
+              </div>
 
-      <PostCard
-        id={post.id}
-        user={post.user}
-        content={post.content}
-        hashtags={post.hashtags}
-        images={post.images}
-        likesCount={likesCount}
-        commentsCount={commentsCount}
-        isLiked={post.isLiked ?? false}
-        createdAt={post.createdAt}
-      />
-
-      {flatWorkouts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">첨부된 훈련 기록</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {flatWorkouts.map(
-              (workout: {
-                id: string;
-                distance: number;
-                duration: number;
-                pace: number;
-                date: string;
-                workoutType?: { name: string };
-              }) => (
-                <div
-                  key={workout.id}
-                  className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">{workout.workoutType?.name || "런닝"}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(workout.date).toLocaleDateString("ko-KR")}
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 text-sm text-right">
-                      <div>
-                        <p className="text-muted-foreground text-xs">거리</p>
-                        <p className="font-medium">{formatDistance(workout.distance)} km</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs">시간</p>
-                        <p className="font-medium">{formatDuration(workout.duration)}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs">페이스</p>
-                        <p className="font-medium">
-                          {workout.distance > 0
-                            ? formatPace(workout.duration / (workout.distance / 1000))
-                            : "-"}{" "}
-                          /km
+              <div className="divide-y divide-border/60 border-y border-border/60">
+                {flatWorkouts.map(
+                  (workout: {
+                    id: string;
+                    distance: number;
+                    duration: number;
+                    pace: number;
+                    date: string;
+                    workoutType?: { name: string };
+                  }) => (
+                    <Link
+                      key={workout.id}
+                      to={`/workouts/${workout.id}`}
+                      className="flex flex-col gap-4 px-3 py-4 transition-colors hover:bg-accent/30 sm:flex-row sm:items-start sm:justify-between"
+                    >
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {workout.workoutType?.name || "런닝"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(workout.date).toLocaleDateString("ko-KR")}
                         </p>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              ),
-            )}
-          </CardContent>
-        </Card>
-      )}
 
-      <Card>
-        <CardContent className="pt-6">
-          <CommentSection postId={postId} />
-        </CardContent>
-      </Card>
+                      <div className="grid grid-cols-3 gap-4 text-sm sm:min-w-80 sm:text-right">
+                        <div>
+                          <p className="text-xs text-muted-foreground">거리</p>
+                          <p className="font-medium">{formatDistance(workout.distance)} km</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">시간</p>
+                          <p className="font-medium">{formatDuration(workout.duration)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">페이스</p>
+                          <p className="font-medium">
+                            {workout.distance > 0
+                              ? formatPace(workout.duration / (workout.distance / 1000))
+                              : "-"}{" "}
+                            /km
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  ),
+                )}
+              </div>
+            </section>
+          )}
+
+          <section
+            data-testid="post-detail-comments"
+            className="border-t border-border/60 px-1 py-5 sm:px-2"
+          >
+            <CommentSection postId={postId} />
+          </section>
+        </article>
+      </div>
     </div>
   );
 }

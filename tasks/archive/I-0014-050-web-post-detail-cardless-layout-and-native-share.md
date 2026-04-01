@@ -39,11 +39,11 @@ Flatten the post detail surface into a cardless layout and switch post sharing t
 
 ## Self Review
 
-- Scope and intent:
-- Source of truth:
-- Design divergence:
-- Verification:
-- Review routing:
+- Scope and intent: `/posts/:id` 상세를 stacked card에서 section/divider 기반 document layout으로 바꾸고, post 공유를 native-first helper로 통일하는 범위만 다뤘다.
+- Source of truth: `design/frontend/conventions.md`, `design/frontend/workout-experience.md`, 현재 post detail/feed 구현을 함께 맞췄다.
+- Design divergence: 없음. 기존 clipboard-first 및 stacked-card drift를 구현으로 해소했다.
+- Verification: `pnpm --filter @masters/web build`, `VITE_PORT=3000 VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web exec playwright test e2e/post-detail.spec.ts --project=chromium`, `bash scripts/check-task-review-metadata.sh`
+- Review routing: user-facing UI 변경이므로 `frontend-reviewer`, `ui-ux-reviewer`, `po-reviewer`
 
 ## Review Focus
 
@@ -62,8 +62,9 @@ Flatten the post detail surface into a cardless layout and switch post sharing t
 ## Attempt Log
 
 - 2026-04-01: created after product review called out stacked card UI and clipboard-only sharing on post detail.
+- 2026-04-01: flattened post detail into one divided document, added native-share-first helper, and kept feed/detail post sharing behavior aligned.
 
 ## Review Notes
 
-- Specialist review:
-- PO review:
+- Specialist review: post detail now reads as one flow with section dividers, attached workouts deep-link cleanly, and post share prefers the native share sheet before clipboard fallback.
+- PO review: `/posts/:id` no longer feels like “게시글 카드 + 훈련 카드 + 댓글 카드” stacked together, and mobile share behavior matches expectation better.

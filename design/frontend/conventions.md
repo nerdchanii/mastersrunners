@@ -35,6 +35,8 @@ This document defines the preferred frontend coding style for `apps/web`. Some l
 - Route-only UI stays next to the route until it proves reusable.
 - Use the existing Tailwind v4 and shadcn-style token system instead of repeating raw spacing or color values.
 - Prefer clear section components over long anonymous JSX blocks.
+- Social detail surfaces should prefer one continuous document with section dividers over stacked generic `Card` wrappers when the content is meant to read as one flow.
+- Use native share affordances when the platform supports them; clipboard-only sharing is the fallback, not the default mobile behavior.
 
 ## Naming
 

@@ -53,10 +53,14 @@ test.describe("게시글 상세", () => {
   test("이미지 첨부 게시글은 상세 페이지에서도 이미지를 유지한다", async ({ page }) => {
     await page.goto("/posts/post-1");
 
+    await expect(page.getByTestId("post-detail-document")).toBeVisible();
+
     const images = page.locator('img[alt^="게시글 이미지"]');
     await expect(images).toHaveCount(2);
     await expect(images.nth(0)).toHaveAttribute("src", /ordered-first\.jpg/);
     await expect(images.nth(1)).toHaveAttribute("src", /ordered-second\.jpg/);
-    await expect(page.getByText("첨부된 훈련 기록")).toBeVisible();
+    await expect(page.getByTestId("post-detail-workouts")).toBeVisible();
+    await expect(page.getByTestId("post-detail-comments")).toBeVisible();
+    await expect(page.getByRole("button", { name: "공유" })).toBeVisible();
   });
 });
