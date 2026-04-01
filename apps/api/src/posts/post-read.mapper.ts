@@ -10,7 +10,7 @@ type PostWithImages = {
   images?: RawPostImage[] | null;
 };
 
-export type PostReadImage = {
+type PostReadImage = {
   id: string;
   url: string;
   order: number;
