@@ -17,7 +17,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   logout: () => void;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,7 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   isAuthenticated: false,
   logout: () => {},
-  refreshUser: async () => {},
+  refreshUser: async () => null,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -33,18 +33,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
-    if (!api.isAuthenticated()) {
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const userData = await api.fetch<User>("/auth/me");
+      const userData = await api.fetchSession<User>("/auth/me");
       setUser(userData);
+      return userData;
     } catch {
-      api.clearTokens();
       setUser(null);
+      return null;
     } finally {
       setIsLoading(false);
     }
@@ -67,8 +62,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    api.clearTokens();
+    void api.logout();
     setUser(null);
+    setIsLoading(false);
     window.location.href = "/login";
   }, []);
 

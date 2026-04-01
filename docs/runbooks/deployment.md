@@ -92,6 +92,7 @@ This runbook explains how deployment works in this repository, what to verify be
 - The deploy workflow still needs Secret Manager access to `DIRECT_URL` so it can run `prisma migrate deploy` and `prisma db seed` before shipping a new revision.
 - Automated branch deploy migrations intentionally allow only a narrow additive SQL subset; anything outside that subset must use a manual rollout task instead of relying on regex guesses about backward compatibility.
 - `FRONTEND_URL` is required for branch deploy boot because the API uses it for CORS and OAuth redirect targets.
+- Browser auth now also depends on `FRONTEND_URL` because the API derives cookie redirect and `Secure` behavior from it.
 - Public feature exposure is controlled by the repo-tracked runtime config module at `apps/api/src/config/feature-flags.ts`.
 - Provider credentials still live in Secret Manager and callback URLs still live in GitHub environment variables.
 - If Kakao is enabled in the repo-tracked runtime config, `KAKAO_CALLBACK_URL` must be present in GitHub vars and the runtime must also receive `KAKAO_CLIENT_ID`.
@@ -103,6 +104,11 @@ This runbook explains how deployment works in this repository, what to verify be
   - challenges disabled
   - events disabled
 - If Kakao or Google is missing from `/config/public`, first confirm the repo-tracked runtime config enables it, then confirm the matching callback URL variable exists in GitHub and the matching credentials exist in Secret Manager.
+- Browser auth transport contract for current deploys:
+  - OAuth callback redirects never include app tokens in the URL
+  - browser auth tokens live only in `HttpOnly` cookies scoped to `/api/v1`
+  - the SPA must call the API with credentials included and cannot rely on `localStorage` token persistence
+  - SSE connections also depend on browser cookies, so same-domain `/api/*` routing or localhost CORS+credentials must stay aligned with `FRONTEND_URL`
 
 ### Secret Manager Bootstrap
 

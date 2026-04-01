@@ -66,7 +66,6 @@ async function bootstrap() {
     .setTitle("Masters Runners API")
     .setDescription("러닝 커뮤니티 API")
     .setVersion("1.0")
-    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app as any, swaggerConfig);
   SwaggerModule.setup("api-docs", app as any, document);

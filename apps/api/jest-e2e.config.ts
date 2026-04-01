@@ -5,7 +5,7 @@ const config: Config = {
   rootDir: "test",
   testRegex: ".*\\.e2e-spec\\.ts$",
   transform: {
-    "^.+\\.ts$": [
+    "^.+\\.[tj]s$": [
       "@swc/jest",
       {
         jsc: {

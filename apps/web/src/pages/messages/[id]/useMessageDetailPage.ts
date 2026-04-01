@@ -126,14 +126,9 @@ export function useMessageDetailPage(id?: string) {
       return;
     }
 
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      return;
-    }
-
-    const eventSource = new EventSource(
-      `${API_BASE}/conversations/sse?token=${encodeURIComponent(token)}`,
-    );
+    const eventSource = new EventSource(`${API_BASE}/conversations/sse`, {
+      withCredentials: true,
+    });
 
     eventSource.addEventListener("new-message", (event) => {
       try {

@@ -8,27 +8,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const API_BASE = "http://localhost:4000/api/v1";
 
 test.describe("파일 업로드 → 워크아웃 생성 E2E", () => {
-  let accessToken: string;
-  let refreshToken: string;
-
-  test.beforeAll(async ({ request }) => {
-    const res = await request.post(`${API_BASE}/auth/dev-login`);
-    expect(res.ok()).toBeTruthy();
-    const body = await res.json();
-    accessToken = body.accessToken;
-    refreshToken = body.refreshToken;
-    expect(accessToken).toBeTruthy();
-  });
-
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.evaluate(
-      ({ at, rt }) => {
-        window.localStorage.setItem("accessToken", at);
-        window.localStorage.setItem("refreshToken", rt);
-      },
-      { at: accessToken, rt: refreshToken },
-    );
+    const res = await page.request.post(`${API_BASE}/auth/dev-login`);
+    expect(res.ok()).toBeTruthy();
   });
 
   test("FIT 파일 업로드 → 생성 → 상세 페이지에서 지도 표시", async ({ page }) => {
@@ -45,9 +27,7 @@ test.describe("파일 업로드 → 워크아웃 생성 E2E", () => {
     await expect(page.getByText("저장됨")).toBeVisible();
 
     // Get the created workout ID from the API
-    const workoutsRes = await page.request.get(`${API_BASE}/workouts`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    const workoutsRes = await page.request.get(`${API_BASE}/workouts`);
     const workouts = await workoutsRes.json();
     const latestWorkout = workouts[0];
     expect(latestWorkout).toBeTruthy();
@@ -75,9 +55,7 @@ test.describe("파일 업로드 → 워크아웃 생성 E2E", () => {
     await expect(page.getByText("저장됨")).toBeVisible();
 
     // Get created workout
-    const workoutsRes = await page.request.get(`${API_BASE}/workouts`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    const workoutsRes = await page.request.get(`${API_BASE}/workouts`);
     const workouts = await workoutsRes.json();
     const latestWorkout = workouts[0];
     expect(latestWorkout).toBeTruthy();

@@ -51,7 +51,7 @@ Direct messaging is implemented as an authenticated conversations module with cu
 ## Realtime Boundary
 
 - Realtime delivery is SSE, not WebSocket.
-- SSE endpoints are public at the route layer but protected by query-token auth through `JwtSseGuard`.
+- SSE endpoints are public at the route layer but protected by cookie auth through `JwtSseGuard`.
 - Message creation persists first, then fan-out happens as a non-blocking side effect.
 - One caller may hold multiple concurrent SSE subscriptions for the same user, such as the shell unread listener plus the direct-message detail stream.
 - SSE registries now keep per-connection heartbeat traffic and explicit close cleanup so Cloudflare or Cloud Run idle/reconnect behavior does not leave stale in-memory listeners behind.

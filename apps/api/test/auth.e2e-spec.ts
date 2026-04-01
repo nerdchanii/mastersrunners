@@ -1,6 +1,8 @@
 import type { INestApplication } from "@nestjs/common";
 import request from "supertest";
 
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "../src/auth/auth-cookie.util";
+
 import { authRequest, loginDevUser } from "./helpers/auth.helper";
 import { cleanDatabase, closeTestApp, createTestApp } from "./setup";
 
@@ -17,17 +19,13 @@ describe("Auth (E2E)", () => {
   });
 
   describe("POST /api/v1/auth/dev-login", () => {
-    it("should return access and refresh tokens", async () => {
-      const res = await request(app.getHttpServer()).post("/api/v1/auth/dev-login").expect(201);
+    it("should set access and refresh cookies", async () => {
+      const res = await request(app.getHttpServer()).post("/api/v1/auth/dev-login").expect(204);
 
-      expect(res.body).toHaveProperty("accessToken");
-      expect(res.body).toHaveProperty("refreshToken");
-      expect(typeof res.body.accessToken).toBe("string");
-      expect(typeof res.body.refreshToken).toBe("string");
-
-      // Tokens should be valid JWTs (3 dot-separated parts)
-      expect(res.body.accessToken.split(".")).toHaveLength(3);
-      expect(res.body.refreshToken.split(".")).toHaveLength(3);
+      expect(res.text).toBe("");
+      const setCookie = res.headers["set-cookie"]?.join("\n") ?? "";
+      expect(setCookie).toContain(`${ACCESS_TOKEN_COOKIE}=`);
+      expect(setCookie).toContain(`${REFRESH_TOKEN_COOKIE}=`);
     });
 
     it("should return the same user on repeated dev-login calls", async () => {
@@ -39,37 +37,46 @@ describe("Auth (E2E)", () => {
   });
 
   describe("POST /api/v1/auth/refresh", () => {
-    it("should issue new tokens with a valid refresh token", async () => {
-      const { refreshToken } = await loginDevUser(app);
+    it("should rotate cookies with a valid refresh session", async () => {
+      const session = await loginDevUser(app);
 
-      const res = await request(app.getHttpServer())
-        .post("/api/v1/auth/refresh")
-        .send({ refreshToken })
-        .expect(201);
+      const res = await authRequest(app, session).post("/api/v1/auth/refresh").expect(204);
 
-      expect(res.body).toHaveProperty("accessToken");
-      expect(res.body).toHaveProperty("refreshToken");
-      // New tokens should be different from the original
-      expect(typeof res.body.accessToken).toBe("string");
+      expect(res.text).toBe("");
+      const setCookie = res.headers["set-cookie"]?.join("\n") ?? "";
+      expect(setCookie).toContain(`${ACCESS_TOKEN_COOKIE}=`);
+      expect(setCookie).toContain(`${REFRESH_TOKEN_COOKIE}=`);
     });
 
     it("should reject an invalid refresh token", async () => {
       await request(app.getHttpServer())
         .post("/api/v1/auth/refresh")
-        .send({ refreshToken: "invalid.token.here" })
+        .set("Cookie", [`${REFRESH_TOKEN_COOKIE}=invalid.token.here`])
         .expect(401);
     });
 
-    it("should reject missing refresh token", async () => {
-      await request(app.getHttpServer()).post("/api/v1/auth/refresh").send({}).expect(400);
+    it("should reject a missing refresh cookie", async () => {
+      await request(app.getHttpServer()).post("/api/v1/auth/refresh").expect(401);
+    });
+  });
+
+  describe("POST /api/v1/auth/logout", () => {
+    it("should clear auth cookies", async () => {
+      const session = await loginDevUser(app);
+
+      const res = await authRequest(app, session).post("/api/v1/auth/logout").expect(204);
+
+      const setCookie = res.headers["set-cookie"]?.join("\n") ?? "";
+      expect(setCookie).toContain(`${ACCESS_TOKEN_COOKIE}=;`);
+      expect(setCookie).toContain(`${REFRESH_TOKEN_COOKIE}=;`);
     });
   });
 
   describe("GET /api/v1/auth/me", () => {
     it("should return current user info with valid token", async () => {
-      const { accessToken } = await loginDevUser(app);
+      const session = await loginDevUser(app);
 
-      const res = await authRequest(app, accessToken).get("/api/v1/auth/me").expect(200);
+      const res = await authRequest(app, session).get("/api/v1/auth/me").expect(200);
 
       expect(res.body).toHaveProperty("id");
       expect(res.body).toHaveProperty("email", "dev@mastersrunners.local");
@@ -80,10 +87,19 @@ describe("Auth (E2E)", () => {
       await request(app.getHttpServer()).get("/api/v1/auth/me").expect(401);
     });
 
-    it("should reject requests with invalid token", async () => {
+    it("should reject requests with an invalid access cookie", async () => {
       await request(app.getHttpServer())
         .get("/api/v1/auth/me")
-        .set("Authorization", "Bearer invalid-token")
+        .set("Cookie", [`${ACCESS_TOKEN_COOKIE}=invalid-token`])
+        .expect(401);
+    });
+
+    it("should reject bearer auth even with a valid JWT", async () => {
+      const session = await loginDevUser(app);
+
+      await request(app.getHttpServer())
+        .get("/api/v1/auth/me")
+        .set("Authorization", `Bearer ${session.accessToken}`)
         .expect(401);
     });
   });

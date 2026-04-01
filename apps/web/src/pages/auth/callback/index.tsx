@@ -1,24 +1,33 @@
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-import { applyAuthCallbackTokens } from "./auth-callback-session";
+import { useAuth } from "@/lib/auth-context";
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const { refreshUser } = useAuth();
 
   useEffect(() => {
-    const accessToken = searchParams.get("accessToken");
-    const refreshToken = searchParams.get("refreshToken");
+    let cancelled = false;
 
-    if (accessToken && refreshToken) {
-      applyAuthCallbackTokens(accessToken, refreshToken);
-      navigate("/", { replace: true });
-    } else {
-      navigate("/login?error=auth_failed", { replace: true });
-    }
-  }, [searchParams, navigate]);
+    void (async () => {
+      const user = await refreshUser();
+      if (cancelled) {
+        return;
+      }
+
+      if (user) {
+        navigate("/", { replace: true });
+      } else {
+        navigate("/login?error=auth_failed", { replace: true });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate, refreshUser]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4">

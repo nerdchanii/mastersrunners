@@ -40,13 +40,10 @@ export default function Header() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const token = localStorage.getItem("accessToken");
-    if (!token) return;
-
     // DM SSE — 새 메시지 수신 시 unread 갱신
-    const dmEventSource = new EventSource(
-      `${API_BASE}/conversations/sse?token=${encodeURIComponent(token)}`,
-    );
+    const dmEventSource = new EventSource(`${API_BASE}/conversations/sse`, {
+      withCredentials: true,
+    });
     dmEventSource.addEventListener("new-message", () => {
       queryClient.invalidateQueries({ queryKey: messageKeys.unreadCount() });
       queryClient.invalidateQueries({ queryKey: messageKeys.conversations() });
@@ -58,9 +55,9 @@ export default function Header() {
     // Notification SSE — 새 알림 수신 시 TanStack Query 캐시 무효화
     let notifEventSource: EventSource | null = null;
     try {
-      notifEventSource = new EventSource(
-        `${API_BASE}/notifications/sse?token=${encodeURIComponent(token)}`,
-      );
+      notifEventSource = new EventSource(`${API_BASE}/notifications/sse`, {
+        withCredentials: true,
+      });
       notifEventSource.addEventListener("notification", () => {
         queryClient.invalidateQueries({ queryKey: notificationKeys.all });
       });

@@ -25,20 +25,14 @@ export async function setupAuth(page: Page) {
   // Mock auth refresh endpoint
   await page.route(`${API_BASE}/auth/refresh`, (route) => {
     route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        accessToken: "mock-access-token-new",
-        refreshToken: "mock-refresh-token-new",
-      }),
+      status: 204,
     });
   });
 
-  // Navigate to a page on the origin first to set localStorage
-  await page.goto("/login");
-  await page.evaluate(() => {
-    window.localStorage.setItem("accessToken", "mock-access-token");
-    window.localStorage.setItem("refreshToken", "mock-refresh-token");
+  await page.route(`${API_BASE}/auth/logout`, (route) => {
+    route.fulfill({
+      status: 204,
+    });
   });
 }
 

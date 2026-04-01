@@ -1,11 +1,12 @@
 ---
 doc_state: current
 owner: architecture
-last_verified: 2026-03-12
+last_verified: 2026-04-01
 sources:
   - apps/api/src/uploads/uploads.module.ts
   - apps/api/src/uploads/uploads.service.ts
   - apps/api/src/uploads/storage/storage-adapter.interface.ts
+  - apps/api/src/auth/guards/jwt-sse.guard.ts
   - apps/api/src/conversations/conversations.controller.ts
   - apps/api/src/conversations/conversations.service.ts
   - apps/api/src/conversations/conversations-sse.service.ts
@@ -57,5 +58,5 @@ At the server boundary, conversation SSE exists as one endpoint for conversation
 ## Current Constraints
 
 - Realtime delivery is process-local in memory. There is no shared pub/sub or Redis fan-out in the current repo implementation.
-- SSE auth uses `?token=` rather than the normal `Authorization` header because `EventSource` cannot set custom headers directly.
+- SSE auth uses the same access-token cookie as normal API requests, and the web opens those streams with `withCredentials`.
 - Realtime ownership is split across page and layout components, and the desktop shell plus direct-message detail can subscribe to the same DM SSE stream at the same time.

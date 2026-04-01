@@ -3,6 +3,8 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { Request } from "express";
 
+import { extractAccessTokenFromRequest } from "../auth-cookie.util.js";
+
 @Injectable()
 export class JwtSseGuard implements CanActivate {
   constructor(
@@ -12,7 +14,7 @@ export class JwtSseGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const token = this.extractTokenFromQuery(request);
+    const token = this.extractAccessToken(request);
 
     if (!token) {
       throw new UnauthorizedException("No token provided");
@@ -31,8 +33,7 @@ export class JwtSseGuard implements CanActivate {
     }
   }
 
-  private extractTokenFromQuery(request: Request): string | undefined {
-    const token = request.query.token;
-    return typeof token === "string" ? token : undefined;
+  private extractAccessToken(request: Request): string | undefined {
+    return extractAccessTokenFromRequest(request);
   }
 }
