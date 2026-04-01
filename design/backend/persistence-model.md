@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-03-31
+last_verified: 2026-04-01
 sources:
   - packages/database/package.json
   - packages/database/src/index.ts
@@ -11,6 +11,9 @@ sources:
   - apps/api/src/workouts/workouts.service.ts
   - apps/api/src/workouts/repositories/workout.repository.ts
   - apps/api/src/profile/profile.service.ts
+  - apps/api/src/feedback/feedback.controller.ts
+  - apps/api/src/feedback/feedback.service.ts
+  - apps/api/src/feedback/repositories/feedback.repository.ts
 ---
 
 # Persistence Model
@@ -39,6 +42,21 @@ The schema currently concentrates multiple domains in one relational model:
 - crews, attendance, boards, bans
 - challenges and events
 - conversations, messages, notifications
+- feedback submissions for authenticated bug and improvement intake
+
+## Feedback Intake Persistence
+
+- `FeedbackSubmission` is the durable intake sink for the first in-product feedback flow.
+- Every submission belongs to one authenticated `User`.
+- The current stored fields are:
+  - category
+  - title
+  - description
+  - optional `currentPath`
+  - optional `userAgent`
+  - workflow `status`
+  - timestamps
+- The first version is intentionally intake-only. Operator review surfaces should read this same table instead of creating a second feedback pipeline later.
 
 ## Transaction Model
 

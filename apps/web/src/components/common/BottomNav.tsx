@@ -1,4 +1,4 @@
-import { Bell, Home, MessageCircle, Plus, Trophy, User, Users } from "lucide-react";
+import { Bell, Bug, Home, MessageCircle, Plus, Trophy, User, Users } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
@@ -106,6 +106,22 @@ export function BottomNav() {
           })}
         </div>
       </nav>
+
+      {/* FAB - 포스트 작성 버튼 (모바일 하단 우측) */}
+      {isAuthenticated && (
+        <Link
+          to="/feedback"
+          state={{ sourcePath: pathname }}
+          className={cn(
+            "fixed bottom-20 left-4 z-50 inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background/95 px-3 py-2 text-xs font-medium text-foreground shadow-sm backdrop-blur-lg",
+            "transition-colors hover:bg-accent md:hidden",
+          )}
+          aria-label="피드백 보내기"
+        >
+          <Bug className="size-3.5" />
+          피드백
+        </Link>
+      )}
 
       {/* FAB - 포스트 작성 버튼 (모바일 하단 우측) */}
       {isAuthenticated && (

@@ -524,10 +524,12 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
 - Severity: `P1`
 - Frequency: `always`
 - Coverage status:
-  - No focused coverage exists because the intake surface does not exist yet.
+  - The first intake surface now exists, but no focused end-to-end coverage exists yet for submission discovery or confirmation UX.
 - Candidate fix pack: `feedback-intake-and-ops-readiness`
 - Notes:
   - The first implementation can prioritize authenticated submission, durable storage, and clear confirmation states before building a full backoffice.
+  - Status update, 2026-04-01: `I-0014-040` adds an authenticated `/feedback` route plus durable `FeedbackSubmission` persistence so users can submit product bugs without waiting for a staff backoffice.
+  - Remaining gap: operator review tooling is still a follow-up and should read the same intake stream instead of creating a second inbox.
 
 ### UI-015 Post Media Visibility and Detail Parity
 

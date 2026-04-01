@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, MessageCircle, Monitor, Moon, Sun } from "lucide-react";
+import { Bell, Bug, MessageCircle, Monitor, Moon, Sun } from "lucide-react";
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -153,6 +153,20 @@ export default function Header() {
                     {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
                   </Badge>
                 )}
+              </Link>
+
+              <Link
+                to="/feedback"
+                state={{ sourcePath: pathname }}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+                  isActive("/feedback") && "bg-accent text-accent-foreground",
+                )}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <Bug className="size-3.5" />
+                  피드백
+                </span>
               </Link>
 
               <button

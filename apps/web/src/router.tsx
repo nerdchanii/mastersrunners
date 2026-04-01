@@ -48,6 +48,7 @@ const EditProfilePage = lazy(() => import("@/pages/settings/profile"));
 const NotificationsPage = lazy(() => import("@/pages/notifications"));
 const SearchPage = lazy(() => import("@/pages/search"));
 const OnboardingPage = lazy(() => import("@/pages/onboarding"));
+const FeedbackPage = lazy(() => import("@/pages/feedback"));
 
 /** 인증 가드 - 미인증 시 /login으로 리다이렉트 */
 function ProtectedRoute() {
@@ -219,6 +220,7 @@ export const router = createBrowserRouter([
               { path: "/messages", element: <MessagesPage /> },
               { path: "/messages/:id", element: <MessageDetailPage /> },
               { path: "/notifications", element: <NotificationsPage /> },
+              { path: "/feedback", element: <FeedbackPage /> },
               { path: "/onboarding", element: <OnboardingPage /> },
             ],
           },

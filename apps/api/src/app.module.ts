@@ -27,6 +27,7 @@ import { CrewsModule } from "./crews/crews.module.js";
 import { DatabaseModule } from "./database/database.module.js";
 import { EventsModule } from "./events/events.module.js";
 import { FeedModule } from "./feed/feed.module.js";
+import { FeedbackModule } from "./feedback/feedback.module.js";
 import { FollowModule } from "./follow/follow.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { NotificationsModule } from "./notifications/notifications.module.js";
@@ -60,6 +61,7 @@ import { WorkoutsModule } from "./workouts/workouts.module.js";
     CrewBoardsModule,
     ChallengesModule,
     EventsModule,
+    FeedbackModule,
     UploadsModule,
     ProfileModule,
     HealthModule,

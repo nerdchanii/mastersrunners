@@ -53,6 +53,7 @@ Protected routes include:
 - `/settings/profile`
 - `/messages/*`
 - `/notifications`
+- `/feedback`
 - crew activity edit/chat/check-in routes
 
 Most route modules are lazy loaded with `lazy(() => import(...))`.
@@ -68,3 +69,4 @@ Most route modules are lazy loaded with `lazy(() => import(...))`.
 
 - Route path and file path are not always 1:1. For example, `/workouts/:id` resolves to `pages/workouts/detail/index.tsx`.
 - Some large route files still mix orchestration and view logic; `I-0007` is the readability follow-up for that.
+- Authenticated shell entry points now include a dedicated feedback handoff in the desktop header and mobile bottom-shell layer so users can file bugs without leaving the product.
