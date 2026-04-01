@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, Bug, MessageCircle, Monitor, Moon, Sun } from "lucide-react";
+import { Bell, Bug, MessageCircle, Monitor, Moon, Search, Sun } from "lucide-react";
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -99,6 +99,20 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Link
+            to="/search"
+            data-testid="desktop-search-link"
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full border border-border/70 px-3 py-2 text-sm font-medium transition-colors",
+              isActive("/search")
+                ? "border-primary/30 bg-accent text-foreground"
+                : "text-muted-foreground hover:bg-accent/60 hover:text-accent-foreground",
+            )}
+          >
+            <Search className="size-4" />
+            <span className="hidden lg:inline">러너 검색</span>
+          </Link>
+
           {/* 테마 토글 */}
           <button
             type="button"

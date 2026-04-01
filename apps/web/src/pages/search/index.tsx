@@ -189,21 +189,29 @@ export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") === "hashtag" ? "hashtag" : "user";
   const initialHashtag = searchParams.get("hashtag") ?? "";
+  const initialQuery = initialTab === "user" ? (searchParams.get("q") ?? "") : "";
 
   const [activeTab, setActiveTab] = useState<"user" | "hashtag">(initialTab);
-  const [query, setQuery] = useState(initialTab === "user" ? (searchParams.get("q") ?? "") : "");
+  const [query, setQuery] = useState(initialQuery);
   const [hashtagQuery, setHashtagQuery] = useState(initialHashtag);
-  const [debouncedQuery, setDebouncedQuery] = useState(query);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [debouncedHashtag, setDebouncedHashtag] = useState(initialHashtag);
 
   // URL에서 hashtag param이 변경될 때 동기화
   useEffect(() => {
+    const nextQuery = searchParams.get("q") ?? "";
     const htag = searchParams.get("hashtag") ?? "";
     const tab = searchParams.get("tab");
+    setQuery(nextQuery);
+    setDebouncedQuery(nextQuery);
     if (htag) {
       setHashtagQuery(htag);
       setDebouncedHashtag(htag);
       setActiveTab("hashtag");
+    }
+    if (!htag) {
+      setHashtagQuery("");
+      setDebouncedHashtag("");
     }
     if (tab === "user") setActiveTab("user");
   }, [searchParams]);
@@ -237,6 +245,17 @@ export default function SearchPage() {
     setSearchParams(params, { replace: true });
   };
 
+  const handleUserInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setQuery(val);
+
+    const params = new URLSearchParams(searchParams);
+    params.set("tab", "user");
+    if (val.trim()) params.set("q", val);
+    else params.delete("q");
+    setSearchParams(params, { replace: true });
+  };
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
@@ -263,8 +282,8 @@ export default function SearchPage() {
             <Input
               type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="이름 또는 이메일로 검색..."
+              onChange={handleUserInputChange}
+              placeholder="러너 이름 또는 이메일로 검색..."
               className="pl-9"
               autoFocus={activeTab === "user"}
             />
@@ -273,9 +292,12 @@ export default function SearchPage() {
           {debouncedQuery.trim().length > 0 ? (
             <UserResults query={debouncedQuery} />
           ) : (
-            <div className="text-center py-12">
-              <Search className="size-10 mx-auto mb-3 text-muted-foreground/50" />
-              <p className="text-muted-foreground text-sm">검색어를 입력하세요.</p>
+            <div className="rounded-3xl border border-border/60 bg-muted/20 px-5 py-8 text-center">
+              <Search className="mx-auto mb-3 size-10 text-muted-foreground/50" />
+              <p className="text-sm font-medium text-foreground">러너를 바로 찾아보세요</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                이름이나 이메일을 입력하면 프로필로 바로 이동할 수 있습니다.
+              </p>
             </div>
           )}
         </TabsContent>

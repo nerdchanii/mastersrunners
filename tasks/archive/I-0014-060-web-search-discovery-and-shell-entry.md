@@ -39,11 +39,11 @@ Make runner search feel present in the main app shell instead of hidden behind r
 
 ## Self Review
 
-- Scope and intent:
-- Source of truth:
-- Design divergence:
-- Verification:
-- Review routing:
+- Scope and intent: mobile/desktop shell에서 `/search` 진입을 드러내고, 검색어를 URL에 반영해 재진입성을 보강하는 범위로 제한했다.
+- Source of truth: `design/frontend/app-shell-routing.md`, 현재 shell component 구현, `/search` route behavior를 함께 맞췄다.
+- Design divergence: 없음. 기존 “존재하지만 숨어 있음” 상태를 shell-level entry로 해소했다.
+- Verification: `pnpm --filter @masters/web build`, `VITE_PORT=3000 VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web exec playwright test e2e/crew-explore.spec.ts --project=chromium`, `bash scripts/check-task-review-metadata.sh`
+- Review routing: user-facing UI 변경이므로 `frontend-reviewer`, `ui-ux-reviewer`, `po-reviewer`
 
 ## Review Focus
 
@@ -61,8 +61,9 @@ Make runner search feel present in the main app shell instead of hidden behind r
 ## Attempt Log
 
 - 2026-04-01: created from the UI bug board because product review reported search as effectively missing.
+- 2026-04-01: added shell-level search entry on desktop and mobile, then mirrored user search queries into the URL so returning to search preserves context.
 
 ## Review Notes
 
-- Specialist review:
-- PO review:
+- Specialist review: search now has explicit shell entry on both desktop and mobile, and the search page preserves query context without expanding scope into result redesign.
+- PO review: runner search now reads like a core action instead of a hidden route or easter egg.

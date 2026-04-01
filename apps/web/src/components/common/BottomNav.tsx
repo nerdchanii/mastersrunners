@@ -1,4 +1,4 @@
-import { Bell, Bug, Home, MessageCircle, Plus, Trophy, User, Users } from "lucide-react";
+import { Bell, Bug, Home, MessageCircle, Plus, Search, User, Users } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
@@ -19,11 +19,18 @@ type NavItem = {
   label: string;
 };
 
-const baseNavItems: NavItem[] = [
+const mobileNavItems: NavItem[] = [
   {
     href: "/feed",
     label: "홈",
     icon: Home,
+    auth: false,
+    badge: null as "messages" | "notifications" | null,
+  },
+  {
+    href: "/search",
+    label: "검색",
+    icon: Search,
     auth: false,
     badge: null as "messages" | "notifications" | null,
   },
@@ -33,14 +40,6 @@ const baseNavItems: NavItem[] = [
     icon: Users,
     auth: false,
     badge: null as "messages" | "notifications" | null,
-  },
-  {
-    href: "/challenges",
-    label: "챌린지",
-    icon: Trophy,
-    auth: false,
-    badge: null as "messages" | "notifications" | null,
-    feature: "challenges" as PublicFeatureName,
   },
   {
     href: "/messages",
@@ -72,7 +71,7 @@ export function BottomNav() {
   const unread = useUnreadCounts();
   const config = runtimeConfig ?? defaultPublicRuntimeConfig;
 
-  const visibleItems = baseNavItems.filter(
+  const visibleItems = mobileNavItems.filter(
     (item) => (!item.auth || isAuthenticated) && (!item.feature || config.features[item.feature]),
   );
 
@@ -89,6 +88,7 @@ export function BottomNav() {
               <Link
                 key={item.href}
                 to={item.href}
+                data-testid={item.href === "/search" ? "mobile-search-link" : undefined}
                 className={cn(
                   "relative flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-lg transition-colors",
                   isActive ? "text-foreground" : "text-muted-foreground",
