@@ -30,6 +30,6 @@ describe("Security headers (E2E)", () => {
     expect(res.headers["x-frame-options"]).toBe("DENY");
     expect(res.headers["permissions-policy"]).toContain("microphone=()");
     expect(res.headers["content-security-policy"]).toContain("default-src 'self'");
-    expect(res.headers["content-security-policy"]).toContain("script-src 'self' 'unsafe-inline'");
+    expect(res.headers["content-security-policy"]).toContain("script-src 'self'");
   });
 });

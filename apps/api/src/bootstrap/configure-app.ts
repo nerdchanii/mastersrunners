@@ -6,6 +6,8 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { createSecurityHeadersMiddleware } from "./security-headers.js";
 
 const LOCALHOST_ORIGIN = /^http:\/\/localhost:\d+$/;
+const JSON_BODY_LIMIT = "1mb";
+const RAW_BODY_LIMIT = "50mb";
 
 function resolveAllowedOrigin(
   frontendUrl: string,
@@ -34,11 +36,11 @@ export function configureApp(app: NestExpressApplication) {
   const config = app.get(ConfigService);
   const frontendUrl = config.get<string>("FRONTEND_URL", "http://localhost:3000");
 
-  app.useBodyParser("json", { limit: "50mb" });
-  app.useBodyParser("urlencoded", { extended: true, limit: "50mb" });
+  app.useBodyParser("json", { limit: JSON_BODY_LIMIT });
+  app.useBodyParser("urlencoded", { extended: true, limit: JSON_BODY_LIMIT });
   app.useBodyParser("raw", {
     type: ["application/octet-stream", "image/*", "application/gpx+xml"],
-    limit: "50mb",
+    limit: RAW_BODY_LIMIT,
   });
 
   app.use(createSecurityHeadersMiddleware());
