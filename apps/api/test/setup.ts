@@ -9,12 +9,13 @@ process.env.JWT_REFRESH_TTL = process.env.JWT_REFRESH_TTL || "604800";
 
 import "reflect-metadata";
 
-import { type INestApplication, ValidationPipe } from "@nestjs/common";
+import type { INestApplication } from "@nestjs/common";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import { Test } from "@nestjs/testing";
 
-import { AppModule } from "../src/app.module";
-import { AllExceptionsFilter } from "../src/common/filters/http-exception.filter";
-import { DatabaseService } from "../src/database/database.service";
+import { AppModule } from "../src/app.module.js";
+import { configureApp } from "../src/bootstrap/configure-app.js";
+import { DatabaseService } from "../src/database/database.service.js";
 
 let app: INestApplication;
 let dbService: DatabaseService;
@@ -28,20 +29,12 @@ export async function createTestApp(): Promise<INestApplication> {
     imports: [AppModule],
   }).compile();
 
-  app = moduleRef.createNestApplication();
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
-
-  app.useGlobalFilters(new AllExceptionsFilter());
-  app.setGlobalPrefix("api/v1", {
-    exclude: ["health", "api/v1/health"],
+  app = moduleRef.createNestApplication<NestExpressApplication>({
+    bodyParser: false,
+    rawBody: true,
+    bufferLogs: true,
   });
+  configureApp(app);
 
   await app.init();
 

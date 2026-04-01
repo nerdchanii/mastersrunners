@@ -10,6 +10,7 @@ This runbook explains how deployment works in this repository, what to verify be
 - Production-like local stack: `docker-compose.prod.yml`
 - Post-deploy verification script: `scripts/verify-deployment.sh`
 - Cloudflare Pages web build entrypoint: `package.json` -> `pnpm build:web`
+- Web response-header contract: `apps/web/public/_headers`
 
 ## Deployment Surfaces
 
@@ -44,6 +45,7 @@ This runbook explains how deployment works in this repository, what to verify be
 - Database migrations required by the release are already prepared.
 - Any migration SQL in the release stays inside the additive-only automated subset: new tables, new non-unique indexes, new nullable or default-backed columns, or default-relaxing alters. Renames, drops, unique/constraint-tightening changes, `SET NOT NULL`, and unconstrained `ADD COLUMN ... NOT NULL` changes need a separate manual rollout task.
 - Health verification should target `GET /api/v1/health`; legacy `GET /health` remains available for compatibility.
+- Deployment verification should prove repo-tracked response headers on the direct API origin and, when `WEB_VERIFY_URL` is available, on the Pages web root.
 - Runbook and workflow still describe the same deployment path.
 
 ## Environment Contract
@@ -161,9 +163,14 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
 - Set the Pages build command to `pnpm build:web`
 - Set the Pages build output directory to `apps/web/dist`
 - Treat Pages environment variables as public build-time config.
+- Pages should also honor the repo-tracked response-header policy from `apps/web/public/_headers`.
 - Required Pages variable for every non-local deployment:
   - `VITE_API_URL`
 - Never store OAuth secrets, JWT secrets, database credentials, or R2 secrets in Pages env.
+- Current header posture for Pages:
+  - `Content-Security-Policy` is defined in `_headers` for the SPA document surface.
+  - `Strict-Transport-Security` is repo-tracked with `max-age=31536000`.
+  - do not add `includeSubDomains` or `preload` while `mastersrunners.com` and `www.mastersrunners.com` still point at the placeholder site.
 
 ### Current Host Matrix
 
@@ -215,6 +222,18 @@ docker compose --env-file .env.production -f docker-compose.prod.yml up -d --bui
 ```bash
 pnpm deploy:verify -- http://localhost:4000
 ```
+
+- Local API-only verification skips the web-root header check unless `WEB_VERIFY_URL` is set.
+- Public lane verification should pass both the direct API origin and the Pages host:
+
+```bash
+WEB_VERIFY_URL=https://dev.mastersrunners.com pnpm deploy:verify -- https://SERVICE_URL.run.app
+```
+
+- `scripts/verify-deployment.sh` now checks:
+  - `GET /api/v1/health` reachability and required headers
+  - `/api-docs` headers on the direct API origin
+  - web-root headers on `WEB_VERIFY_URL` when that host is provided or when the base URL is already the public app host
 
 ### 4. Check logs
 

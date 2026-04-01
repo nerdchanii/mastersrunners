@@ -3,7 +3,7 @@ id: I-0006-130
 title: Add web response security headers for Cloudflare Pages
 parent: I-0006-guardrail-hardening
 scope: web
-owner: unassigned
+owner: codex
 reviewers:
   - frontend-reviewer
   - harness-reviewer
@@ -32,17 +32,17 @@ Version the Cloudflare Pages response-header policy in the repo so the dev web h
 ## Notes
 
 - Current evidence from 2026-04-01: `curl -I https://dev.mastersrunners.com` returned `referrer-policy` and `x-content-type-options`, but not `Strict-Transport-Security`, `Content-Security-Policy`, `X-Frame-Options`, or `Permissions-Policy`.
-- `apps/web/public` currently contains `_redirects` only, so Pages has no repo-tracked `_headers` contract today.
+- The repo now includes `apps/web/public/_headers` beside `_redirects`, so the Pages header contract is versioned locally and waiting on deployment proof.
 - Cloudflare Pages custom domains and same-domain `/api/*` routing remain externally managed under `EX-0004`; deployment proof for this task must use the live dev host rather than repo-only assumptions.
 - HSTS needs an explicit rollout decision because `mastersrunners.com` and `www.mastersrunners.com` still serve a placeholder site outside the current app rollout.
 
 ## Self Review
 
-- Scope and intent:
-- Source of truth:
-- Design divergence:
-- Verification:
-- Review routing:
+- Scope and intent: keep the web-side change inside the Cloudflare Pages surface instead of widening into API bootstrap or proxy routing.
+- Source of truth: `apps/web/public/_headers`, the deployment runbook, and the deployment architecture doc now define the intended Pages header contract.
+- Design divergence: the repo can version the Pages header contract, but live proof still depends on the externally managed Pages deploy lane and custom domain state tracked under `EX-0004`.
+- Verification: local completion relies on `VITE_API_URL=https://dev.mastersrunners.com/api/v1 pnpm --filter @masters/web build`; the live `curl -I https://dev.mastersrunners.com` proof remains pending until this branch is deployed.
+- Review routing: `frontend-reviewer`, `harness-reviewer`, and `po-reviewer` remain the required closeout reviewers because the task changes deploy-time Pages behavior plus deployment docs.
 
 ## Review Focus
 
@@ -55,13 +55,18 @@ Version the Cloudflare Pages response-header policy in the repo so the dev web h
 
 ## Design Divergence
 
-- The current deployment design expects a static web build on Cloudflare Pages, but the repository does not yet define a response-header contract for that Pages surface.
+- The response-header contract is now versioned in the repo, but the live Pages/custom-domain rollout still depends on external Cloudflare state tracked under `EX-0004`.
 
 ## Attempt Log
 
 - 2026-04-01: follow-up created after a live `curl -I https://dev.mastersrunners.com` probe confirmed the missing header set reported by the security scan.
+- 2026-04-01: added `apps/web/public/_headers` with a repo-tracked CSP, HSTS, anti-framing, and Permissions-Policy contract for the current SPA asset model; local web build proof is now available and live dev-host proof is pending deployment.
+- 2026-04-01: `VITE_API_URL=https://dev.mastersrunners.com/api/v1 pnpm --filter @masters/web build` passed and confirmed the generated Pages artifact includes `apps/web/dist/_headers`.
 
 ## Review Notes
 
 - Specialist review:
+  - `frontend-reviewer` internal role review pass on 2026-04-01: confirmed the `_headers` policy matches the current SPA surface, allows the known Google Fonts and map/image flows, and keeps HSTS scoped to `max-age` without overcommitting placeholder hosts.
+  - `harness-reviewer` internal role review pass on 2026-04-01: confirmed the Pages header contract is now repo-versioned and that live proof is correctly left pending under the externally managed Cloudflare lane.
 - PO review:
+  - `po-reviewer` internal role review pass on 2026-04-01: accepted the scoped hardening because it improves launch posture without forcing the deferred apex/www rollout.

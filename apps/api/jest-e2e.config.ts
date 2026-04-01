@@ -20,6 +20,7 @@ const config: Config = {
   testTimeout: 30000,
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
+    "^@masters/database$": "<rootDir>/../../../packages/database/src/index.ts",
   },
 };
 
