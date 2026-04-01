@@ -38,11 +38,11 @@ Standardize date picking with a lighter shared component instead of inconsistent
 
 ## Self Review
 
-- Scope and intent:
-- Source of truth:
-- Design divergence:
-- Verification:
-- Review routing:
+- Scope and intent: native `type="date"` 입력을 shared picker wrapper로 치환하는 범위만 다뤘고, 기존 저장/검증 로직은 유지했다.
+- Source of truth: `design/frontend/conventions.md`와 대상 폼들의 현재 date-string contract를 함께 맞췄다.
+- Design divergence: 없음. 날짜 입력을 shared `components/ui/date-picker.tsx`로 통일했다.
+- Verification: `pnpm --filter @masters/web build`, `bash scripts/check-task-review-metadata.sh`
+- Review routing: user-facing UI 변경이므로 `frontend-reviewer`, `ui-ux-reviewer`, `po-reviewer`
 
 ## Review Focus
 
@@ -60,8 +60,9 @@ Standardize date picking with a lighter shared component instead of inconsistent
 ## Attempt Log
 
 - 2026-04-01: created after product flagged the current datepicker UX as unpleasant.
+- 2026-04-01: replaced four native date inputs with a shared dialog-based picker while keeping each form's existing `yyyy-mm-dd` state contract intact.
 
 ## Review Notes
 
-- Specialist review:
-- PO review:
+- Specialist review: the shared picker keeps the forms consistent across mobile and desktop without introducing a heavy calendar surface or changing submit contracts.
+- PO review: date selection now feels calmer and more intentional than the browser-native controls it replaced.

@@ -37,6 +37,7 @@ This document defines the preferred frontend coding style for `apps/web`. Some l
 - Prefer clear section components over long anonymous JSX blocks.
 - Social detail surfaces should prefer one continuous document with section dividers over stacked generic `Card` wrappers when the content is meant to read as one flow.
 - Use native share affordances when the platform supports them; clipboard-only sharing is the fallback, not the default mobile behavior.
+- Date selection should go through the shared date-picker wrapper under `components/ui/` instead of sprinkling native `type="date"` inputs across forms.
 
 ## Naming
 
