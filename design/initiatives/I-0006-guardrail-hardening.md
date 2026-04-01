@@ -59,9 +59,11 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `tasks/active/I-0006-150-web-response-security-headers.md`
 - `tasks/active/I-0006-160-api-response-security-headers.md`
 - `tasks/active/I-0006-170-ci-deployment-security-header-verification.md`
+- `tasks/archive/I-0006-205-ci-header-rollout-regression-recovery.md`
 - `tasks/archive/I-0006-180-api-r2-runtime-endpoint-derivation.md`
 - `tasks/archive/I-0006-190-ci-dev-r2-browser-upload-cors.md`
 - `tasks/archive/I-0006-200-ci-tighten-dev-r2-browser-origin-allowlist.md`
+- `tasks/todo/I-0006-210-api-conversation-type-leak-knip-cleanup.md`
 
 ## Success Criteria
 
@@ -86,6 +88,8 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `I-0006-140` adds a `pre-push` gate so `pnpm ci:local` runs before publishing changes, reducing the chance of pushing commits that only fail in remote CI.
 - 2026-04-01 live header probes on `https://dev.mastersrunners.com`, `https://dev.mastersrunners.com/api-docs`, and `https://dev.mastersrunners.com/api/v1/health` confirmed that `Strict-Transport-Security`, `Content-Security-Policy`, `X-Frame-Options`, and `Permissions-Policy` are still missing on repo-controlled response surfaces, so the initiative now carries follow-up tasks `I-0006-150` through `I-0006-170` for Pages HTML, API runtime, and deployment verification hardening.
 - 2026-04-01 follow-up implementation is now active: the repo adds a versioned Pages `_headers` contract, centralized API bootstrap header middleware with Swagger-aware CSP coverage, and deployment verification that checks direct API plus web-root header surfaces. Live dev-host proof remains pending until the branch is deployed.
+- 2026-04-02 recovery task `I-0006-205` restored green local branch health after that rollout by narrowing the automated deploy gate back to direct API proof, removing true dead exports caught by `knip`, and logging the remaining conversations type leak as follow-up `I-0006-210`.
+- 2026-04-01 CI recovery also added a temporary `knip` `types` ignore for the conversations repository because the Nest public return contract still leaks repository helper types; follow-up `I-0006-210` now tracks the explicit boundary cleanup needed to remove that exception.
 - 2026-04-01 dev upload triage found that the Cloud Run runtime carries the R2 account/public URL secrets but not `R2_ENDPOINT`, and `I-0006-180` is now closed after deriving the standard R2 endpoint from `R2_ACCOUNT_ID`, redeploying dev, and confirming live `/api/v1/uploads/presign` returns R2-backed URLs instead of localhost disk fallbacks.
 - 2026-04-01 browser upload triage then found the dev R2 bucket itself was missing a CORS policy, so `I-0006-190` now captures the bucket-side fix and the repo documentation needed to keep direct uploads aligned with the active frontend origins.
 - 2026-04-01 follow-up review then tightened that bucket rule further: `I-0006-200` removes `http://localhost:3000` from the deployed dev-bucket allowlist because the current dev lane does not intentionally support localhost browser sessions against the live bucket.

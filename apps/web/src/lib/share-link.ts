@@ -1,4 +1,4 @@
-export type ShareLinkResult = "shared" | "copied" | "dismissed";
+type ShareLinkResult = "shared" | "copied" | "dismissed";
 
 interface ShareLinkOptions {
   title?: string;

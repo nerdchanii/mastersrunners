@@ -2,14 +2,14 @@ import { useMutation } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
 
-export interface CreateFeedbackInput {
+interface CreateFeedbackInput {
   category: "BUG" | "IMPROVEMENT" | "QUESTION" | "OTHER";
   title: string;
   description: string;
   currentPath?: string;
 }
 
-export interface FeedbackSubmission {
+interface FeedbackSubmission {
   id: string;
   category: string;
   title: string;

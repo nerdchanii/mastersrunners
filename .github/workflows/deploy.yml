@@ -154,4 +154,4 @@ jobs:
         run: |
           URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} --region ${{ env.REGION }} --format 'value(status.url)')
           echo "Service URL: $URL"
-          WEB_VERIFY_URL="$FRONTEND_URL" bash scripts/verify-deployment.sh "$URL"
+          bash scripts/verify-deployment.sh "$URL"

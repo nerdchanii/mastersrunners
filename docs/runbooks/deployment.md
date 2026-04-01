@@ -45,7 +45,8 @@ This runbook explains how deployment works in this repository, what to verify be
 - Database migrations required by the release are already prepared.
 - Any migration SQL in the release stays inside the additive-only automated subset: new tables, new non-unique indexes, new nullable or default-backed columns, or default-relaxing alters. Renames, drops, unique/constraint-tightening changes, `SET NOT NULL`, and unconstrained `ADD COLUMN ... NOT NULL` changes need a separate manual rollout task.
 - Health verification should target `GET /api/v1/health`; legacy `GET /health` remains available for compatibility.
-- Deployment verification should prove repo-tracked response headers on the direct API origin and, when `WEB_VERIFY_URL` is available, on the Pages web root.
+- Deployment verification should always prove repo-tracked response headers on the direct API origin.
+- Web-root header verification remains available through `WEB_VERIFY_URL`, but automated API deploys should not block on the external Pages host because that routing/domain surface is tracked under `EX-0004`.
 - Browser direct uploads require the target R2 bucket to allow preflight requests from the active frontend host; on the current dev lane that means `https://dev.mastersrunners.com`.
 - Runbook and workflow still describe the same deployment path.
 
@@ -243,7 +244,7 @@ pnpm deploy:verify -- http://localhost:4000
 ```
 
 - Local API-only verification skips the web-root header check unless `WEB_VERIFY_URL` is set.
-- Public lane verification should pass both the direct API origin and the Pages host:
+- Optional public-lane verification can also probe the Pages host when the operator wants live web-header proof:
 
 ```bash
 WEB_VERIFY_URL=https://dev.mastersrunners.com pnpm deploy:verify -- https://SERVICE_URL.run.app
@@ -278,6 +279,7 @@ docker compose --env-file .env.production -f docker-compose.prod.yml down
 6. GitHub Actions runs `pnpm db:migrate:deploy` and `pnpm db:seed`.
 7. GitHub Actions deploys that image to the branch-mapped Cloud Run service.
 8. GitHub Actions runs `scripts/verify-deployment.sh` against the deployed service URL.
+9. If operator-facing proof of the Pages header contract is needed, rerun the script manually with `WEB_VERIFY_URL=https://dev.mastersrunners.com` after the API deploy succeeds.
 
 The existence of a `main` API deploy lane does not by itself mean the public main web host is live. Cloudflare host switching still controls when `mastersrunners.com` stops serving the placeholder site.
 

@@ -10,12 +10,12 @@ export interface ConversationParticipant {
   user: ConversationUser;
 }
 
-export interface ConversationCrewContext {
+interface ConversationCrewContext {
   id: string;
   name: string;
 }
 
-export interface ConversationActivityContext {
+interface ConversationActivityContext {
   id: string;
   title: string;
   crewId: string;
@@ -48,7 +48,7 @@ export interface ConversationListItem extends ConversationRoom {
 
 export type ConversationRoomKind = ConversationListItem["type"];
 
-export interface ConversationRoomMeta {
+interface ConversationRoomMeta {
   href: string;
   kindLabel: string;
   subtitle: string;

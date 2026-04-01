@@ -61,7 +61,7 @@ Exceptions are only for repository controls that cannot be fully proven or close
 - `reason_not_repo_controllable`: Cloudflare Pages branch aliases, custom domains, build environment variables, and same-domain `/api/*` proxy rules are dashboard-managed external state.
 - `external_owner`: project owner
 - `required_external_proof`: dashboard evidence plus runtime checks showing `dev.mastersrunners.com` points at the `dev` branch build, `VITE_API_URL` is set, and `/api/*` reaches the intended API origin
-- `latest_observed_external_state`: 2026-04-01 runtime checks show `https://dev.mastersrunners.com/api/v1/health` returns API health JSON and `https://dev.mastersrunners.com/api/v1/auth/providers` reaches the dev API lane through the same-domain Cloudflare route.
+- `latest_observed_external_state`: 2026-04-01 runtime checks show `https://dev.mastersrunners.com/api/v1/health` returns API health JSON and `https://dev.mastersrunners.com/api/v1/auth/providers` reaches the dev API lane through the same-domain Cloudflare route, while GitHub Actions deploy verification of `https://dev.mastersrunners.com` itself currently receives `403` from the externally managed Pages host.
 - `revisit_date`: 2026-04-15
 - `unblock_condition`: branch/domain mapping and `/api/*` proxy behavior are externally verified and no longer rely on implicit dashboard state
 

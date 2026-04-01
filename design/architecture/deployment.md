@@ -64,7 +64,7 @@ This document defines the intended deployment shape for the repository. Runbooks
 - Redis appears in environment and compose-level deployment assumptions, but the current repo implementation does not use a shared Redis runtime for app logic or realtime fan-out
 - The Pages project itself is external state, so its build command and output directory must match `docs/runbooks/deployment.md`
 - Branch aliases, custom domains, and `/api/*` proxy rules for Pages are also external state and are tracked under `EX-0004`
-- The deployment verify script should check repo-controlled API headers on the direct API origin and web headers on the Pages host, rather than treating same-domain proxy routing as the only proof path
+- The deployment verify script should block automated deploys on the direct API origin only; web-host header proof remains available through the same script when operators provide `WEB_VERIFY_URL`, because the Pages host is external state tracked under `EX-0004`
 
 ### Local Production-Like
 
@@ -89,7 +89,7 @@ This document defines the intended deployment shape for the repository. Runbooks
 6. Deploy workflow loads `DIRECT_URL` from Secret Manager
 7. Deploy workflow applies additive-only automated migrations and seed data
 8. Cloud Run receives the new revision
-9. Verification script checks service health plus the repo-tracked header contract on the direct API and web surfaces
+9. Verification script checks service health plus the repo-tracked header contract on the direct API surface; web-host proof remains an operator-run follow-up when the external Pages host is reachable
 
 ## Rollback Model
 
