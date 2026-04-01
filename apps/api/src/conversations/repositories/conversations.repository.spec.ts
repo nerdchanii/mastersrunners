@@ -149,6 +149,10 @@ describe("ConversationsRepository", () => {
         {
           id: "conv-1",
           type: "DIRECT",
+          crew: null,
+          crewId: null,
+          activity: null,
+          activityId: null,
           createdAt: new Date(),
           updatedAt: new Date(),
           participants: [
@@ -224,6 +228,10 @@ describe("ConversationsRepository", () => {
       const conversation = {
         id: conversationId,
         type: "DIRECT",
+        crew: null,
+        crewId: null,
+        activity: null,
+        activityId: null,
         participants: [
           { userId: "user-1", user: { id: "user-1", name: "User 1" } },
           { userId: "user-2", user: { id: "user-2", name: "User 2" } },

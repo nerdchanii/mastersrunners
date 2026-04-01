@@ -106,6 +106,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - `tasks/archive/I-0014-170-web-date-picker-modernization.md`
 - `tasks/archive/I-0014-180-web-post-composer-media-selection.md`
 - `tasks/archive/I-0014-190-web-post-composer-text-tagging-and-preview.md`
+- `tasks/archive/I-0014-220-api-conversation-context-spec-sync.md`
 
 ### Product Checkpoint Required
 
@@ -127,3 +128,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - the initiative seeds executable task files for every currently reported issue cluster and separates autonomous work from product-checkpoint work
 - the report records that GPX and FIT visual/metric work needs a product-user sample review before implementation
 - the repo gains a durable UI intake artifact under `docs/reports/` instead of leaving the discussion in chat only
+
+## Progress Notes
+
+- 2026-04-02: follow-up `I-0014-220` synced the conversations repository unit spec with the room-context fields shipped by `I-0014-020`, removing stale DM-only expectations that were failing local CI during push.
