@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -86,8 +85,8 @@ export default function CrewForm({
   });
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError(null);
 
     if (!formData.name.trim()) {
@@ -131,131 +130,142 @@ export default function CrewForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <Card className="border-destructive/50 bg-destructive/10">
-          <CardContent className="pt-4 pb-4">
-            <p className="text-sm font-medium text-destructive">{error}</p>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 px-4 py-3">
+          <p className="text-sm font-medium text-destructive">{error}</p>
+        </div>
       )}
 
-      <Card>
-        <CardContent className="pt-6 space-y-5">
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="crew-name">
-              크루 이름 <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="crew-name"
-              value={formData.name}
-              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder="크루 이름을 입력하세요"
-              maxLength={50}
-            />
-            <p className="text-xs text-muted-foreground text-right">{formData.name.length} / 50</p>
-          </div>
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="crew-name" className="sr-only">
+            크루 이름
+          </Label>
+          <Input
+            id="crew-name"
+            aria-label="크루 이름"
+            value={formData.name}
+            onChange={(event) => setFormData((prev) => ({ ...prev, name: event.target.value }))}
+            placeholder="크루 이름"
+            maxLength={50}
+            className="h-12 text-base"
+          />
+          <p className="text-right text-xs text-muted-foreground">{formData.name.length} / 50</p>
+        </div>
 
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="crew-description">설명</Label>
-            <Textarea
-              id="crew-description"
-              value={formData.description}
-              onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-              rows={4}
-              placeholder="크루에 대한 설명을 입력하세요"
-              maxLength={500}
-            />
-            <p className="text-xs text-muted-foreground text-right">
-              {formData.description.length} / 500
-            </p>
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="crew-description" className="sr-only">
+            크루 설명
+          </Label>
+          <Textarea
+            id="crew-description"
+            aria-label="크루 설명"
+            value={formData.description}
+            onChange={(event) =>
+              setFormData((prev) => ({ ...prev, description: event.target.value }))
+            }
+            rows={5}
+            placeholder="크루 소개, 활동 분위기, 가입 기준 등을 적어주세요"
+            maxLength={500}
+            className="min-h-32"
+          />
+          <p className="text-right text-xs text-muted-foreground">
+            {formData.description.length} / 500
+          </p>
+        </div>
 
-          {/* Public Toggle */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="crew-public">공개 설정</Label>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {formData.isPublic
-                    ? "누구나 크루를 검색하고 바로 가입할 수 있습니다."
-                    : "관리자 승인 후 가입할 수 있습니다."}
-                </p>
-              </div>
-              <Switch
-                id="crew-public"
-                checked={formData.isPublic}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({ ...prev, isPublic: checked }))
-                }
-              />
+        <div className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">공개 설정</p>
+              <p className="text-xs leading-5 text-muted-foreground">
+                {formData.isPublic
+                  ? "누구나 검색하고 바로 가입할 수 있습니다."
+                  : "관리자 승인 후 가입할 수 있습니다."}
+              </p>
             </div>
+            <Switch
+              id="crew-public"
+              checked={formData.isPublic}
+              onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isPublic: checked }))}
+            />
           </div>
+        </div>
 
-          {/* Max Members */}
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="max-members">최대 인원 (선택)</Label>
+            <Label htmlFor="max-members" className="sr-only">
+              최대 인원
+            </Label>
             <Input
               type="number"
               id="max-members"
+              aria-label="최대 인원"
               value={formData.maxMembers}
-              onChange={(e) => setFormData((prev) => ({ ...prev, maxMembers: e.target.value }))}
-              placeholder="제한 없음"
+              onChange={(event) =>
+                setFormData((prev) => ({ ...prev, maxMembers: event.target.value }))
+              }
+              placeholder="최대 인원 (선택)"
               min={2}
             />
             <p className="text-xs text-muted-foreground">비워두면 인원 제한이 없습니다.</p>
           </div>
 
-          {/* Location */}
           <div className="space-y-2">
-            <Label htmlFor="crew-location">활동 지역 (선택)</Label>
+            <Label htmlFor="crew-location" className="sr-only">
+              활동 지역
+            </Label>
             <Input
               id="crew-location"
+              aria-label="활동 지역"
               value={formData.location}
-              onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
-              placeholder="활동 지역 (예: 서울 한강)"
+              onChange={(event) =>
+                setFormData((prev) => ({ ...prev, location: event.target.value }))
+              }
+              placeholder="활동 지역 (선택)"
             />
           </div>
 
-          {/* Region */}
           <div className="space-y-2">
-            <Label htmlFor="crew-region">지역 (선택)</Label>
+            <p className="text-xs font-medium text-muted-foreground">지역</p>
             <Select
               value={formData.region}
               onValueChange={(value) =>
                 setFormData((prev) => ({ ...prev, region: value, subRegion: "" }))
               }
             >
-              <SelectTrigger id="crew-region">
+              <SelectTrigger id="crew-region" aria-label="지역">
                 <SelectValue placeholder="지역 선택" />
               </SelectTrigger>
               <SelectContent>
-                {KOREA_REGIONS.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {r}
+                {KOREA_REGIONS.map((region) => (
+                  <SelectItem key={region} value={region}>
+                    {region}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Sub-Region */}
           {formData.region && (
             <div className="space-y-2">
-              <Label htmlFor="crew-subregion">세부 지역 (선택)</Label>
+              <Label htmlFor="crew-subregion" className="sr-only">
+                세부 지역
+              </Label>
               <Input
                 id="crew-subregion"
+                aria-label="세부 지역"
                 value={formData.subRegion}
-                onChange={(e) => setFormData((prev) => ({ ...prev, subRegion: e.target.value }))}
-                placeholder="세부 지역 (예: 마포구)"
+                onChange={(event) =>
+                  setFormData((prev) => ({ ...prev, subRegion: event.target.value }))
+                }
+                placeholder="세부 지역 (선택)"
               />
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Actions */}
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-col-reverse gap-3 border-t border-border/60 pt-4 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           취소
         </Button>

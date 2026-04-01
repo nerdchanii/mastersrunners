@@ -56,6 +56,12 @@ Membership state determines which tabs and controls are visible:
 - active members can view internal tabs
 - owners/admins see moderation, settings, and attendance-management controls
 
+### Settings Shell
+
+- `/crews/:id/settings` keeps basic-info editing in a single flat panel instead of nesting a generic form card inside another page card.
+- simple text inputs rely on placeholders and supporting copy where that reduces noise without hiding intent.
+- destructive owner actions remain visually separated, but they are no longer wrapped in the same card style as routine editing.
+
 ## Activity Model in the UI
 
 Crew activities are split from the main crew hub into route-specific detail and utility pages:

@@ -102,7 +102,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - `tasks/todo/I-0014-090-web-mobile-create-entry-switcher.md`
 - `tasks/todo/I-0014-100-web-composer-shell-progress-and-action-rails.md`
 - `tasks/todo/I-0014-130-web-crew-invite-url-share-entry.md`
-- `tasks/todo/I-0014-140-web-crew-settings-basic-info-shell-cleanup.md`
+- `tasks/archive/I-0014-140-web-crew-settings-basic-info-shell-cleanup.md`
 - `tasks/todo/I-0014-170-web-date-picker-modernization.md`
 - `tasks/todo/I-0014-180-web-post-composer-media-selection.md`
 - `tasks/todo/I-0014-190-web-post-composer-text-tagging-and-preview.md`

@@ -214,7 +214,7 @@ export default function CrewSettingsClient() {
   const activeMembers = crew.members.filter((m) => m.status === "ACTIVE");
 
   return (
-    <div className="container max-w-4xl mx-auto py-6 space-y-6">
+    <div className="container mx-auto max-w-4xl space-y-6 px-4 py-6">
       <PageHeader
         title="크루 설정"
         description={crew.name}
@@ -234,44 +234,46 @@ export default function CrewSettingsClient() {
         </TabsList>
 
         <TabsContent value="edit" className="mt-6 space-y-6">
-          <Card>
-            <CardContent className="p-6">
-              <CrewForm
-                initialValues={{
-                  name: crew.name,
-                  description: crew.description,
-                  isPublic: crew.isPublic,
-                  maxMembers: crew.maxMembers,
-                }}
-                onSubmit={handleEditSubmit}
-                onCancel={() => navigate(`/crews/${crewId}`)}
-                submitLabel="수정하기"
-                isSubmitting={isSubmitting}
-              />
-            </CardContent>
-          </Card>
+          <section className="rounded-3xl border border-border/60 bg-background px-5 py-5 shadow-sm sm:px-6">
+            <div className="mb-5 space-y-1">
+              <h2 className="text-lg font-semibold text-foreground">기본 정보</h2>
+              <p className="text-sm text-muted-foreground">
+                크루 이름, 소개, 공개 범위처럼 멤버가 가장 먼저 보는 정보만 정리합니다.
+              </p>
+            </div>
+
+            <CrewForm
+              initialValues={{
+                name: crew.name,
+                description: crew.description,
+                isPublic: crew.isPublic,
+                maxMembers: crew.maxMembers,
+              }}
+              onSubmit={handleEditSubmit}
+              onCancel={() => navigate(`/crews/${crewId}`)}
+              submitLabel="수정하기"
+              isSubmitting={isSubmitting}
+            />
+          </section>
 
           {isOwner && (
-            <Card className="border-destructive">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
-                  <CardTitle className="text-destructive">위험 구역</CardTitle>
-                </div>
-                <CardDescription>
-                  크루를 삭제하면 모든 데이터가 영구적으로 삭제됩니다.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  variant="destructive"
-                  onClick={() => setShowDeleteDialog(true)}
-                  disabled={isSubmitting}
-                >
-                  크루 삭제
-                </Button>
-              </CardContent>
-            </Card>
+            <section className="rounded-3xl border border-destructive/40 bg-destructive/5 px-5 py-5">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                <h3 className="text-base font-semibold text-destructive">위험 구역</h3>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                크루를 삭제하면 모든 데이터가 영구적으로 삭제됩니다.
+              </p>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isSubmitting}
+                className="mt-4"
+              >
+                크루 삭제
+              </Button>
+            </section>
           )}
         </TabsContent>
 
