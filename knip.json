@@ -22,6 +22,7 @@
     "apps/api/test/follow.e2e-spec.ts",
     "apps/api/test/helpers/auth.helper.ts",
     "apps/api/test/posts.e2e-spec.ts",
+    "apps/api/test/security-headers.e2e-spec.ts",
     "apps/api/test/setup.ts",
     "apps/api/test/workouts.e2e-spec.ts",
     "apps/web/src/components/crew/CrewAttendance.tsx",

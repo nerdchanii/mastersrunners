@@ -26,7 +26,7 @@ const SWAGGER_CONTENT_SECURITY_POLICY = [
   "style-src 'self' 'unsafe-inline'",
 ].join("; ");
 
-export const API_SECURITY_HEADERS = {
+const API_SECURITY_HEADERS = {
   contentSecurityPolicy: "Content-Security-Policy",
   permissionsPolicy: "Permissions-Policy",
   referrerPolicy: "Referrer-Policy",
@@ -35,7 +35,7 @@ export const API_SECURITY_HEADERS = {
   xFrameOptions: "X-Frame-Options",
 } as const;
 
-export const API_PERMISSIONS_POLICY = [
+const API_PERMISSIONS_POLICY = [
   "accelerometer=()",
   "autoplay=()",
   "camera=()",
