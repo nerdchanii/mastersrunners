@@ -56,6 +56,9 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `tasks/archive/I-0006-120-api-auth-token-transport-hardening.md`
 - `tasks/archive/I-0006-130-ci-knip-cookie-session-followup.md`
 - `tasks/archive/I-0006-140-ci-pre-push-local-ci-gate.md`
+- `tasks/active/I-0006-150-web-response-security-headers.md`
+- `tasks/active/I-0006-160-api-response-security-headers.md`
+- `tasks/active/I-0006-170-ci-deployment-security-header-verification.md`
 
 ## Success Criteria
 
@@ -78,4 +81,6 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `I-0006-120` now closes the browser auth transport hardening by moving OAuth callback, refresh, logout, and SSE browser auth to `HttpOnly` cookies instead of query-string or `localStorage` token transport.
 - `I-0006-130` closes the immediate CI follow-up by removing unused cookie helper exports and making local `ci:local` pass the same `VITE_API_URL` contract into `knip` as GitHub Actions.
 - `I-0006-140` adds a `pre-push` gate so `pnpm ci:local` runs before publishing changes, reducing the chance of pushing commits that only fail in remote CI.
+- 2026-04-01 live header probes on `https://dev.mastersrunners.com`, `https://dev.mastersrunners.com/api-docs`, and `https://dev.mastersrunners.com/api/v1/health` confirmed that `Strict-Transport-Security`, `Content-Security-Policy`, `X-Frame-Options`, and `Permissions-Policy` are still missing on repo-controlled response surfaces, so the initiative now carries follow-up tasks `I-0006-150` through `I-0006-170` for Pages HTML, API runtime, and deployment verification hardening.
+- 2026-04-01 follow-up implementation is now active: the repo adds a versioned Pages `_headers` contract, centralized API bootstrap header middleware with Swagger-aware CSP coverage, and deployment verification that checks direct API plus web-root header surfaces. Live dev-host proof remains pending until the branch is deployed.
 - In-repo guardrail hardening is effectively complete; the remaining blockers are external platform settings and the exceptions recorded in `design/operating-rules/exceptions.md`.
