@@ -2,6 +2,7 @@ import { Heart, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { TimeAgo } from "@/components/common/TimeAgo";
+import { PostImageGallery } from "@/components/post/PostImageGallery";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,11 @@ interface PostCardProps {
   commentsCount: number;
   isLiked: boolean;
   createdAt: string;
+  images?: Array<{
+    id: string;
+    url: string;
+    order: number;
+  }>;
   onLikeToggle?: () => void;
 }
 
@@ -36,6 +42,7 @@ export function PostCard({
   commentsCount,
   isLiked,
   createdAt,
+  images = [],
   onLikeToggle,
 }: PostCardProps) {
   const likePost = useLikePost();
@@ -84,6 +91,8 @@ export function PostCard({
             ))}
           </div>
         )}
+
+        <PostImageGallery images={images} className="mb-3" />
 
         {/* Actions */}
         <div className="flex items-center gap-4 pt-3 border-t">

@@ -1,12 +1,11 @@
 import { Flag, MessageCircle, MoreHorizontal, Share2, Trash2 } from "lucide-react";
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
-import { ImageLightbox } from "@/components/common/ImageLightbox";
 import { StatItem } from "@/components/common/StatItem";
 import { TimeAgo } from "@/components/common/TimeAgo";
 import { UserAvatar } from "@/components/common/UserAvatar";
+import { PostImageGallery } from "@/components/post/PostImageGallery";
 import { LikeButton } from "@/components/social/LikeButton";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -55,8 +54,6 @@ interface PostFeedCardProps {
 
 export default function PostFeedCard({ post, onDelete }: PostFeedCardProps) {
   const { user: currentUser } = useAuth();
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const isOwner = currentUser?.id === post.user.id;
 
@@ -75,22 +72,9 @@ export default function PostFeedCard({ post, onDelete }: PostFeedCardProps) {
   };
 
   const images = post.images ?? [];
-  const lightboxImages = images.map((img) => ({ url: img.url, alt: "게시글 이미지" }));
-
-  const handleImageClick = (idx: number) => {
-    setLightboxIndex(idx);
-    setLightboxOpen(true);
-  };
 
   return (
     <article className="border-b bg-card">
-      <ImageLightbox
-        images={lightboxImages}
-        initialIndex={lightboxIndex}
-        open={lightboxOpen}
-        onOpenChange={setLightboxOpen}
-      />
-
       {/* User Header */}
       <div className="flex items-center justify-between px-4 py-3">
         <UserAvatar user={post.user} showName subtitle={<TimeAgo date={post.createdAt} />} />
@@ -150,45 +134,7 @@ export default function PostFeedCard({ post, onDelete }: PostFeedCardProps) {
       </Link>
 
       {/* Post Images */}
-      {images.length > 0 && (
-        <div className="mt-3">
-          {images.length === 1 ? (
-            <button type="button" className="w-full text-left" onClick={() => handleImageClick(0)}>
-              <img
-                src={images[0].url}
-                alt="게시글 이미지"
-                loading="lazy"
-                className="w-full max-h-96 object-cover"
-              />
-            </button>
-          ) : (
-            <div
-              className={`grid gap-0.5 ${images.length === 2 ? "grid-cols-2" : "grid-cols-2 grid-rows-2"}`}
-            >
-              {images.slice(0, 4).map((image, idx) => (
-                <button
-                  key={image.id}
-                  type="button"
-                  className="relative aspect-square overflow-hidden"
-                  onClick={() => handleImageClick(idx)}
-                >
-                  <img
-                    src={image.url}
-                    alt={`게시글 이미지 ${idx + 1}번`}
-                    loading="lazy"
-                    className="w-full h-full object-cover"
-                  />
-                  {idx === 3 && images.length > 4 && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <span className="text-white text-xl font-bold">+{images.length - 4}</span>
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <PostImageGallery images={images} className="mt-3" />
 
       {/* Attached Workouts */}
       <Link to={`/posts/${post.id}`}>

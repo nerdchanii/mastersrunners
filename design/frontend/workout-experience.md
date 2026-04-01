@@ -47,6 +47,7 @@ The page state is orchestrated by `useWorkoutEntry`, which owns:
 
 - workout type options are fetched from `/workout-types`
 - the post composer reuses existing workouts via `useWorkouts`
+- post detail keeps post-owned image media visible above attached workouts so feed-to-detail navigation does not drop the primary post content
 - event result linking is handled from the event detail page rather than from workout detail
 
 ## Visibility and Metadata

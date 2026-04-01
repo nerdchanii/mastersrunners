@@ -130,6 +130,7 @@ export default function PostDetailPage() {
         user={post.user}
         content={post.content}
         hashtags={post.hashtags}
+        images={post.images}
         likesCount={likesCount}
         commentsCount={commentsCount}
         isLiked={post.isLiked ?? false}
