@@ -17,7 +17,8 @@ interface Workout {
 
 interface PostImage {
   id: string;
-  imageUrl: string;
+  url: string;
+  order: number;
 }
 
 interface PostWorkoutRelation {

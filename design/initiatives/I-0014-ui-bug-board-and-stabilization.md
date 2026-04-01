@@ -107,6 +107,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - `tasks/archive/I-0014-180-web-post-composer-media-selection.md`
 - `tasks/archive/I-0014-190-web-post-composer-text-tagging-and-preview.md`
 - `tasks/archive/I-0014-220-api-conversation-context-spec-sync.md`
+- `tasks/active/I-0014-240-web-feed-media-and-analytics-regression-recovery.md`
 
 ### Product Checkpoint Required
 
@@ -134,3 +135,5 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 
 - 2026-04-02: follow-up `I-0014-220` synced the conversations repository unit spec with the room-context fields shipped by `I-0014-020`, removing stale DM-only expectations that were failing local CI during push.
 - 2026-04-02: seeded `I-0014-230` for the remaining `UI-014` operator-tooling gap so the future feedback backoffice ships on a dedicated ops hostname with Cloudflare Access at the edge and API-side staff RBAC behind it.
+- 2026-04-02: opened `I-0014-240` after the deployed dev lane still showed `/feed` post-image regressions and Cloudflare analytics CSP violations, even though direct reads against the persisted `R2_PUBLIC_URL` remained healthy.
+- 2026-04-02: `I-0014-240` is now review-ready with targeted API/web verification complete; only the repo-wide pre-existing Prisma/Jest ESM issue still blocks the task's narrow API e2e command.

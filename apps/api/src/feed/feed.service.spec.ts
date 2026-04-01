@@ -105,6 +105,28 @@ describe("FeedService", () => {
         limit: 10,
       });
     });
+
+    it("should normalize post image fields for the web read contract", async () => {
+      mockFeedRepo.getFollowingIds.mockResolvedValue([]);
+      mockFeedRepo.getPostFeed.mockResolvedValue([
+        {
+          id: "post-1",
+          images: [{ id: "image-1", imageUrl: "https://example.com/feed.png", sortOrder: 3 }],
+          likes: [{ id: "like-1" }],
+        },
+      ]);
+
+      const result = await service.getPostFeed("me", undefined, 10);
+
+      expect(result.items[0].images).toEqual([
+        {
+          id: "image-1",
+          url: "https://example.com/feed.png",
+          order: 3,
+        },
+      ]);
+      expect(result.items[0].isLiked).toBe(true);
+    });
   });
 
   describe("getWorkoutFeed", () => {

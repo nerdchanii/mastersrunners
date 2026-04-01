@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 
 import { Toaster } from "@/components/ui/sonner";
+import { ensureCloudflareAnalytics } from "@/lib/cloudflare-analytics";
 
 import { router } from "./router";
 
@@ -18,6 +19,8 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+ensureCloudflareAnalytics();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

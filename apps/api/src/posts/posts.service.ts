@@ -5,6 +5,7 @@ import { BlockRepository } from "../block/repositories/block.repository.js";
 import type { CreatePostDto } from "./dto/create-post.dto.js";
 import type { UpdatePostDto } from "./dto/update-post.dto.js";
 import { PostRepository } from "./repositories/post.repository.js";
+import { mapPostForRead, mapPostsForRead } from "./post-read.mapper.js";
 
 @Injectable()
 export class PostsService {
@@ -43,7 +44,7 @@ export class PostsService {
         throw new ForbiddenException("차단된 사용자의 게시글입니다.");
       }
     }
-    return post;
+    return post ? mapPostForRead(post) : post;
   }
 
   async findByUser(userId: string, currentUserId?: string, cursor?: string, limit?: number) {
@@ -53,7 +54,8 @@ export class PostsService {
         throw new ForbiddenException("차단된 사용자입니다.");
       }
     }
-    return this.postRepo.findByUser(userId, { cursor, limit, currentUserId });
+    const posts = await this.postRepo.findByUser(userId, { cursor, limit, currentUserId });
+    return mapPostsForRead(posts);
   }
 
   async update(id: string, dto: UpdatePostDto) {
@@ -62,7 +64,13 @@ export class PostsService {
 
   async findByHashtag(tag: string, currentUserId: string, cursor?: string, limit?: number) {
     const blockedUserIds = await this.blockRepo.getBlockedUserIds(currentUserId);
-    return this.postRepo.findByHashtag(tag, { blockedUserIds, cursor, limit, currentUserId });
+    const posts = await this.postRepo.findByHashtag(tag, {
+      blockedUserIds,
+      cursor,
+      limit,
+      currentUserId,
+    });
+    return mapPostsForRead(posts);
   }
 
   async getPopularHashtags(limit = 20) {

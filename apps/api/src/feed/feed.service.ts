@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 
 import { BlockRepository } from "../block/repositories/block.repository.js";
+import { mapPostForRead } from "../posts/post-read.mapper.js";
 
 import { FeedRepository } from "./repositories/feed.repository.js";
 
@@ -35,10 +36,10 @@ export class FeedService {
     const items = rawItems.map((post: (typeof rawItems)[number]) => {
       const { likes, ...rest } = post;
       const likeRows = likes ?? [];
-      return {
+      return mapPostForRead({
         ...rest,
         isLiked: likeRows.length > 0,
-      };
+      });
     });
     const nextCursor = hasMore ? items[items.length - 1].id : null;
 

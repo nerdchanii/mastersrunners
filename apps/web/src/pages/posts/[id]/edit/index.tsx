@@ -40,7 +40,8 @@ interface Workout {
 
 interface PostImage {
   id: string;
-  imageUrl: string;
+  url: string;
+  order: number;
 }
 
 interface PostWorkoutRelation {
@@ -280,7 +281,7 @@ export default function EditPostPage() {
                       className="relative aspect-square bg-muted-foreground/10 rounded-lg overflow-hidden border"
                     >
                       <img
-                        src={img.imageUrl}
+                        src={img.url}
                         alt="Post attachment"
                         className="w-full h-full object-cover"
                       />

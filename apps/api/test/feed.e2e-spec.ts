@@ -33,7 +33,11 @@ describe("Feed (E2E)", () => {
       // Poster creates public posts
       await authRequest(app, poster.accessToken)
         .post("/api/v1/posts")
-        .send({ content: "Poster's first post", visibility: "PUBLIC" });
+        .send({
+          content: "Poster's first post",
+          visibility: "PUBLIC",
+          imageUrls: ["https://pub-554fa59edea143768fe7d87a16310baf.r2.dev/posts/tester/first.png"],
+        });
 
       await authRequest(app, poster.accessToken)
         .post("/api/v1/posts")
@@ -59,6 +63,15 @@ describe("Feed (E2E)", () => {
       // Should NOT contain stranger's posts (not followed)
       const strangerPosts = res.body.items.filter((p: any) => p.userId === stranger.userId);
       expect(strangerPosts.length).toBe(0);
+
+      const imagedPosterPost = posterPosts.find((post: any) => (post.images?.length ?? 0) > 0);
+      expect(imagedPosterPost).toBeDefined();
+      expect(imagedPosterPost.images).toEqual([
+        expect.objectContaining({
+          url: "https://pub-554fa59edea143768fe7d87a16310baf.r2.dev/posts/tester/first.png",
+          order: 0,
+        }),
+      ]);
     });
 
     it("should include own posts in feed", async () => {

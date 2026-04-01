@@ -180,9 +180,14 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
 - Pages should also honor the repo-tracked response-header policy from `apps/web/public/_headers`.
 - Required Pages variable for every non-local deployment:
   - `VITE_API_URL`
+- Optional Pages variable when Cloudflare Web Analytics should load from repo-owned code:
+  - `VITE_CLOUDFLARE_ANALYTICS_TOKEN`
 - Never store OAuth secrets, JWT secrets, database credentials, or R2 secrets in Pages env.
 - Current header posture for Pages:
   - `Content-Security-Policy` is defined in `_headers` for the SPA document surface.
+  - `script-src` allows the explicit Cloudflare Insights beacon host and still rejects inline script execution.
+  - `connect-src` allows `https://cloudflareinsights.com` for manual beacon reporting.
+  - `Cache-Control: public, no-transform` is set on the Pages response contract so Cloudflare does not re-inject inline analytics HTML that would violate the repo CSP.
   - `Strict-Transport-Security` is repo-tracked with `max-age=31536000`.
   - do not add `includeSubDomains` or `preload` while `mastersrunners.com` and `www.mastersrunners.com` still point at the placeholder site.
 

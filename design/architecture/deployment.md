@@ -44,6 +44,7 @@ This document defines the intended deployment shape for the repository. Runbooks
 ## Response Header Contract
 
 - Cloudflare Pages HTML and static responses use the repo-tracked `_headers` file at `apps/web/public/_headers`.
+- The Pages header contract keeps Cloudflare Web Analytics on an explicit external beacon host and blocks inline HTML mutation with `Cache-Control: public, no-transform`.
 - The API applies a centralized bootstrap-level response-header policy before route handling.
 - API JSON surfaces use a deny-by-default CSP, while Swagger UI uses a narrower Swagger-safe CSP instead of inheriting an accidental default.
 - Current HSTS posture is `max-age=31536000` only.

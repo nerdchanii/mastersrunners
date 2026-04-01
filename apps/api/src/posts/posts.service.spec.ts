@@ -170,7 +170,7 @@ describe("PostsService", () => {
         userId: "user-123",
         content: "테스트 포스트",
         user: { id: "user-123", name: "홍길동", profileImage: null },
-        images: [],
+        images: [{ id: "image-1", imageUrl: "https://example.com/post.png", sortOrder: 0 }],
         workouts: [],
         _count: { likes: 5, comments: 2 },
       };
@@ -179,7 +179,10 @@ describe("PostsService", () => {
       const result = await service.findById(postId);
 
       expect(mockPostRepository.findById).toHaveBeenCalledWith(postId, undefined);
-      expect(result).toEqual(mockPost);
+      expect(result).toEqual({
+        ...mockPost,
+        images: [{ id: "image-1", url: "https://example.com/post.png", order: 0 }],
+      });
     });
 
     it("should throw ForbiddenException when post author is blocked by current user", async () => {
@@ -210,7 +213,7 @@ describe("PostsService", () => {
       const result = await service.findById(postId, currentUserId);
 
       expect(mockBlockRepository.isBlocked).not.toHaveBeenCalled();
-      expect(result).toEqual(mockPost);
+      expect(result).toEqual({ ...mockPost, images: [] });
     });
   });
 
@@ -218,8 +221,13 @@ describe("PostsService", () => {
     it("should delegate to postRepo.findByUser", async () => {
       const userId = "user-123";
       const mockPosts = [
-        { id: "post-1", userId, content: "포스트 1" },
-        { id: "post-2", userId, content: "포스트 2" },
+        {
+          id: "post-1",
+          userId,
+          content: "포스트 1",
+          images: [{ id: "image-1", imageUrl: "https://example.com/a.png", sortOrder: 1 }],
+        },
+        { id: "post-2", userId, content: "포스트 2", images: [] },
       ];
       mockPostRepository.findByUser.mockResolvedValue(mockPosts);
 
@@ -230,7 +238,15 @@ describe("PostsService", () => {
         limit: undefined,
         currentUserId: userId,
       });
-      expect(result).toEqual(mockPosts);
+      expect(result).toEqual([
+        {
+          id: "post-1",
+          userId,
+          content: "포스트 1",
+          images: [{ id: "image-1", url: "https://example.com/a.png", order: 1 }],
+        },
+        { id: "post-2", userId, content: "포스트 2", images: [] },
+      ]);
     });
 
     it("should pass cursor and limit to repository", async () => {

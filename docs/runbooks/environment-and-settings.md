@@ -25,6 +25,7 @@ This document is intentionally an index. It does not duplicate every environment
 ### Web Runtime and Build Settings
 
 - The web app reads `VITE_API_URL` in `apps/web/src/lib/api-client.ts`.
+- If Cloudflare Web Analytics is enabled for a Pages lane, the web app also reads `VITE_CLOUDFLARE_ANALYTICS_TOKEN` and loads the beacon from repo-owned code instead of relying on HTML mutation.
 - The Vite dev server reads `VITE_PORT` in `apps/web/vite.config.ts`; worktree bootstrap may generate `apps/web/.env.local` so each worktree can bind a unique local dev port.
 - Non-development web builds must provide `VITE_API_URL`; only local Vite development may fall back to `http://localhost:4000/api/v1`.
 - Repository analysis/build automation may inject a placeholder `VITE_API_URL=http://localhost:4000` so tools such as `knip` and workspace-wide builds can load the Vite config without weakening the runtime deployment contract.
