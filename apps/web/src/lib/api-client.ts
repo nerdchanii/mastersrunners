@@ -47,9 +47,13 @@ export class ApiError extends Error {
 class ApiClient {
   private redirectToLogin() {
     if (typeof window === "undefined") return;
-    const { pathname } = window.location;
+    const { pathname, search, hash } = window.location;
     if (pathname === "/login" || pathname.startsWith("/auth")) return;
-    window.location.href = "/login";
+
+    const next = `${pathname}${search}${hash}`;
+    const loginUrl = new URL("/login", window.location.origin);
+    loginUrl.searchParams.set("next", next);
+    window.location.href = loginUrl.toString();
   }
 
   private notifyLogout() {

@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/lib/auth-context";
+import { consumeAuthReturnPath } from "@/lib/auth-return-path";
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ export default function AuthCallbackPage() {
       }
 
       if (user) {
-        navigate("/", { replace: true });
+        navigate(consumeAuthReturnPath() ?? "/", { replace: true });
       } else {
         navigate("/login?error=auth_failed", { replace: true });
       }

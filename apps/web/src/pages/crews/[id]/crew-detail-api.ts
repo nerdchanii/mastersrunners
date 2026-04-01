@@ -4,7 +4,7 @@ interface CrewMember {
   id: string;
   userId: string;
   role: "OWNER" | "ADMIN" | "MEMBER";
-  status: "ACTIVE" | "PENDING";
+  status: "ACTIVE" | "PENDING" | "LEFT";
   joinedAt: string;
   user: {
     id: string;

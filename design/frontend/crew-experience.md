@@ -55,12 +55,15 @@ Membership state determines which tabs and controls are visible:
 - non-members can request or join
 - active members can view internal tabs
 - owners/admins see moderation, settings, and attendance-management controls
+- invite entrants who land on `/crews/:id?invite=1` should see a lightweight shared-invite explainer above the crew header until they join or their request becomes pending
 
 ### Settings Shell
 
 - `/crews/:id/settings` keeps basic-info editing in a single flat panel instead of nesting a generic form card inside another page card.
 - simple text inputs rely on placeholders and supporting copy where that reduces noise without hiding intent.
 - destructive owner actions remain visually separated, but they are no longer wrapped in the same card style as routine editing.
+- owner/admin surfaces now expose a dedicated invite-link share action in both the crew hub and settings so operators do not have to copy crew URLs manually
+- the current invite URL contract is `/crews/:id?invite=1`; when an unauthenticated user opens it, the login flow should preserve that destination and return the user to the same invite entry after authentication
 
 ## Activity Model in the UI
 

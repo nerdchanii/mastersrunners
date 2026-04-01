@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Share2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -15,6 +15,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth-context";
+import { shareLink } from "@/lib/share-link";
+
+import { fetchCrewInviteLink, resolveCrewInviteUrl } from "../crew-invite-api";
 
 import {
   deleteCrew,
@@ -79,6 +82,7 @@ export default function CrewSettingsClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSharingInvite, setIsSharingInvite] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("edit");
 
@@ -164,6 +168,32 @@ export default function CrewSettingsClient() {
     }
   };
 
+  const handleShareInvite = async () => {
+    if (!crewId || !crew) {
+      return;
+    }
+
+    setIsSharingInvite(true);
+    try {
+      const invite = await fetchCrewInviteLink(crewId);
+      const result = await shareLink({
+        title: `${crew.name} 크루 초대`,
+        text: `${crew.name} 크루에 참여해보세요.`,
+        url: resolveCrewInviteUrl(invite.path),
+      });
+
+      if (result === "shared") {
+        toast.success("크루 초대 링크 공유 창을 열었습니다.");
+      } else if (result === "copied") {
+        toast.success("크루 초대 링크를 복사했습니다.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "초대 링크를 공유하지 못했습니다.");
+    } finally {
+      setIsSharingInvite(false);
+    }
+  };
+
   if (!crewId || crewId === "_") {
     return (
       <div className="container max-w-2xl mx-auto text-center py-12">
@@ -219,9 +249,15 @@ export default function CrewSettingsClient() {
         title="크루 설정"
         description={crew.name}
         actions={
-          <Button variant="outline" onClick={() => navigate(`/crews/${crewId}`)}>
-            돌아가기
-          </Button>
+          <>
+            <Button variant="outline" onClick={handleShareInvite} disabled={isSharingInvite}>
+              <Share2 className="mr-2 size-4" />
+              {isSharingInvite ? "공유 준비 중..." : "초대 링크"}
+            </Button>
+            <Button variant="outline" onClick={() => navigate(`/crews/${crewId}`)}>
+              돌아가기
+            </Button>
+          </>
         }
       />
 

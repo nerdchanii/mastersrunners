@@ -1,6 +1,6 @@
-import { Lock, LogOut, Settings, UserPlus, Users } from "lucide-react";
+import { Lock, LogOut, Settings, Share2, UserPlus, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
@@ -20,14 +20,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCrewChat } from "@/hooks/useGroupChat";
 import { useAuth } from "@/lib/auth-context";
+import { shareLink } from "@/lib/share-link";
 
 import { fetchCrewDetail, joinCrew, leaveCrew } from "./crew-detail-api";
+import { fetchCrewInviteLink, resolveCrewInviteUrl } from "./crew-invite-api";
 
 interface CrewMember {
   id: string;
   userId: string;
   role: "OWNER" | "ADMIN" | "MEMBER";
-  status: "ACTIVE" | "PENDING";
+  status: "ACTIVE" | "PENDING" | "LEFT";
   joinedAt: string;
   user: {
     id: string;
@@ -58,6 +60,7 @@ interface CrewDetail {
 export default function CrewDetailClient() {
   const params = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const crewId = params.id as string;
 
@@ -65,6 +68,7 @@ export default function CrewDetailClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
+  const [isSharingInvite, setIsSharingInvite] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("members");
   const { data: chatData, isLoading: chatLoading } = useCrewChat(crewId);
@@ -88,8 +92,10 @@ export default function CrewDetailClient() {
 
   const currentMember = crew?.members?.find((m) => m.userId === user?.id);
   const isMember = !!currentMember && currentMember.status === "ACTIVE";
+  const canJoinCrew = !!user && (!currentMember || currentMember.status === "LEFT");
   const currentUserRole = currentMember?.role ?? null;
   const isOwnerOrAdmin = currentUserRole === "OWNER" || currentUserRole === "ADMIN";
+  const isInviteEntry = searchParams.get("invite") === "1";
 
   const handleJoin = async () => {
     if (!crewId) return;
@@ -101,6 +107,32 @@ export default function CrewDetailClient() {
       toast.error(err instanceof Error ? err.message : "가입에 실패했습니다.");
     } finally {
       setIsJoining(false);
+    }
+  };
+
+  const handleShareInvite = async () => {
+    if (!crewId || !crew) {
+      return;
+    }
+
+    setIsSharingInvite(true);
+    try {
+      const invite = await fetchCrewInviteLink(crewId);
+      const result = await shareLink({
+        title: `${crew.name} 크루 초대`,
+        text: `${crew.name} 크루에 참여해보세요.`,
+        url: resolveCrewInviteUrl(invite.path),
+      });
+
+      if (result === "shared") {
+        toast.success("크루 초대 링크 공유 창을 열었습니다.");
+      } else if (result === "copied") {
+        toast.success("크루 초대 링크를 복사했습니다.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "초대 링크를 공유하지 못했습니다.");
+    } finally {
+      setIsSharingInvite(false);
     }
   };
 
@@ -165,6 +197,31 @@ export default function CrewDetailClient() {
 
   return (
     <div className="container max-w-4xl mx-auto py-6 space-y-6">
+      {isInviteEntry && !isMember && (
+        <section className="rounded-3xl border border-primary/20 bg-primary/5 px-5 py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-foreground">운영진이 보낸 초대 링크예요.</p>
+              <p className="text-sm text-muted-foreground">
+                공개 크루는 바로 가입되고, 비공개 크루는 가입 요청이 대기 멤버로 전달됩니다.
+              </p>
+            </div>
+            {currentMember?.status === "PENDING" ? (
+              <Badge variant="secondary" className="w-fit">
+                가입 요청 대기 중
+              </Badge>
+            ) : (
+              canJoinCrew && (
+                <Button onClick={handleJoin} disabled={isJoining}>
+                  <UserPlus className="mr-2 size-4" />
+                  {isJoining ? "가입 중..." : "이 링크로 가입하기"}
+                </Button>
+              )
+            )}
+          </div>
+        </section>
+      )}
+
       {/* Crew Header */}
       <Card>
         <CardContent className="p-6">
@@ -210,7 +267,7 @@ export default function CrewDetailClient() {
             <TimeAgo date={crew.createdAt} />
 
             <div className="flex items-center gap-2">
-              {user && !isMember && (
+              {canJoinCrew && (
                 <Button onClick={handleJoin} disabled={isJoining}>
                   <UserPlus className="size-4 mr-2" />
                   {isJoining ? "가입 중..." : "크루 가입"}
@@ -225,10 +282,16 @@ export default function CrewDetailClient() {
               )}
 
               {isOwnerOrAdmin && (
-                <Button variant="outline" onClick={() => navigate(`/crews/${crewId}/settings`)}>
-                  <Settings className="size-4 mr-2" />
-                  설정
-                </Button>
+                <>
+                  <Button variant="outline" onClick={handleShareInvite} disabled={isSharingInvite}>
+                    <Share2 className="mr-2 size-4" />
+                    {isSharingInvite ? "공유 준비 중..." : "초대 링크"}
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate(`/crews/${crewId}/settings`)}>
+                    <Settings className="size-4 mr-2" />
+                    설정
+                  </Button>
+                </>
               )}
             </div>
           </div>

@@ -203,6 +203,57 @@ describe("CrewsService", () => {
     });
   });
 
+  describe("getInviteLink", () => {
+    it("should return a stable invite path for owner", async () => {
+      const crewId = "crew-123";
+      const userId = "user-owner";
+
+      mockCrewRepository.findById.mockResolvedValue({ id: crewId });
+      mockCrewMemberRepository.findMember.mockResolvedValue({
+        role: "OWNER",
+        status: "ACTIVE",
+      });
+
+      await expect(service.getInviteLink(crewId, userId)).resolves.toEqual({
+        path: `/crews/${crewId}?invite=1`,
+      });
+    });
+
+    it("should throw NotFoundException if crew not found", async () => {
+      mockCrewRepository.findById.mockResolvedValue(null);
+
+      await expect(service.getInviteLink("non-existent", "user-owner")).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it("should throw ForbiddenException for non-admin members", async () => {
+      const crewId = "crew-123";
+
+      mockCrewRepository.findById.mockResolvedValue({ id: crewId });
+      mockCrewMemberRepository.findMember.mockResolvedValue({
+        role: "MEMBER",
+        status: "ACTIVE",
+      });
+
+      await expect(service.getInviteLink(crewId, "user-member")).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it("should throw ForbiddenException for pending admins", async () => {
+      const crewId = "crew-123";
+
+      mockCrewRepository.findById.mockResolvedValue({ id: crewId });
+      mockCrewMemberRepository.findMember.mockResolvedValue({
+        role: "ADMIN",
+        status: "PENDING",
+      });
+
+      await expect(service.getInviteLink(crewId, "user-admin")).rejects.toThrow(ForbiddenException);
+    });
+  });
+
   describe("findAll", () => {
     it("should delegate to crewRepo.findAll and return { data, nextCursor }", async () => {
       const options = { isPublic: true, cursor: "crew-100", limit: 20 };

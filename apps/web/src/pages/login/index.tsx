@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/lib/auth-context";
+import { rememberAuthReturnPath, sanitizeAuthReturnPath } from "@/lib/auth-return-path";
 import { defaultPublicRuntimeConfig, usePublicRuntimeConfig } from "@/lib/public-config";
 
 import { isLocalApiBase, performDevLogin, startOAuthLogin } from "./login-api";
@@ -16,15 +17,17 @@ function LoginContent() {
   const { isAuthenticated, isLoading, refreshUser } = useAuth();
   const { data: runtimeConfig, isPending: isRuntimeConfigPending } = usePublicRuntimeConfig();
   const error = searchParams.get("error");
+  const nextPath = sanitizeAuthReturnPath(searchParams.get("next"));
   const providers = runtimeConfig?.authProviders ?? defaultPublicRuntimeConfig.authProviders;
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      navigate("/", { replace: true });
+      navigate(nextPath ?? "/", { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, navigate, nextPath]);
 
   const handleOAuth = (provider: string) => {
+    rememberAuthReturnPath(nextPath);
     startOAuthLogin(provider);
   };
 
@@ -115,7 +118,7 @@ function LoginContent() {
                     try {
                       await performDevLogin();
                       await refreshUser();
-                      navigate("/", { replace: true });
+                      navigate(nextPath ?? "/", { replace: true });
                     } catch {
                       // silently fail
                     }

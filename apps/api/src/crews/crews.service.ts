@@ -81,6 +81,26 @@ export class CrewsService {
     return crew;
   }
 
+  async getInviteLink(crewId: string, userId: string) {
+    const crew = await this.crewRepo.findById(crewId);
+    if (!crew) {
+      throw new NotFoundException("크루를 찾을 수 없습니다.");
+    }
+
+    const member = await this.crewMemberRepo.findMember(crewId, userId);
+    if (
+      !member ||
+      member.status !== "ACTIVE" ||
+      (member.role !== "OWNER" && member.role !== "ADMIN")
+    ) {
+      throw new ForbiddenException("크루 운영진만 초대 링크를 공유할 수 있습니다.");
+    }
+
+    return {
+      path: `/crews/${crewId}?invite=1`,
+    };
+  }
+
   async findAll(options: { isPublic?: boolean; cursor?: string; limit?: number }) {
     return this.crewRepo.findAll(options);
   }

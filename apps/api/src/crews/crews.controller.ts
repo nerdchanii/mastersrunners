@@ -89,6 +89,14 @@ export class CrewsController {
     return this.crewsService.getSubRegions(region);
   }
 
+  @ApiOperation({ summary: "크루 초대 링크 조회 (운영진 전용)" })
+  @ApiResponse({ status: 200, description: "성공" })
+  @Get(":id/invite-link")
+  getInviteLink(@Param("id") id: string, @Req() req: Request) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.getInviteLink(id, userId);
+  }
+
   @ApiOperation({ summary: "크루 상세 조회" })
   @ApiResponse({ status: 200, description: "성공" })
   @Get(":id")

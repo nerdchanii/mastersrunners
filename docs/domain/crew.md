@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: product
-last_verified: 2026-03-30
+last_verified: 2026-04-01
 sources:
   - packages/database/prisma/schema.prisma
   - apps/api/src
@@ -96,9 +96,17 @@ sources:
 
 - OWNER/ADMIN
   - 설정, 멤버 관리, 활동 운영, 태그 관리
+  - 안정적인 크루 초대 URL 공유
 - MEMBER
   - 가입 후 활동 참여, 채팅, 일부 활동 생성
 - 정확한 화면 권한은 현재 프론트엔드 route와 백엔드 서비스 규칙이 함께 결정한다.
+
+## 초대 URL
+
+- 현재 운영진 전용 초대 경로는 `GET /crews/:id/invite-link`로 조회한다.
+- 반환되는 안정 경로는 `/crews/:id?invite=1` 형식이다.
+- 초대 링크를 연 사용자가 로그인되지 않았다면, 로그인 후 다시 같은 초대 경로로 복귀해야 한다.
+- 초대 링크는 별도 토큰 기반 초대장이 아니라 기존 크루 join/request 정책 위에 얹힌 운영진 공유 진입점이다.
 
 ## 현재 제약
 
