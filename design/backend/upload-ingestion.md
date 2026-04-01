@@ -28,6 +28,7 @@ Uploads are handled inside the API through a storage-adapter abstraction, with d
 - `StorageAdapter` defines signed upload/download URL generation, public URL derivation, file download, and deletion.
 - `UploadsModule` chooses either `DiskStorageAdapter` or `R2StorageAdapter` at startup.
 - Disk mode is the current default unless production-style R2 configuration is present.
+- Production-style R2 configuration uses `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and the derived standard Cloudflare R2 endpoint unless `R2_ENDPOINT` is explicitly overridden.
 - `/uploads/presign` is a shared upload boundary used beyond workouts, including profile and post-image flows.
 
 ## Upload Request Flow

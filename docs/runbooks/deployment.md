@@ -145,6 +145,8 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
   - `R2_SECRET_ACCESS_KEY`
   - `R2_BUCKET_NAME`
   - `R2_PUBLIC_URL`
+- The API derives the standard Cloudflare R2 S3 endpoint from `R2_ACCOUNT_ID`, so `R2_ENDPOINT` does not need to be stored as a separate secret for the normal Cloudflare R2 path.
+- Only set `R2_ENDPOINT` explicitly when you need to override the standard Cloudflare R2 host shape for a non-default environment.
 - Optional social-login secrets can also be stored if they are present in the env file:
   - `KAKAO_CLIENT_ID`
   - `KAKAO_CLIENT_SECRET`

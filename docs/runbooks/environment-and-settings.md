@@ -42,6 +42,7 @@ This document is intentionally an index. It does not duplicate every environment
 
 - Storage adapter selection is controlled by `STORAGE_TYPE`.
 - R2 and disk-storage details are documented in `docs/runbooks/deployment.md`.
+- For the standard Cloudflare R2 path, the API derives the S3 endpoint from `R2_ACCOUNT_ID`; do not treat `R2_ENDPOINT` as a required runtime secret unless you intentionally override the default host.
 - Upload request flow, file-type rules, and storage ownership boundaries live in `design/backend/upload-ingestion.md`.
 
 ## Update Rules
