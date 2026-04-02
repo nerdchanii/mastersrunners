@@ -13,6 +13,8 @@ const mockUserRepo = {
   findByIdWithProfile: jest.fn(),
   findByEmail: jest.fn(),
   createWithAccount: jest.fn(),
+  update: jest.fn(),
+  restoreDeletedUser: jest.fn(),
 };
 
 const mockAccountRepo = {
@@ -81,18 +83,24 @@ describe("AuthService", () => {
   });
 
   describe("upsertOAuthUser", () => {
+    const insecureKakaoProfileImage = "http://k.kakaocdn.net/dn/profile.png";
+    const secureKakaoProfileImage = "https://k.kakaocdn.net/dn/profile.png";
     const baseProfile: OAuthProfile = {
       provider: "kakao",
       providerAccountId: "kakao-123",
       email: "test@test.com",
       name: "Test User",
-      profileImage: "https://img.test/photo.jpg",
+      profileImage: insecureKakaoProfileImage,
       accessToken: "oauth-access",
       refreshToken: "oauth-refresh",
     };
 
     it("should update tokens and return user when account exists", async () => {
-      const existingUser = { id: "u1", email: "test@test.com" };
+      const existingUser = {
+        id: "u1",
+        email: "test@test.com",
+        profileImage: "https://img.test/photo.jpg",
+      };
       mockAccountRepo.findByProviderWithUser.mockResolvedValue({
         id: "a1",
         user: existingUser,
@@ -105,9 +113,33 @@ describe("AuthService", () => {
         "oauth-access",
         "oauth-refresh",
       );
+      expect(mockUserRepo.update).not.toHaveBeenCalled();
       expect(result).toEqual({ ...existingUser, deletedAt: null });
       expect(mockUserRepo.findByEmail).not.toHaveBeenCalled();
       expect(mockUserRepo.createWithAccount).not.toHaveBeenCalled();
+    });
+
+    it("should refresh persisted insecure Kakao profile images for existing accounts", async () => {
+      const existingUser = {
+        id: "u1",
+        email: "test@test.com",
+        profileImage: insecureKakaoProfileImage,
+      };
+      mockAccountRepo.findByProviderWithUser.mockResolvedValue({
+        id: "a1",
+        user: existingUser,
+      });
+
+      const result = await service.upsertOAuthUser(baseProfile);
+
+      expect(mockUserRepo.update).toHaveBeenCalledWith("u1", {
+        profileImage: secureKakaoProfileImage,
+      });
+      expect(result).toEqual({
+        ...existingUser,
+        profileImage: secureKakaoProfileImage,
+        deletedAt: null,
+      });
     });
 
     it("should link account to existing user when email matches", async () => {
@@ -140,7 +172,7 @@ describe("AuthService", () => {
         {
           email: "test@test.com",
           name: "Test User",
-          profileImage: "https://img.test/photo.jpg",
+          profileImage: secureKakaoProfileImage,
           emailVerified: expect.any(Date),
         },
         {
@@ -164,7 +196,48 @@ describe("AuthService", () => {
 
       const call = mockUserRepo.createWithAccount.mock.calls[0][0];
       expect(call.email).toBe("kakao_kakao-123@placeholder.local");
+      expect(call.profileImage).toBe(secureKakaoProfileImage);
       expect(call.emailVerified).toBeNull();
+    });
+
+    it("should restore deleted users with a normalized Kakao profile image", async () => {
+      mockAccountRepo.findByProviderWithUser.mockResolvedValue({
+        id: "a1",
+        user: {
+          id: "u1",
+          email: "test@test.com",
+          profileImage: insecureKakaoProfileImage,
+          deletedAt: new Date("2026-04-01T00:00:00.000Z"),
+        },
+      });
+
+      await service.upsertOAuthUser(baseProfile);
+
+      expect(mockUserRepo.restoreDeletedUser).toHaveBeenCalledWith(
+        "u1",
+        "Test User",
+        secureKakaoProfileImage,
+      );
+    });
+
+    it("should not normalize unrelated insecure external profile images", async () => {
+      const nonKakaoProfile: OAuthProfile = {
+        ...baseProfile,
+        profileImage: "http://cdn.example.com/avatar.png",
+      };
+      const newUser = { id: "u-new", email: "test@test.com" };
+      mockAccountRepo.findByProviderWithUser.mockResolvedValue(null);
+      mockUserRepo.findByEmail.mockResolvedValue(null);
+      mockUserRepo.createWithAccount.mockResolvedValue(newUser);
+
+      await service.upsertOAuthUser(nonKakaoProfile);
+
+      expect(mockUserRepo.createWithAccount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          profileImage: "http://cdn.example.com/avatar.png",
+        }),
+        expect.any(Object),
+      );
     });
   });
 

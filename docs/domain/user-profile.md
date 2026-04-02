@@ -17,16 +17,18 @@ sources:
 
 ## 현재 저장 필드
 
-| 필드 | 현재 의미 |
-| --- | --- |
-| `name` | 표시 이름 |
-| `bio` | 자기소개 |
-| `profileImage` | 프로필 이미지 URL |
-| `backgroundImage` | 배경 이미지 URL |
-| `isPrivate` | 계정 공개 여부 |
+| 필드                    | 현재 의미                                                  |
+| ----------------------- | ---------------------------------------------------------- |
+| `name`                  | 표시 이름                                                  |
+| `bio`                   | 자기소개                                                   |
+| `profileImage`          | 프로필 이미지 URL                                          |
+| `backgroundImage`       | 배경 이미지 URL                                            |
+| `isPrivate`             | 계정 공개 여부                                             |
 | `workoutSharingDefault` | 워크아웃 기본 공개 범위 (`PRIVATE`, `FOLLOWERS`, `PUBLIC`) |
-| `region`, `subRegion` | 지역 정보 |
-| `deletedAt` | 탈퇴 soft delete 시각 |
+| `region`, `subRegion`   | 지역 정보                                                  |
+| `deletedAt`             | 탈퇴 soft delete 시각                                      |
+
+OAuth 제공자 프로필 이미지 중 지원된 외부 avatar는 인증 경계에서 안전한 `https` URL로 정규화해 저장한다. 현재 이 정규화는 Kakao CDN avatar URL에 한정된다.
 
 ## 현재 프로필 화면 구성
 
@@ -39,11 +41,11 @@ sources:
 
 ### 현재 탭
 
-| 탭 | 현재 내용 |
-| --- | --- |
-| `posts` | 사용자의 포스트 목록 |
-| `workouts` | 사용자의 워크아웃 목록 |
-| `crews` | 사용자가 속한 크루 목록 |
+| 탭         | 현재 내용               |
+| ---------- | ----------------------- |
+| `posts`    | 사용자의 포스트 목록    |
+| `workouts` | 사용자의 워크아웃 목록  |
+| `crews`    | 사용자가 속한 크루 목록 |
 
 현재 profile tab surface에는 `shoes`, `race records`, 사용자별 ON/OFF 탭 설정이 없다.
 
@@ -73,14 +75,14 @@ Onboarding에서는 `name`, `bio`, `isPrivate`를 먼저 설정한다.
 
 ### 현재 저장 필드
 
-| 필드 | 의미 |
-| --- | --- |
-| `type` | 알림 유형 |
-| `referenceType` | 관련 엔티티 종류 |
-| `referenceId` | 관련 엔티티 ID |
-| `message` | 사용자에게 보여줄 메시지 |
-| `isRead` | 읽음 여부 |
-| `createdAt` | 생성 시각 |
+| 필드            | 의미                     |
+| --------------- | ------------------------ |
+| `type`          | 알림 유형                |
+| `referenceType` | 관련 엔티티 종류         |
+| `referenceId`   | 관련 엔티티 ID           |
+| `message`       | 사용자에게 보여줄 메시지 |
+| `isRead`        | 읽음 여부                |
+| `createdAt`     | 생성 시각                |
 
 ### 현재 동작
 

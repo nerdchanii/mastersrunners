@@ -21,6 +21,43 @@ interface TokenPayload {
   email: string;
 }
 
+const KAKAO_CDN_HOST = "k.kakaocdn.net";
+const KAKAO_CDN_HOST_SUFFIX = ".kakaocdn.net";
+
+function parseUrl(value: string): URL | null {
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
+}
+
+function isInsecureKakaoProfileImage(value: string | null): value is string {
+  if (!value) {
+    return false;
+  }
+
+  const parsedUrl = parseUrl(value);
+  return (
+    parsedUrl?.protocol === "http:" &&
+    (parsedUrl.hostname === KAKAO_CDN_HOST || parsedUrl.hostname.endsWith(KAKAO_CDN_HOST_SUFFIX))
+  );
+}
+
+function normalizeOAuthProfileImage(provider: string, profileImage: string | null) {
+  if (provider !== "kakao" || !isInsecureKakaoProfileImage(profileImage)) {
+    return profileImage;
+  }
+
+  const parsedUrl = parseUrl(profileImage);
+  if (!parsedUrl) {
+    return profileImage;
+  }
+
+  parsedUrl.protocol = "https:";
+  return parsedUrl.toString();
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -55,8 +92,16 @@ export class AuthService {
    *    b. Otherwise: create User + Account atomically
    */
   async upsertOAuthUser(profile: OAuthProfile) {
-    const { provider, providerAccountId, email, name, profileImage, accessToken, refreshToken } =
-      profile;
+    const {
+      provider,
+      providerAccountId,
+      email,
+      name,
+      profileImage: rawProfileImage,
+      accessToken,
+      refreshToken,
+    } = profile;
+    const profileImage = normalizeOAuthProfileImage(provider, rawProfileImage);
 
     // 1. Check if this OAuth account already exists
     const existingAccount = await this.accountRepo.findByProviderWithUser(
@@ -66,6 +111,12 @@ export class AuthService {
 
     if (existingAccount) {
       await this.accountRepo.updateTokens(existingAccount.id, accessToken, refreshToken);
+
+      if (isInsecureKakaoProfileImage(existingAccount.user.profileImage) && profileImage) {
+        await this.userRepo.update(existingAccount.user.id, { profileImage });
+        existingAccount.user.profileImage = profileImage;
+      }
+
       // 탈퇴한 유저가 재로그인하면 deletedAt 초기화
       if (existingAccount.user.deletedAt) {
         await this.userRepo.restoreDeletedUser(existingAccount.user.id, name, profileImage);

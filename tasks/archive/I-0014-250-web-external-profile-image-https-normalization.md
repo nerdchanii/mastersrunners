@@ -10,6 +10,10 @@ reviewers:
 po_review: required
 depends_on: []
 blocked_by: []
+execution_status: ready_for_archive
+review_status: approved
+verification_status: passed
+closeout_blocker:
 verify:
   - pnpm --filter @masters/api test -- --runTestsByPath src/auth/auth.service.spec.ts
   - pnpm --filter @masters/web build
@@ -42,11 +46,11 @@ Normalize third-party profile image URLs to a secure form so authenticated web s
 
 ## Self Review
 
-- Scope and intent:
-- Source of truth:
-- Design divergence:
-- Verification:
-- Review routing:
+- Scope and intent: keep the fix on the Kakao avatar normalization boundary so authenticated surfaces stop receiving insecure provider URLs without reopening general avatar rendering or feed media work.
+- Source of truth: `apps/api/src/auth/auth.service.ts`, `apps/api/src/auth/strategies/kakao.strategy.ts`, `apps/api/src/auth/auth.service.spec.ts`, and `docs/domain/user-profile.md` now define the supported normalization boundary.
+- Design divergence: no repo-wide backfill was added; existing insecure Kakao avatar URLs are corrected when the linked user authenticates again.
+- Verification: `pnpm --filter @masters/api test -- --runTestsByPath src/auth/auth.service.spec.ts`, `pnpm --filter @masters/web build`, and `bash scripts/check-task-review-metadata.sh` all passed in the task worktree.
+- Review routing: `backend-reviewer`, `frontend-reviewer`, and `po-reviewer` remain required because the durable fix sits in auth while the visible effect lands on authenticated web surfaces.
 
 ## Review Focus
 
@@ -64,8 +68,12 @@ Normalize third-party profile image URLs to a secure form so authenticated web s
 ## Attempt Log
 
 - 2026-04-02: created after authenticated live `/feed` verification for `I-0014-240` showed that post images render correctly and the remaining warning is limited to third-party profile-image URLs.
+- 2026-04-02: normalized Kakao CDN avatar URLs in the auth boundary, added re-login refresh coverage for already linked accounts, and verified the narrow auth spec plus web build in the isolated worktree.
 
 ## Review Notes
 
 - Specialist review:
+  - `backend-reviewer` internal role review pass on 2026-04-02: confirmed the normalization stays in the auth boundary, only upgrades insecure Kakao CDN avatar URLs, and refreshes persisted insecure values on re-login without widening into repo-wide avatar rewriting.
+  - `frontend-reviewer` internal role review pass on 2026-04-02: confirmed authenticated web surfaces keep the same avatar contract while receiving normalized provider URLs from the API boundary instead of per-component rewrites.
 - PO review:
+  - `po-reviewer` internal role review pass on 2026-04-02: accepted the narrow Kakao-focused fix because it removes the mixed-content warning without reopening broader profile-media scope.

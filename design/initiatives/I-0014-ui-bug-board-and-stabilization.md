@@ -121,7 +121,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - `tasks/todo/I-0014-230-web-feedback-backoffice-access-boundary.md`
 - `tasks/todo/I-0014-260-web-feedback-ops-inbox-and-triage.md`
 - `tasks/todo/I-0014-270-web-feedback-ops-handoff-actions.md`
-- `tasks/todo/I-0014-250-web-external-profile-image-https-normalization.md`
+- `tasks/archive/I-0014-250-web-external-profile-image-https-normalization.md`
 
 ## Success Criteria
 
@@ -143,3 +143,4 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - 2026-04-02: `I-0014-240` is now review-ready with targeted API/web verification complete; only the repo-wide pre-existing Prisma/Jest ESM issue still blocks the task's narrow API e2e command.
 - 2026-04-02: `I-0014-240` is now archived after authenticated live `/feed` verification confirmed persisted post images render again on the dev lane and the Cloudflare analytics CSP regression stays closed.
 - 2026-04-02: seeded `I-0014-250` for the residual mixed-content warning from third-party `profileImage` URLs observed during the same authenticated `/feed` check; that warning is separate from the post-media regression fixed by `I-0014-240`.
+- 2026-04-02: `I-0014-250` is now archived after narrowing the fix to Kakao avatar normalization at the auth boundary, refreshing persisted insecure Kakao URLs on re-login, and keeping authenticated web avatar behavior unchanged.
