@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-04-01
+last_verified: 2026-04-02
 sources:
   - packages/database/package.json
   - packages/database/src/index.ts
@@ -57,6 +57,8 @@ The schema currently concentrates multiple domains in one relational model:
   - workflow `status`
   - timestamps
 - The first version is intentionally intake-only. Operator review surfaces should read this same table instead of creating a second feedback pipeline later.
+- The next operator flow is expected to run behind a single Access-protected `ops.<lane>.mastersrunners.com` host rather than on the public app host.
+- Future task/issue/initiative handoff metadata should stay attached to the same submission root record instead of forking feedback into a second tracker.
 
 ## Transaction Model
 

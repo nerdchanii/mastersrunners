@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: architecture
-last_verified: 2026-04-01
+last_verified: 2026-04-02
 sources:
   - .github/workflows/deploy.yml
   - scripts/verify-deployment.sh
@@ -21,6 +21,7 @@ This document defines the intended deployment shape for the repository. Runbooks
 
 - API: NestJS container on Google Cloud Run
 - Web: static Vite SPA on Cloudflare Pages
+- Planned operator surface: single `ops.<lane>.mastersrunners.com` host fronted by Cloudflare Access
 - Database: Supabase Postgres
 - File storage: Cloudflare R2
 
@@ -47,6 +48,7 @@ This document defines the intended deployment shape for the repository. Runbooks
 - The Pages header contract keeps Cloudflare Web Analytics on an explicit external beacon host and blocks inline HTML mutation with `Cache-Control: public, no-transform`.
 - The API applies a centralized bootstrap-level response-header policy before route handling.
 - API JSON surfaces use a deny-by-default CSP, while Swagger UI uses a narrower Swagger-safe CSP instead of inheriting an accidental default.
+- Public app hosts should not treat Swagger as part of the same-domain contract; operator docs are intended to move behind the future ops host.
 - Current HSTS posture is `max-age=31536000` only.
 - `includeSubDomains` and `preload` are intentionally deferred because `mastersrunners.com` and `www.mastersrunners.com` still serve placeholder content outside the active app rollout.
 
@@ -65,6 +67,7 @@ This document defines the intended deployment shape for the repository. Runbooks
 - Redis appears in environment and compose-level deployment assumptions, but the current repo implementation does not use a shared Redis runtime for app logic or realtime fan-out
 - The Pages project itself is external state, so its build command and output directory must match `docs/runbooks/deployment.md`
 - Branch aliases, custom domains, and `/api/*` proxy rules for Pages are also external state and are tracked under `EX-0004`
+- The future ops host, its Access policy, and any `/api-docs*` or operator-route proxy rules are external state tracked under `EX-0007`
 - The deployment verify script should block automated deploys on the direct API origin only; web-host header proof remains available through the same script when operators provide `WEB_VERIFY_URL`, because the Pages host is external state tracked under `EX-0004`
 
 ### Local Production-Like
@@ -75,6 +78,9 @@ This document defines the intended deployment shape for the repository. Runbooks
 ### Current Rollout Phase
 
 - The active app host is expected to be `dev.mastersrunners.com` on the `dev` branch while apex/www remain on a placeholder site.
+- The public `dev.mastersrunners.com` host is expected to carry the app plus `/api/*`, but not public Swagger.
+- Planned staff-only host:
+  - `dev` lane -> `ops.dev.mastersrunners.com`
 - The API has two automated deploy lanes:
   - `dev` branch -> `masters-runners-api-dev`
   - `main` branch -> `masters-runners-api`

@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: harness
-last_verified: 2026-04-01
+last_verified: 2026-04-02
 sources:
   - AGENTS.md
   - docs/runbooks/harness-diagnostics.md
@@ -61,9 +61,20 @@ Exceptions are only for repository controls that cannot be fully proven or close
 - `reason_not_repo_controllable`: Cloudflare Pages branch aliases, custom domains, build environment variables, and same-domain `/api/*` proxy rules are dashboard-managed external state.
 - `external_owner`: project owner
 - `required_external_proof`: dashboard evidence plus runtime checks showing `dev.mastersrunners.com` points at the `dev` branch build, `VITE_API_URL` is set, and `/api/*` reaches the intended API origin
-- `latest_observed_external_state`: 2026-04-01 runtime checks show `https://dev.mastersrunners.com/api/v1/health` returns API health JSON and `https://dev.mastersrunners.com/api/v1/auth/providers` reaches the dev API lane through the same-domain Cloudflare route, while GitHub Actions deploy verification of `https://dev.mastersrunners.com` itself currently receives `403` from the externally managed Pages host.
+- `latest_observed_external_state`: 2026-04-02 runtime checks show `https://dev.mastersrunners.com/api/v1/health` and `https://dev.mastersrunners.com/api/v1/auth/providers` still reach the dev API lane through the same-domain Cloudflare route, while public `dev.mastersrunners.com` is no longer being treated as the desired Swagger host.
 - `revisit_date`: 2026-04-15
 - `unblock_condition`: branch/domain mapping and `/api/*` proxy behavior are externally verified and no longer rely on implicit dashboard state
+
+### EX-0007
+
+- `related_principles`: `P3`, `P8`, `P10`
+- `repo_control`: `cloudflare-ops-host-zero-trust-and-operator-routing`
+- `reason_not_repo_controllable`: Cloudflare Access applications and policies, custom domains, and Worker routes for the future ops host are dashboard-managed external state.
+- `external_owner`: project owner
+- `required_external_proof`: evidence that `ops.dev.mastersrunners.com` exists, is fronted by Cloudflare Access, routes `/api/*` and `/api-docs*` to the intended dev API origin, and no longer relies on public `dev.mastersrunners.com/api-docs*`.
+- `latest_observed_external_state`: 2026-04-02 design direction is now one Access-protected `ops.dev.mastersrunners.com` host for backoffice UI, operator API, and Swagger, but that host and policy do not exist yet.
+- `revisit_date`: 2026-04-15
+- `unblock_condition`: the ops host, its Access policy, and its operator-route proxy behavior are externally verified end-to-end
 
 ### EX-0005
 

@@ -127,7 +127,7 @@ if [ -n "$WEB_URL" ]; then
   verify_headers \
     "web root" \
     "$WEB_URL" \
-    "Content-Security-Policy" "default-src 'self'; base-uri 'self'; connect-src 'self' https://dev.mastersrunners.com https://mastersrunners.com https://www.mastersrunners.com https://*.run.app https://*.a.run.app https://*.r2.cloudflarestorage.com; font-src 'self' https://fonts.gstatic.com; form-action 'self'; frame-ancestors 'none'; img-src 'self' data: blob: https:; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com" \
+    "Content-Security-Policy" "default-src 'self'; base-uri 'self'; connect-src 'self' https://cloudflareinsights.com https://dev.mastersrunners.com https://mastersrunners.com https://www.mastersrunners.com https://*.run.app https://*.a.run.app https://*.r2.cloudflarestorage.com; font-src 'self' https://fonts.gstatic.com; form-action 'self'; frame-ancestors 'none'; img-src 'self' data: blob: https:; object-src 'none'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com" \
     "Permissions-Policy" "accelerometer=(), autoplay=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()" \
     "Strict-Transport-Security" "max-age=31536000" \
     "X-Frame-Options" "DENY"

@@ -12,10 +12,6 @@ reviewers:
 po_review: required
 depends_on: []
 blocked_by: []
-execution_status: blocked
-review_status: approved
-verification_status: partial
-closeout_blocker: live /feed confirmation still requires an authenticated browser session; the current unauthenticated dev-lane probe redirects to /login before feed images can be checked.
 verify:
   - VITE_API_URL=https://dev.mastersrunners.com/api/v1 pnpm --filter @masters/web build
   - pnpm --filter @masters/api test:e2e -- --runTestsByPath test/feed.e2e-spec.ts
@@ -56,8 +52,8 @@ Restore image-bearing posts on `/feed` and align the deployed web CSP with Cloud
 
 - Scope and intent: kept to general post read surfaces plus the Pages analytics/CSP boundary; crew-board image contracts and storage write-path changes stayed out of scope.
 - Source of truth: `design/architecture/deployment.md`, `docs/runbooks/deployment.md`, and the current post/feed service contracts in `apps/api/src/posts/` plus `apps/api/src/feed/`.
-- Design divergence: current implementation now follows the intended read-model boundary for post images, but live deploy confirmation still depends on shipping these changes to the dev Pages lane.
-- Verification: `pnpm --filter @masters/api build`, targeted post/feed service specs, `VITE_API_URL=https://dev.mastersrunners.com/api/v1 pnpm --filter @masters/web build`, Playwright coverage for `/feed` and `/posts/:id`, `bash scripts/check-task-review-metadata.sh`, and `git diff --check` all passed; API e2e remains blocked by the pre-existing Prisma/Jest ESM runtime issue noted below.
+- Design divergence: the feed post-media regression and Cloudflare analytics CSP issue are closed on the dev lane; a separate mixed-content warning from third-party profile images remains out of scope and is tracked by `I-0014-250`.
+- Verification: `pnpm --filter @masters/api build`, targeted post/feed service specs, `VITE_API_URL=https://dev.mastersrunners.com/api/v1 pnpm --filter @masters/web build`, Playwright coverage for `/feed` and `/posts/:id`, `bash scripts/check-task-review-metadata.sh`, and `git diff --check` all passed; an authenticated live browser check on `https://dev.mastersrunners.com/feed` now confirms persisted post images render again. API e2e remains blocked by the pre-existing Prisma/Jest ESM runtime issue noted below.
 - Review routing: kept `frontend-reviewer`, `ui-ux-reviewer`, `backend-reviewer`, `harness-reviewer`, and `po-reviewer` because the fix spans API read models, user-facing feed/detail UI, and deploy-time header policy.
 
 ## Review Focus
@@ -68,10 +64,12 @@ Restore image-bearing posts on `/feed` and align the deployed web CSP with Cloud
 ## Handoff
 
 - If future work needs Cloudflare Web Analytics auto-injection again, it must revisit the current CSP and `no-transform` assumptions explicitly instead of silently relying on dashboard behavior.
+- Residual mixed-content warnings from third-party `profileImage` URLs are intentionally out of scope here and continue in `I-0014-250`.
 
 ## Design Divergence
 
-- The current dev web lane blocks Cloudflare's inline analytics injection under the repo CSP and currently exposes a drifted post image read contract between API and web callers.
+- The current dev web lane no longer exposes the post-image read-contract drift or the inline-analytics CSP regression that opened this task.
+- Some third-party profile-image URLs still arrive as `http://...` and are browser-upgraded on the client; that separate follow-up is tracked in `I-0014-250`.
 
 ## Attempt Log
 
@@ -79,6 +77,7 @@ Restore image-bearing posts on `/feed` and align the deployed web CSP with Cloud
 - 2026-04-02: `pnpm --filter @masters/api test:e2e -- --runTestsByPath test/feed.e2e-spec.ts` was attempted but remains blocked by the pre-existing Prisma/Jest ESM runtime issue around `@prisma/client/runtime/query_compiler_fast_bg.postgresql.mjs`; targeted API unit tests, web build, and Playwright regression coverage still ran for this task.
 - 2026-04-02: review-ready snapshot prepared with passing targeted verification for API build, feed/posts service specs, web production build, `/feed` and `/posts/:id` Playwright coverage, task metadata validation, and `git diff --check`.
 - 2026-04-02: live browser verification on `https://dev.mastersrunners.com/feed` now redirects unauthenticated sessions to `/login?next=%2Ffeed`; deploy proof and the root CSP are healthy, but final feed-image confirmation still needs an authenticated operator session.
+- 2026-04-02: authenticated live verification on `https://dev.mastersrunners.com/feed` confirmed persisted post images render from the stored R2 URLs again; remaining console warnings came from browser-upgraded third-party profile-image URLs and were split into `I-0014-250`.
 
 ## Review Notes
 

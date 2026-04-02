@@ -19,7 +19,7 @@ verify:
   - pnpm --filter @masters/api build
   - VITE_API_URL=https://dev.mastersrunners.com/api/v1 pnpm --filter @masters/web build
   - bash scripts/check-task-review-metadata.sh
-  - pnpm exec prettier --check --ignore-unknown .github/workflows/deploy.yml apps/web/src/components/ui/sheet.tsx apps/web/src/hooks/useFeedback.ts apps/web/src/lib/message-room.ts apps/web/src/lib/share-link.ts design/architecture/deployment.md design/initiatives/I-0006-guardrail-hardening.md design/operating-rules/exceptions.md docs/runbooks/deployment.md knip.json tasks/active/I-0006-170-ci-deployment-security-header-verification.md tasks/todo/I-0006-210-api-conversation-type-leak-knip-cleanup.md tasks/archive/I-0006-205-ci-header-rollout-regression-recovery.md
+  - pnpm exec prettier --check --ignore-unknown .github/workflows/deploy.yml apps/web/src/components/ui/sheet.tsx apps/web/src/hooks/useFeedback.ts apps/web/src/lib/message-room.ts apps/web/src/lib/share-link.ts design/architecture/deployment.md design/initiatives/I-0006-guardrail-hardening.md design/operating-rules/exceptions.md docs/runbooks/deployment.md knip.json tasks/archive/I-0006-170-ci-deployment-security-header-verification.md tasks/todo/I-0006-210-api-conversation-type-leak-knip-cleanup.md tasks/archive/I-0006-205-ci-header-rollout-regression-recovery.md
 artifacts:
   - .github/workflows/deploy.yml
   - apps/web/src/components/ui/sheet.tsx
@@ -31,7 +31,7 @@ artifacts:
   - design/operating-rules/exceptions.md
   - docs/runbooks/deployment.md
   - knip.json
-  - tasks/active/I-0006-170-ci-deployment-security-header-verification.md
+  - tasks/archive/I-0006-170-ci-deployment-security-header-verification.md
   - tasks/todo/I-0006-210-api-conversation-type-leak-knip-cleanup.md
 ---
 

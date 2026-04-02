@@ -530,7 +530,8 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
   - The first implementation can prioritize authenticated submission, durable storage, and clear confirmation states before building a full backoffice.
   - Status update, 2026-04-01: `I-0014-040` adds an authenticated `/feedback` route plus durable `FeedbackSubmission` persistence so users can submit product bugs without waiting for a staff backoffice.
   - Remaining gap: operator review tooling is still a follow-up and should read the same intake stream instead of creating a second inbox.
-  - Status update, 2026-04-02: `I-0014-230` now tracks a dedicated ops hostname plus Cloudflare Access plus API RBAC approach so the future backoffice is not exposed as a public app route.
+  - Status update, 2026-04-02: `I-0014-230` now tracks a single `ops.dev.mastersrunners.com` host plus Cloudflare Access plus API RBAC so the future backoffice is not exposed as a public app route.
+  - Seeded task split, 2026-04-02: `I-0014-260` covers inbox/triage and `I-0014-270` covers task/issue/initiative handoff actions built on the same submission stream.
 
 ### UI-015 Post Media Visibility and Detail Parity
 
@@ -561,6 +562,8 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
 - Candidate fix pack: `post-media-visibility-and-detail-parity`
 - Notes:
   - This should be handled before or together with broader cardless post-detail cleanup so media does not get lost again during layout refactors.
+  - Status update, 2026-04-02: `I-0014-240` closed this regression after authenticated live `/feed` verification confirmed persisted post images render from stored R2 URLs again.
+  - Residual mixed-content warnings from third-party `profileImage` URLs are tracked separately by `I-0014-250`; they are not part of the post-media visibility regression itself.
 
 ## Suggested Fix-Pack Order
 

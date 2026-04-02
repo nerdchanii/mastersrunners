@@ -11,12 +11,8 @@ depends_on:
   - I-0006-150
   - I-0006-160
 blocked_by: []
-execution_status: blocked
-review_status: approved
-verification_status: partial
-closeout_blocker: deploy verification still fails on same-domain /api-docs because the route serves Pages HTML instead of the Swagger API surface.
 verify:
-  - pnpm deploy:verify -- https://dev.mastersrunners.com
+  - WEB_VERIFY_URL=https://dev.mastersrunners.com pnpm deploy:verify -- https://masters-runners-api-dev-e2m534vcpa-du.a.run.app
   - curl -I https://dev.mastersrunners.com
   - curl -I https://dev.mastersrunners.com/api/v1/health
 artifacts:
@@ -41,6 +37,7 @@ Extend deployment verification so it proves the expected security-header contrac
 - The repo now extends `scripts/verify-deployment.sh` beyond health reachability, but live lane proof still depends on a deployed revision plus the externally managed Pages host.
 - The 2026-04-01 live probes that created `I-0006-150` and `I-0006-160` showed that header regressions can survive despite a passing health check.
 - Keep this verification compatible with the current dev-lane routing model and the external Pages proxy/custom-domain state tracked in `EX-0004`.
+- Public-host same-domain `/api-docs` is intentionally no longer part of the deploy gate; future operator-only docs exposure now lives in `I-0006-230`.
 - Prefer repo-versioned checks over one-off manual scanning so future deploys fail fast when the hardening contract drifts.
 
 ## Self Review
@@ -48,7 +45,7 @@ Extend deployment verification so it proves the expected security-header contrac
 - Scope and intent: keep the deploy hardening focused on proving the header contract without turning the script into a full synthetic browser probe.
 - Source of truth: `scripts/verify-deployment.sh`, `.github/workflows/deploy.yml`, and the deployment docs now define which surfaces are checked and how web-vs-API URLs are separated.
 - Design divergence: same-domain `/api/*` proxy routing and the live Pages host remain external Cloudflare state, so the automated deploy gate now blocks only on repo-controlled API headers at the direct API origin while keeping manual `WEB_VERIFY_URL` proof available for the Pages host.
-- Verification: local script behavior can be exercised with `pnpm deploy:verify -- http://localhost:4000` for API-only and with `WEB_VERIFY_URL=https://dev.mastersrunners.com pnpm deploy:verify -- https://SERVICE_URL.run.app` after deploy when live web-host proof is needed.
+- Verification: local script behavior can be exercised with `pnpm deploy:verify -- http://localhost:4000` for API-only and with `WEB_VERIFY_URL=https://dev.mastersrunners.com pnpm deploy:verify -- https://SERVICE_URL.run.app` after deploy when live web-host proof is needed; the canonical deployed proof now uses the Cloud Run service URL for Swagger/API checks and the public web host only for the Pages root.
 - Review routing: `harness-reviewer` and `po-reviewer` remain required because the change affects local CI/deploy automation and release gates.
 
 ## Review Focus
@@ -62,7 +59,8 @@ Extend deployment verification so it proves the expected security-header contrac
 
 ## Design Divergence
 
-- Current deployment verification proves service reachability but not hardening posture on either the Pages HTML surface or the API responses behind the same-domain route.
+- The deploy verification path now proves the repo-controlled API health/docs header contract at the direct API origin plus the public Pages root when `WEB_VERIFY_URL` is supplied.
+- Public-host `/api-docs` is intentionally excluded from the deploy contract while the future ops-host-only docs boundary remains in `I-0006-230`.
 - Current CI recovery for this branch also carries a temporary `knip` `types` ignore on the conversations repository; that cleanup is intentionally split into follow-up `I-0006-210` so this deploy task does not widen into an API type-boundary refactor.
 
 ## Attempt Log
@@ -71,7 +69,9 @@ Extend deployment verification so it proves the expected security-header contrac
 - 2026-04-01: extended `scripts/verify-deployment.sh` to assert the required header set on the direct API health/docs surfaces and, when a Pages host is available, the web root. The first deploy attempt showed that the externally managed Pages host currently returns `403` to GitHub Actions, so the automated deploy gate was narrowed back to the direct API origin while preserving manual `WEB_VERIFY_URL` proof for operators.
 - 2026-04-01: added a defensive `--` argument shim so `pnpm deploy:verify -- <url>` still works, then proved the local API-only path with `pnpm deploy:verify -- http://localhost:4100`, which now checks `/api/v1/health`, `/api-docs`, and skips the web-root probe when `WEB_VERIFY_URL` is absent.
 - 2026-04-01: branch CI recovery temporarily added a `knip` `types` ignore for the conversations repository; the structural cleanup is tracked separately in `I-0006-210` instead of being folded into this deploy verification task.
-- 2026-04-02: live `pnpm deploy:verify -- https://dev.mastersrunners.com` now proves API health and web-root headers, but it still fails on `/api-docs` because the same-domain route currently resolves to the Pages HTML surface instead of Swagger.
+- 2026-04-02: updated the expected web-root CSP in `scripts/verify-deployment.sh` to match the repo-tracked Cloudflare Insights policy, including `https://static.cloudflareinsights.com` in `script-src` and `https://cloudflareinsights.com` in `connect-src`.
+- 2026-04-02: canonical deploy proof now uses `WEB_VERIFY_URL=https://dev.mastersrunners.com pnpm deploy:verify -- https://masters-runners-api-dev-e2m534vcpa-du.a.run.app`, which verifies direct-origin API health/docs headers plus the public web-root contract without requiring public same-domain Swagger exposure.
+- 2026-04-02: reran `WEB_VERIFY_URL=https://dev.mastersrunners.com pnpm deploy:verify -- https://masters-runners-api-dev-e2m534vcpa-du.a.run.app` after archiving prep; the script succeeded with verified headers on API health, API docs, and the dev web root.
 
 ## Review Notes
 

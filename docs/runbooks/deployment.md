@@ -47,6 +47,7 @@ This runbook explains how deployment works in this repository, what to verify be
 - Health verification should target `GET /api/v1/health`; legacy `GET /health` remains available for compatibility.
 - Deployment verification should always prove repo-tracked response headers on the direct API origin.
 - Web-root header verification remains available through `WEB_VERIFY_URL`, but automated API deploys should not block on the external Pages host because that routing/domain surface is tracked under `EX-0004`.
+- Public app hosts should not be treated as the source of truth for Swagger exposure; `api-docs` belongs on the direct API origin for deploy verification today and on the future ops host once that staff-only surface exists.
 - Browser direct uploads require the target R2 bucket to allow preflight requests from the active frontend host; on the current dev lane that means `https://dev.mastersrunners.com`.
 - Runbook and workflow still describe the same deployment path.
 
@@ -190,6 +191,10 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
   - `Cache-Control: public, no-transform` is set on the Pages response contract so Cloudflare does not re-inject inline analytics HTML that would violate the repo CSP.
   - `Strict-Transport-Security` is repo-tracked with `max-age=31536000`.
   - do not add `includeSubDomains` or `preload` while `mastersrunners.com` and `www.mastersrunners.com` still point at the placeholder site.
+- Planned operator-host posture:
+  - `ops.dev.mastersrunners.com` should be the single staff-only host for backoffice UI, operator API routes, and Swagger.
+  - Cloudflare Access should protect the entire ops host before any app content is reachable.
+  - A secret-less Pages frontend plus same-host Worker routes for `/api/*` and `/api-docs*` is the preferred first implementation shape.
 
 ### Current Host Matrix
 
@@ -209,6 +214,12 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
   - max age: `3600`
 - Current expected routing:
   - `dev.mastersrunners.com/api/*` -> dev API origin
+- Public dev host non-goal:
+  - `dev.mastersrunners.com/api-docs*` should not be relied on as a public route once the ops host exists.
+- Planned operator routing:
+  - `ops.dev.mastersrunners.com/*` -> Cloudflare Access-protected operator UI
+  - `ops.dev.mastersrunners.com/api/*` -> dev API origin
+  - `ops.dev.mastersrunners.com/api-docs*` -> dev API origin
 - 2026-04-01 runtime checks confirmed the current same-domain dev host reaches the API successfully on:
   - `https://dev.mastersrunners.com/api/v1/health`
   - `https://dev.mastersrunners.com/api/v1/auth/providers`
@@ -259,6 +270,7 @@ WEB_VERIFY_URL=https://dev.mastersrunners.com pnpm deploy:verify -- https://SERV
   - `GET /api/v1/health` reachability and required headers
   - `/api-docs` headers on the direct API origin
   - web-root headers on `WEB_VERIFY_URL` when that host is provided or when the base URL is already the public app host
+- Do not use `pnpm deploy:verify -- https://dev.mastersrunners.com` as the canonical proof once Swagger is treated as an ops-only surface; prefer a direct API origin base URL plus optional `WEB_VERIFY_URL`.
 
 ### 4. Check logs
 
