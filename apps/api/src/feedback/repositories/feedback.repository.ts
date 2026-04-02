@@ -57,19 +57,6 @@ export class FeedbackRepository {
     });
   }
 
-  findActiveOperatorIdentity(email: string) {
-    return this.db.prisma.platformOperatorIdentity.findFirst({
-      where: {
-        email,
-        revokedAt: null,
-      },
-      select: {
-        email: true,
-        note: true,
-      },
-    });
-  }
-
   listOpsSubmissions(filters: ListFeedbackOpsSubmissionFilters) {
     return this.db.prisma.feedbackSubmission.findMany({
       where: {

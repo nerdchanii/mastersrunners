@@ -109,6 +109,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - `tasks/archive/I-0014-220-api-conversation-context-spec-sync.md`
 - `tasks/archive/I-0014-240-web-feed-media-and-analytics-regression-recovery.md`
 - `tasks/archive/I-0014-280-meta-ops-feedback-proxy-and-runtime-repair.md`
+- `tasks/archive/I-0014-290-api-ops-access-single-gate.md`
 
 ### Product Checkpoint Required
 
@@ -149,3 +150,5 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - 2026-04-02: `I-0014-250` is now archived after narrowing the fix to Kakao avatar normalization at the auth boundary, refreshing persisted insecure Kakao URLs on re-login, and keeping authenticated web avatar behavior unchanged.
 - 2026-04-02: opened `I-0014-280` after live investigation showed `ops.dev.mastersrunners.com` still used a stale Worker proxy contract and the dev API runtime was missing ops-specific env, which broke both ops-host Swagger rendering and feedback inbox reads despite the separate ops app rollout.
 - 2026-04-02: archived `I-0014-280` after repairing the shared ops proxy host allowlist plus `/api-docs*` routing, restoring the missing dev runtime env for Access verification, and updating `ops-web` to show request failures explicitly instead of masquerading as an empty inbox.
+- 2026-04-02: opened `I-0014-290` to remove the extra operator-email registry check from the current dev ops lane because the present single-operator setup should trust Cloudflare Access as the sole gate.
+- 2026-04-02: archived `I-0014-290` after simplifying the dev ops feedback lane to Access-only gating, removing the runtime dependency on `PlatformOperatorIdentity`, and updating the ops UI plus persistence docs so they no longer instruct the solo operator to perform separate email registration.

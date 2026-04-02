@@ -1,21 +1,11 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  Injectable,
-  UnauthorizedException,
-} from "@nestjs/common";
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 
 import { FeedbackOpsAuthService } from "../ops-auth/feedback-ops-auth.service.js";
-import { FeedbackRepository } from "../repositories/feedback.repository.js";
 import type { FeedbackOpsRequest } from "../types/feedback-ops-request.js";
 
 @Injectable()
 export class FeedbackOpsGuard implements CanActivate {
-  constructor(
-    private readonly feedbackOpsAuthService: FeedbackOpsAuthService,
-    private readonly feedbackRepository: FeedbackRepository,
-  ) {}
+  constructor(private readonly feedbackOpsAuthService: FeedbackOpsAuthService) {}
 
   async canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<FeedbackOpsRequest>();
@@ -26,15 +16,10 @@ export class FeedbackOpsGuard implements CanActivate {
     }
 
     const operator = await this.feedbackOpsAuthService.verifyAssertion(assertion);
-    const identity = await this.feedbackRepository.findActiveOperatorIdentity(operator.email);
-
-    if (!identity) {
-      throw new ForbiddenException("운영자 권한이 없습니다.");
-    }
 
     request.operator = {
-      email: identity.email,
-      note: identity.note,
+      email: operator.email,
+      note: null,
     };
 
     return true;

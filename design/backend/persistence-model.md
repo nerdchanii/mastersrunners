@@ -43,7 +43,7 @@ The schema currently concentrates multiple domains in one relational model:
 - challenges and events
 - conversations, messages, notifications
 - feedback submissions for authenticated bug and improvement intake
-- feedback operator identities and follow-up references for the ops backoffice
+- feedback follow-up references for the ops backoffice, plus a dormant operator-identity table retained for possible future staffing rules
 
 ## Feedback Intake Persistence
 
@@ -66,7 +66,8 @@ The schema currently concentrates multiple domains in one relational model:
 - Operator review surfaces still read this same table instead of creating a second feedback pipeline.
 - Triage status is bounded to the backoffice workflow: `NEW`, `IN_REVIEW`, `PLANNED`, `RESOLVED`, `DISMISSED`.
 - The next operator flow is expected to run behind a single Access-protected `ops.<lane>.mastersrunners.com` host rather than on the public app host.
-- `PlatformOperatorIdentity` is the separate operator allowlist and intentionally does not reuse the `User` table or add a role column there.
+- The current dev ops runtime trusts Cloudflare Access as its sole gate and does not require a matching application-side operator allowlist row.
+- `PlatformOperatorIdentity` still exists in the schema as dormant metadata for possible future staffing rules, and it still intentionally does not reuse the `User` table or add a role column there.
 - `FeedbackFollowUpReference` stores manual task, initiative, issue, or generic link references against the submission root record.
 - Future task/issue/initiative handoff metadata should stay attached to the same submission root record instead of forking feedback into a second tracker.
 

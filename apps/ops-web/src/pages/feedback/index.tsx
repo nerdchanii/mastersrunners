@@ -85,18 +85,18 @@ function ForbiddenState({ message }: { message: string }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShieldAlert className="size-5 text-destructive" />
-          운영자 권한이 없습니다
+          접근이 거부되었습니다
         </CardTitle>
         <CardDescription>{message}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm text-muted-foreground">
         <p>
-          Cloudflare Access를 통과했더라도, API는 별도의 operator registry에 등록된 이메일만
-          허용합니다.
+          현재 dev ops는 Cloudflare Access를 단일 게이트로 사용합니다. 로그인 세션이 꼬였거나 Access
+          정책에 허용되지 않은 계정이면 요청이 거부될 수 있습니다.
         </p>
         <p>
-          현재는 one-time SQL로 operator identity를 등록하는 구조입니다. runbook 절차로 이메일을
-          추가한 뒤 다시 시도해 주세요.
+          허용된 Google 계정으로 다시 로그인한 뒤에도 반복되면 Cloudflare Access 정책과
+          `cf-access-jwt-assertion` 전달 경로를 확인해 주세요.
         </p>
       </CardContent>
     </Card>
