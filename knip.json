@@ -38,7 +38,6 @@
     ".github/scripts/pr-autofix-state.cjs": ["exports"],
     ".github/scripts/pr-merge-readiness.cjs": ["exports"],
     ".github/scripts/pr-review-threads.cjs": ["exports"],
-    "apps/api/src/conversations/repositories/conversations.repository.ts": ["types"],
     "apps/api/src/uploads/uploads.service.ts": ["types"],
     "apps/api/src/uploads/utils/douglas-peucker.ts": ["types"],
     "apps/api/src/uploads/utils/encoded-polyline.ts": ["types"],

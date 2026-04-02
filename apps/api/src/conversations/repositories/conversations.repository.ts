@@ -1,26 +1,79 @@
-import type { TransactionClient } from "@masters/database";
+import type { Prisma, TransactionClient } from "@masters/database";
 import { Injectable } from "@nestjs/common";
 
 import { DatabaseService } from "../../database/database.service.js";
 
-export interface ConversationCrewContext {
+interface ConversationCrewContext {
   id: string;
   name: string;
 }
 
-export interface ConversationActivityContext {
+interface ConversationActivityContext {
   id: string;
   title: string;
   crewId: string;
   crew: ConversationCrewContext | null;
 }
 
-export type ConversationWithContext<
+type ConversationWithContext<
   TConversation extends { id: string; activityId: string | null; crewId: string | null },
 > = TConversation & {
   activity: ConversationActivityContext | null;
   crew: ConversationCrewContext | null;
 };
+
+type ConversationSummaryRecord = ConversationWithContext<
+  Prisma.ConversationGetPayload<{
+    include: {
+      participants: {
+        include: {
+          user: {
+            select: {
+              id: true;
+              name: true;
+              profileImage: true;
+            };
+          };
+        };
+      };
+      messages: {
+        where: { deletedAt: null };
+        orderBy: { createdAt: "desc" };
+        take: 1;
+      };
+    };
+  }>
+>;
+
+type ConversationDetailRecord = ConversationWithContext<
+  Prisma.ConversationGetPayload<{
+    include: {
+      participants: {
+        include: {
+          user: {
+            select: {
+              id: true;
+              name: true;
+              profileImage: true;
+            };
+          };
+        };
+      };
+    };
+  }>
+>;
+
+type ConversationMessageRecord = Prisma.MessageGetPayload<{
+  include: {
+    sender: {
+      select: {
+        id: true;
+        name: true;
+        profileImage: true;
+      };
+    };
+  };
+}>;
 
 @Injectable()
 export class ConversationsRepository {
@@ -139,7 +192,11 @@ export class ConversationsRepository {
     });
   }
 
-  async findByUserId(userId: string, cursor?: string, limit: number = 20) {
+  async findByUserId(
+    userId: string,
+    cursor?: string,
+    limit: number = 20,
+  ): Promise<ConversationSummaryRecord[]> {
     const conversations = await this.db.prisma.conversation.findMany({
       where: {
         participants: {
@@ -175,7 +232,7 @@ export class ConversationsRepository {
     return this.attachConversationContext(conversations);
   }
 
-  async findById(conversationId: string) {
+  async findById(conversationId: string): Promise<ConversationDetailRecord | null> {
     const conversation = await this.db.prisma.conversation.findUnique({
       where: { id: conversationId },
       include: {
@@ -211,7 +268,11 @@ export class ConversationsRepository {
     return !!participant;
   }
 
-  async getMessages(conversationId: string, cursor?: string, limit: number = 20) {
+  async getMessages(
+    conversationId: string,
+    cursor?: string,
+    limit: number = 20,
+  ): Promise<ConversationMessageRecord[]> {
     return this.db.prisma.message.findMany({
       where: {
         conversationId,

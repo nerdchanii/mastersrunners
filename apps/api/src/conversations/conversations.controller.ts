@@ -23,7 +23,11 @@ import { CursorLimitQueryDto } from "../common/dto/cursor-limit-query.dto.js";
 
 import { CreateConversationDto } from "./dto/create-conversation.dto.js";
 import { SendMessageDto } from "./dto/send-message.dto.js";
-import { ConversationsService } from "./conversations.service.js";
+import {
+  ConversationDetailResponse,
+  ConversationListResponse,
+  ConversationsService,
+} from "./conversations.service.js";
 import { ConversationsSseService } from "./conversations-sse.service.js";
 
 @Controller("conversations")
@@ -46,7 +50,7 @@ export class ConversationsController {
   async getConversations(
     @Req() req: { user: { userId: string } },
     @Query() query: CursorLimitQueryDto,
-  ) {
+  ): Promise<ConversationListResponse> {
     return this.conversationsService.getConversations(
       req.user.userId,
       query.cursor,
@@ -69,7 +73,7 @@ export class ConversationsController {
     @Req() req: { user: { userId: string } },
     @Param("id") id: string,
     @Query() query: CursorLimitQueryDto,
-  ) {
+  ): Promise<ConversationDetailResponse> {
     return this.conversationsService.getConversation(
       id,
       req.user.userId,

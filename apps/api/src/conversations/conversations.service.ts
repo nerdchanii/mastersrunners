@@ -10,6 +10,209 @@ import { BlockRepository } from "../block/repositories/block.repository.js";
 import { ConversationsRepository } from "./repositories/conversations.repository.js";
 import { ConversationsSseService } from "./conversations-sse.service.js";
 
+type ConversationType = "DIRECT" | "CREW" | "ACTIVITY";
+
+interface ConversationUser {
+  id: string;
+  name: string;
+  profileImage: string | null;
+}
+
+interface ConversationCrewContext {
+  id: string;
+  name: string;
+}
+
+interface ConversationActivityContext {
+  id: string;
+  title: string;
+  crewId: string;
+  crew: ConversationCrewContext | null;
+}
+
+interface ConversationParticipant {
+  userId: string;
+  lastReadAt: Date | null;
+  joinedAt: Date;
+  user: ConversationUser;
+}
+
+interface ConversationSummaryMessage {
+  id: string;
+  conversationId: string;
+  deletedAt: Date | null;
+  content: string;
+  senderId: string;
+  createdAt: Date;
+}
+
+interface ConversationMessage extends ConversationSummaryMessage {
+  conversationId: string;
+  deletedAt: Date | null;
+  sender: ConversationUser;
+}
+
+export interface ConversationResponse {
+  id: string;
+  type: ConversationType;
+  name: string | null;
+  crewId: string | null;
+  activityId: string | null;
+  crew: ConversationCrewContext | null;
+  activity: ConversationActivityContext | null;
+  updatedAt: Date;
+  participants: ConversationParticipant[];
+}
+
+export interface ConversationListItemResponse extends ConversationResponse {
+  messages: ConversationSummaryMessage[];
+  unreadCount: number;
+}
+
+export interface ConversationListResponse {
+  data: ConversationListItemResponse[];
+  nextCursor: string | null;
+}
+
+export interface ConversationDetailResponse {
+  conversation: ConversationResponse;
+  messages: ConversationMessage[];
+  nextCursor: string | null;
+}
+
+function mapConversationUser(user: {
+  id: string;
+  name: string;
+  profileImage: string | null;
+}): ConversationUser {
+  return {
+    id: user.id,
+    name: user.name,
+    profileImage: user.profileImage,
+  };
+}
+
+function mapConversationCrewContext(
+  crew: { id: string; name: string } | null,
+): ConversationCrewContext | null {
+  if (!crew) {
+    return null;
+  }
+
+  return {
+    id: crew.id,
+    name: crew.name,
+  };
+}
+
+function mapConversationActivityContext(
+  activity: {
+    id: string;
+    title: string;
+    crewId: string;
+    crew: { id: string; name: string } | null;
+  } | null,
+): ConversationActivityContext | null {
+  if (!activity) {
+    return null;
+  }
+
+  return {
+    id: activity.id,
+    title: activity.title,
+    crewId: activity.crewId,
+    crew: mapConversationCrewContext(activity.crew),
+  };
+}
+
+function mapConversationParticipants(
+  participants: Array<{
+    userId: string;
+    lastReadAt?: Date | null;
+    joinedAt: Date;
+    user: { id: string; name: string; profileImage: string | null };
+  }>,
+): ConversationParticipant[] {
+  return participants.map((participant) => ({
+    userId: participant.userId,
+    lastReadAt: participant.lastReadAt ?? null,
+    joinedAt: participant.joinedAt,
+    user: mapConversationUser(participant.user),
+  }));
+}
+
+function mapConversationResponse(conversation: {
+  id: string;
+  type: ConversationType;
+  name: string | null;
+  crewId: string | null;
+  activityId: string | null;
+  crew: { id: string; name: string } | null;
+  activity: {
+    id: string;
+    title: string;
+    crewId: string;
+    crew: { id: string; name: string } | null;
+  } | null;
+  updatedAt: Date;
+  participants: Array<{
+    userId: string;
+    lastReadAt?: Date | null;
+    joinedAt: Date;
+    user: { id: string; name: string; profileImage: string | null };
+  }>;
+}): ConversationResponse {
+  return {
+    id: conversation.id,
+    type: conversation.type,
+    name: conversation.name,
+    crewId: conversation.crewId,
+    activityId: conversation.activityId,
+    crew: mapConversationCrewContext(conversation.crew),
+    activity: mapConversationActivityContext(conversation.activity),
+    updatedAt: conversation.updatedAt,
+    participants: mapConversationParticipants(conversation.participants),
+  };
+}
+
+function mapConversationSummaryMessage(message: {
+  id: string;
+  conversationId: string;
+  deletedAt: Date | null;
+  content: string;
+  senderId: string;
+  createdAt: Date;
+}): ConversationSummaryMessage {
+  return {
+    id: message.id,
+    conversationId: message.conversationId,
+    deletedAt: message.deletedAt,
+    content: message.content,
+    senderId: message.senderId,
+    createdAt: message.createdAt,
+  };
+}
+
+function mapConversationMessage(message: {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  deletedAt: Date | null;
+  createdAt: Date;
+  sender: { id: string; name: string; profileImage: string | null };
+}): ConversationMessage {
+  return {
+    id: message.id,
+    conversationId: message.conversationId,
+    senderId: message.senderId,
+    content: message.content,
+    deletedAt: message.deletedAt,
+    createdAt: message.createdAt,
+    sender: mapConversationUser(message.sender),
+  };
+}
+
 @Injectable()
 export class ConversationsService {
   constructor(
@@ -34,7 +237,11 @@ export class ConversationsService {
     return this.conversationsRepo.findOrCreateDirect(userId, participantId);
   }
 
-  async getConversations(userId: string, cursor?: string, limit: number = 20) {
+  async getConversations(
+    userId: string,
+    cursor?: string,
+    limit: number = 20,
+  ): Promise<ConversationListResponse> {
     const conversations = await this.conversationsRepo.findByUserId(userId, cursor, limit);
 
     // Check if there are more items
@@ -46,7 +253,8 @@ export class ConversationsService {
       items.map(async (conv: (typeof items)[number]) => {
         const unreadCount = await this.conversationsRepo.getUnreadCount(conv.id, userId);
         return {
-          ...conv,
+          ...mapConversationResponse(conv),
+          messages: conv.messages.map(mapConversationSummaryMessage),
           unreadCount,
         };
       }),
@@ -63,7 +271,7 @@ export class ConversationsService {
     userId: string,
     cursor?: string,
     limit: number = 50,
-  ) {
+  ): Promise<ConversationDetailResponse> {
     const conversation = await this.conversationsRepo.findById(conversationId);
 
     if (!conversation) {
@@ -95,8 +303,8 @@ export class ConversationsService {
     const messageItems = hasMore ? messages.slice(0, limit) : messages;
 
     return {
-      conversation,
-      messages: messageItems,
+      conversation: mapConversationResponse(conversation),
+      messages: messageItems.map(mapConversationMessage),
       nextCursor: hasMore ? messageItems[messageItems.length - 1].id : null,
     };
   }

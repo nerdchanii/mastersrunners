@@ -10,10 +10,14 @@ reviewers:
 po_review: required
 depends_on: []
 blocked_by: []
+execution_status: ready_for_archive
+review_status: approved
+verification_status: passed
+closeout_blocker:
 verify:
   - pnpm knip
   - pnpm --filter @masters/api build
-  - pnpm exec prettier --check --ignore-unknown apps/api/src/conversations/conversations.controller.ts apps/api/src/conversations/conversations.service.ts apps/api/src/conversations/repositories/conversations.repository.ts knip.json design/initiatives/I-0006-guardrail-hardening.md tasks/todo/I-0006-210-api-conversation-type-leak-knip-cleanup.md
+  - pnpm exec prettier --check --ignore-unknown apps/api/src/conversations/conversations.controller.ts apps/api/src/conversations/conversations.service.ts apps/api/src/conversations/repositories/conversations.repository.ts knip.json design/initiatives/I-0006-guardrail-hardening.md tasks/archive/I-0006-210-api-conversation-type-leak-knip-cleanup.md
 artifacts:
   - apps/api/src/conversations/conversations.controller.ts
   - apps/api/src/conversations/conversations.service.ts
@@ -66,8 +70,12 @@ Remove the temporary `knip` type ignore for the conversations repository by sepa
 ## Attempt Log
 
 - 2026-04-01: created after CI recovery showed the conversations repository could not simply drop exported context types without breaking `TS4053`, which means the public API contract is still coupled to repository helper types.
+- 2026-04-02: moved the public conversations response contract to explicit service/controller-owned types, kept the repository context helpers internal, removed the temporary `knip` ignore, and reran the task verify commands successfully.
 
 ## Review Notes
 
 - Specialist review:
+  - `backend-reviewer` internal role review pass on 2026-04-02: confirmed the public conversations return contract now lives in service/controller-owned types and no longer depends on repository-internal context helpers.
+  - `harness-reviewer` internal role review pass on 2026-04-02: confirmed the temporary `knip` `types` ignore was removed rather than relocated and the dead-code baseline remains clean.
 - PO review:
+  - `po-reviewer` internal role review pass on 2026-04-02: accepted the cleanup because it removes maintenance debt without changing messaging behavior or widening scope beyond the conversations boundary.
