@@ -103,6 +103,23 @@ function ForbiddenState({ message }: { message: string }) {
   );
 }
 
+function RequestErrorState({ message, title }: { message: string; title: string }) {
+  return (
+    <Card className="border-amber-500/30 bg-amber-500/5">
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{message}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm text-muted-foreground">
+        <p>
+          빈 inbox처럼 보여도 실제로는 요청 실패일 수 있습니다. worker route, Access header, 또는
+          ops runtime env를 먼저 확인해 주세요.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 function InboxItem({
   isSelected,
   submission,
@@ -210,6 +227,9 @@ export default function FeedbackPage() {
   const listError = submissionsQuery.error instanceof ApiError ? submissionsQuery.error : null;
   const detailError = detailQuery.error instanceof ApiError ? detailQuery.error : null;
   const selectedSubmission = detailQuery.data;
+  const listErrorMessage = listError?.message ?? "Inbox 요청을 완료하지 못했습니다.";
+  const detailErrorMessage =
+    detailError?.message ?? "선택한 항목이 존재하지 않거나 접근 권한이 없습니다.";
 
   const saveTriage = async () => {
     if (!submissionId) {
@@ -363,6 +383,8 @@ export default function FeedbackPage() {
 
           {listError?.isForbidden ? (
             <ForbiddenState message={listError.message} />
+          ) : listError ? (
+            <RequestErrorState title="Inbox를 불러오지 못했습니다" message={listErrorMessage} />
           ) : submissionsQuery.isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, index) => (
@@ -414,6 +436,11 @@ export default function FeedbackPage() {
             </div>
           ) : detailError?.isForbidden ? (
             <ForbiddenState message={detailError.message} />
+          ) : detailError ? (
+            <RequestErrorState
+              title="피드백 상세를 불러오지 못했습니다"
+              message={detailErrorMessage}
+            />
           ) : selectedSubmission ? (
             <>
               <Card>
@@ -672,9 +699,7 @@ export default function FeedbackPage() {
             <Card>
               <CardHeader>
                 <CardTitle>피드백을 불러오지 못했습니다</CardTitle>
-                <CardDescription>
-                  {detailError?.message ?? "선택한 항목이 존재하지 않거나 접근 권한이 없습니다."}
-                </CardDescription>
+                <CardDescription>{detailErrorMessage}</CardDescription>
               </CardHeader>
             </Card>
           )}

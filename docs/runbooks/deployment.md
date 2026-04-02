@@ -247,11 +247,13 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
   - `ops.dev.mastersrunners.com/api/*` -> dev API origin
   - `ops.dev.mastersrunners.com/api-docs*` -> dev API origin
 - 2026-04-02 observed external state:
-  - DNS record exists for `ops.dev.mastersrunners.com -> mastersrunners.pages.dev`
+  - DNS record exists for `ops.dev.mastersrunners.com -> mastersrunners-ops.pages.dev`
   - Worker routes exist for `ops.dev.mastersrunners.com/api/*` and `ops.dev.mastersrunners.com/api-docs*`
   - Access now protects `ops.dev.mastersrunners.com/*`, and live probes against the published edge return Cloudflare Access `302` responses for `/`, `/api/v1/health`, and `/api-docs`
   - a dedicated Pages project `mastersrunners-ops` now exists with build command `pnpm run build:ops-web` and output `apps/ops-web/dist`
-  - the custom domain is intentionally not moved yet, so `ops.dev.mastersrunners.com` still resolves through the original `mastersrunners` Pages project until the new project has a deployment to promote
+  - the custom domain now resolves through the dedicated `mastersrunners-ops` Pages project
+  - the shared `mastersrunners-api-proxy` Worker must allow both `dev.mastersrunners.com` and `ops.dev.mastersrunners.com`, and must proxy `/api-docs*` in addition to `/api/*`
+  - the dev Cloud Run service must include `OPS_FRONTEND_URL`, `CF_ACCESS_TEAM_DOMAIN`, and `CF_ACCESS_POLICY_AUD` once the ops backoffice is enabled
 - 2026-04-01 runtime checks confirmed the current same-domain dev host reaches the API successfully on:
   - `https://dev.mastersrunners.com/api/v1/health`
   - `https://dev.mastersrunners.com/api/v1/auth/providers`

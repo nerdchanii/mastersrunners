@@ -88,8 +88,8 @@ This document defines the intended deployment shape for the repository. Runbooks
 - Planned staff-only host:
   - `dev` lane -> `ops.dev.mastersrunners.com`
 - 2026-04-02 repo contract: `ops.dev.mastersrunners.com` should serve a dedicated `apps/ops-web` build, while `/api/*` and `/api-docs*` continue to route to the dev API origin on the same host.
-- 2026-04-02 external provisioning status: the dev lane now has an active `ops.dev.mastersrunners.com` custom domain, Worker routes for `/api/*` and `/api-docs*`, a Cloudflare Access self-hosted app protecting `ops.dev.mastersrunners.com/*`, and a separate `mastersrunners-ops` Pages project ready to build `apps/ops-web/dist`.
-- 2026-04-02 custom-domain cutover status: `ops.dev.mastersrunners.com` still points at the original `mastersrunners` Pages project until the new ops-web project has a deployment worth promoting.
+- 2026-04-02 external provisioning status: the dev lane now has an active `ops.dev.mastersrunners.com` custom domain on the dedicated `mastersrunners-ops` Pages project, Worker routes for `/api/*` and `/api-docs*`, and a Cloudflare Access self-hosted app protecting `ops.dev.mastersrunners.com/*`.
+- 2026-04-02 repair note: the shared `mastersrunners-api-proxy` Worker must explicitly allow both `dev.mastersrunners.com` and `ops.dev.mastersrunners.com`, and must proxy `/api-docs*` as well as `/api/*`; the dev Cloud Run lane also needs `OPS_FRONTEND_URL`, `CF_ACCESS_TEAM_DOMAIN`, and `CF_ACCESS_POLICY_AUD` in runtime env for the ops backoffice contract to work after auth.
 - The API has two automated deploy lanes:
   - `dev` branch -> `masters-runners-api-dev`
   - `main` branch -> `masters-runners-api`

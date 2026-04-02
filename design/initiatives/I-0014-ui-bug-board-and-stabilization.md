@@ -108,6 +108,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - `tasks/archive/I-0014-190-web-post-composer-text-tagging-and-preview.md`
 - `tasks/archive/I-0014-220-api-conversation-context-spec-sync.md`
 - `tasks/archive/I-0014-240-web-feed-media-and-analytics-regression-recovery.md`
+- `tasks/archive/I-0014-280-meta-ops-feedback-proxy-and-runtime-repair.md`
 
 ### Product Checkpoint Required
 
@@ -146,3 +147,5 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - 2026-04-02: `I-0014-240` is now archived after authenticated live `/feed` verification confirmed persisted post images render again on the dev lane and the Cloudflare analytics CSP regression stays closed.
 - 2026-04-02: seeded `I-0014-250` for the residual mixed-content warning from third-party `profileImage` URLs observed during the same authenticated `/feed` check; that warning is separate from the post-media regression fixed by `I-0014-240`.
 - 2026-04-02: `I-0014-250` is now archived after narrowing the fix to Kakao avatar normalization at the auth boundary, refreshing persisted insecure Kakao URLs on re-login, and keeping authenticated web avatar behavior unchanged.
+- 2026-04-02: opened `I-0014-280` after live investigation showed `ops.dev.mastersrunners.com` still used a stale Worker proxy contract and the dev API runtime was missing ops-specific env, which broke both ops-host Swagger rendering and feedback inbox reads despite the separate ops app rollout.
+- 2026-04-02: archived `I-0014-280` after repairing the shared ops proxy host allowlist plus `/api-docs*` routing, restoring the missing dev runtime env for Access verification, and updating `ops-web` to show request failures explicitly instead of masquerading as an empty inbox.

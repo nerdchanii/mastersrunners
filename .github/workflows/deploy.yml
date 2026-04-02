@@ -19,6 +19,9 @@ jobs:
       RUNTIME_SERVICE_ACCOUNT: ${{ vars.CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT }}
       REGION: asia-northeast3
       FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+      OPS_FRONTEND_URL: ${{ vars.OPS_FRONTEND_URL }}
+      CF_ACCESS_TEAM_DOMAIN: ${{ vars.CF_ACCESS_TEAM_DOMAIN }}
+      CF_ACCESS_POLICY_AUD: ${{ vars.CF_ACCESS_POLICY_AUD }}
       API_PUBLIC_URL: ${{ vars.API_PUBLIC_URL }}
       KAKAO_CALLBACK_URL: ${{ vars.KAKAO_CALLBACK_URL }}
       GOOGLE_CALLBACK_URL: ${{ vars.GOOGLE_CALLBACK_URL }}
@@ -67,6 +70,20 @@ jobs:
           if [ -z "${FRONTEND_URL}" ]; then
             echo "::error::GitHub environment variable FRONTEND_URL must be set for ${DEPLOY_LANE} Cloud Run deploys."
             exit 1
+          fi
+          if [ "${DEPLOY_LANE}" = "dev" ]; then
+            if [ -z "${OPS_FRONTEND_URL}" ]; then
+              echo "::error::GitHub environment variable OPS_FRONTEND_URL must be set for the dev deploy lane once the ops host is enabled."
+              exit 1
+            fi
+            if [ -z "${CF_ACCESS_TEAM_DOMAIN}" ]; then
+              echo "::error::GitHub environment variable CF_ACCESS_TEAM_DOMAIN must be set for the dev deploy lane once the ops host is enabled."
+              exit 1
+            fi
+            if [ -z "${CF_ACCESS_POLICY_AUD}" ]; then
+              echo "::error::GitHub environment variable CF_ACCESS_POLICY_AUD must be set for the dev deploy lane once the ops host is enabled."
+              exit 1
+            fi
           fi
 
       - name: Check automated migration safety
@@ -125,6 +142,15 @@ jobs:
 
           if [ -n "${API_PUBLIC_URL}" ]; then
             env_vars+=("API_PUBLIC_URL=${API_PUBLIC_URL}")
+          fi
+          if [ -n "${OPS_FRONTEND_URL}" ]; then
+            env_vars+=("OPS_FRONTEND_URL=${OPS_FRONTEND_URL}")
+          fi
+          if [ -n "${CF_ACCESS_TEAM_DOMAIN}" ]; then
+            env_vars+=("CF_ACCESS_TEAM_DOMAIN=${CF_ACCESS_TEAM_DOMAIN}")
+          fi
+          if [ -n "${CF_ACCESS_POLICY_AUD}" ]; then
+            env_vars+=("CF_ACCESS_POLICY_AUD=${CF_ACCESS_POLICY_AUD}")
           fi
           if [ -n "${KAKAO_CALLBACK_URL}" ]; then
             env_vars+=("KAKAO_CALLBACK_URL=${KAKAO_CALLBACK_URL}")
