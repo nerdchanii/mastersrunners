@@ -12,10 +12,10 @@ po_review: required
 depends_on:
   - I-0014-230
 blocked_by: []
-execution_status: blocked
+execution_status: ready_for_archive
 review_status: approved
 verification_status: passed
-closeout_blocker: Waiting for the first Git-driven `mastersrunners-ops` Pages deployment on the `dev` branch and the `ops.dev.mastersrunners.com` custom-domain cutover.
+closeout_blocker:
 verify:
   - pnpm --filter @masters/ops-web build
   - pnpm --filter @masters/api test -- --runTestsByPath src/feedback/feedback.service.spec.ts
@@ -50,7 +50,7 @@ Let operators review submitted feedback in one inbox inside `apps/ops-web`, insp
 - Scope and intent: land a first operator inbox and bounded triage state machine in `apps/ops-web` without coupling it to GitHub mutation or a broader backoffice redesign.
 - Source of truth: `design/backend/persistence-model.md`, the future ops-host shell from `I-0014-230`, and the existing `FeedbackSubmission` data model.
 - Design divergence: the repo currently stores submissions only for intake, so this task must add operator read/triage surfaces without introducing a second inbox or secondary persistence path.
-- Verification: `pnpm --filter @masters/ops-web build`, `pnpm --filter @masters/api test -- --runTestsByPath src/feedback/feedback.service.spec.ts`, `bash scripts/check-task-review-metadata.sh`, `bash scripts/check-active-task-closeout.sh`, and `VITE_API_URL=http://localhost:4000/api/v1 pnpm -r run build` passed. External closeout still depends on the first Git-driven Pages deployment plus custom-domain cutover.
+- Verification: `pnpm --filter @masters/ops-web build`, `pnpm --filter @masters/api test -- --runTestsByPath src/feedback/feedback.service.spec.ts`, `bash scripts/check-task-review-metadata.sh`, `bash scripts/check-active-task-closeout.sh`, and `VITE_API_URL=http://localhost:4000/api/v1 pnpm -r run build` passed. The first Git-driven `mastersrunners-ops` Pages deployment on `dev` succeeded, the `ops.dev.mastersrunners.com` custom domain was cut over to the dedicated project, and the ops host plus `/api-docs` now resolve through Cloudflare Access as intended.
 - Review routing: `frontend-reviewer`, `ui-ux-reviewer`, `backend-reviewer`, and `po-reviewer` remain required because the task spans operator UI, triage semantics, and API-backed state updates.
 
 ## Review Focus
@@ -71,6 +71,7 @@ Let operators review submitted feedback in one inbox inside `apps/ops-web`, insp
 
 - 2026-04-02: created after the ops-host plan was split so inbox review and triage can land independently from host-boundary work and later task/issue automation.
 - 2026-04-02: implemented the shadcn-based ops inbox, feedback detail surface, and bounded triage workflow inside `apps/ops-web`.
+- 2026-04-02: validated the inbox deployment path by shipping the dedicated `mastersrunners-ops` Pages project on `dev`, cutting `ops.dev.mastersrunners.com` over to it, and re-confirming the ops host is edge-protected after the domain move.
 
 ## Review Notes
 

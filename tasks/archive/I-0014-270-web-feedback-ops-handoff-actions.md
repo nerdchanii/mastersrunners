@@ -12,10 +12,10 @@ po_review: required
 depends_on:
   - I-0014-260
 blocked_by: []
-execution_status: blocked
+execution_status: ready_for_archive
 review_status: approved
 verification_status: passed
-closeout_blocker: Waiting for the first Git-driven `mastersrunners-ops` Pages deployment on the `dev` branch and the `ops.dev.mastersrunners.com` custom-domain cutover.
+closeout_blocker:
 verify:
   - pnpm --filter @masters/ops-web build
   - pnpm --filter @masters/api test -- --runTestsByPath src/feedback/feedback.service.spec.ts
@@ -50,7 +50,7 @@ Let operators turn reviewed feedback into concrete follow-up work by recording t
 - Scope and intent: add explicit handoff links and notes on top of triaged feedback items without turning the first version into a full issue-sync engine.
 - Source of truth: `design/backend/persistence-model.md`, the inbox/triage contract from `I-0014-260`, and the deployment/runbook guidance for operator-only surfaces.
 - Design divergence: the repo currently has no structured bridge from feedback submissions to tasks, issues, or initiatives, and browser code must not gain repository credentials to compensate.
-- Verification: `pnpm --filter @masters/ops-web build`, `pnpm --filter @masters/api test -- --runTestsByPath src/feedback/feedback.service.spec.ts`, `bash scripts/check-task-review-metadata.sh`, `bash scripts/check-active-task-closeout.sh`, and `VITE_API_URL=http://localhost:4000/api/v1 pnpm -r run build` passed. External closeout still depends on the first Git-driven Pages deployment plus custom-domain cutover.
+- Verification: `pnpm --filter @masters/ops-web build`, `pnpm --filter @masters/api test -- --runTestsByPath src/feedback/feedback.service.spec.ts`, `bash scripts/check-task-review-metadata.sh`, `bash scripts/check-active-task-closeout.sh`, and `VITE_API_URL=http://localhost:4000/api/v1 pnpm -r run build` passed. The first Git-driven `mastersrunners-ops` Pages deployment on `dev` succeeded, the `ops.dev.mastersrunners.com` custom domain was cut over to the dedicated project, and live probes confirm the final handoff surface now sits behind the same Access-protected ops host as the inbox.
 - Review routing: `frontend-reviewer`, `backend-reviewer`, `harness-reviewer`, and `po-reviewer` remain required because the handoff model touches operator UI, persistence/API boundaries, and repository-workflow integration.
 
 ## Review Focus
@@ -71,6 +71,7 @@ Let operators turn reviewed feedback into concrete follow-up work by recording t
 
 - 2026-04-02: created after the ops-host plan was split so the first inbox can land before deciding whether direct GitHub issue/task creation is necessary.
 - 2026-04-02: implemented manual handoff notes plus structured task, initiative, issue, and generic link references on top of the ops detail flow.
+- 2026-04-02: completed external closeout after the dedicated `mastersrunners-ops` Pages deployment went live on `dev`, `ops.dev.mastersrunners.com` was re-homed to that project, and the final ops host once again returned Cloudflare Access `302` responses for both the shell and `/api-docs`.
 
 ## Review Notes
 

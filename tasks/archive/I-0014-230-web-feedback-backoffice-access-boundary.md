@@ -13,10 +13,10 @@ po_review: required
 depends_on:
   - I-0006-230
 blocked_by: []
-execution_status: blocked
+execution_status: ready_for_archive
 review_status: approved
 verification_status: passed
-closeout_blocker: Waiting for the first Git-driven `mastersrunners-ops` Pages deployment on the `dev` branch and the `ops.dev.mastersrunners.com` custom-domain cutover.
+closeout_blocker:
 verify:
   - pnpm --filter @masters/ops-web build
   - pnpm --filter @masters/api test -- --runTestsByPath src/feedback/guards/feedback-ops.guard.spec.ts
@@ -58,7 +58,7 @@ Define the separate `apps/ops-web` shell, routing, and authorization boundary fo
 - Scope and intent: keep this task on the separate ops shell, routing, and authorization boundary; do not fold inbox UX or task-link automation into the same changeset.
 - Source of truth: `design/backend/persistence-model.md`, `design/architecture/deployment.md`, `docs/runbooks/deployment.md`, `docs/runbooks/environment-and-settings.md`, and `I-0006-230` for the ops-host edge contract.
 - Design divergence: the repo still has no dedicated ops-web app, no Access-JWT-backed operator auth path, and no operator read endpoints; this task defines those boundaries before the inbox UX lands.
-- Verification: `pnpm --filter @masters/ops-web build`, `pnpm --filter @masters/api test -- --runTestsByPath src/feedback/guards/feedback-ops.guard.spec.ts`, `bash scripts/check-task-review-metadata.sh`, `bash scripts/check-active-task-closeout.sh`, and `VITE_API_URL=http://localhost:4000/api/v1 pnpm -r run build` passed. External closeout still depends on the first Git-driven Pages deployment plus custom-domain cutover.
+- Verification: `pnpm --filter @masters/ops-web build`, `pnpm --filter @masters/api test -- --runTestsByPath src/feedback/guards/feedback-ops.guard.spec.ts`, `bash scripts/check-task-review-metadata.sh`, `bash scripts/check-active-task-closeout.sh`, and `VITE_API_URL=http://localhost:4000/api/v1 pnpm -r run build` passed. The first Git-driven `mastersrunners-ops` Pages deployment on `dev` succeeded, the `ops.dev.mastersrunners.com` custom domain was cut over to the dedicated project, and live probes now return Cloudflare Access `302` responses for `/` and `/api-docs`.
 - Review routing: `frontend-reviewer`, `ui-ux-reviewer`, `backend-reviewer`, `harness-reviewer`, and `po-reviewer` remain required because the shell spans user-facing operator UI, API auth boundaries, runtime config, and deploy-time host posture.
 
 ## Review Focus
@@ -83,6 +83,7 @@ Define the separate `apps/ops-web` shell, routing, and authorization boundary fo
 - 2026-04-02: revised to a separate `apps/ops-web` app after product rejected host-branching inside `apps/web` and asked to keep operator identity separate from the `User` model.
 - 2026-04-02: implemented the separate `apps/ops-web` shell, Access-JWT-backed ops API boundary, and dedicated `mastersrunners-ops` Pages project without cutting the `ops.dev.mastersrunners.com` custom domain over yet.
 - 2026-04-02: corrected the dedicated `mastersrunners-ops` Pages project so its `production_branch` is `dev`, matching the current dev-lane operator host.
+- 2026-04-02: pushed the ops app to `dev`, confirmed the first Git-driven `mastersrunners-ops` production deployment, moved `ops.dev.mastersrunners.com` from the consumer Pages project to `mastersrunners-ops`, corrected the proxied CNAME to `mastersrunners-ops.pages.dev`, and verified the host now resolves behind Cloudflare Access again.
 
 ## Review Notes
 
