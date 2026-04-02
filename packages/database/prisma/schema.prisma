@@ -808,21 +808,53 @@ model SyncLog {
 // Feedback Intake
 // ============================================================================
 
+model PlatformOperatorIdentity {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  revokedAt DateTime?
+
+  @@index([revokedAt, email])
+}
+
 model FeedbackSubmission {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category    String // BUG, IMPROVEMENT, QUESTION, OTHER
-  title       String
-  description String
-  currentPath String?
-  userAgent   String?
-  status      String   @default("NEW") // NEW, REVIEWED, PLANNED, CLOSED
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                     String                    @id @default(cuid())
+  userId                 String
+  user                   User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category               String // BUG, IMPROVEMENT, QUESTION, OTHER
+  title                  String
+  description            String
+  currentPath            String?
+  userAgent              String?
+  status                 String                    @default("NEW") // NEW, IN_REVIEW, PLANNED, RESOLVED, DISMISSED
+  triageNote             String?
+  reviewedAt             DateTime?
+  reviewedByOperatorEmail String?
+  handoffNote            String?
+  handoffUpdatedAt       DateTime?
+  handoffUpdatedByOperatorEmail String?
+  createdAt              DateTime                  @default(now())
+  updatedAt              DateTime                  @updatedAt
+
+  followUpReferences FeedbackFollowUpReference[]
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
+}
+
+model FeedbackFollowUpReference {
+  id                     String             @id @default(cuid())
+  submissionId           String
+  submission             FeedbackSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  kind                   String // TASK, INITIATIVE, ISSUE, LINK
+  label                  String
+  target                 String
+  createdAt              DateTime           @default(now())
+  createdByOperatorEmail String
+
+  @@index([submissionId, createdAt(sort: Desc)])
 }
 
 // ============================================================================

@@ -43,6 +43,7 @@ The schema currently concentrates multiple domains in one relational model:
 - challenges and events
 - conversations, messages, notifications
 - feedback submissions for authenticated bug and improvement intake
+- feedback operator identities and follow-up references for the ops backoffice
 
 ## Feedback Intake Persistence
 
@@ -55,9 +56,18 @@ The schema currently concentrates multiple domains in one relational model:
   - optional `currentPath`
   - optional `userAgent`
   - workflow `status`
+  - optional `triageNote`
+  - optional `reviewedAt`
+  - optional `reviewedByOperatorEmail`
+  - optional `handoffNote`
+  - optional `handoffUpdatedAt`
+  - optional `handoffUpdatedByOperatorEmail`
   - timestamps
-- The first version is intentionally intake-only. Operator review surfaces should read this same table instead of creating a second feedback pipeline later.
+- Operator review surfaces still read this same table instead of creating a second feedback pipeline.
+- Triage status is bounded to the backoffice workflow: `NEW`, `IN_REVIEW`, `PLANNED`, `RESOLVED`, `DISMISSED`.
 - The next operator flow is expected to run behind a single Access-protected `ops.<lane>.mastersrunners.com` host rather than on the public app host.
+- `PlatformOperatorIdentity` is the separate operator allowlist and intentionally does not reuse the `User` table or add a role column there.
+- `FeedbackFollowUpReference` stores manual task, initiative, issue, or generic link references against the submission root record.
 - Future task/issue/initiative handoff metadata should stay attached to the same submission root record instead of forking feedback into a second tracker.
 
 ## Transaction Model

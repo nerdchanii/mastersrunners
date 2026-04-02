@@ -1,14 +1,16 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsIn, IsOptional, IsString, MaxLength } from "class-validator";
 
+import { FEEDBACK_CATEGORIES } from "../types/feedback.constants.js";
+
 export class CreateFeedbackSubmissionDto {
   @ApiProperty({
     description: "피드백 분류",
-    enum: ["BUG", "IMPROVEMENT", "QUESTION", "OTHER"],
+    enum: FEEDBACK_CATEGORIES,
     example: "BUG",
   })
   @IsString()
-  @IsIn(["BUG", "IMPROVEMENT", "QUESTION", "OTHER"])
+  @IsIn(FEEDBACK_CATEGORIES)
   category!: string;
 
   @ApiProperty({

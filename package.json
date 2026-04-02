@@ -6,6 +6,7 @@
     "dev": "pnpm --parallel -r run dev",
     "build": "pnpm -r run build",
     "build:web": "pnpm --filter @masters/web build",
+    "build:ops-web": "pnpm --filter @masters/ops-web build",
     "lint": "pnpm -r run lint",
     "typecheck": "bash scripts/run-typecheck.sh",
     "knip": "bash scripts/run-knip.sh",

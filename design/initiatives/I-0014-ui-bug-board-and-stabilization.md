@@ -118,9 +118,9 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - `tasks/todo/I-0014-160-web-crew-detail-tab-hierarchy-cleanup.md`
 - `tasks/todo/I-0014-200-web-workout-attachment-deeplink-and-visuals.md`
 - `tasks/todo/I-0014-210-docs-post-video-upload-scope.md`
-- `tasks/todo/I-0014-230-web-feedback-backoffice-access-boundary.md`
-- `tasks/todo/I-0014-260-web-feedback-ops-inbox-and-triage.md`
-- `tasks/todo/I-0014-270-web-feedback-ops-handoff-actions.md`
+- `tasks/active/I-0014-230-web-feedback-backoffice-access-boundary.md`
+- `tasks/active/I-0014-260-web-feedback-ops-inbox-and-triage.md`
+- `tasks/active/I-0014-270-web-feedback-ops-handoff-actions.md`
 - `tasks/archive/I-0014-250-web-external-profile-image-https-normalization.md`
 
 ## Success Criteria
@@ -139,6 +139,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - 2026-04-02: follow-up `I-0014-220` synced the conversations repository unit spec with the room-context fields shipped by `I-0014-020`, removing stale DM-only expectations that were failing local CI during push.
 - 2026-04-02: seeded `I-0014-230` for the remaining `UI-014` operator-tooling gap so the future feedback backoffice ships on one `ops.dev.mastersrunners.com` host with Cloudflare Access at the edge and API-side staff RBAC behind it.
 - 2026-04-02: split the remaining feedback backoffice work into `I-0014-260` for inbox/triage and `I-0014-270` for task/issue/initiative handoff actions so the ops UX can land incrementally on top of the same feedback stream.
+- 2026-04-02: revised the operator tooling track to ship as a separate `apps/ops-web` app with shadcn-based UI instead of host-branching inside `apps/web`.
 - 2026-04-02: opened `I-0014-240` after the deployed dev lane still showed `/feed` post-image regressions and Cloudflare analytics CSP violations, even though direct reads against the persisted `R2_PUBLIC_URL` remained healthy.
 - 2026-04-02: `I-0014-240` is now review-ready with targeted API/web verification complete; only the repo-wide pre-existing Prisma/Jest ESM issue still blocks the task's narrow API e2e command.
 - 2026-04-02: `I-0014-240` is now archived after authenticated live `/feed` verification confirmed persisted post images render again on the dev lane and the Cloudflare analytics CSP regression stays closed.

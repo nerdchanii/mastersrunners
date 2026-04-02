@@ -93,6 +93,9 @@ jobs:
       - name: Build web
         run: pnpm --filter @masters/web build
 
+      - name: Build ops web
+        run: pnpm --filter @masters/ops-web build
+
   build-docker:
     runs-on: ubuntu-latest
 

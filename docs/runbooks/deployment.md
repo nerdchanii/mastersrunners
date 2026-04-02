@@ -10,7 +10,9 @@ This runbook explains how deployment works in this repository, what to verify be
 - Production-like local stack: `docker-compose.prod.yml`
 - Post-deploy verification script: `scripts/verify-deployment.sh`
 - Cloudflare Pages web build entrypoint: `package.json` -> `pnpm build:web`
+- Cloudflare Pages ops-web build entrypoint: `package.json` -> `pnpm build:ops-web`
 - Web response-header contract: `apps/web/public/_headers`
+- Ops-web response-header contract: `apps/ops-web/public/_headers`
 
 ## Deployment Surfaces
 
@@ -37,6 +39,13 @@ This runbook explains how deployment works in this repository, what to verify be
 - Build artifact: `apps/web/dist`
 - Build contract source of truth: this runbook plus the root `build:web` script
 
+### Ops Web Static Hosting
+
+- Target: Cloudflare Pages
+- Trigger: Git-connected preview and production deployments
+- Build artifact: `apps/ops-web/dist`
+- Build contract source of truth: this runbook plus the root `build:ops-web` script
+
 ## Pre-Deploy Checklist
 
 - CI is green on the commit being deployed.
@@ -60,13 +69,14 @@ This runbook explains how deployment works in this repository, what to verify be
   - `main` branch -> `production` GitHub environment
 - Each GitHub environment should provide the lane-scoped deployment contract:
   - secrets: `GCP_PROJECT_ID`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT`
-  - variables: `CLOUD_RUN_SERVICE_NAME`, `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT`, `FRONTEND_URL`
+  - variables: `CLOUD_RUN_SERVICE_NAME`, `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT`, `FRONTEND_URL`, `OPS_FRONTEND_URL`
   - optional variables: `API_PUBLIC_URL`, `KAKAO_CALLBACK_URL`, `GOOGLE_CALLBACK_URL`
 - Expected GitHub environment variable values for the current rollout:
   - `dev` environment:
     - `CLOUD_RUN_SERVICE_NAME=masters-runners-api-dev`
     - `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT=cloud-run-runtime@mastersrunners-dev-20260331.iam.gserviceaccount.com`
     - `FRONTEND_URL=https://dev.mastersrunners.com`
+    - `OPS_FRONTEND_URL=https://ops.dev.mastersrunners.com`
   - `production` environment:
     - `CLOUD_RUN_SERVICE_NAME=masters-runners-api`
     - `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT=cloud-run-runtime@mastersrunners-prod-20260331.iam.gserviceaccount.com`
@@ -74,11 +84,15 @@ This runbook explains how deployment works in this repository, what to verify be
 - Deployment workflow injects:
   - `NODE_ENV=production`
   - `FRONTEND_URL`
+  - `OPS_FRONTEND_URL`
   - `DATABASE_URL`
   - `JWT_SECRET`
   - `JWT_ACCESS_TTL`
   - `JWT_REFRESH_TTL`
   - R2 credentials and bucket/public URL values
+- Additional ops-auth runtime values:
+  - `CF_ACCESS_TEAM_DOMAIN`
+  - `CF_ACCESS_POLICY_AUD`
 - Optional runtime values:
   - `API_PUBLIC_URL`
   - `KAKAO_CALLBACK_URL`
@@ -97,6 +111,7 @@ This runbook explains how deployment works in this repository, what to verify be
 - The deploy workflow still needs Secret Manager access to `DIRECT_URL` so it can run `prisma migrate deploy` and `prisma db seed` before shipping a new revision.
 - Automated branch deploy migrations intentionally allow only a narrow additive SQL subset; anything outside that subset must use a manual rollout task instead of relying on regex guesses about backward compatibility.
 - `FRONTEND_URL` is required for branch deploy boot because the API uses it for CORS and OAuth redirect targets.
+- `OPS_FRONTEND_URL` is also required once the ops backoffice is enabled because the API allows that origin for ops-host API traffic.
 - Browser auth now also depends on `FRONTEND_URL` because the API derives cookie redirect and `Secure` behavior from it.
 - Public feature exposure is controlled by the repo-tracked runtime config module at `apps/api/src/config/feature-flags.ts`.
 - Provider credentials still live in Secret Manager and callback URLs still live in GitHub environment variables.
@@ -194,8 +209,18 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
 - Planned operator-host posture:
   - `ops.dev.mastersrunners.com` should be the single staff-only host for backoffice UI, operator API routes, and Swagger.
   - Cloudflare Access should protect the entire ops host before any app content is reachable.
-  - A secret-less Pages frontend plus same-host Worker routes for `/api/*` and `/api-docs*` is the preferred first implementation shape.
+  - The backoffice should ship as a dedicated `mastersrunners-ops` Pages project built from `apps/ops-web/dist`.
+  - A secret-less Pages frontend plus same-host Worker routes for `/api/*` and `/api-docs*` is the preferred implementation shape.
   - 2026-04-02 external proof: Cloudflare now has an active `ops.dev.mastersrunners.com` custom domain, Worker routes for `ops.dev.mastersrunners.com/api/*` plus `ops.dev.mastersrunners.com/api-docs*`, and an Access app that gates `ops.dev.mastersrunners.com/*` before content is served.
+
+### Cloudflare Pages For Ops Web
+
+- Set the Pages build command to `pnpm build:ops-web`
+- Set the Pages build output directory to `apps/ops-web/dist`
+- Prefer same-host API routing and let deployed ops-web builds default to `/api/v1`
+- Do not store Access private keys or database secrets in Pages env
+- Optional Pages variable for preview/local override:
+  - `VITE_API_URL`
 
 ### Current Host Matrix
 
@@ -218,19 +243,22 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
 - Public dev host non-goal:
   - `dev.mastersrunners.com/api-docs*` should not be relied on as a public route once the ops host exists.
 - Planned operator routing:
-  - `ops.dev.mastersrunners.com/*` -> Cloudflare Access-protected operator UI
+  - `ops.dev.mastersrunners.com/*` -> Cloudflare Access-protected `apps/ops-web` UI
   - `ops.dev.mastersrunners.com/api/*` -> dev API origin
   - `ops.dev.mastersrunners.com/api-docs*` -> dev API origin
 - 2026-04-02 observed external state:
   - DNS record exists for `ops.dev.mastersrunners.com -> mastersrunners.pages.dev`
   - Worker routes exist for `ops.dev.mastersrunners.com/api/*` and `ops.dev.mastersrunners.com/api-docs*`
   - Access now protects `ops.dev.mastersrunners.com/*`, and live probes against the published edge return Cloudflare Access `302` responses for `/`, `/api/v1/health`, and `/api-docs`
+  - a dedicated Pages project `mastersrunners-ops` now exists with build command `pnpm run build:ops-web` and output `apps/ops-web/dist`
+  - the custom domain is intentionally not moved yet, so `ops.dev.mastersrunners.com` still resolves through the original `mastersrunners` Pages project until the new project has a deployment to promote
 - 2026-04-01 runtime checks confirmed the current same-domain dev host reaches the API successfully on:
   - `https://dev.mastersrunners.com/api/v1/health`
   - `https://dev.mastersrunners.com/api/v1/auth/providers`
 - Deferred routing after the placeholder host is retired:
   - `mastersrunners.com/api/*` -> production API origin
 - Local non-development web builds should provide `VITE_API_URL` through the shell environment or an env file resolved from `apps/web`.
+- Local ops-web builds may omit `VITE_API_URL` when they are intended to run on the deployed ops host, but local preview outside that host should still provide an explicit override.
 
 ### Supabase Connection Contract
 

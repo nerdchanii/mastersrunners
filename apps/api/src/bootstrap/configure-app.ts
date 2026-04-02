@@ -10,7 +10,7 @@ const JSON_BODY_LIMIT = "1mb";
 const RAW_BODY_LIMIT = "50mb";
 
 function resolveAllowedOrigin(
-  frontendUrl: string,
+  allowedOrigins: string[],
   origin: string | undefined,
   callback: (err: Error | null, allow?: boolean) => void,
 ) {
@@ -24,7 +24,7 @@ function resolveAllowedOrigin(
     return;
   }
 
-  if (origin === frontendUrl) {
+  if (allowedOrigins.includes(origin)) {
     callback(null, true);
     return;
   }
@@ -34,7 +34,12 @@ function resolveAllowedOrigin(
 
 export function configureApp(app: NestExpressApplication) {
   const config = app.get(ConfigService);
-  const frontendUrl = config.get<string>("FRONTEND_URL", "http://localhost:3000");
+  const allowedOrigins = [
+    config.get<string>("FRONTEND_URL", "http://localhost:3000"),
+    config.get<string>("OPS_FRONTEND_URL", ""),
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean);
 
   app.useBodyParser("json", { limit: JSON_BODY_LIMIT });
   app.useBodyParser("urlencoded", { extended: true, limit: JSON_BODY_LIMIT });
@@ -46,7 +51,7 @@ export function configureApp(app: NestExpressApplication) {
   app.use(createSecurityHeadersMiddleware());
 
   app.enableCors({
-    origin: (origin, callback) => resolveAllowedOrigin(frontendUrl, origin, callback),
+    origin: (origin, callback) => resolveAllowedOrigin(allowedOrigins, origin, callback),
     credentials: true,
   });
 

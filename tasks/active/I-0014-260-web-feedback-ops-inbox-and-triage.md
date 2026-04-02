@@ -12,12 +12,16 @@ po_review: required
 depends_on:
   - I-0014-230
 blocked_by: []
+execution_status: blocked
+review_status: approved
+verification_status: passed
+closeout_blocker: Waiting for the first Git-driven `mastersrunners-ops` Pages deployment on the `dev` branch and the `ops.dev.mastersrunners.com` custom-domain cutover.
 verify:
-  - pnpm --filter @masters/web build
+  - pnpm --filter @masters/ops-web build
   - pnpm --filter @masters/api test -- --runTestsByPath src/feedback/feedback.service.spec.ts
   - bash scripts/check-task-review-metadata.sh
 artifacts:
-  - apps/web/src/pages/feedback/
+  - apps/ops-web/src/pages/feedback/
   - apps/api/src/feedback/
   - design/backend/persistence-model.md
   - design/architecture/deployment.md
@@ -25,7 +29,7 @@ artifacts:
 
 ## Goal
 
-Let operators review submitted feedback in one inbox, inspect the underlying report context, and move each item through a lightweight triage workflow on the ops host.
+Let operators review submitted feedback in one inbox inside `apps/ops-web`, inspect the underlying report context, and move each item through a lightweight triage workflow on the ops host.
 
 ## Done Criteria
 
@@ -33,19 +37,20 @@ Let operators review submitted feedback in one inbox, inspect the underlying rep
 - operators can inspect submission details such as category, title, description, route context, timestamps, and submitter
 - operators can move items through a bounded workflow such as `new`, `in_review`, `planned`, `resolved`, or `dismissed`
 - inbox filters and empty states are explicit enough for day-to-day review without introducing a second persistence path
+- the inbox UI is built in `apps/ops-web` with shadcn primitives instead of being folded into the consumer app shell
 
 ## Notes
 
-- Execution mode: requires the ops-host boundary from `I-0014-230`.
+- Execution mode: requires the separate ops-host boundary from `I-0014-230`.
 - Keep the first inbox focused on review and triage, not full ticket automation.
 - Any operator notes or audit trail additions should extend the existing feedback model rather than fork it.
 
 ## Self Review
 
-- Scope and intent: land a first operator inbox and bounded triage state machine without coupling it to GitHub mutation or a broader backoffice redesign.
+- Scope and intent: land a first operator inbox and bounded triage state machine in `apps/ops-web` without coupling it to GitHub mutation or a broader backoffice redesign.
 - Source of truth: `design/backend/persistence-model.md`, the future ops-host shell from `I-0014-230`, and the existing `FeedbackSubmission` data model.
 - Design divergence: the repo currently stores submissions only for intake, so this task must add operator read/triage surfaces without introducing a second inbox or secondary persistence path.
-- Verification: closeout should include web build proof, focused feedback-service coverage, and enough UI-path evidence to show operators can list, inspect, and transition triage states on the ops host.
+- Verification: `pnpm --filter @masters/ops-web build`, `pnpm --filter @masters/api test -- --runTestsByPath src/feedback/feedback.service.spec.ts`, `bash scripts/check-task-review-metadata.sh`, `bash scripts/check-active-task-closeout.sh`, and `VITE_API_URL=http://localhost:4000/api/v1 pnpm -r run build` passed. External closeout still depends on the first Git-driven Pages deployment plus custom-domain cutover.
 - Review routing: `frontend-reviewer`, `ui-ux-reviewer`, `backend-reviewer`, and `po-reviewer` remain required because the task spans operator UI, triage semantics, and API-backed state updates.
 
 ## Review Focus
@@ -60,12 +65,16 @@ Let operators review submitted feedback in one inbox, inspect the underlying rep
 ## Design Divergence
 
 - Current feedback persistence is intake-only and does not yet power an operator inbox or triage workflow.
+- No dedicated shadcn-based ops app exists yet.
 
 ## Attempt Log
 
 - 2026-04-02: created after the ops-host plan was split so inbox review and triage can land independently from host-boundary work and later task/issue automation.
+- 2026-04-02: implemented the shadcn-based ops inbox, feedback detail surface, and bounded triage workflow inside `apps/ops-web`.
 
 ## Review Notes
 
 - Specialist review:
+  - 2026-04-02 `frontend-reviewer`, `ui-ux-reviewer`, and `backend-reviewer` internal pass. Confirmed the inbox reads the existing `FeedbackSubmission` stream, triage stays inside the five-state workflow, and detail context is sufficient without opening a second tracker.
 - PO review:
+  - 2026-04-02 `po-reviewer` internal pass. Confirmed the workflow is enough for solo operator review and preserves the public feedback intake as the single canonical entrypoint.
