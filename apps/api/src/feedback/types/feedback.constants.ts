@@ -10,6 +10,5 @@ export const FEEDBACK_TRIAGE_STATUSES = [
 
 export const FEEDBACK_HANDOFF_REFERENCE_KINDS = ["TASK", "INITIATIVE", "ISSUE", "LINK"] as const;
 
-export type FeedbackCategory = (typeof FEEDBACK_CATEGORIES)[number];
 export type FeedbackTriageStatus = (typeof FEEDBACK_TRIAGE_STATUSES)[number];
 export type FeedbackHandoffReferenceKind = (typeof FEEDBACK_HANDOFF_REFERENCE_KINDS)[number];

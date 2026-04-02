@@ -3,10 +3,6 @@ import { isRouteErrorResponse, useRouteError } from "react-router-dom";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function ErrorBoundary({ children }: { children: React.ReactNode }) {
-  return children;
-}
-
 export function RouteErrorBoundary() {
   const error = useRouteError();
   const message = isRouteErrorResponse(error)

@@ -15,7 +15,7 @@ import {
   type FeedbackHandoffReferenceKind,
 } from "../types/feedback.constants.js";
 
-export class FeedbackFollowUpReferenceDto {
+class FeedbackFollowUpReferenceDto {
   @ApiProperty({
     description: "후속 작업 참조 종류",
     enum: FEEDBACK_HANDOFF_REFERENCE_KINDS,
