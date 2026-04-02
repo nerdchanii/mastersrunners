@@ -248,12 +248,29 @@ describe("ConversationsService", () => {
     it("should return conversation with messages", async () => {
       const conversationId = "conv-1";
       const userId = "user-1";
+      const now = new Date("2026-04-02T04:00:00.000Z");
       const conversation = {
         id: conversationId,
         type: "DIRECT",
+        name: null,
+        crewId: null,
+        activityId: null,
+        crew: null,
+        activity: null,
+        updatedAt: now,
         participants: [
-          { userId: "user-1", user: { id: "user-1", name: "User 1" } },
-          { userId: "user-2", user: { id: "user-2", name: "User 2" } },
+          {
+            userId: "user-1",
+            lastReadAt: null,
+            joinedAt: now,
+            user: { id: "user-1", name: "User 1", profileImage: null },
+          },
+          {
+            userId: "user-2",
+            lastReadAt: null,
+            joinedAt: now,
+            user: { id: "user-2", name: "User 2", profileImage: null },
+          },
         ],
       };
       const messages = [
@@ -262,8 +279,9 @@ describe("ConversationsService", () => {
           conversationId,
           senderId: "user-2",
           content: "Hello",
-          createdAt: new Date(),
-          sender: { id: "user-2", name: "User 2" },
+          deletedAt: null,
+          createdAt: now,
+          sender: { id: "user-2", name: "User 2", profileImage: null },
         },
       ];
 
@@ -285,7 +303,7 @@ describe("ConversationsService", () => {
         50,
       );
       expect(result.conversation).toEqual(conversation);
-      expect(result.messages).toHaveLength(1);
+      expect(result.messages).toEqual(messages);
     });
 
     it("should throw NotFoundException if conversation not found", async () => {
