@@ -81,6 +81,7 @@ This document defines the intended deployment shape for the repository. Runbooks
 - The public `dev.mastersrunners.com` host is expected to carry the app plus `/api/*`, but not public Swagger.
 - Planned staff-only host:
   - `dev` lane -> `ops.dev.mastersrunners.com`
+- 2026-04-02 external provisioning status: the dev lane now has an active `ops.dev.mastersrunners.com` custom domain, Worker routes for `/api/*` and `/api-docs*`, and a Cloudflare Access self-hosted app protecting `ops.dev.mastersrunners.com/*`.
 - The API has two automated deploy lanes:
   - `dev` branch -> `masters-runners-api-dev`
   - `main` branch -> `masters-runners-api`

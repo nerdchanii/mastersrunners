@@ -71,8 +71,8 @@ Exceptions are only for repository controls that cannot be fully proven or close
 - `repo_control`: `cloudflare-ops-host-zero-trust-and-operator-routing`
 - `reason_not_repo_controllable`: Cloudflare Access applications and policies, custom domains, and Worker routes for the future ops host are dashboard-managed external state.
 - `external_owner`: project owner
-- `required_external_proof`: evidence that `ops.dev.mastersrunners.com` exists, is fronted by Cloudflare Access, routes `/api/*` and `/api-docs*` to the intended dev API origin, and no longer relies on public `dev.mastersrunners.com/api-docs*`.
-- `latest_observed_external_state`: 2026-04-02 design direction is now one Access-protected `ops.dev.mastersrunners.com` host for backoffice UI, operator API, and Swagger, but that host and policy do not exist yet.
+- `required_external_proof`: evidence that `ops.dev.mastersrunners.com` exists, is fronted by Cloudflare Access, uses the intended same-host Worker route pattern for `/api/*` and `/api-docs*`, and no longer relies on public `dev.mastersrunners.com/api-docs*`.
+- `latest_observed_external_state`: 2026-04-02 Cloudflare now has an active `ops.dev.mastersrunners.com` custom domain, Worker routes for `ops.dev.mastersrunners.com/api/*` and `ops.dev.mastersrunners.com/api-docs*`, and an Access self-hosted app with an allow policy for `nerdchanii@gmail.com`; edge probes return Cloudflare Access `302` responses before any operator content is served, while post-auth API origin behavior is inferred from the shared `mastersrunners-api-proxy` script already serving the dev host route.
 - `revisit_date`: 2026-04-15
 - `unblock_condition`: the ops host, its Access policy, and its operator-route proxy behavior are externally verified end-to-end
 

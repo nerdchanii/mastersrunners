@@ -64,7 +64,7 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `tasks/archive/I-0006-180-api-r2-runtime-endpoint-derivation.md`
 - `tasks/archive/I-0006-190-ci-dev-r2-browser-upload-cors.md`
 - `tasks/archive/I-0006-200-ci-tighten-dev-r2-browser-origin-allowlist.md`
-- `tasks/todo/I-0006-230-meta-ops-host-swagger-and-zero-trust-boundary.md`
+- `tasks/archive/I-0006-230-meta-ops-host-swagger-and-zero-trust-boundary.md`
 - `tasks/archive/I-0006-210-api-conversation-type-leak-knip-cleanup.md`
 
 ## Success Criteria

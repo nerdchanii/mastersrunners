@@ -195,6 +195,7 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
   - `ops.dev.mastersrunners.com` should be the single staff-only host for backoffice UI, operator API routes, and Swagger.
   - Cloudflare Access should protect the entire ops host before any app content is reachable.
   - A secret-less Pages frontend plus same-host Worker routes for `/api/*` and `/api-docs*` is the preferred first implementation shape.
+  - 2026-04-02 external proof: Cloudflare now has an active `ops.dev.mastersrunners.com` custom domain, Worker routes for `ops.dev.mastersrunners.com/api/*` plus `ops.dev.mastersrunners.com/api-docs*`, and an Access app that gates `ops.dev.mastersrunners.com/*` before content is served.
 
 ### Current Host Matrix
 
@@ -220,6 +221,10 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
   - `ops.dev.mastersrunners.com/*` -> Cloudflare Access-protected operator UI
   - `ops.dev.mastersrunners.com/api/*` -> dev API origin
   - `ops.dev.mastersrunners.com/api-docs*` -> dev API origin
+- 2026-04-02 observed external state:
+  - DNS record exists for `ops.dev.mastersrunners.com -> mastersrunners.pages.dev`
+  - Worker routes exist for `ops.dev.mastersrunners.com/api/*` and `ops.dev.mastersrunners.com/api-docs*`
+  - Access now protects `ops.dev.mastersrunners.com/*`, and live probes against the published edge return Cloudflare Access `302` responses for `/`, `/api/v1/health`, and `/api-docs`
 - 2026-04-01 runtime checks confirmed the current same-domain dev host reaches the API successfully on:
   - `https://dev.mastersrunners.com/api/v1/health`
   - `https://dev.mastersrunners.com/api/v1/auth/providers`
