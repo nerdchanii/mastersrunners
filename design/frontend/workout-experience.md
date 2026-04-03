@@ -58,6 +58,7 @@ The page state is orchestrated by `useWorkoutEntry`, which owns:
 - event result linking is handled from the event detail page rather than from workout detail
 - the current `/workouts/:id` route uses persisted route, lap, and point-level sensor data to render a map-first report with linked elevation, heart-rate, and cadence charts when those series exist
 - chart scrubbing and lap selection both share one route-selection model so the detail surface can grow into deeper analytics work later
+- this analysis-first direction is part of the current UX contract for runner detail and should not be downgraded into a generic social summary card without an explicit follow-up task
 
 ## Visibility and Metadata
 

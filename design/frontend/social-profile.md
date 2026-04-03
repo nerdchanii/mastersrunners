@@ -81,3 +81,4 @@ The dedicated profile edit form can later revise the same region, PB, and privac
 - self-profile and other-user profile do not yet share one unified view-model
 - background-image editing still exists in the dedicated settings form, but the public profile header no longer treats that field as required presentation chrome
 - onboarding no longer treats running level or main distance as canonical profile fields
+- `/profile/:id` still lags behind the public social route posture used by feed, posts, and crews; treat that as an explicit alignment follow-up instead of silent UX truth

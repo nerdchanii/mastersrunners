@@ -51,6 +51,7 @@ Anonymous entry stays public-first:
   - activity summaries
 - join, invite-entry, and activity-entry actions now open an auth prompt dialog and preserve the current crew path as the post-login return target
 - member-only chat data should not be queried until the viewer is actually an active member
+- public crew surfaces should not rely on extra explainer copy to justify their visibility; the readable data and gated actions should communicate the boundary by themselves
 
 ## Crew Hub Composition
 

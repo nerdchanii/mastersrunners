@@ -36,6 +36,9 @@ This document defines the preferred frontend coding style for `apps/web`. Some l
 - Use the existing Tailwind v4 and shadcn-style token system instead of repeating raw spacing or color values.
 - Prefer clear section components over long anonymous JSX blocks.
 - Social detail surfaces should prefer one continuous document with section dividers over stacked generic `Card` wrappers when the content is meant to read as one flow.
+- Public social surfaces should prefer content-first layout over explainer-first chrome. Do not add helper blocks or promo rails when the main content itself can carry the page.
+- Guest participation boundaries should prefer in-place auth dialogs over immediate route redirects when the underlying route is publicly readable.
+- Consumer web copy should follow `design/frontend/writing-and-copy.md`; avoid sample/demo framing and UI that over-explains itself.
 - Use native share affordances when the platform supports them; clipboard-only sharing is the fallback, not the default mobile behavior.
 - Date selection should go through the shared date-picker wrapper under `components/ui/` instead of sprinkling native `type="date"` inputs across forms.
 

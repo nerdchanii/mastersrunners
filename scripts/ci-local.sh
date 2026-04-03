@@ -53,6 +53,8 @@ run_step "Run format check" pnpm format:check
 
 run_step "Run lint" pnpm lint
 
+run_step "Check first-wave UX copy guardrails" pnpm check:ux-copy
+
 run_step "Run explicit typecheck" bash scripts/run-typecheck.sh
 
 run_step "Check deterministic active-task closeout state" bash scripts/check-active-task-closeout.sh

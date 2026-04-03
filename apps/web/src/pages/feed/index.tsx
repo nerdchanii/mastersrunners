@@ -139,12 +139,11 @@ function GuestFeedPostCard({ post }: { post: GuestShowcasePost }) {
 
   return (
     <>
-      <article className="border-b bg-card/65 px-4 py-5" aria-label={`공개 샘플 게시글 ${post.id}`}>
-        <UserAvatar
-          user={post.user}
-          showName
-          subtitle={<span className="text-xs text-muted-foreground">샘플 공개 피드</span>}
-        />
+      <article
+        className="border-b bg-card/65 px-4 py-5"
+        aria-label={`${post.user.name}님의 게시글`}
+      >
+        <UserAvatar user={post.user} showName />
 
         <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
           {post.content}

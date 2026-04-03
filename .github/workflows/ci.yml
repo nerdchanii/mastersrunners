@@ -63,6 +63,9 @@ jobs:
       - name: Run lint
         run: pnpm lint
 
+      - name: Check first-wave UX copy guardrails
+        run: pnpm check:ux-copy
+
       - name: Run explicit typecheck
         run: pnpm typecheck
 

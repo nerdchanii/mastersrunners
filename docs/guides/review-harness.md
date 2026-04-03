@@ -55,6 +55,15 @@ Before commit, the task must satisfy all of these:
 6. The task file has been updated with review notes.
 7. The task is moved from `tasks/active/` to `tasks/archive/` in the same changeset that finalizes the work.
 
+## UX Guardrail Reminder
+
+- user-facing consumer web tasks should cite the relevant docs under `design/frontend/` when they affect public social routes, auth gates, product copy, or visual-system usage
+- start with:
+  - `design/frontend/ux-principles.md`
+  - `design/frontend/social-surface-patterns.md`
+  - `design/frontend/writing-and-copy.md`
+  - `design/frontend/visual-system-rules.md`
+
 ## Deterministic Active-State Gate
 
 Active tasks now carry machine-readable closeout fields in frontmatter:

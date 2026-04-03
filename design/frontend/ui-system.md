@@ -37,6 +37,15 @@ The current UI stack is Tailwind CSS v4 plus shadcn-style primitives, with desig
 - variants are typically modeled with `class-variance-authority`
 - class composition uses `cn()` from `lib/utils.ts`
 - shell-level shared UX components live under `components/common` and `components/layout`
+- `components/ui` is a primitive layer, not permission to wrap every product section in card chrome
+- consumer social surfaces should default to section/divider/media composition and use cards only when the boundary itself is important
+
+## UX Rule References
+
+- product-level UX posture lives in `design/frontend/ux-principles.md`
+- public social route patterns live in `design/frontend/social-surface-patterns.md`
+- consumer web copy rules live in `design/frontend/writing-and-copy.md`
+- visual-system usage rules live in `design/frontend/visual-system-rules.md`
 
 ## Current Constraints
 

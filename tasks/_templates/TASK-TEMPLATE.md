@@ -32,6 +32,7 @@ Describe the single unit of work.
 
 - Constraints
 - relevant links
+- For user-facing consumer web work, cite the relevant UX docs under `design/frontend/` in `artifacts` or here in `Notes`.
 
 ## Self Review
 

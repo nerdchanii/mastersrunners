@@ -9,6 +9,7 @@
     "build:ops-web": "pnpm --filter @masters/ops-web build",
     "lint": "pnpm -r run lint",
     "typecheck": "bash scripts/run-typecheck.sh",
+    "check:ux-copy": "node scripts/check-ux-copy-patterns.mjs --strict",
     "knip": "bash scripts/run-knip.sh",
     "format": "prettier . --write",
     "format:check": "prettier --check --ignore-unknown AGENTS.md README.md DEPLOYMENT.md design docs/README.md docs/guides docs/runbooks docs/reports tasks scripts .github package.json",
