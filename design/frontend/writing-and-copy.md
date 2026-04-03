@@ -10,61 +10,61 @@ sources:
   - docs/reports/i-0014-ui-bug-board.md
 ---
 
-# Writing and Copy
+# 문구와 카피
 
-## Summary
+## 요약
 
-Consumer web copy should behave like product UI, not like marketing commentary or a narrated prototype. Use short, concrete language that supports orientation, state, and action.
+소비자용 웹 문구는 마케팅 카피나 설명형 프로토타입 문장처럼 보이면 안 됩니다. 방향 안내, 상태, 행동을 짧고 구체적으로 지원하는 제품 UI 문구처럼 동작해야 합니다.
 
-## Allowed Copy Roles
+## 허용되는 문구 역할
 
-- orientation
-  - tells the user where they are or what the section contains
-- state
-  - explains loading, empty, error, or visibility status
-- consequence
-  - explains what will happen if an action is blocked or delayed
-- action
-  - labels the next possible step
+- 방향 안내
+  - 사용자가 지금 어디에 있는지, 이 영역이 무엇인지 알려준다.
+- 상태
+  - 로딩, 비어 있음, 에러, 공개 범위 같은 상태를 설명한다.
+- 결과/제약
+  - 어떤 행동이 막히거나 지연될 때 무슨 일이 일어나는지 알려준다.
+- 행동
+  - 다음에 할 수 있는 행동을 라벨링한다.
 
-## Rules
+## 규칙
 
-- keep headings literal and scannable
-- prefer one short sentence over stacked explanation
-- do not restate what a visible button, tab, or list already makes obvious
-- write auth prompts around the blocked action, not around brand persuasion
-- empty states should be neutral and specific, not motivational by default
+- 제목은 직설적이고 훑어보기 쉬워야 한다.
+- 여러 줄 설명보다 짧은 한 문장을 우선한다.
+- 이미 보이는 버튼, 탭, 리스트가 설명하는 내용을 다시 문장으로 풀어쓰지 않는다.
+- 인증 유도 문구는 브랜드 설득이 아니라, 지금 막힌 행동을 중심으로 써야 한다.
+- empty state는 기본적으로 동기부여형 문구가 아니라 중립적이고 구체적인 문구여야 한다.
 
-## Banned Patterns
+## 금지 패턴
 
-- sample/demo framing inside the product UI
-- copy that explains the existence of the UI instead of helping use it
-- pre-emptive signup persuasion on public reading surfaces
-- vague guidance that duplicates the surrounding controls
+- 제품 UI 안에서 샘플/데모라고 스스로 규정하는 문구
+- 사용을 돕기보다 UI의 존재 자체를 설명하는 문구
+- 공개 읽기 화면에서 선제적으로 가입을 설득하는 문구
+- 주변 컨트롤이 이미 보여주는 내용을 반복하는 모호한 안내 문구
 
-## First-Wave Banned Phrases
+## 1차 금지 문구
 
-These phrases are blocked by automation in `apps/web/src`:
+아래 문구는 `apps/web/src`에서 자동 검사로 막습니다.
 
 - `샘플 공개 피드`
 - `공개 샘플 게시글`
 - `먼저 둘러보세요`
 
-If product needs one of these strings in a non-user-facing context such as tests or docs, keep it out of `apps/web/src`.
+테스트나 문서처럼 사용자에게 직접 보이지 않는 맥락에서 이 표현이 필요하다면, `apps/web/src` 바깥에 둡니다.
 
-## Preferred Rewrites
+## 권장 수정 방향
 
-- bad: `샘플 공개 피드`
-- better: no label at all, or a concrete social/context label only when needed
+- 나쁨: `샘플 공개 피드`
+- 권장: 라벨을 아예 없애거나, 정말 필요할 때만 구체적인 소셜/맥락 라벨을 둔다.
 
-- bad: `먼저 둘러보세요`
-- better: remove the sentence unless the UI truly needs orientation that the layout cannot provide
+- 나쁨: `먼저 둘러보세요`
+- 권장: 레이아웃만으로는 방향 안내가 불가능한 경우가 아니라면 문장을 제거한다.
 
-- bad: `공개 크루와 피드는 로그인 없이도 둘러볼 수 있습니다`
-- better: let the navigation and available actions demonstrate that rule, and only explain the boundary at the action that requires login
+- 나쁨: `공개 크루와 피드는 로그인 없이도 둘러볼 수 있습니다`
+- 권장: 네비게이션과 사용 가능한 액션이 그 규칙을 스스로 보여주게 하고, 로그인은 필요한 행동 시점에서만 설명한다.
 
-## Review Questions
+## 리뷰 질문
 
-- does the copy help operate the screen, or merely explain the product?
-- if we delete this sentence, does the UI still make sense?
-- would this line sound at home in a live social app, or only in a demo?
+- 이 문구는 화면 사용을 돕는가, 아니면 제품을 설명만 하고 있는가?
+- 이 문장을 지워도 UI가 여전히 이해되는가?
+- 이 문장은 실제 소셜 앱 안에 있어도 자연스러운가, 아니면 데모 화면에서만 자연스러운가?

@@ -22,13 +22,13 @@ sources:
   - apps/web/src/hooks/useGroupChat.ts
 ---
 
-# Crew Experience
+# 크루 경험
 
-## Summary
+## 요약
 
-Crew UX combines discovery, membership management, discussion, activity scheduling, attendance, and chat. The detail route is the operational hub, but the page now uses a clearer primary/secondary hierarchy so members can scan it without being overwhelmed by tabs.
+크루 UX는 탐색, 멤버십 관리, 토론, 활동 일정, 출석, 채팅을 함께 다룬다. 상세 라우트가 운영 허브 역할을 하며, 현재 페이지는 더 분명한 1차/2차 위계를 사용해 멤버가 탭 구조에 압도되지 않고 빠르게 훑을 수 있게 한다.
 
-## Route Model
+## 라우트 모델
 
 - `/crews` lists crews
 - `/crews/new` creates a crew
@@ -39,91 +39,91 @@ Crew UX combines discovery, membership management, discussion, activity scheduli
 - `/crews/:id/activities/:activityId/chat` opens activity chat
 - `/crews/:id/activities/:activityId/qr-check-in` handles QR attendance
 
-Anonymous entry stays public-first:
+비로그인 진입은 공개 탐색 우선을 유지한다.
 
-- `/crews` defaults to `크루 찾기` for logged-out visitors instead of opening `내 크루`
-- choosing `내 크루` while logged out opens an auth prompt dialog instead of an immediate redirect
-- `/crews/:id` remains readable without login for public discovery
-- logged-out crew reads should include the public exploration payloads the page mounts by default:
-  - region filters
-  - explore results
-  - public crew boards/posts
-  - activity summaries
-- join, invite-entry, and activity-entry actions now open an auth prompt dialog and preserve the current crew path as the post-login return target
-- member-only chat data should not be queried until the viewer is actually an active member
-- public crew surfaces should not rely on extra explainer copy to justify their visibility; the readable data and gated actions should communicate the boundary by themselves
+- 비로그인 방문자에게 `/crews`는 `내 크루`를 여는 대신 기본적으로 `크루 찾기`를 보여준다
+- 비로그인 상태에서 `내 크루`를 고르면 즉시 리다이렉트하지 않고 인증 유도 다이얼로그를 연다
+- `/crews/:id`는 공개 탐색을 위해 로그인 없이도 읽을 수 있어야 한다
+- 비로그인 상태의 크루 읽기 화면은 페이지가 기본적으로 마운트하는 공개 탐색 payload를 포함해야 한다
+  - 지역 필터
+  - 탐색 결과
+  - 공개 크루 게시판/게시글
+  - 활동 요약
+- 가입, 초대 진입, 활동 진입 액션은 이제 인증 유도 다이얼로그를 열고, 현재 크루 경로를 로그인 후 복귀 대상으로 보존한다
+- 멤버 전용 채팅 데이터는 사용자가 실제 활성 멤버가 되기 전까지 조회하지 않는다
+- 공개 크루 화면은 자신의 공개 범위를 정당화하기 위해 추가 설명 카피에 기대지 않는다. 읽을 수 있는 데이터와 게이트된 행동이 그 경계를 스스로 보여줘야 한다
 
-## Crew Hub Composition
+## 크루 허브 구성
 
-The crew detail page now assembles a layered workspace instead of a flat tab bar:
+크루 상세 페이지는 이제 평평한 탭 바 대신 층위가 있는 작업 공간을 구성한다.
 
-- a hero area that treats crew profile image and cover image as separate roles, without reusing one slot as the other's fallback
-- three primary tabs only: 활동, 채팅, 게시판
-- a secondary member panel that keeps the roster visible without competing with the primary content
-- separate operator panels for attendance stats, tags, and pending members
-- invite entrants who land on `/crews/:id?invite=1` still see the lightweight shared-invite explainer above the hero until they join or their request becomes pending
-- unauthenticated invite entrants keep the same invite URL as the post-login return target through the auth prompt dialog
+- 크루 프로필 이미지와 커버 이미지를 서로의 fallback으로 재사용하지 않고, 각기 다른 역할로 다루는 hero 영역
+- 1차 탭은 `활동`, `채팅`, `게시판` 세 개만 유지
+- 주 콘텐츠와 경쟁하지 않으면서 멤버 목록을 계속 보여주는 2차 멤버 패널
+- 출석 통계, 태그, 승인 대기 멤버를 위한 별도 운영 패널
+- `/crews/:id?invite=1`로 들어온 초대 유입 사용자는 가입하거나 가입 요청이 대기 상태가 될 때까지 hero 위에서 가벼운 초대 설명을 계속 본다
+- 비로그인 초대 유입 사용자는 인증 유도 다이얼로그를 거치더라도 로그인 후 복귀 대상으로 같은 초대 URL을 유지한다
 
-Membership state now determines the primary affordances instead of the entire page structure:
+이제 페이지 전체 구조보다 멤버십 상태가 주요 affordance를 결정한다.
 
-- non-members can request or join
-- active members can use the chat tab
-- owners/admins see invite, moderation, stats, and settings actions
-- admin/operator tools are visually separated from member-facing surfaces so scanning the page does not feel like opening a control panel first
+- 비멤버는 가입 요청 또는 바로 가입을 할 수 있다
+- 활성 멤버는 채팅 탭을 사용할 수 있다
+- owner/admin은 초대, 운영, 통계, 설정 액션을 본다
+- admin/operator 도구는 멤버용 화면과 시각적으로 분리되어, 페이지를 훑을 때 먼저 관리 패널을 열어본 느낌이 들지 않도록 한다
 
-Primary tab order is fixed to support fast scanning:
+빠른 스캔을 위해 1차 탭 순서는 고정한다.
 
 1. 활동
 2. 채팅
 3. 게시판
 
-### Settings Shell
+### 설정 셸
 
-- `/crews/:id/settings` now uses the same profile/cover framing as the detail hero so the crew identity feels consistent across read and edit modes.
-- the routine edit form stays in the left/main column, while member management, pending approvals, and bans move into separate operational cards.
-- operators can edit profile-image URL and cover-image URL directly from the same settings form, with live previews for each slot.
-- simple text inputs still rely on placeholders and supporting copy where that reduces noise without hiding intent.
-- destructive owner actions remain visually separated from the routine edit form.
-- owner/admin surfaces expose a dedicated invite-link share action in both the crew hub and settings so operators do not have to copy crew URLs manually.
-- the current invite URL contract is `/crews/:id?invite=1`; when an unauthenticated user opens it, the login flow should preserve that destination and return the user to the same invite entry after authentication.
+- `/crews/:id/settings`는 이제 상세 hero와 같은 프로필/커버 프레이밍을 사용해 읽기 모드와 편집 모드 모두에서 크루 정체성이 일관되게 느껴지도록 한다.
+- 기본 편집 폼은 왼쪽/메인 컬럼에 두고, 멤버 관리, 승인 대기, 차단 목록은 별도 운영 카드로 분리한다.
+- 운영자는 같은 설정 폼 안에서 profile-image URL과 cover-image URL을 직접 수정할 수 있고, 각 슬롯에 대한 live preview를 본다.
+- 단순 텍스트 입력은 의도를 숨기지 않으면서도 화면 소음을 줄일 수 있다면 placeholder와 보조 카피를 활용한다.
+- 파괴적 owner 액션은 일반 편집 폼과 시각적으로 분리해 유지한다.
+- owner/admin 화면은 크루 허브와 설정 양쪽에서 전용 초대 링크 공유 액션을 노출해, 운영자가 크루 URL을 수동 복사하지 않도록 한다.
+- 현재 초대 URL 계약은 `/crews/:id?invite=1`이며, 비로그인 사용자가 이를 열면 로그인 흐름은 그 목적지를 보존하고 인증 후 같은 초대 진입으로 돌려보내야 한다.
 
-## Activity Model in the UI
+## UI의 활동 모델
 
-Crew activities are split from the main crew hub into route-specific detail and utility pages:
+크루 활동은 메인 크루 허브에서 분리되어, 라우트 전용 상세/유틸리티 페이지로 나뉜다.
 
 - detail page
 - edit page
 - QR check-in page
 - activity chat page
 
-The activity detail route was slimmed down in `I-0007`, but it still orchestrates several member and attendance behaviors around a route-local view model.
+활동 상세 라우트는 `I-0007`에서 슬림화됐지만, 여전히 라우트 전용 뷰 모델을 중심으로 여러 멤버십/출석 동작을 오케스트레이션한다.
 
-Current attendance entry points are intentionally split:
+현재 출석 진입점은 의도적으로 분리되어 있다.
 
-- RSVP members use the QR check-in route for their own check-in
-- owners/admins, plus popup hosts with manage permission, can still perform manual/operator check-in actions
-- the activity detail page should not expose self manual check-in to ordinary members
+- RSVP한 멤버는 자신의 체크인을 위해 QR check-in 라우트를 사용한다
+- owner/admin과 manage 권한이 있는 popup host는 수동/operator check-in 액션을 계속 사용할 수 있다
+- 활동 상세 페이지는 일반 멤버에게 self manual check-in을 노출하지 않아야 한다
 
-## Chat and Realtime
+## 채팅과 실시간성
 
-- direct crew chat and activity chat are built on the group-chat hooks
-- direct messages use SSE, but crew and activity chat still rely on the group-chat polling model
-- crew chat and activity chat now use route-owned labels and copy instead of generic room names
-- the main `/messages` hub now keeps crew and activity chat rooms visible with explicit room identity:
-  - crew rooms render as `크루명`
-  - activity rooms render as `크루명 / 활동명`
-- selecting a crew or activity room from the message hub routes the user back into the matching crew or activity chat surface instead of pretending every room is a DM thread
-- raw `crewId`, `activityId`, or fallback conversation ids should not surface in crew-facing chat headers or empty states
-- activity chat route access is intentionally aligned with the activity detail CTA:
+- 크루 채팅과 활동 채팅은 group-chat 훅 위에 구축된다
+- DM은 SSE를 쓰지만, 크루/활동 채팅은 여전히 group-chat polling 모델에 의존한다
+- 이제 크루 채팅과 활동 채팅은 generic room name 대신 라우트가 소유한 라벨과 카피를 사용한다
+- 메인 `/messages` 허브는 이제 크루/활동 채팅방을 명시적인 방 정체성과 함께 계속 보여준다
+  - 크루 방은 `크루명`으로 렌더링한다
+  - 활동 방은 `크루명 / 활동명`으로 렌더링한다
+- 메시지 허브에서 크루 또는 활동 방을 선택하면, 모든 방을 DM thread처럼 취급하지 않고 해당 크루/활동 채팅 화면으로 다시 라우팅한다
+- raw `crewId`, `activityId`, 또는 fallback conversation id는 크루용 채팅 헤더나 empty state에 노출하지 않는다
+- 활동 채팅 라우트 접근 권한은 의도적으로 활동 상세 CTA와 정렬한다
   - `RSVP`
   - `CHECKED_IN`
-  - crew admins/owners
-  - popup hosts with manage permission
-- users outside those access rules see an explanatory state and a return action instead of an editable chat composer
+  - 크루 admin/owner
+  - manage 권한이 있는 popup host
+- 이 접근 규칙 밖의 사용자는 편집 가능한 채팅 입력창 대신, 설명 상태와 복귀 액션을 본다
 
-## Current Constraints
+## 현재 제약
 
-- `/crews/:id` still performs direct page-level fetches instead of a dedicated hook/query owner
-- crew hub scope is still broad, but the page is now split into a primary three-tab surface plus secondary operational zones
-- membership approval, tag management, and activity operations are implemented, but their state is not yet normalized through one shared crew query layer
-- group chat still polls every 10 seconds, so scroll behavior must protect users who are reading older messages during refreshes
+- `/crews/:id`는 아직 전용 hook/query owner 대신 페이지 레벨 직접 fetch를 수행한다
+- 크루 허브의 범위는 여전히 넓지만, 페이지는 이제 세 개의 1차 탭 표면과 2차 운영 영역으로 나뉘어 있다
+- 가입 승인, 태그 관리, 활동 운영은 구현되어 있지만 상태가 하나의 공유 crew query 레이어로 아직 정규화되지는 않았다
+- group chat은 여전히 10초마다 polling하므로, 스크롤 동작은 새로고침 중에도 이전 메시지를 읽는 사용자를 보호해야 한다

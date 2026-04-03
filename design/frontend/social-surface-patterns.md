@@ -14,53 +14,53 @@ sources:
   - apps/web/src/pages/crews/[id]/index.tsx
 ---
 
-# Social Surface Patterns
+# 소셜 화면 패턴
 
-## Summary
+## 요약
 
-This document defines current UX patterns for public social routes and their auth boundaries. Use it when implementing or reviewing user-facing social surfaces.
+이 문서는 공개 소셜 라우트와 그 인증 경계에 대한 현재 UX 패턴을 정의합니다. 사용자에게 보이는 소셜 화면을 구현하거나 리뷰할 때 이 문서를 기준으로 삼습니다.
 
-## Pattern: Public Feed
+## 패턴: 공개 피드
 
-- `/feed` is the first-touch route for both guests and signed-in users
-- guest feed should remain one main reading column, not a split discovery-marketing shell
-- public posts in the guest feed should read like real community activity
-- guest feed should not use labels that frame the content as sample, demo, or preview-only
+- `/feed`는 비로그인 사용자와 로그인 사용자 모두의 첫 진입 라우트다.
+- 게스트 피드는 읽기 중심의 메인 컬럼 하나로 유지해야 하며, 탐색용/홍보용 셸로 쪼개지지 않아야 한다.
+- 게스트 피드의 공개 게시글은 실제 커뮤니티 활동처럼 읽혀야 한다.
+- 게스트 피드에는 콘텐츠를 샘플, 데모, 미리보기 전용으로 규정하는 라벨을 쓰지 않는다.
 
-## Pattern: Public Post Detail
+## 패턴: 공개 게시글 상세
 
-- `/posts/:id` should stay directly readable when the post itself is public
-- post detail should preserve images, attached workouts, comments, and actions in one document-like reading flow
-- guest users may read the page without login
-- guest attempts to like, comment, or open a protected workout detail should open an in-place auth dialog and keep the current post URL
+- 게시글 자체가 공개라면 `/posts/:id`는 직접 읽을 수 있어야 한다.
+- 게시글 상세는 이미지, 연결된 워크아웃, 댓글, 액션이 한 문서 흐름처럼 이어져야 한다.
+- 게스트 사용자는 로그인 없이도 페이지를 읽을 수 있어야 한다.
+- 게스트가 좋아요, 댓글, 보호된 워크아웃 상세 진입을 시도할 때는 온페이지 인증 다이얼로그를 열고 현재 게시글 URL을 유지해야 한다.
 
-## Pattern: Public Crew Discovery
+## 패턴: 공개 크루 탐색
 
-- `/crews` should default to public exploration for logged-out visitors
-- guest users can scan public crews without being redirected to `/login`
-- switching into clearly member-scoped areas should trigger an auth dialog rather than a surprise route change
+- `/crews`는 로그아웃 상태 방문자에게 공개 탐색 화면으로 먼저 동작해야 한다.
+- 게스트 사용자는 `/login`으로 튕기지 않고 공개 크루를 둘러볼 수 있어야 한다.
+- 명확히 멤버 전용인 영역으로 들어가려 할 때만, 갑작스러운 페이지 이동 대신 인증 다이얼로그를 띄운다.
 
-## Pattern: Public Crew Detail
+## 패턴: 공개 크루 상세
 
-- `/crews/:id` remains readable when the crew is public
-- basic crew identity, public posts, and public activity summaries should be readable before login
-- join, invite-entry completion, and protected activity/chat entry should open an auth dialog in place
+- 크루가 공개라면 `/crews/:id`는 로그인 없이 읽을 수 있어야 한다.
+- 기본 크루 정보, 공개 게시글, 공개 활동 요약은 로그인 전에도 읽을 수 있어야 한다.
+- 가입, 초대 진입 완료, 보호된 활동/채팅 진입은 온페이지 인증 다이얼로그로 막아야 한다.
 
-## Pattern: Public Profile Detail
+## 패턴: 공개 프로필 상세
 
-- `/profile/:id` belongs to the public route tree
-- if the profile remains auth-gated today, that should be treated as an explicit temporary constraint rather than silent default behavior
-- future work should align public profile reads with the same explore-first posture used by feed, posts, and crews
+- `/profile/:id`는 공개 라우트 트리에 속한다.
+- 현재 프로필이 여전히 인증 게이트에 막혀 있다면, 그것은 암묵적 기본값이 아니라 명시적인 임시 제약으로 다뤄야 한다.
+- 이후 작업에서는 공개 프로필 읽기 경험도 피드, 게시글, 크루와 같은 탐색 우선 방향으로 맞춰야 한다.
 
-## Pattern: Auth Prompts
+## 패턴: 인증 유도
 
-- auth dialogs should appear at the moment of consequence
-- titles should name the blocked action, not market the service
-- auth prompts should preserve the current route as `next`
-- closing the dialog should leave the user exactly where they were
+- 인증 다이얼로그는 실제 결과가 달라지는 순간에만 나타나야 한다.
+- 제목은 서비스 홍보가 아니라, 지금 막힌 행동이 무엇인지 말해야 한다.
+- 인증 유도는 현재 라우트를 `next`로 보존해야 한다.
+- 다이얼로그를 닫으면 사용자는 방금 있던 위치에 그대로 남아 있어야 한다.
 
-## Pattern: Back Navigation
+## 패턴: 뒤로가기
 
-- if a user opened a dialog from a public route, Back should first unwind that overlay state before leaving the underlying route
-- public browsing should never trap the user in `/login?next=...` unless the target route itself is protected
-- when the target route is protected, `next` must preserve the intended destination exactly
+- 사용자가 공개 라우트에서 다이얼로그를 열었다면, 브라우저 뒤로가기는 underlying route를 떠나기 전에 먼저 그 overlay 상태를 되감아야 한다.
+- 대상 라우트 자체가 보호된 화면이 아닌 이상, 공개 탐색 흐름이 `/login?next=...`에 갇혀서는 안 된다.
+- 대상 라우트가 보호된 화면이라면, `next`는 원래 목적지를 정확히 보존해야 한다.

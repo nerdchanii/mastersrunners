@@ -1,6 +1,6 @@
 ---
 id: I-0016-010
-title: Establish research-backed web UX guardrail foundation
+title: 리서치 기반 웹 UX 가드레일 기반 구축
 parent: I-0016-design-system-and-ux-guardrails
 scope: meta
 owner: codex
@@ -38,57 +38,57 @@ artifacts:
   - .github/workflows/ci.yml
 ---
 
-## Goal
+## 목표
 
-Define a durable UX guardrail foundation for the consumer web app and connect it to first-wave automated checks so that explanation-heavy copy and public-entry UX regressions are less likely to return.
+소비자용 웹 앱에 대한 지속 가능한 UX 가드레일 기반을 정의하고, 이를 1차 자동 검사와 연결해 설명이 과한 카피나 공개 진입 UX 회귀가 다시 생기지 않도록 한다.
 
-## Done Criteria
+## 완료 기준
 
-- the repo has explicit frontend UX principle, pattern, copy, and visual-system docs for consumer web work
-- review guidance exists for frontend, UI/UX, and PO passes
-- first-wave banned copy is removed from current web code and checked automatically
-- Playwright covers public-entry UX contract details beyond the existing regression suite
+- 레포에 소비자용 웹 작업을 위한 frontend UX 원칙, 패턴, 문구, 비주얼 시스템 문서가 명시적으로 존재한다.
+- frontend/UI-UX/PO 리뷰를 위한 가이드가 존재한다.
+- 1차 금지 카피가 현재 웹 코드에서 제거되고 자동 검사로 확인된다.
+- Playwright가 기존 회귀 스위트 바깥의 공개 진입 UX 계약까지 검증한다.
 
-## Notes
+## 메모
 
-- This foundation targets `apps/web` only. `apps/ops-web` remains out of scope.
-- External UX and runner-product references are recorded in the initiative for durable rationale.
-- Follow-up tasks will widen route coverage and deepen the design system after this baseline.
+- 이 기반 작업은 `apps/web`만 대상으로 한다. `apps/ops-web`은 범위 밖이다.
+- 외부 UX 자료와 러너 제품 레퍼런스는 지속 가능한 근거로서 이니셔티브 문서에 기록한다.
+- 후속 태스크에서는 이 기반 위에서 라우트 범위를 넓히고 디자인 시스템을 더 구체화한다.
 
-## Self Review
+## 셀프 리뷰
 
-- Scope and intent: kept this task on the UX control plane itself: docs, review workflow, narrow automation, and one immediate cleanup of banned guest-feed copy.
-- Source of truth: added initiative and frontend docs, updated existing frontend design docs, and connected the new rules to review/runbook/task guidance in the same task.
-- Design divergence: none intended. The current implementation now records the desired public social and copy posture instead of relying on chat history.
-- Verification: `VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build`, `pnpm --filter @masters/web exec playwright test e2e/public-entry-auth.spec.ts e2e/ux-contract.spec.ts --project=chromium`, `node scripts/check-ux-copy-patterns.mjs --strict`, and `bash scripts/check-task-review-metadata.sh` all passed.
-- Review routing: used `docs-reviewer`, `frontend-reviewer`, `ui-ux-reviewer`, and `harness-reviewer` because the task spans design truth, user-facing guardrails, task/review workflow, and CI/local automation.
+- Scope and intent: 이 태스크는 UX 제어면 자체에만 집중했다. 문서, 리뷰 흐름, 좁은 자동화, 그리고 게스트 피드의 금지 카피 정리만 포함했다.
+- Source of truth: 이니셔티브와 frontend 문서를 추가하고, 기존 frontend 설계 문서를 갱신했으며, 같은 태스크 안에서 새 규칙을 리뷰/런북/태스크 가이드와 연결했다.
+- Design divergence: 의도된 divergence는 없다. 이제 공개 소셜/카피 방향이 채팅 기억이 아니라 구현과 문서에 기록된다.
+- Verification: `VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build`, `pnpm --filter @masters/web exec playwright test e2e/public-entry-auth.spec.ts e2e/ux-contract.spec.ts --project=chromium`, `node scripts/check-ux-copy-patterns.mjs --strict`, `bash scripts/check-task-review-metadata.sh`를 모두 통과했다.
+- Review routing: 이 태스크는 설계 truth, 사용자 가드레일, 태스크/리뷰 워크플로, CI/local 자동화를 함께 건드리므로 `docs-reviewer`, `frontend-reviewer`, `ui-ux-reviewer`, `harness-reviewer`를 사용했다.
 
-## Review Focus
+## 리뷰 포인트
 
-- Specialist reviewers should check: the new docs are specific enough to guide future work, the banned-copy check is narrow and low-noise, and the Playwright contract covers the public-entry UX expectations that recently regressed.
-- PO reviewer should check: the resulting system supports a better runner-social product rather than a more descriptive but still inconsistent UI.
+- Specialist reviewers should check: 새 문서가 이후 작업을 실제로 이끌 수 있을 만큼 구체적인지, 금지 카피 검사가 좁고 노이즈가 적은지, Playwright 계약이 최근 회귀했던 공개 진입 UX 기대를 덮고 있는지 확인한다.
+- PO reviewer should check: 결과물이 설명만 많은 UI가 아니라 더 나은 러너 소셜 제품을 지탱하는 시스템인지 확인한다.
 
-## Handoff
+## 핸드오프
 
-- Use `I-0016-020` for route-by-route surface alignment work.
-- Use `I-0016-030` for broader copy and auth-gate cleanup across remaining consumer routes.
-- Use `I-0016-040` to expand the automated guardrails once the first-wave baseline stays stable.
+- `I-0016-020`은 라우트별 공개 소셜 화면 정렬 작업에 사용한다.
+- `I-0016-030`은 남은 소비자 라우트의 카피 및 인증 게이트 정리에 사용한다.
+- `I-0016-040`은 1차 기반이 안정화된 뒤 자동 가드레일을 넓히는 데 사용한다.
 
-## Design Divergence
+## 설계 divergence
 
-- No known divergence at handoff.
+- 핸드오프 시점의 알려진 divergence는 없다.
 
-## Attempt Log
+## 시도 로그
 
-- 2026-04-03: created after product feedback identified the absence of UX source-of-truth docs and guardrails as the recurring cause behind explanation-heavy copy and inconsistent public social behavior.
-- 2026-04-03: implemented the first-wave rule set, removed remaining banned feed labels, added the static copy checker, and extended Playwright coverage for public-entry UX behavior.
+- 2026-04-03: UX source-of-truth 문서와 가드레일의 부재가 설명형 카피와 일관성 없는 공개 소셜 동작을 반복시키는 원인이라는 제품 피드백을 바탕으로 이 태스크를 만들었다.
+- 2026-04-03: 1차 규칙 세트를 구현하고, 남아 있던 피드 금지 라벨을 제거했으며, 정적 카피 검사기와 공개 진입 UX Playwright 검증을 추가했다.
 
-## Review Notes
+## 리뷰 메모
 
 - Specialist review:
-  - `docs-reviewer` internal pass. The new docs are scoped, cross-linked, and express product UX truth without turning into speculative redesign prose.
-  - `frontend-reviewer` internal pass. Public-entry and route-context expectations now match the existing repaired guest flow and the new Playwright coverage guards the recent failure class.
-  - `ui-ux-reviewer` internal pass. The copy rules, content-first posture, and card-usage rules align with the intended runner-social product direction.
-  - `harness-reviewer` internal pass. The static checker is narrow, CI/local integration is explicit, and task/review guidance now points future user-facing web work at the new UX docs.
+  - `docs-reviewer` internal pass. 새 문서는 범위가 명확하고, 상호 참조가 잘 되어 있으며, 추상적인 리디자인 문서가 아니라 제품 UX truth를 표현한다.
+  - `frontend-reviewer` internal pass. 공개 진입과 라우트 맥락 기대가 기존에 복구한 게스트 흐름과 일치하며, 새 Playwright 검증이 최근 실패 유형을 막아준다.
+  - `ui-ux-reviewer` internal pass. 문구 규칙, 콘텐츠 우선 방향, 카드 사용 규칙이 의도한 러너 소셜 제품 방향과 맞는다.
+  - `harness-reviewer` internal pass. 정적 검사기는 좁고, CI/local 연동이 명시적이며, 태스크/리뷰 가이드가 이후 사용자용 웹 작업을 새 UX 문서로 이끈다.
 - PO review:
-  - `po-reviewer` internal pass. The foundation moves the repo toward a better delivered product by protecting public social reading, action-boundary auth, and runner-analysis surfaces instead of re-explaining them each task.
+  - `po-reviewer` internal pass. 이 기반은 매 태스크마다 설명을 반복하는 대신, 공개 소셜 읽기 경험, 행동 경계 인증, 러닝 분석 화면을 보호함으로써 더 나은 제품 전달에 기여한다.

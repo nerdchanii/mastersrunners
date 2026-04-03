@@ -1,6 +1,6 @@
 ---
 id: I-0016-020
-title: Align remaining public social surfaces with the UX guardrail contract
+title: 남은 공개 소셜 화면을 UX 가드레일 계약에 맞게 정렬
 parent: I-0016-design-system-and-ux-guardrails
 scope: web
 owner: unassigned
@@ -22,20 +22,20 @@ artifacts:
   - design/frontend/ux-principles.md
 ---
 
-## Goal
+## 목표
 
-Apply the new public social UX contract to remaining user-facing routes that still drift from the documented read-versus-participate patterns.
+문서화된 읽기/참여 패턴에서 아직 벗어나 있는 사용자용 라우트에 새 공개 소셜 UX 계약을 적용한다.
 
-## Done Criteria
+## 완료 기준
 
-- remaining public social routes follow the documented gating and back-navigation rules
-- any still-protected reads are called out explicitly as temporary divergence
+- 남은 공개 소셜 라우트가 문서화된 게이팅 및 뒤로가기 규칙을 따른다.
+- 여전히 보호된 읽기 경험이 있다면 임시 divergence로 명시한다.
 
-## Notes
+## 메모
 
-- Expected focus areas include public profile reads and any remaining route-local auth redirects on public tree pages.
+- 예상 범위에는 공개 프로필 읽기와 공개 트리 안에 남아 있는 라우트 로컬 인증 리다이렉트가 포함된다.
 
-## Self Review
+## 셀프 리뷰
 
 - Scope and intent:
 - Source of truth:
@@ -43,24 +43,24 @@ Apply the new public social UX contract to remaining user-facing routes that sti
 - Verification:
 - Review routing:
 
-## Review Focus
+## 리뷰 포인트
 
 - Specialist reviewer should check:
 - PO reviewer should check:
 
-## Handoff
+## 핸드오프
 
-- Record unresolved route exceptions explicitly instead of treating them as silent defaults.
+- 해결되지 않은 라우트 예외는 암묵적 기본값처럼 두지 말고 명시적으로 기록한다.
 
-## Design Divergence
+## 설계 divergence
 
-- Record any remaining public-route mismatch here.
+- 남아 있는 공개 라우트 불일치를 여기에 기록한다.
 
-## Attempt Log
+## 시도 로그
 
-- 2026-04-03: seeded from `I-0016-010`.
+- 2026-04-03: `I-0016-010`에서 후속 태스크로 시드했다.
 
-## Review Notes
+## 리뷰 메모
 
 - Specialist review:
 - PO review:

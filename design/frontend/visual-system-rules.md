@@ -12,65 +12,65 @@ sources:
   - apps/web/src/pages/crews/[id]/index.tsx
 ---
 
-# Visual System Rules
+# 비주얼 시스템 규칙
 
-## Summary
+## 요약
 
-The consumer app should feel calm, precise, and product-led. The default layout is section, divider, list, and media block. Card wrappers are the exception, not the baseline.
+소비자용 앱은 차분하고, 정확하며, 제품 중심적으로 느껴져야 합니다. 기본 레이아웃은 섹션, 구분선, 리스트, 미디어 블록이며, 카드 래퍼는 기본값이 아니라 예외여야 합니다.
 
-## Surface Hierarchy
+## 화면 위계
 
-- primary content should dominate through spacing, typography, and media, not by wrapping every section in chrome
-- supporting tools, operator controls, and secondary metadata may use stronger containment
-- mobile and desktop should preserve the same hierarchy even when layouts stack
+- 주요 콘텐츠는 모든 영역을 박스로 감싸서가 아니라, 간격, 타이포그래피, 미디어를 통해 중심을 가져야 한다.
+- 보조 도구, 운영자 컨트롤, 2차 메타데이터는 더 강한 경계 표현을 사용할 수 있다.
+- 모바일과 데스크톱은 레이아웃이 세로로 쌓이더라도 같은 위계를 유지해야 한다.
 
-## Card Usage Rules
+## 카드 사용 규칙
 
-### Default: no card
+### 기본값: 카드 없음
 
-Prefer plain layout blocks for:
+아래 영역은 기본적으로 평평한 레이아웃 블록을 우선한다.
 
-- public feed rows
-- post detail main document flow
-- workout detail report sections
-- crew detail primary content tabs
-- profile identity surfaces
+- 공개 피드 행
+- 게시글 상세의 메인 문서 흐름
+- 워크아웃 상세 리포트 섹션
+- 크루 상세의 주요 콘텐츠 탭
+- 프로필 아이덴티티 영역
 
-### Allowed card use
+### 카드 사용 허용
 
-Cards are allowed when the card itself is the interaction or the boundary matters:
+카드는 카드 자체가 인터랙션이거나, 경계가 중요할 때만 허용한다.
 
-- dialogs and popovers
-- settings/operator panels
-- highly scoped secondary utilities
-- explicit picker or chooser surfaces
+- 다이얼로그와 팝오버
+- 설정/운영 패널
+- 범위가 좁은 보조 유틸리티
+- 명시적인 선택기/chooser 화면
 
-### Avoid
+### 피해야 할 것
 
-- card-inside-card composition
-- using rounded border boxes as the default wrapper for every page region
-- turning analytics/detail reading surfaces into dashboard mosaics
+- 카드 안에 카드를 또 넣는 구성
+- 모든 페이지 영역의 기본 래퍼로 둥근 테두리 박스를 쓰는 것
+- 분석/상세 읽기 화면을 대시보드 타일 모자이크처럼 만드는 것
 
-## Typography and Labels
+## 타이포그래피와 라벨
 
-- product names, runner identity, section headings, and metric numbers should carry hierarchy first
-- support text should remain quieter and shorter than action labels
-- do not use decorative label chips to compensate for weak layout structure
+- 제품명, 러너 아이덴티티, 섹션 제목, 수치 정보는 먼저 위계를 가져야 한다.
+- 보조 텍스트는 행동 라벨보다 더 조용하고 짧아야 한다.
+- 약한 레이아웃 구조를 가리기 위해 장식용 라벨 칩을 남용하지 않는다.
 
-## Empty and Error States
+## 빈 상태와 오류 상태
 
-- empty states should stay light
-- use one short sentence plus one relevant action when needed
-- avoid promotional copy on routine product states
+- empty state는 가볍게 유지한다.
+- 필요할 때만 짧은 한 문장과 관련 행동 하나를 둔다.
+- 일상적인 제품 상태에 홍보성 문구를 넣지 않는다.
 
-## Motion and Feedback
+## 모션과 피드백
 
-- motion should sharpen affordance or preserve context
-- dialogs and drawers should feel deliberate but fast
-- hover/press states should clarify interactivity, not decorate static content
+- 모션은 affordance를 더 분명하게 하거나 맥락을 보존하는 데 써야 한다.
+- 다이얼로그와 드로어는 의도적이되 빠르게 느껴져야 한다.
+- hover/press 상태는 정적인 콘텐츠를 꾸미는 것이 아니라 인터랙션을 분명히 해야 한다.
 
-## Review Questions
+## 리뷰 질문
 
-- is this card necessary, or is it hiding weak layout decisions?
-- does the screen still read clearly if borders and shadows are reduced?
-- is the primary content obvious without extra badges or explainer labels?
+- 이 카드는 정말 필요한가, 아니면 약한 레이아웃 결정을 가리고 있는가?
+- 테두리와 그림자를 줄여도 화면이 여전히 명확하게 읽히는가?
+- 추가 배지나 설명 라벨 없이도 주요 콘텐츠가 분명한가?

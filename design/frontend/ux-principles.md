@@ -14,69 +14,69 @@ sources:
   - apps/web/src/pages/crews/[id]/index.tsx
 ---
 
-# UX Principles
+# UX 원칙
 
-## Summary
+## 요약
 
-These principles define how the consumer web app should feel and behave as a runner-focused social product. They are not visual mood notes. They are product-level UX rules for public entry, social reading, participation boundaries, and runner-detail surfaces.
+이 문서는 소비자용 웹 앱이 러너 중심의 소셜 제품으로서 어떻게 보여야 하고 어떻게 동작해야 하는지 정의합니다. 단순한 무드 가이드가 아니라, 공개 진입, 소셜 읽기 경험, 참여 경계, 워크아웃 상세 화면에 대한 제품 수준의 UX 규칙입니다.
 
-## Product Posture
+## 제품 태세
 
-- `mastersrunners` is a social product for runners, not a campaign landing page.
-- the first-touch experience should feel like entering a live community product
-- the app should prefer real content, real actions, and real route context over explanatory chrome
-- runner records, route maps, laps, and analysis should feel first-class, not secondary attachments
+- `mastersrunners`는 러너를 위한 소셜 제품이지, 캠페인형 랜딩 페이지가 아니다.
+- 첫 진입 경험은 살아 있는 커뮤니티 제품 안으로 들어오는 느낌이어야 한다.
+- 앱은 설명용 크롬보다 실제 콘텐츠, 실제 행동, 실제 라우트 맥락을 우선해야 한다.
+- 러닝 기록, 경로 지도, 랩, 분석은 부가 요소가 아니라 핵심 경험처럼 느껴져야 한다.
 
-## Core Rules
+## 핵심 규칙
 
-### 1. Content first
+### 1. 콘텐츠 우선
 
-- public surfaces should open with content, not with a hero, explainer block, or conversion wall
-- if the UI itself already explains the next step, do not add a second explanatory paragraph
-- section copy should orient or constrain, not narrate the product back to the user
+- 공개 화면은 히어로, 설명 블록, 가입 유도 벽보다 콘텐츠로 먼저 시작해야 한다.
+- UI 자체가 다음 행동을 이미 설명하고 있다면, 같은 내용을 다시 문단으로 풀어쓰지 않는다.
+- 섹션 문구는 방향을 잡아주거나 제약을 알려주는 역할만 해야 하며, 제품을 다시 설명하는 서술이 되어서는 안 된다.
 
-### 2. Explore first, participate later
+### 2. 탐색 먼저, 참여는 나중에
 
-- anonymous visitors may browse public feed, public post detail, public crews, and other explicitly public reads
-- auth prompts should appear when the visitor crosses into participation, such as joining, posting, liking, commenting, chatting, or opening protected detail
-- do not interrupt public reading with premature login redirects
+- 비로그인 사용자는 공개 피드, 공개 게시글 상세, 공개 크루 등 명시적으로 공개된 읽기 경험을 탐색할 수 있어야 한다.
+- 인증 유도는 가입, 작성, 좋아요, 댓글, 채팅, 보호된 상세 진입처럼 실제 참여 경계를 넘는 순간에만 나타나야 한다.
+- 공개 읽기 흐름을 성급한 로그인 리다이렉트로 끊지 않는다.
 
-### 3. Keep route context intact
+### 3. 라우트 맥락 보존
 
-- public-route participation gates should prefer in-place dialogs over route handoffs
-- browser Back should return users to what they perceived as their previous view
-- overlays, dialogs, and lightboxes must not create confusing detours or trap users on auth routes
+- 공개 라우트의 참여 게이트는 별도 페이지 이동보다 온페이지 다이얼로그를 우선한다.
+- 브라우저 뒤로가기는 사용자가 직전에 보고 있었다고 느끼는 화면으로 돌아가야 한다.
+- 오버레이, 다이얼로그, 라이트박스는 혼란스러운 우회 동선을 만들거나 사용자를 인증 라우트에 가둬서는 안 된다.
 
-### 4. Social surfaces should feel real, not demo-like
+### 4. 소셜 화면은 데모가 아니라 실제 서비스처럼 보여야 한다
 
-- public social views should look like a limited real product, not a sample gallery
-- avoid labels that announce placeholder intent inside the UI
-- if mock or fallback content is necessary, render it with product-respecting hierarchy and without demo language
+- 공개 소셜 화면은 샘플 갤러리가 아니라, 제한된 실제 서비스처럼 보여야 한다.
+- UI 안에서 placeholder 의도를 스스로 드러내는 라벨은 피한다.
+- 목업이나 fallback 콘텐츠가 필요하더라도, 데모 톤 없이 제품다운 위계로 렌더링한다.
 
-### 5. Runner detail is analysis, not decoration
+### 5. 러너 상세는 장식이 아니라 분석이다
 
-- workout detail should lead with route map and key metrics when the data exists
-- charts, laps, and point-linked inspection are part of the runner promise, not optional garnish
-- post-linked workouts should preview that analysis direction instead of collapsing into a generic stat card
+- 데이터가 있다면 워크아웃 상세는 경로 지도와 핵심 지표로 먼저 시작해야 한다.
+- 차트, 랩, 지점 연동 탐색은 선택 장식이 아니라 러닝 제품으로서의 약속에 포함된다.
+- 게시글에 연결된 워크아웃도 일반적인 스탯 카드로 축소하지 말고, 분석 화면으로 이어지는 방향성을 미리 보여줘야 한다.
 
-### 6. Utility over promotion on product surfaces
+### 6. 제품 화면에서는 홍보보다 유틸리티가 우선이다
 
-- headings should say what the section is or what the user can do there
-- avoid aspirational banner copy on routine app surfaces
-- empty states should be short, neutral, and action-oriented
+- 제목은 이 영역이 무엇인지, 여기서 무엇을 할 수 있는지를 말해야 한다.
+- 일상적인 제품 화면에 포장성 배너 카피를 올리지 않는다.
+- empty state는 짧고, 중립적이며, 필요한 행동만 안내해야 한다.
 
-## External Rationale
+## 외부 근거
 
-- Apple HIG `Launching` favors getting users into the real experience quickly instead of stretching the pre-use phase.
-- Apple `Writing for interfaces` favors concise, clear, task-oriented language.
-- Baymard research on sign-in flows and browser Back behavior supports preserving user intent and perceived page history.
-- Material guidance on dialogs and empty states supports using dialogs sparingly and keeping state copy brief.
-- Strava, COROS, and similar runner products treat social feed, privacy boundaries, and activity detail as one continuous product experience, not as separate marketing surfaces.
+- Apple HIG `Launching`은 사용자를 준비 단계에 오래 머물게 하기보다 실제 경험으로 빠르게 들어가게 하는 방향을 권장한다.
+- Apple `Writing for interfaces`는 짧고, 명확하고, 과업 중심적인 언어를 권장한다.
+- Baymard의 로그인 흐름과 브라우저 뒤로가기 연구는 사용자 의도와 사용자가 인지한 화면 히스토리를 보존해야 함을 뒷받침한다.
+- Material의 다이얼로그와 empty state 가이드는 다이얼로그를 필요한 순간에만 쓰고 상태 문구를 짧게 유지해야 함을 뒷받침한다.
+- Strava, COROS 같은 러너 제품은 소셜 피드, 공개 범위, 활동 상세를 마케팅 화면이 아니라 하나의 연속된 제품 경험으로 다룬다.
 
-## Review Questions
+## 리뷰 질문
 
-- does this screen show product content quickly, or does it explain before it shows?
-- is auth being asked for at the participation boundary, or too early?
-- will browser Back behave like the user expects from the current visible state?
-- does the surface read like a live runner product rather than a sample app?
-- does workout detail honor the runner-analysis promise?
+- 이 화면은 제품 콘텐츠를 빠르게 보여주는가, 아니면 보여주기 전에 설명부터 하는가?
+- 인증 요구가 참여 경계에서 나타나는가, 아니면 너무 이른 시점에 나타나는가?
+- 현재 보이는 상태에서 브라우저 뒤로가기가 사용자 기대대로 동작하는가?
+- 이 화면은 샘플 앱이 아니라 실제 러너 제품처럼 읽히는가?
+- 워크아웃 상세가 러닝 분석 경험이라는 약속을 지키고 있는가?

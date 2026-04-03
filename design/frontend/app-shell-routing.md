@@ -15,29 +15,29 @@ sources:
   - apps/web/src/components/common/ErrorBoundary.tsx
 ---
 
-# App Shell and Routing
+# 앱 셸과 라우팅
 
-## Summary
+## 요약
 
-The web app is a Vite SPA that composes one router tree, one main shell, and a protected-route wrapper.
+웹 앱은 하나의 라우터 트리, 하나의 메인 셸, 그리고 protected-route 래퍼를 조합하는 Vite SPA다.
 
-## Entry Composition
+## 진입 구성
 
-`apps/web/src/main.tsx` mounts:
+`apps/web/src/main.tsx`는 다음을 마운트한다.
 
 - `QueryClientProvider`
 - `RouterProvider`
 - global `Toaster`
 
-The router tree in `apps/web/src/router.tsx` defines three shell layers:
+`apps/web/src/router.tsx`의 라우터 트리는 세 개의 셸 레이어를 정의한다.
 
 - `RootLayout`: `ThemeProvider -> AuthProvider -> Outlet`
 - `AuthLayout`: login-only shell
 - `MainLayout`: `Header`, centered `<main>`, `BottomNav`, `Suspense`, `ErrorBoundary`
 
-## Route Model
+## 라우트 모델
 
-Public routes include:
+공개 라우트는 다음을 포함한다.
 
 - `/` redirect entry for the public feed
 - `/login` login-only shell
@@ -49,7 +49,7 @@ Public routes include:
 - `/profile/:id`
 - `/search`
 
-Protected routes include:
+보호 라우트는 다음을 포함한다.
 
 - `/workouts/*`
 - `/posts/new`
@@ -60,47 +60,47 @@ Protected routes include:
 - `/feedback`
 - crew activity edit/chat/check-in routes
 
-The `/` path now resolves into `/feed` for both anonymous and authenticated visitors. The app no longer maintains a separate intro-only landing route; the public feed itself is the first-touch entry and the authenticated app chrome remains visible.
+이제 `/` 경로는 비로그인 사용자와 로그인 사용자 모두에게 `/feed`로 해석된다. 앱은 더 이상 소개 전용 랜딩 라우트를 따로 유지하지 않으며, 공개 피드 자체가 첫 진입 화면이 되고 로그인 이후의 앱 크롬도 그대로 유지된다.
 
-Most route modules are lazy loaded with `lazy(() => import(...))`.
+대부분의 라우트 모듈은 `lazy(() => import(...))`로 지연 로딩된다.
 
-## Route Guarding
+## 라우트 가드
 
 - `ProtectedRoute` reads `useAuth()`
-- while auth is bootstrapping, it renders `LoadingPage`
-- unauthenticated access redirects to `/login`
-- some protected pages still keep page-local auth/bootstrap logic on top of `ProtectedRoute`, including `/profile` and `/settings/profile`
-- `/profile/:id` and its follower/following subroutes live in the public route tree but still apply a page-local auth gate that redirects anonymous users to `/login`
+- auth 부트스트랩 중에는 `LoadingPage`를 렌더링한다
+- 인증되지 않은 접근은 `/login`으로 리다이렉트한다
+- `/profile`, `/settings/profile`를 포함한 일부 보호 페이지는 `ProtectedRoute` 위에 페이지 전용 auth/bootstrap 로직을 추가로 유지한다
+- `/profile/:id`와 그 하위 팔로워/팔로잉 라우트는 공개 트리에 존재하지만, 여전히 비로그인 사용자를 `/login`으로 보내는 페이지 전용 auth gate를 적용한다
 
-## Current Constraints
+## 현재 제약
 
-- Route path and file path are not always 1:1. For example, `/workouts/:id` resolves to `pages/workouts/detail/index.tsx`.
-- Some large route files still mix orchestration and view logic; `I-0007` is the readability follow-up for that.
-- Authenticated shell entry points now include a dedicated feedback handoff in the desktop header and mobile bottom-shell layer so users can file bugs without leaving the product.
-- Search is a first-class shell entry:
-  - desktop header exposes a direct `/search` link
-  - mobile bottom navigation keeps `/search` visible without requiring route knowledge
-  - the search page mirrors user queries into the URL so re-entry and back-navigation preserve context
-- The first-touch route is public-feed-first:
+- 라우트 경로와 파일 경로가 항상 1:1은 아니다. 예를 들어 `/workouts/:id`는 `pages/workouts/detail/index.tsx`로 해석된다.
+- 일부 큰 라우트 파일은 아직 오케스트레이션과 뷰 로직을 함께 담고 있으며, 이에 대한 가독성 후속 작업은 `I-0007`이다.
+- 로그인 이후 셸 진입점에는 이제 데스크톱 헤더와 모바일 하단 셸에 전용 피드백 진입이 포함되어, 사용자가 제품을 떠나지 않고도 버그를 제보할 수 있다.
+- 검색은 1급 셸 진입점이다.
+  - 데스크톱 헤더는 직접 `/search` 링크를 노출한다
+  - 모바일 하단 내비게이션은 라우트 지식 없이도 `/search`를 볼 수 있게 유지한다
+  - 검색 페이지는 사용자 질의를 URL에 반영해 재진입과 뒤로가기에 맥락을 보존한다
+- 첫 진입 라우트는 공개 피드 우선이다.
   - `/` resolves to `/feed`
   - `/feed` stays publicly readable for anonymous visitors
   - the guest `/feed` surface should stay as one main content column without a separate desktop explainer/sidebar rail
-  - the guest `/feed` surface should not label itself as sample, preview, or demo content
+  - 게스트 `/feed` 화면은 스스로를 샘플, 프리뷰, 데모 콘텐츠라고 라벨링하지 않는다
   - public navigation from that entry, including `/crews` and public post detail, should stay on-route instead of bouncing through `/login?next=...`
   - deeper participation actions should prefer an in-place auth dialog before a full `/login` handoff
   - attached workout previews inside public post detail should keep the current post route for anonymous visitors and open an in-place auth dialog instead of navigating to `/workouts/:id`
-  - public-route dialogs and overlays should preserve expected browser Back behavior instead of creating auth detours
-  - onboarding can be skipped once the user is ready to reach the feed
-- Authenticated mobile navigation now owns the create entry directly:
-  - the detached post-only FAB is removed
-  - the center create trigger opens a bottom-sheet chooser for `/posts/new` or `/workouts/new`
-  - both creation routes expose a lightweight switch so users can correct the chosen flow without backing out to the shell
-- Composer routes keep their own local shell rails above mobile navigation:
-  - `/posts/new` uses a top progress bar without step labels and a sticky bottom action rail
-  - `/posts/new` photo selection is gallery-first within browser limits:
-    - the photo step should foreground opening the device photo picker instead of a generic upload prompt
-    - selected media should land in a 3-column grid and stay visible in later composer steps
-  - `/posts/new` text authoring should use one primary textarea for body, hashtags, and lightweight mentions:
-    - hashtags are parsed from the same text input instead of a second field
-    - lightweight mentions can be previewed without autocomplete-backed tagging in the first pass
-  - `/workouts/new` keeps cancel/save actions in the same bottom rail zone instead of leaving them at the end of the scroll
+  - 공개 라우트의 다이얼로그와 오버레이는 인증 우회 동선을 만드는 대신, 사용자가 기대하는 브라우저 뒤로가기 동작을 보존해야 한다
+  - 사용자가 피드로 바로 가고 싶다면 onboarding은 건너뛸 수 있다
+- 로그인 사용자의 모바일 내비게이션은 이제 생성 진입점을 직접 소유한다.
+  - 분리된 게시글 전용 FAB는 제거되었다
+  - 중앙 생성 트리거는 `/posts/new` 또는 `/workouts/new`를 고르는 바텀시트 선택기를 연다
+  - 두 생성 라우트 모두, 사용자가 셸로 다시 나가지 않고도 흐름을 바로잡을 수 있게 가벼운 전환 스위치를 노출한다
+- 작성기 라우트는 모바일 내비게이션 위에 자체 로컬 셸 레일을 유지한다.
+  - `/posts/new`는 단계 라벨 없는 상단 진행 바와 하단 고정 액션 레일을 사용한다
+  - `/posts/new` 사진 선택은 브라우저 제약 안에서 gallery-first를 따른다
+    - 사진 단계는 일반적인 업로드 프롬프트보다 기기 사진 선택기를 여는 행동을 전면에 둔다
+    - 선택된 미디어는 3열 그리드에 안착하고 이후 작성 단계에서도 계속 보여야 한다
+  - `/posts/new` 텍스트 작성은 본문, 해시태그, 가벼운 멘션을 하나의 주 텍스트 영역으로 처리한다
+    - 해시태그는 별도 필드가 아니라 같은 입력창에서 파싱한다
+    - 가벼운 멘션은 1차 범위에서 자동완성 태깅 없이도 미리보기 수준으로 다룰 수 있다
+  - `/workouts/new`는 취소/저장 액션을 스크롤 끝이 아니라 동일한 하단 레일 영역에 유지한다
