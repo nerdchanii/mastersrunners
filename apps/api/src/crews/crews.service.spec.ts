@@ -186,6 +186,33 @@ describe("CrewsService", () => {
     });
   });
 
+  describe("findOne", () => {
+    it("should hide private crews from anonymous viewers", async () => {
+      mockCrewRepository.findById.mockResolvedValue({ id: "crew-1", isPublic: false });
+
+      await expect(service.findOne("crew-1")).rejects.toThrow(NotFoundException);
+      expect(mockCrewMemberRepository.findMember).not.toHaveBeenCalled();
+    });
+
+    it("should hide private crews from non-members", async () => {
+      mockCrewRepository.findById.mockResolvedValue({ id: "crew-1", isPublic: false });
+      mockCrewMemberRepository.findMember.mockResolvedValue(null);
+
+      await expect(service.findOne("crew-1", "viewer-1")).rejects.toThrow(NotFoundException);
+      expect(mockCrewMemberRepository.findMember).toHaveBeenCalledWith("crew-1", "viewer-1");
+    });
+
+    it("should allow private crews for active members", async () => {
+      const privateCrew = { id: "crew-1", isPublic: false };
+      mockCrewRepository.findById.mockResolvedValue(privateCrew);
+      mockCrewMemberRepository.findMember.mockResolvedValue({ status: "ACTIVE" });
+
+      const result = await service.findOne("crew-1", "member-1");
+
+      expect(result).toEqual(privateCrew);
+    });
+  });
+
   describe("update", () => {
     it("should map profile and cover image fields into the crew media contract", async () => {
       const crewId = "crew-123";

@@ -113,11 +113,32 @@ export class PostRepository {
   async findByUser(userId: string, options?: FindByUserOptions & { currentUserId?: string }) {
     const { cursor, limit = 20 } = options || {};
     const currentUserId = options?.currentUserId;
+    const visibilityWhere = !currentUserId
+      ? { visibility: "PUBLIC" as const }
+      : currentUserId === userId
+        ? {}
+        : {
+            OR: [
+              { visibility: "PUBLIC" as const },
+              {
+                visibility: "FOLLOWERS" as const,
+                user: {
+                  followers: {
+                    some: {
+                      followerId: currentUserId,
+                      status: "ACCEPTED" as const,
+                    },
+                  },
+                },
+              },
+            ],
+          };
 
     const posts = await this.db.prisma.post.findMany({
       where: {
         userId,
         deletedAt: null,
+        ...visibilityWhere,
       },
       include: {
         user: {

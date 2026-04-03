@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from "@
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
+import { Public } from "../common/decorators/public.decorator.js";
 import { CursorQueryDto } from "../common/dto/cursor-query.dto.js";
 
 import { ChangeCrewMemberRoleDto } from "./dto/change-crew-member-role.dto.js";
@@ -64,6 +65,7 @@ export class CrewsController {
   }
 
   @Get("explore")
+  @Public()
   explore(@Query() query: ExploreCrewsQueryDto) {
     return this.crewsService.explore({
       region: query.region,
@@ -80,11 +82,13 @@ export class CrewsController {
   }
 
   @Get("regions")
+  @Public()
   getRegions() {
     return this.crewsService.getRegions();
   }
 
   @Get("regions/:region")
+  @Public()
   getSubRegions(@Param("region") region: string) {
     return this.crewsService.getSubRegions(region);
   }
@@ -100,22 +104,28 @@ export class CrewsController {
   @ApiOperation({ summary: "크루 상세 조회" })
   @ApiResponse({ status: 200, description: "성공" })
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.crewsService.findOne(id);
+  @Public()
+  findOne(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as { userId: string } | undefined)?.userId;
+    return this.crewsService.findOne(id, userId);
   }
 
   @ApiOperation({ summary: "크루 프로필 조회 (집계 정보)" })
   @ApiResponse({ status: 200, description: "성공" })
   @Get(":id/profile")
-  getCrewProfile(@Param("id") id: string) {
-    return this.crewsService.getCrewProfile(id);
+  @Public()
+  getCrewProfile(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as { userId: string } | undefined)?.userId;
+    return this.crewsService.getCrewProfile(id, userId);
   }
 
   @ApiOperation({ summary: "크루 게시물 목록 조회" })
   @ApiResponse({ status: 200, description: "성공" })
   @Get(":id/posts")
-  getCrewPosts(@Param("id") id: string, @Query() query: CursorQueryDto) {
-    return this.crewsService.getCrewPosts(id, query.cursor);
+  @Public()
+  getCrewPosts(@Param("id") id: string, @Req() req: Request, @Query() query: CursorQueryDto) {
+    const userId = (req.user as { userId: string } | undefined)?.userId;
+    return this.crewsService.getCrewPosts(id, query.cursor, userId);
   }
 
   @ApiOperation({ summary: "크루 게시물 작성 (크루장 전용)" })
@@ -295,13 +305,23 @@ export class CrewsController {
   }
 
   @Get(":id/activities")
-  getActivities(@Param("id") id: string, @Query() query: ListCrewActivitiesQueryDto) {
-    return this.crewsService.getActivities(id, {
-      cursor: query.cursor,
-      limit: query.resolveOptionalLimit(),
-      type: query.type,
-      status: query.status,
-    });
+  @Public()
+  getActivities(
+    @Param("id") id: string,
+    @Req() req: Request,
+    @Query() query: ListCrewActivitiesQueryDto,
+  ) {
+    const userId = (req.user as { userId: string } | undefined)?.userId;
+    return this.crewsService.getActivities(
+      id,
+      {
+        cursor: query.cursor,
+        limit: query.resolveOptionalLimit(),
+        type: query.type,
+        status: query.status,
+      },
+      userId,
+    );
   }
 
   @Get(":id/activities/:activityId")

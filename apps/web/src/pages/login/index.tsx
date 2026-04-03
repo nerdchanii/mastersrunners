@@ -17,9 +17,21 @@ function LoginContent() {
   const { isAuthenticated, isLoading, refreshUser } = useAuth();
   const { data: runtimeConfig, isPending: isRuntimeConfigPending } = usePublicRuntimeConfig();
   const error = searchParams.get("error");
+  const intent = searchParams.get("intent") === "signup" ? "signup" : "login";
   const nextPath = sanitizeAuthReturnPath(searchParams.get("next"));
   const destination = nextPath && nextPath !== "/" ? nextPath : "/feed";
   const providers = runtimeConfig?.authProviders ?? defaultPublicRuntimeConfig.authProviders;
+  const title = intent === "signup" ? "회원가입" : "로그인";
+  const description =
+    intent === "signup"
+      ? "처음이라면 소셜 계정으로 바로 시작하고, 프로필은 나중에 가볍게 맞춰도 됩니다."
+      : "이미 마스터즈러너라면 계속하고, 처음이어도 같은 버튼으로 바로 시작할 수 있습니다.";
+  const kakaoLabel = intent === "signup" ? "카카오로 회원가입" : "카카오로 로그인";
+  const googleLabel = intent === "signup" ? "Google로 회원가입" : "Google로 로그인";
+  const supportCopy =
+    intent === "signup"
+      ? "이미 가입한 계정이라면 같은 소셜 계정으로 바로 로그인됩니다."
+      : "아직 계정이 없어도 같은 소셜 계정으로 바로 시작할 수 있습니다.";
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -62,10 +74,8 @@ function LoginContent() {
             </svg>
             <span className="text-2xl font-bold">Masters Runners</span>
           </div>
-          <CardTitle className="text-3xl font-bold">로그인</CardTitle>
-          <CardDescription className="text-base">
-            러너 커뮤니티에 로그인하고 피드와 온보딩을 이어가세요.
-          </CardDescription>
+          <CardTitle className="text-3xl font-bold">{title}</CardTitle>
+          <CardDescription className="text-base">{description}</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -81,7 +91,7 @@ function LoginContent() {
               className="w-full bg-[#FEE500] text-[#191919] hover:bg-[#FEE500]/90"
               size="lg"
             >
-              카카오로 시작하기
+              {kakaoLabel}
             </Button>
           )}
 
@@ -92,9 +102,11 @@ function LoginContent() {
               className="w-full"
               size="lg"
             >
-              Google로 시작하기
+              {googleLabel}
             </Button>
           )}
+
+          <p className="text-center text-xs text-muted-foreground">{supportCopy}</p>
 
           {!isRuntimeConfigPending && !providers.kakao && !providers.google && (
             <p className="text-center text-xs text-muted-foreground">

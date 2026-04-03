@@ -17,13 +17,21 @@ import CrewActivityForm from "./CrewActivityForm";
 interface CrewActivityListProps {
   crewId: string;
   isAdmin: boolean;
+  isAuthenticated: boolean;
   isMember: boolean;
+  onRequireAuth: () => void;
 }
 
 type ActivityTypeFilter = "ALL" | "OFFICIAL" | "POP_UP";
 type StatusFilter = "ALL" | "SCHEDULED" | "ACTIVE" | "COMPLETED" | "CANCELLED";
 
-export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActivityListProps) {
+export default function CrewActivityList({
+  crewId,
+  isAdmin,
+  isAuthenticated,
+  isMember,
+  onRequireAuth,
+}: CrewActivityListProps) {
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [typeFilter, setTypeFilter] = useState<ActivityTypeFilter>("ALL");
@@ -47,6 +55,15 @@ export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActi
 
   // POP_UP은 일반 멤버도 생성 가능
   const canCreate = isAdmin || isMember;
+
+  const handleOpenActivity = (activityId: string) => {
+    if (!isAuthenticated) {
+      onRequireAuth();
+      return;
+    }
+
+    navigate(`/crews/${crewId}/activities/${activityId}`);
+  };
 
   if (isLoading) {
     return (
@@ -142,7 +159,7 @@ export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActi
               <Card
                 key={activity.id}
                 className="cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => navigate(`/crews/${crewId}/activities/${activity.id}`)}
+                onClick={() => handleOpenActivity(activity.id)}
               >
                 <CardHeader>
                   <div className="flex items-start justify-between">

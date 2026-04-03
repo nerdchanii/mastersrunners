@@ -12,7 +12,11 @@ export class FeedService {
     private readonly blockRepo: BlockRepository,
   ) {}
 
-  private async getFilteredFollowingIds(userId: string): Promise<string[]> {
+  private async getFilteredFollowingIds(userId: string | undefined): Promise<string[]> {
+    if (!userId) {
+      return [];
+    }
+
     const [rawFollowingIds, blockedUserIds] = await Promise.all([
       this.feedRepo.getFollowingIds(userId),
       this.blockRepo.getBlockedUserIds(userId),
@@ -21,7 +25,7 @@ export class FeedService {
     return rawFollowingIds.filter((id) => !blockedSet.has(id));
   }
 
-  async getPostFeed(userId: string, cursor: string | undefined, limit: number) {
+  async getPostFeed(userId: string | undefined, cursor: string | undefined, limit: number) {
     const followingIds = await this.getFilteredFollowingIds(userId);
 
     const posts = await this.feedRepo.getPostFeed({
@@ -47,7 +51,7 @@ export class FeedService {
   }
 
   async getWorkoutFeed(
-    userId: string,
+    userId: string | undefined,
     cursor: string | undefined,
     limit: number,
     excludeLinkedToPost?: boolean,

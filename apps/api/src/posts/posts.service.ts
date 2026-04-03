@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 
 import { BlockRepository } from "../block/repositories/block.repository.js";
+import { FollowRepository } from "../follow/repositories/follow.repository.js";
 
 import type { CreatePostDto } from "./dto/create-post.dto.js";
 import type { UpdatePostDto } from "./dto/update-post.dto.js";
@@ -12,7 +13,36 @@ export class PostsService {
   constructor(
     private readonly postRepo: PostRepository,
     private readonly blockRepo: BlockRepository,
+    private readonly followRepo: FollowRepository,
   ) {}
+
+  private async canReadPost(
+    post: { userId: string; visibility: string } | null,
+    currentUserId?: string,
+  ) {
+    if (!post) {
+      return false;
+    }
+
+    if (post.visibility === "PUBLIC") {
+      return true;
+    }
+
+    if (!currentUserId) {
+      return false;
+    }
+
+    if (post.userId === currentUserId) {
+      return true;
+    }
+
+    if (post.visibility === "FOLLOWERS") {
+      const follow = await this.followRepo.findFollow(currentUserId, post.userId);
+      return follow?.status === "ACCEPTED";
+    }
+
+    return false;
+  }
 
   extractHashtags(content: string | null | undefined): string[] {
     if (!content) return [];
@@ -38,6 +68,9 @@ export class PostsService {
 
   async findById(id: string, currentUserId?: string) {
     const post = await this.postRepo.findById(id, currentUserId);
+    if (!(await this.canReadPost(post, currentUserId))) {
+      return null;
+    }
     if (post && currentUserId && post.userId !== currentUserId) {
       const blocked = await this.blockRepo.isBlocked(currentUserId, post.userId);
       if (blocked) {

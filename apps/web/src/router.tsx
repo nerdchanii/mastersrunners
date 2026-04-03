@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router-dom";
 
 import { BottomNav } from "@/components/common/BottomNav";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
@@ -15,7 +15,6 @@ import NotFoundPage from "@/pages/not-found";
 
 // Lazy-loaded pages
 const FeedPage = lazy(() => import("@/pages/feed"));
-const IntroPage = lazy(() => import("@/pages/intro"));
 const WorkoutsPage = lazy(() => import("@/pages/workouts"));
 const NewWorkoutPage = lazy(() => import("@/pages/workouts/new"));
 const WorkoutDetailPage = lazy(() => import("@/pages/workouts/detail"));
@@ -54,13 +53,15 @@ const FeedbackPage = lazy(() => import("@/pages/feedback"));
 /** 인증 가드 - 미인증 시 /login으로 리다이렉트 */
 function ProtectedRoute() {
   const { isLoading, isAuthenticated } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return <LoadingPage />;
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    const nextPath = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to={`/login?intent=login&next=${encodeURIComponent(nextPath)}`} replace />;
   }
 
   return <Outlet />;
@@ -73,26 +74,6 @@ function RootLayout() {
         <Outlet />
       </AuthProvider>
     </ThemeProvider>
-  );
-}
-
-function RootEntryRoute() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <LoadingPage />;
-  }
-
-  if (isAuthenticated) {
-    return <Navigate to="/feed" replace />;
-  }
-
-  return (
-    <Suspense fallback={<LoadingPage />}>
-      <ErrorBoundary>
-        <IntroPage />
-      </ErrorBoundary>
-    </Suspense>
   );
 }
 
@@ -131,8 +112,8 @@ export const router = createBrowserRouter([
       </ErrorBoundary>
     ),
     children: [
-      // Root intro
-      { path: "/", element: <RootEntryRoute /> },
+      // Root entry
+      { path: "/", element: <Navigate to="/feed" replace /> },
 
       // Auth layout
       {

@@ -1,17 +1,22 @@
 import { Test } from "@nestjs/testing";
 
+import { IS_PUBLIC_KEY } from "../common/decorators/public.decorator.js";
+
 import { ListCrewActivitiesQueryDto } from "./dto/list-crew-activities-query.dto.js";
 import { CrewsController } from "./crews.controller.js";
 import { CrewsService } from "./crews.service.js";
 
 const mockUser = { userId: "user-123" };
 const mockReq = { user: mockUser } as any;
+const mockAnonymousReq = {} as any;
 
 const mockCrewsService = {
   create: jest.fn(),
   findAll: jest.fn(),
   findMyCrews: jest.fn(),
   findOne: jest.fn(),
+  getCrewProfile: jest.fn(),
+  getCrewPosts: jest.fn(),
   update: jest.fn(),
   remove: jest.fn(),
   join: jest.fn(),
@@ -49,6 +54,39 @@ describe("CrewsController", () => {
       providers: [{ provide: CrewsService, useValue: mockCrewsService }],
     }).compile();
     controller = module.get(CrewsController);
+  });
+
+  describe("public read metadata", () => {
+    it("marks logged-out crew discovery endpoints as public", () => {
+      expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.explore)).toBe(true);
+      expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.getRegions)).toBe(true);
+      expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.getSubRegions)).toBe(
+        true,
+      );
+    });
+
+    it("marks public crew detail reads as public", () => {
+      expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.findOne)).toBe(true);
+      expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.getCrewProfile)).toBe(
+        true,
+      );
+      expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.getCrewPosts)).toBe(true);
+      expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.getActivities)).toBe(
+        true,
+      );
+    });
+  });
+
+  describe("public read delegation", () => {
+    it("passes optional user identity through public detail reads", async () => {
+      await controller.findOne("crew-1", mockAnonymousReq);
+      await controller.getCrewProfile("crew-1", mockReq);
+      await controller.getCrewPosts("crew-1", mockAnonymousReq, {} as any);
+
+      expect(mockCrewsService.findOne).toHaveBeenCalledWith("crew-1", undefined);
+      expect(mockCrewsService.getCrewProfile).toHaveBeenCalledWith("crew-1", "user-123");
+      expect(mockCrewsService.getCrewPosts).toHaveBeenCalledWith("crew-1", undefined, undefined);
+    });
   });
 
   // ============ Pending Members ============
@@ -226,14 +264,18 @@ describe("CrewsController", () => {
         cursor: "cursor-1",
         limit: "10",
       });
-      const result = await controller.getActivities("crew-1", query);
+      const result = await controller.getActivities("crew-1", mockReq, query);
 
-      expect(mockCrewsService.getActivities).toHaveBeenCalledWith("crew-1", {
-        cursor: "cursor-1",
-        limit: 10,
-        type: undefined,
-        status: undefined,
-      });
+      expect(mockCrewsService.getActivities).toHaveBeenCalledWith(
+        "crew-1",
+        {
+          cursor: "cursor-1",
+          limit: 10,
+          type: undefined,
+          status: undefined,
+        },
+        "user-123",
+      );
       expect(result).toEqual(expected);
     });
 
@@ -242,14 +284,18 @@ describe("CrewsController", () => {
       mockCrewsService.getActivities.mockResolvedValue(expected);
 
       const query = new ListCrewActivitiesQueryDto();
-      const result = await controller.getActivities("crew-1", query);
+      const result = await controller.getActivities("crew-1", mockAnonymousReq, query);
 
-      expect(mockCrewsService.getActivities).toHaveBeenCalledWith("crew-1", {
-        cursor: undefined,
-        limit: undefined,
-        type: undefined,
-        status: undefined,
-      });
+      expect(mockCrewsService.getActivities).toHaveBeenCalledWith(
+        "crew-1",
+        {
+          cursor: undefined,
+          limit: undefined,
+          type: undefined,
+          status: undefined,
+        },
+        undefined,
+      );
       expect(result).toEqual(expected);
     });
   });

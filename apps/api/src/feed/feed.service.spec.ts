@@ -34,6 +34,21 @@ describe("FeedService", () => {
   });
 
   describe("getPostFeed", () => {
+    it("should skip following and block lookups for anonymous post feed reads", async () => {
+      mockFeedRepo.getPostFeed.mockResolvedValue([]);
+
+      await service.getPostFeed(undefined, undefined, 10);
+
+      expect(mockFeedRepo.getFollowingIds).not.toHaveBeenCalled();
+      expect(mockBlockRepo.getBlockedUserIds).not.toHaveBeenCalled();
+      expect(mockFeedRepo.getPostFeed).toHaveBeenCalledWith({
+        userId: undefined,
+        followingIds: [],
+        cursor: undefined,
+        limit: 10,
+      });
+    });
+
     it("should fetch following IDs and return post feed with pagination", async () => {
       mockFeedRepo.getFollowingIds.mockResolvedValue(["user1", "user2"]);
       const posts = Array.from({ length: 11 }, (_, i) => ({ id: `p${i}` }));
@@ -130,6 +145,22 @@ describe("FeedService", () => {
   });
 
   describe("getWorkoutFeed", () => {
+    it("should skip following and block lookups for anonymous workout feed reads", async () => {
+      mockFeedRepo.getWorkoutFeed.mockResolvedValue([]);
+
+      await service.getWorkoutFeed(undefined, undefined, 10);
+
+      expect(mockFeedRepo.getFollowingIds).not.toHaveBeenCalled();
+      expect(mockBlockRepo.getBlockedUserIds).not.toHaveBeenCalled();
+      expect(mockFeedRepo.getWorkoutFeed).toHaveBeenCalledWith({
+        userId: undefined,
+        followingIds: [],
+        cursor: undefined,
+        limit: 10,
+        excludeLinkedToPost: undefined,
+      });
+    });
+
     it("should fetch following IDs and return workout feed with pagination", async () => {
       mockFeedRepo.getFollowingIds.mockResolvedValue(["user1", "user2"]);
       const workouts = Array.from({ length: 11 }, (_, i) => ({

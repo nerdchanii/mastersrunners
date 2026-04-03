@@ -1,6 +1,7 @@
 import { Test } from "@nestjs/testing";
 
 import { BlockRepository } from "../block/repositories/block.repository";
+import { FollowRepository } from "../follow/repositories/follow.repository";
 
 import { PostRepository } from "./repositories/post.repository";
 import { PostsService } from "./posts.service";
@@ -20,6 +21,10 @@ const mockBlockRepo = {
   getBlockedUserIds: jest.fn(),
 };
 
+const mockFollowRepo = {
+  findFollow: jest.fn(),
+};
+
 describe("PostsService - hashtag", () => {
   let service: PostsService;
 
@@ -27,12 +32,14 @@ describe("PostsService - hashtag", () => {
     jest.clearAllMocks();
     mockBlockRepo.isBlocked.mockResolvedValue(false);
     mockBlockRepo.getBlockedUserIds.mockResolvedValue([]);
+    mockFollowRepo.findFollow.mockResolvedValue(null);
 
     const module = await Test.createTestingModule({
       providers: [
         PostsService,
         { provide: PostRepository, useValue: mockPostRepo },
         { provide: BlockRepository, useValue: mockBlockRepo },
+        { provide: FollowRepository, useValue: mockFollowRepo },
       ],
     }).compile();
 

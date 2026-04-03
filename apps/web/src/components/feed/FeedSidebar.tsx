@@ -1,21 +1,40 @@
-import { CalendarDays, Dumbbell, Search, SquarePen, Users } from "lucide-react";
+import { Dumbbell, Search, SquarePen, Users } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
+import { AuthGateDialog } from "@/components/common/AuthGateDialog";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
+import {
+  defaultPublicRuntimeConfig,
+  type PublicFeatureName,
+  usePublicRuntimeConfig,
+} from "@/lib/public-config";
 
 const quickLinks = [
   { href: "/search", label: "러너 검색", icon: Search },
   { href: "/crews", label: "크루 둘러보기", icon: Users },
-  { href: "/events", label: "이벤트 확인", icon: CalendarDays },
-  { href: "/challenges", label: "챌린지 보기", icon: Dumbbell },
+  { href: "/feed", label: "공개 피드", icon: Dumbbell },
 ];
+
+type QuickLink = {
+  feature?: PublicFeatureName;
+  href: string;
+  icon: typeof Search;
+  label: string;
+};
 
 export function FeedSidebar() {
   const { user } = useAuth();
+  const { data: runtimeConfig } = usePublicRuntimeConfig();
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const config = runtimeConfig ?? defaultPublicRuntimeConfig;
+  const visibleQuickLinks = (quickLinks as QuickLink[]).filter(
+    (item) => !item.feature || config.features[item.feature],
+  );
 
   return (
     <aside className="hidden w-72 shrink-0 space-y-4 lg:block">
@@ -45,14 +64,19 @@ export function FeedSidebar() {
         <Card className="border-border/70 bg-card/95 shadow-sm">
           <CardContent className="space-y-3 p-4">
             <p className="text-sm font-semibold text-foreground">
-              로그인하면 더 잘 맞는 추천을 볼 수 있어요.
+              공개 크루와 피드는 로그인 없이도 둘러볼 수 있습니다.
             </p>
             <p className="text-xs leading-5 text-muted-foreground">
-              러너와 크루 추천, 기록, 활동 흐름은 로그인 뒤에 더 자연스럽게 연결됩니다.
+              참여, 댓글, 채팅, 기록 작성은 로그인 뒤에 이어집니다.
             </p>
-            <Button asChild className="w-full">
-              <Link to="/login">로그인하기</Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button asChild variant="outline" className="flex-1">
+                <Link to="/login?intent=login&next=/feed">로그인</Link>
+              </Button>
+              <Button asChild className="flex-1">
+                <Link to="/login?intent=signup&next=/feed">회원가입</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -66,7 +90,7 @@ export function FeedSidebar() {
             </p>
           </div>
           <div className="space-y-2">
-            {quickLinks.map((item) => {
+            {visibleQuickLinks.map((item) => {
               const Icon = item.icon;
               return (
                 <Button
@@ -90,24 +114,62 @@ export function FeedSidebar() {
       <Card className="border-border/70 bg-card/95 shadow-sm">
         <CardContent className="space-y-2 p-4">
           <p className="text-sm font-semibold text-foreground">빠른 기록</p>
-          <Button asChild variant="outline" size="sm" className="w-full justify-start">
-            <Link to="/workouts/new">
-              <Dumbbell className="size-4" />
-              워크아웃 추가
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm" className="w-full justify-start">
-            <Link to="/posts/new">
-              <SquarePen className="size-4" />
-              게시글 작성
-            </Link>
-          </Button>
+          {user ? (
+            <>
+              <Button asChild variant="outline" size="sm" className="w-full justify-start">
+                <Link to="/workouts/new">
+                  <Dumbbell className="size-4" />
+                  워크아웃 추가
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="w-full justify-start">
+                <Link to="/posts/new">
+                  <SquarePen className="size-4" />
+                  게시글 작성
+                </Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs leading-5 text-muted-foreground">
+                기록 작성과 게시글 등록은 로그인 뒤에 바로 이어집니다.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => setShowAuthDialog(true)}
+              >
+                <Dumbbell className="size-4" />
+                워크아웃 추가
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => setShowAuthDialog(true)}
+              >
+                <SquarePen className="size-4" />
+                게시글 작성
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
 
       <p className="text-[10px] text-center text-muted-foreground">
         마스터즈 러너스 &copy; {new Date().getFullYear()}
       </p>
+
+      <AuthGateDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        nextPath="/feed"
+        title="로그인하면 기록을 남길 수 있습니다."
+        description="공개 피드는 계속 둘러보고, 직접 기록하거나 게시글을 올릴 때만 로그인하면 됩니다."
+      />
     </aside>
   );
 }

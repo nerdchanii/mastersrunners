@@ -45,11 +45,11 @@ export const groupChatKeys = {
     ["crews", crewId, "activities", activityId, "chat"] as const,
 };
 
-export function useCrewChat(crewId: string) {
+export function useCrewChat(crewId: string, enabled = true) {
   return useQuery({
     queryKey: groupChatKeys.crew(crewId),
     queryFn: () => api.fetch<ChatResponse>(`/crews/${crewId}/chat`),
-    enabled: !!crewId,
+    enabled: !!crewId && enabled,
     refetchInterval: 10000, // Poll every 10 seconds for new messages
   });
 }

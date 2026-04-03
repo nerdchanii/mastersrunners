@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
+import { AuthGateDialog } from "@/components/common/AuthGateDialog";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import CrewActivityList from "@/components/crew/CrewActivityList";
 import CrewAttendanceStats from "@/components/crew/CrewAttendanceStats";
@@ -72,8 +73,11 @@ export default function CrewDetailClient() {
   const [isJoining, setIsJoining] = useState(false);
   const [isSharingInvite, setIsSharingInvite] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("activities");
-  const { data: chatData, isLoading: chatLoading } = useCrewChat(crewId);
+  const currentMember = crew?.members?.find((member) => member.userId === user?.id);
+  const isMember = !!currentMember && currentMember.status === "ACTIVE";
+  const { data: chatData, isLoading: chatLoading } = useCrewChat(crewId, isMember);
 
   const fetchCrew = useCallback(async () => {
     if (!crewId || crewId === "_") return;
@@ -92,15 +96,21 @@ export default function CrewDetailClient() {
     fetchCrew();
   }, [fetchCrew]);
 
-  const currentMember = crew?.members?.find((m) => m.userId === user?.id);
-  const isMember = !!currentMember && currentMember.status === "ACTIVE";
-  const canJoinCrew = !!user && (!currentMember || currentMember.status === "LEFT");
+  const canJoinCrew = !currentMember || currentMember.status === "LEFT";
   const currentUserRole = currentMember?.role ?? null;
   const isOwnerOrAdmin = currentUserRole === "OWNER" || currentUserRole === "ADMIN";
   const isInviteEntry = searchParams.get("invite") === "1";
+  const authReturnPath =
+    typeof window === "undefined"
+      ? `/crews/${crewId}${isInviteEntry ? "?invite=1" : ""}`
+      : `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
   const handleJoin = async () => {
     if (!crewId) return;
+    if (!user) {
+      setShowAuthDialog(true);
+      return;
+    }
     setIsJoining(true);
     try {
       await joinCrew(crewId);
@@ -218,7 +228,7 @@ export default function CrewDetailClient() {
               canJoinCrew && (
                 <Button onClick={handleJoin} disabled={isJoining}>
                   <UserPlus className="mr-2 size-4" />
-                  {isJoining ? "가입 중..." : "이 링크로 가입하기"}
+                  {!user ? "로그인하고 가입하기" : isJoining ? "가입 중..." : "이 링크로 가입하기"}
                 </Button>
               )
             )}
@@ -242,7 +252,7 @@ export default function CrewDetailClient() {
             {canJoinCrew && (
               <Button onClick={handleJoin} disabled={isJoining}>
                 <UserPlus className="size-4 mr-2" />
-                {isJoining ? "가입 중..." : "크루 가입"}
+                {!user ? "로그인하고 크루 가입" : isJoining ? "가입 중..." : "크루 가입"}
               </Button>
             )}
 
@@ -297,6 +307,8 @@ export default function CrewDetailClient() {
                         crewId={crewId}
                         isAdmin={isOwnerOrAdmin}
                         isMember={isMember}
+                        isAuthenticated={!!user}
+                        onRequireAuth={() => setShowAuthDialog(true)}
                       />
                     </div>
                   </TabsContent>
@@ -440,6 +452,14 @@ export default function CrewDetailClient() {
         description="정말 크루를 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다."
         confirmLabel="탈퇴"
         variant="destructive"
+      />
+
+      <AuthGateDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        nextPath={authReturnPath}
+        title="로그인하면 크루 흐름을 이어갈 수 있습니다."
+        description="공개 크루 상세는 계속 볼 수 있고, 가입이나 활동 참여, 초대 링크 진입은 로그인 뒤에 바로 이어집니다."
       />
     </div>
   );

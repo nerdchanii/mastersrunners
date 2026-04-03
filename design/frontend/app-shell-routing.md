@@ -5,7 +5,7 @@ last_verified: 2026-04-03
 sources:
   - apps/web/src/main.tsx
   - apps/web/src/router.tsx
-  - apps/web/src/pages/intro/index.tsx
+  - apps/web/src/pages/feed/index.tsx
   - apps/web/src/pages/onboarding/index.tsx
   - apps/web/src/pages/profile/index.tsx
   - apps/web/src/pages/settings/profile/index.tsx
@@ -39,7 +39,7 @@ The router tree in `apps/web/src/router.tsx` defines three shell layers:
 
 Public routes include:
 
-- `/` public intro route
+- `/` redirect entry for the public feed
 - `/login` login-only shell
 - `/feed`
 - `/crews`, `/crews/:id`
@@ -60,7 +60,7 @@ Protected routes include:
 - `/feedback`
 - crew activity edit/chat/check-in routes
 
-The authenticated `/` path now redirects to `/feed`. The root intro route is intentionally shell-less so the first impression can stay focused on community messaging instead of the authenticated app chrome.
+The `/` path now resolves into `/feed` for both anonymous and authenticated visitors. The app no longer maintains a separate intro-only landing route; the public feed itself is the first-touch entry and the authenticated app chrome remains visible.
 
 Most route modules are lazy loaded with `lazy(() => import(...))`.
 
@@ -81,9 +81,11 @@ Most route modules are lazy loaded with `lazy(() => import(...))`.
   - desktop header exposes a direct `/search` link
   - mobile bottom navigation keeps `/search` visible without requiring route knowledge
   - the search page mirrors user queries into the URL so re-entry and back-navigation preserve context
-- The first-visit route is community-first:
-  - `/` shows a public intro page for anonymous users
-  - `/login` remains the auth handoff
+- The first-touch route is public-feed-first:
+  - `/` resolves to `/feed`
+  - `/feed` stays publicly readable for anonymous visitors
+  - public navigation from that entry, including `/crews` and public post detail, should stay on-route instead of bouncing through `/login?next=...`
+  - deeper participation actions should prefer an in-place auth dialog before a full `/login` handoff
   - onboarding can be skipped once the user is ready to reach the feed
 - Authenticated mobile navigation now owns the create entry directly:
   - the detached post-only FAB is removed

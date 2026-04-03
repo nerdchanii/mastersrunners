@@ -45,11 +45,12 @@ export function useCrews(params?: Record<string, string>) {
   });
 }
 
-export function useMyCrews() {
+export function useMyCrews(enabled = true) {
   return useQuery({
     queryKey: crewKeys.mine(),
-    queryFn: () => api.fetch<Crew[]>("/crews/my"),
+    queryFn: () => api.fetchSession<Crew[]>("/crews/my"),
     select: (data) => (Array.isArray(data) ? data : []),
+    enabled,
   });
 }
 

@@ -79,12 +79,13 @@ export class CrewReadService {
     });
   }
 
-  async getCrewPosts(crewId: string, cursor?: string) {
-    await this.getCrewOrThrow(crewId);
+  async getCrewPosts(crewId: string, cursor?: string, currentUserId?: string) {
+    await this.requireReadableCrew(crewId, currentUserId);
     return this.crewRepo.findCrewPosts(crewId, cursor);
   }
 
-  async getCrewProfile(crewId: string) {
+  async getCrewProfile(crewId: string, currentUserId?: string) {
+    await this.requireReadableCrew(crewId, currentUserId);
     const result = await this.crewRepo.getCrewProfile(crewId);
     if (!result) {
       throw new NotFoundException("크루를 찾을 수 없습니다.");
@@ -97,6 +98,22 @@ export class CrewReadService {
     if (!crew) {
       throw new NotFoundException("크루를 찾을 수 없습니다.");
     }
+    return crew;
+  }
+
+  private async requireReadableCrew(crewId: string, currentUserId?: string) {
+    const crew = await this.getCrewOrThrow(crewId);
+    if (crew.isPublic !== false) {
+      return crew;
+    }
+
+    const member = currentUserId
+      ? await this.crewMemberRepo.findMember(crewId, currentUserId)
+      : null;
+    if (!member || member.status !== "ACTIVE") {
+      throw new NotFoundException("크루를 찾을 수 없습니다.");
+    }
+
     return crew;
   }
 }

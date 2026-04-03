@@ -1,6 +1,7 @@
 import { Send, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { AuthGateDialog } from "@/components/common/AuthGateDialog";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { TimeAgo } from "@/components/common/TimeAgo";
 import { UserAvatar } from "@/components/common/UserAvatar";
@@ -36,7 +37,15 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const nextPath =
+    typeof window === "undefined"
+      ? entityType === "workout"
+        ? `/workouts/${entityId}`
+        : `/posts/${entityId}`
+      : `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
   const endpoint =
     entityType === "workout" ? `/workouts/${entityId}/comments` : `/posts/${entityId}/comments`;
@@ -44,7 +53,7 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
   const fetchComments = async () => {
     try {
       setIsLoading(true);
-      const data = await api.fetch<
+      const data = await api.fetchSession<
         { data: Comment[]; cursor: string | null; hasMore: boolean } | Comment[]
       >(`${endpoint}?limit=50`);
 
@@ -52,8 +61,10 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
 
       // Backend already returns top-level comments with nested replies
       setComments(items);
+      setLoadError(null);
     } catch {
-      // silent
+      setComments([]);
+      setLoadError("댓글을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
       setIsLoading(false);
     }
@@ -96,6 +107,11 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
   };
 
   const handleReply = (comment: Comment) => {
+    if (!user) {
+      setShowAuthDialog(true);
+      return;
+    }
+
     setReplyingTo(comment);
     setNewComment(`@${comment.user.name} `);
     inputRef.current?.focus();
@@ -157,6 +173,8 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
       {/* Comment list */}
       {isLoading ? (
         <p className="text-sm text-muted-foreground text-center py-4">로딩 중...</p>
+      ) : loadError ? (
+        <p className="text-sm text-muted-foreground text-center py-6">{loadError}</p>
       ) : comments.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-6">첫 댓글을 작성해보세요</p>
       ) : (
@@ -216,6 +234,14 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
         confirmLabel="삭제"
         variant="destructive"
         onConfirm={handleDelete}
+      />
+
+      <AuthGateDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        nextPath={nextPath}
+        title="로그인하면 댓글과 답글을 남길 수 있습니다."
+        description="지금 보고 있는 흐름은 그대로 두고, 참여만 로그인 뒤에 이어집니다."
       />
     </div>
   );

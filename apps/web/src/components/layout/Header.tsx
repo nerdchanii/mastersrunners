@@ -22,7 +22,7 @@ const navLinks = [
   { href: "/crews", label: "크루" },
   { href: "/events", label: "대회", feature: "events" as PublicFeatureName },
   { href: "/challenges", label: "챌린지", feature: "challenges" as PublicFeatureName },
-  { href: "/workouts", label: "내 기록" },
+  { href: "/workouts", label: "내 기록", authRequired: true },
 ];
 
 export default function Header() {
@@ -35,7 +35,10 @@ export default function Header() {
   const config = runtimeConfig ?? defaultPublicRuntimeConfig;
 
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + "/");
-  const visibleNavLinks = navLinks.filter((link) => !link.feature || config.features[link.feature]);
+  const visibleNavLinks = navLinks.filter(
+    (link) =>
+      (!link.feature || config.features[link.feature]) && (!link.authRequired || isAuthenticated),
+  );
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -77,7 +80,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 hidden w-full border-b bg-background/95 backdrop-blur-lg md:block">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-        <Link to="/" className="text-lg font-bold tracking-tight text-foreground">
+        <Link to="/feed" className="text-lg font-bold tracking-tight text-foreground">
           마스터즈 러너스
         </Link>
 

@@ -142,6 +142,7 @@ describe("PostRepository", () => {
         where: {
           userId,
           deletedAt: null,
+          visibility: "PUBLIC",
         },
         include: expect.objectContaining({
           workouts: {
@@ -176,6 +177,7 @@ describe("PostRepository", () => {
         where: {
           userId,
           deletedAt: null,
+          visibility: "PUBLIC",
         },
         include: expect.objectContaining({
           workouts: {
@@ -197,6 +199,52 @@ describe("PostRepository", () => {
         skip: 1,
         cursor: { id: cursor },
       });
+    });
+
+    it("should allow owners to fetch all of their posts", async () => {
+      const userId = "user-123";
+      mockDatabaseService.prisma.post.findMany.mockResolvedValue([]);
+
+      await repository.findByUser(userId, { currentUserId: userId });
+
+      expect(mockDatabaseService.prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            userId,
+            deletedAt: null,
+          },
+        }),
+      );
+    });
+
+    it("should restrict signed-in non-followers to public and accepted-follower posts", async () => {
+      const userId = "author-1";
+      mockDatabaseService.prisma.post.findMany.mockResolvedValue([]);
+
+      await repository.findByUser(userId, { currentUserId: "viewer-1" });
+
+      expect(mockDatabaseService.prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            userId,
+            deletedAt: null,
+            OR: [
+              { visibility: "PUBLIC" },
+              {
+                visibility: "FOLLOWERS",
+                user: {
+                  followers: {
+                    some: {
+                      followerId: "viewer-1",
+                      status: "ACCEPTED",
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        }),
+      );
     });
   });
 

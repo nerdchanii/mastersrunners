@@ -15,6 +15,13 @@ export class CrewBoardsRepository {
     return member?.role ?? null;
   }
 
+  async findCrewAccessById(crewId: string) {
+    return this.db.prisma.crew.findUnique({
+      where: { id: crewId, deletedAt: null },
+      select: { id: true, isPublic: true },
+    });
+  }
+
   // ============ Boards ============
 
   async createBoard(

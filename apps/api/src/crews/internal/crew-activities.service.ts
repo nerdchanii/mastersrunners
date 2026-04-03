@@ -80,8 +80,9 @@ export class CrewActivitiesService {
   async getActivities(
     crewId: string,
     opts?: { cursor?: string; limit?: number; type?: string; status?: string },
+    currentUserId?: string,
   ) {
-    await this.getCrewOrThrow(crewId);
+    await this.requireReadableCrew(crewId, currentUserId);
 
     const limit = opts?.limit ?? 20;
     const activities = await this.crewActivityRepo.findByCrewId(crewId, { ...opts, limit });
@@ -319,6 +320,22 @@ export class CrewActivitiesService {
     if (!crew) {
       throw new NotFoundException("크루를 찾을 수 없습니다.");
     }
+    return crew;
+  }
+
+  private async requireReadableCrew(crewId: string, currentUserId?: string) {
+    const crew = await this.getCrewOrThrow(crewId);
+    if (crew.isPublic !== false) {
+      return crew;
+    }
+
+    const member = currentUserId
+      ? await this.crewMemberRepo.findMember(crewId, currentUserId)
+      : null;
+    if (!member || member.status !== "ACTIVE") {
+      throw new NotFoundException("크루를 찾을 수 없습니다.");
+    }
+
     return crew;
   }
 

@@ -92,10 +92,16 @@ export class CrewsService {
     return crew;
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, currentUserId?: string) {
     const crew = await this.crewRepo.findById(id);
     if (!crew) {
       throw new NotFoundException("크루를 찾을 수 없습니다.");
+    }
+    if (crew.isPublic === false) {
+      const member = currentUserId ? await this.crewMemberRepo.findMember(id, currentUserId) : null;
+      if (!member || member.status !== "ACTIVE") {
+        throw new NotFoundException("크루를 찾을 수 없습니다.");
+      }
     }
     return crew;
   }
@@ -247,8 +253,9 @@ export class CrewsService {
   async getActivities(
     crewId: string,
     opts?: { cursor?: string; limit?: number; type?: string; status?: string },
+    currentUserId?: string,
   ) {
-    return this.activitiesService.getActivities(crewId, opts);
+    return this.activitiesService.getActivities(crewId, opts, currentUserId);
   }
 
   async getActivity(activityId: string) {
@@ -356,12 +363,12 @@ export class CrewsService {
     return this.readService.createCrewPost(crewId, userId, data);
   }
 
-  async getCrewPosts(crewId: string, cursor?: string) {
-    return this.readService.getCrewPosts(crewId, cursor);
+  async getCrewPosts(crewId: string, cursor?: string, currentUserId?: string) {
+    return this.readService.getCrewPosts(crewId, cursor, currentUserId);
   }
 
-  async getCrewProfile(crewId: string) {
-    return this.readService.getCrewProfile(crewId);
+  async getCrewProfile(crewId: string, currentUserId?: string) {
+    return this.readService.getCrewProfile(crewId, currentUserId);
   }
 
   async getActivityChat(crewId: string, activityId: string, userId: string, cursor?: string) {

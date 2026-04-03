@@ -2,6 +2,7 @@ import { ArrowLeft, ChevronRight, Heart, MessageSquare, Pin, Plus, Send } from "
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { AuthGateDialog } from "@/components/common/AuthGateDialog";
 import { TimeAgo } from "@/components/common/TimeAgo";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ import {
   useCreatePost,
   useToggleLike,
 } from "@/hooks/useCrewBoards";
+import { useAuth } from "@/lib/auth-context";
 
 interface Props {
   crewId: string;
@@ -246,12 +248,22 @@ function PostDetail({
   onBack: () => void;
 }) {
   const { data: post, isLoading } = useBoardPost(crewId, board.id, postId);
+  const { user } = useAuth();
   const toggleLike = useToggleLike();
   const createComment = useCreateComment();
   const [comment, setComment] = useState("");
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const nextPath =
+    typeof window === "undefined"
+      ? `/crews/${crewId}`
+      : `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
   const handleLike = () => {
     if (!post) return;
+    if (!user) {
+      setShowAuthDialog(true);
+      return;
+    }
     toggleLike.mutate({ crewId, boardId: board.id, postId, liked: !!post.liked });
   };
 
@@ -392,6 +404,14 @@ function PostDetail({
           )}
         </CardContent>
       </Card>
+
+      <AuthGateDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        nextPath={nextPath}
+        title="로그인하면 반응을 남길 수 있습니다."
+        description="공개 게시판 글은 계속 읽을 수 있고, 좋아요 같은 반응은 로그인 뒤에 바로 이어집니다."
+      />
     </div>
   );
 }

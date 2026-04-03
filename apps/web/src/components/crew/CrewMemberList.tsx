@@ -135,7 +135,7 @@ export default function CrewMemberList({
       <div className="space-y-2">
         {sortedMembers.map((member) => {
           const isSelf = member.userId === currentUserId;
-          const canMessageThis = !isSelf;
+          const canMessageThis = !!currentUserId && !isSelf;
           const canKickThis = canManage && !isSelf && member.role !== "OWNER";
           const canPromoteThis = isOwner && !isSelf && member.role === "MEMBER";
           const canDemoteThis = isOwner && !isSelf && member.role === "ADMIN";

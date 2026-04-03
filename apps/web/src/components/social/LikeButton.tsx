@@ -1,7 +1,9 @@
 import { Heart } from "lucide-react";
 import { useState } from "react";
 
+import { AuthGateDialog } from "@/components/common/AuthGateDialog";
 import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
 interface LikeButtonProps {
@@ -19,15 +21,25 @@ export function LikeButton({
   initialCount = 0,
   compact = false,
 }: LikeButtonProps) {
+  const { user } = useAuth();
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
   const [isLoading, setIsLoading] = useState(false);
   const [animating, setAnimating] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const nextPath =
+    typeof window === "undefined"
+      ? "/feed"
+      : `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
   const handleToggleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (isLoading) return;
+    if (!user) {
+      setShowAuthDialog(true);
+      return;
+    }
 
     const previousLiked = liked;
     const previousCount = count;
@@ -59,33 +71,43 @@ export function LikeButton({
   };
 
   return (
-    <button
-      onClick={handleToggleLike}
-      disabled={isLoading}
-      className={cn(
-        "flex items-center gap-1.5 transition-colors disabled:opacity-50",
-        compact ? "p-1" : "rounded-lg px-2 py-1.5 hover:bg-accent",
-      )}
-    >
-      <Heart
+    <>
+      <button
+        onClick={handleToggleLike}
+        disabled={isLoading}
         className={cn(
-          "transition-all duration-200",
-          compact ? "size-5" : "size-5",
-          liked ? "fill-red-500 text-red-500" : "text-muted-foreground",
-          animating && "scale-125",
+          "flex items-center gap-1.5 transition-colors disabled:opacity-50",
+          compact ? "p-1" : "rounded-lg px-2 py-1.5 hover:bg-accent",
         )}
-      />
-      {count > 0 && (
-        <span
+      >
+        <Heart
           className={cn(
-            "font-medium tabular-nums",
-            compact ? "text-xs" : "text-sm",
-            liked ? "text-red-500" : "text-muted-foreground",
+            "transition-all duration-200",
+            compact ? "size-5" : "size-5",
+            liked ? "fill-red-500 text-red-500" : "text-muted-foreground",
+            animating && "scale-125",
           )}
-        >
-          {count}
-        </span>
-      )}
-    </button>
+        />
+        {count > 0 && (
+          <span
+            className={cn(
+              "font-medium tabular-nums",
+              compact ? "text-xs" : "text-sm",
+              liked ? "text-red-500" : "text-muted-foreground",
+            )}
+          >
+            {count}
+          </span>
+        )}
+      </button>
+
+      <AuthGateDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        nextPath={nextPath}
+        title="로그인하면 반응을 남길 수 있습니다."
+        description="지금 보고 있는 흐름은 그대로 두고, 좋아요는 로그인 뒤에 바로 이어집니다."
+      />
+    </>
   );
 }

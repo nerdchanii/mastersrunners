@@ -111,6 +111,8 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - `tasks/archive/I-0014-280-meta-ops-feedback-proxy-and-runtime-repair.md`
 - `tasks/archive/I-0014-290-api-ops-access-single-gate.md`
 - `tasks/archive/I-0014-300-web-workout-analysis-detail-and-post-preview.md`
+- `tasks/archive/I-0014-310-web-public-feed-entry-and-auth-prompts.md`
+- `tasks/archive/I-0014-320-web-public-route-auth-regression-repair.md`
 
 ### Product Checkpoint Required
 
@@ -155,3 +157,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - 2026-04-02: archived `I-0014-290` after simplifying the dev ops feedback lane to Access-only gating, removing the runtime dependency on `PlatformOperatorIdentity`, and updating the ops UI plus persistence docs so they no longer instruct the solo operator to perform separate email registration.
 - 2026-04-03: opened `I-0014-300` after product rejected the temporary safe-summary workout detail and clarified that workout detail should be a map-first analysis report with linked charts, laps, and a richer post-detail preview.
 - 2026-04-03: archived `I-0014-300` after restoring workout detail as a map-first analysis report with linked charts and lap analysis, strengthening post-detail workout previews, and preserving no-GPS workouts through a partial-render lap fallback instead of a summary-only downgrade.
+- 2026-04-03: opened `I-0014-310` as a focused intro-copy pass after product rejected the logged-out landing tone as awkward, low-quality placeholder language.
+- 2026-04-03: widened `I-0014-310` from intro copy into a public-feed entry pivot once product clarified that a separate `/` CTA screen may be unnecessary and the logged-out first-touch should show real public community activity instead.
+- 2026-04-03: opened `I-0014-320` after Playwright reproduction proved the new public-feed/public-crews flow still had protected API reads and global unauthorized redirects that bounced anonymous visitors into `/login` and broke browser back-navigation.
+- 2026-04-03: archived `I-0014-310` and `I-0014-320` together after the public `/feed` entry shipped, protected participation actions were consistently modal-gated, public route regressions were reproduced and fixed with Playwright coverage, and backend visibility boundaries were re-tightened so only public or properly follower/member-scoped data stays readable.

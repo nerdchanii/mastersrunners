@@ -52,10 +52,11 @@ export function useCrewExplore(params: {
   });
 }
 
-export function useCrewRecommend() {
+export function useCrewRecommend(enabled = true) {
   return useQuery({
     queryKey: exploreKeys.recommend(),
     queryFn: () => api.fetch<ExploreCrewItem[]>("/crews/recommend"),
+    enabled,
   });
 }
 

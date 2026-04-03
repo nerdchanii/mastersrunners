@@ -39,6 +39,19 @@ Crew UX combines discovery, membership management, discussion, activity scheduli
 - `/crews/:id/activities/:activityId/chat` opens activity chat
 - `/crews/:id/activities/:activityId/qr-check-in` handles QR attendance
 
+Anonymous entry stays public-first:
+
+- `/crews` defaults to `크루 찾기` for logged-out visitors instead of opening `내 크루`
+- choosing `내 크루` while logged out opens an auth prompt dialog instead of an immediate redirect
+- `/crews/:id` remains readable without login for public discovery
+- logged-out crew reads should include the public exploration payloads the page mounts by default:
+  - region filters
+  - explore results
+  - public crew boards/posts
+  - activity summaries
+- join, invite-entry, and activity-entry actions now open an auth prompt dialog and preserve the current crew path as the post-login return target
+- member-only chat data should not be queried until the viewer is actually an active member
+
 ## Crew Hub Composition
 
 The crew detail page now assembles a layered workspace instead of a flat tab bar:
@@ -48,6 +61,7 @@ The crew detail page now assembles a layered workspace instead of a flat tab bar
 - a secondary member panel that keeps the roster visible without competing with the primary content
 - separate operator panels for attendance stats, tags, and pending members
 - invite entrants who land on `/crews/:id?invite=1` still see the lightweight shared-invite explainer above the hero until they join or their request becomes pending
+- unauthenticated invite entrants keep the same invite URL as the post-login return target through the auth prompt dialog
 
 Membership state now determines the primary affordances instead of the entire page structure:
 

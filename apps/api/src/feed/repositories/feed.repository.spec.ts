@@ -64,6 +64,28 @@ describe("FeedRepository", () => {
   });
 
   describe("getPostFeed", () => {
+    it("should fetch public posts only for anonymous visitors", async () => {
+      mockDb.prisma.post.findMany.mockResolvedValue([]);
+
+      await repo.getPostFeed({
+        userId: undefined,
+        followingIds: [],
+        limit: 10,
+      });
+
+      expect(mockDb.prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            deletedAt: null,
+            OR: [{ visibility: "PUBLIC" }],
+          },
+          include: expect.objectContaining({
+            likes: false,
+          }),
+        }),
+      );
+    });
+
     it("should fetch posts with correct visibility filters", async () => {
       const posts = [{ id: "p1" }, { id: "p2" }];
       mockDb.prisma.post.findMany.mockResolvedValue(posts);
@@ -165,6 +187,28 @@ describe("FeedRepository", () => {
   });
 
   describe("getWorkoutFeed", () => {
+    it("should fetch public workouts only for anonymous visitors", async () => {
+      mockDb.prisma.workout.findMany.mockResolvedValue([]);
+
+      await repo.getWorkoutFeed({
+        userId: undefined,
+        followingIds: [],
+        limit: 10,
+      });
+
+      expect(mockDb.prisma.workout.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            deletedAt: null,
+            OR: [{ visibility: "PUBLIC" }],
+          }),
+          include: expect.objectContaining({
+            workoutLikes: false,
+          }),
+        }),
+      );
+    });
+
     it("should fetch workouts with correct visibility filters", async () => {
       const workouts = [{ id: "w1" }, { id: "w2" }];
       mockDb.prisma.workout.findMany.mockResolvedValue(workouts);
