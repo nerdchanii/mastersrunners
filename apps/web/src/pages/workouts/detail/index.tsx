@@ -7,7 +7,7 @@ import {
   Share2,
   Trash2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -20,13 +20,8 @@ import { LikeButton } from "@/components/social/LikeButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ElevationChart } from "@/components/workout/ElevationChart";
-import { HeartRateChart } from "@/components/workout/HeartRateChart";
-import { LapsTable, type WorkoutLap } from "@/components/workout/LapsTable";
-import { type GpsPoint, RouteMap } from "@/components/workout/RouteMap";
 import { ShareCardGenerator } from "@/components/workout/ShareCardGenerator";
 import { SourceInfo, type WorkoutFile } from "@/components/workout/SourceInfo";
-import { WorkoutMetrics, type WorkoutMetricsData } from "@/components/workout/WorkoutMetrics";
 import { useDeleteWorkout, useWorkout } from "@/hooks/useWorkouts";
 import { useAuth } from "@/lib/auth-context";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
@@ -58,7 +53,6 @@ interface WorkoutData {
   shoe: { id: string; brand: string; model: string } | null;
   workoutRoutes?: WorkoutRoute[];
   workoutFiles?: WorkoutFile[];
-  workoutLaps?: WorkoutLap[];
 }
 
 export default function WorkoutDetailPage() {
@@ -72,33 +66,6 @@ export default function WorkoutDetailPage() {
   const deleteWorkout = useDeleteWorkout();
 
   const typedWorkout = workout as WorkoutData | undefined;
-
-  const routeData = useMemo<GpsPoint[]>(() => {
-    if (!typedWorkout?.workoutRoutes?.length) return [];
-    try {
-      return JSON.parse(typedWorkout.workoutRoutes[0].routeData) as GpsPoint[];
-    } catch {
-      return [];
-    }
-  }, [typedWorkout]);
-
-  const hasElevation = useMemo(() => routeData.some((p) => p.elevation != null), [routeData]);
-  const hasHeartRate = useMemo(
-    () => routeData.some((p) => p.heartRate != null && p.heartRate > 0),
-    [routeData],
-  );
-
-  const metricsData = useMemo<WorkoutMetricsData | null>(() => {
-    if (!typedWorkout) return null;
-    return {
-      calories: typedWorkout.calories,
-      elevationGain: typedWorkout.elevationGain,
-      avgHeartRate: typedWorkout.avgHeartRate,
-      maxHeartRate: typedWorkout.maxHeartRate,
-      avgCadence: typedWorkout.avgCadence,
-      maxCadence: typedWorkout.maxCadence,
-    };
-  }, [typedWorkout]);
 
   const handleDelete = async () => {
     if (!workoutId) return;
@@ -147,19 +114,7 @@ export default function WorkoutDetailPage() {
   if (!typedWorkout) return null;
 
   const isOwner = currentUser?.id === typedWorkout.user.id;
-  const laps = typedWorkout.workoutLaps ?? [];
   const sourceFile = typedWorkout.workoutFiles?.[0] ?? null;
-
-  const encodedPolyline = typedWorkout?.workoutRoutes?.[0]
-    ? (() => {
-        try {
-          const parsed = JSON.parse(typedWorkout!.workoutRoutes![0].routeData);
-          return parsed as string | null;
-        } catch {
-          return null;
-        }
-      })()
-    : null;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
@@ -184,12 +139,10 @@ export default function WorkoutDetailPage() {
             pace: typedWorkout.pace,
             date: typedWorkout.date,
             userName: typedWorkout.user.name,
-            encodedPolyline: typeof encodedPolyline === "string" ? encodedPolyline : undefined,
           }}
         />
       )}
 
-      {/* Navigation */}
       <div className="flex items-center justify-between">
         <Button onClick={() => navigate(-1)} variant="ghost" size="sm">
           <ArrowLeft className="size-4" />
@@ -226,7 +179,6 @@ export default function WorkoutDetailPage() {
         </div>
       </div>
 
-      {/* Basic Info */}
       <Card>
         <CardHeader>
           <UserAvatar
@@ -243,13 +195,10 @@ export default function WorkoutDetailPage() {
               </div>
             }
           />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-around py-4 border-y">
-            <StatItem value={`${formatDistance(typedWorkout.distance)} km`} label="거리" />
-            <StatItem value={formatDuration(typedWorkout.duration)} label="시간" />
-            <StatItem value={`${formatPace(typedWorkout.pace)}/km`} label="페이스" />
-          </div>
+          <CardDescription>
+            첨부 운동에서 넘어와도 같은 요약을 바로 확인할 수 있도록, 거리와 시간처럼 안전하게
+            보장되는 정보부터 정리했습니다.
+          </CardDescription>
 
           <div className="flex flex-wrap items-center gap-2">
             {typedWorkout.workoutType && (
@@ -271,29 +220,21 @@ export default function WorkoutDetailPage() {
               </span>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-around py-4 border-y">
+            <StatItem value={`${formatDistance(typedWorkout.distance)} km`} label="거리" />
+            <StatItem value={formatDuration(typedWorkout.duration)} label="시간" />
+            <StatItem value={`${formatPace(typedWorkout.pace)}/km`} label="페이스" />
+          </div>
 
-      {/* Route Map */}
-      {routeData.length > 0 && <RouteMap routeData={routeData} />}
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">{typedWorkout.workoutType?.name ?? "런닝"}</Badge>
+            <Badge variant="outline" className="capitalize">
+              {typedWorkout.visibility.toLowerCase()}
+            </Badge>
+          </div>
 
-      {/* Charts: Elevation + HeartRate */}
-      {(hasElevation || hasHeartRate) && (
-        <div className="grid gap-4 md:grid-cols-2">
-          {hasElevation && <ElevationChart routeData={routeData} />}
-          {hasHeartRate && <HeartRateChart routeData={routeData} />}
-        </div>
-      )}
-
-      {/* Workout Metrics */}
-      {metricsData && <WorkoutMetrics data={metricsData} />}
-
-      {/* Laps */}
-      {laps.length > 0 && <LapsTable laps={laps} />}
-
-      {/* Memo + Source + Social */}
-      <Card>
-        <CardContent className="space-y-4 pt-6">
           {typedWorkout.memo && (
             <div className="rounded-lg bg-muted p-4">
               <p className="text-sm text-foreground whitespace-pre-wrap">{typedWorkout.memo}</p>

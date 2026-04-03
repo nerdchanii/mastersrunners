@@ -1,10 +1,12 @@
 ---
 doc_state: current
 owner: frontend
-last_verified: 2026-03-12
+last_verified: 2026-04-03
 sources:
   - apps/web/src/main.tsx
   - apps/web/src/router.tsx
+  - apps/web/src/pages/intro/index.tsx
+  - apps/web/src/pages/onboarding/index.tsx
   - apps/web/src/pages/profile/index.tsx
   - apps/web/src/pages/settings/profile/index.tsx
   - apps/web/src/components/layout/Header.tsx
@@ -37,6 +39,8 @@ The router tree in `apps/web/src/router.tsx` defines three shell layers:
 
 Public routes include:
 
+- `/` public intro route
+- `/login` login-only shell
 - `/feed`
 - `/crews`, `/crews/:id`
 - `/events`, `/events/:id`
@@ -56,6 +60,8 @@ Protected routes include:
 - `/feedback`
 - crew activity edit/chat/check-in routes
 
+The authenticated `/` path now redirects to `/feed`. The root intro route is intentionally shell-less so the first impression can stay focused on community messaging instead of the authenticated app chrome.
+
 Most route modules are lazy loaded with `lazy(() => import(...))`.
 
 ## Route Guarding
@@ -64,6 +70,7 @@ Most route modules are lazy loaded with `lazy(() => import(...))`.
 - while auth is bootstrapping, it renders `LoadingPage`
 - unauthenticated access redirects to `/login`
 - some protected pages still keep page-local auth/bootstrap logic on top of `ProtectedRoute`, including `/profile` and `/settings/profile`
+- `/profile/:id` and its follower/following subroutes live in the public route tree but still apply a page-local auth gate that redirects anonymous users to `/login`
 
 ## Current Constraints
 
@@ -74,6 +81,10 @@ Most route modules are lazy loaded with `lazy(() => import(...))`.
   - desktop header exposes a direct `/search` link
   - mobile bottom navigation keeps `/search` visible without requiring route knowledge
   - the search page mirrors user queries into the URL so re-entry and back-navigation preserve context
+- The first-visit route is community-first:
+  - `/` shows a public intro page for anonymous users
+  - `/login` remains the auth handoff
+  - onboarding can be skipped once the user is ready to reach the feed
 - Authenticated mobile navigation now owns the create entry directly:
   - the detached post-only FAB is removed
   - the center create trigger opens a bottom-sheet chooser for `/posts/new` or `/workouts/new`

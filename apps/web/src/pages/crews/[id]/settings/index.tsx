@@ -4,16 +4,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { PageHeader } from "@/components/common/PageHeader";
-import { TimeAgo } from "@/components/common/TimeAgo";
-import { UserAvatar } from "@/components/common/UserAvatar";
 import CrewForm from "@/components/crew/CrewForm";
+import CrewIdentityHero from "@/components/crew/CrewIdentityHero";
 import CrewMemberList from "@/components/crew/CrewMemberList";
 import PendingMemberList from "@/components/crew/PendingMemberList";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth-context";
 import { shareLink } from "@/lib/share-link";
 
@@ -57,6 +54,11 @@ interface CrewDetail {
   name: string;
   description: string | null;
   imageUrl: string | null;
+  profileImageUrl?: string | null;
+  coverImageUrl?: string | null;
+  location?: string | null;
+  region?: string | null;
+  subRegion?: string | null;
   isPublic: boolean;
   maxMembers: number | null;
   createdAt: string;
@@ -84,7 +86,6 @@ export default function CrewSettingsClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSharingInvite, setIsSharingInvite] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState("edit");
 
   const fetchCrew = useCallback(async () => {
     if (!crewId || crewId === "_") return;
@@ -114,10 +115,8 @@ export default function CrewSettingsClient() {
   }, [fetchCrew]);
 
   useEffect(() => {
-    if (activeTab === "bans") {
-      fetchBans();
-    }
-  }, [activeTab, fetchBans]);
+    fetchBans();
+  }, [fetchBans]);
 
   // Access control
   const currentMember = crew?.members.find((m) => m.userId === user?.id);
@@ -128,8 +127,13 @@ export default function CrewSettingsClient() {
   const handleEditSubmit = async (data: {
     name: string;
     description?: string;
+    profileImageUrl?: string | null;
+    coverImageUrl?: string | null;
     isPublic: boolean;
     maxMembers?: number;
+    location?: string;
+    region?: string;
+    subRegion?: string;
   }) => {
     setIsSubmitting(true);
     try {
@@ -242,12 +246,22 @@ export default function CrewSettingsClient() {
   }
 
   const activeMembers = crew.members.filter((m) => m.status === "ACTIVE");
+  const heroProfileImage = crew.profileImageUrl ?? crew.imageUrl ?? null;
+  const heroCoverImage = crew.coverImageUrl ?? null;
 
   return (
-    <div className="container mx-auto max-w-4xl space-y-6 px-4 py-6">
-      <PageHeader
-        title="크루 설정"
-        description={crew.name}
+    <div className="container mx-auto max-w-6xl space-y-6 px-4 py-6">
+      <CrewIdentityHero
+        eyebrow="크루 설정"
+        name={crew.name}
+        description="대표 정보와 운영 도구를 분리해서 정리합니다."
+        creatorName={crew.creator.name}
+        createdAt={crew.createdAt}
+        memberCount={crew._count.members}
+        maxMembers={crew.maxMembers}
+        isPublic={crew.isPublic}
+        profileImageUrl={heroProfileImage}
+        coverImageUrl={heroCoverImage}
         actions={
           <>
             <Button variant="outline" onClick={handleShareInvite} disabled={isSharingInvite}>
@@ -261,20 +275,13 @@ export default function CrewSettingsClient() {
         }
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="edit">기본 정보</TabsTrigger>
-          <TabsTrigger value="members">멤버 관리</TabsTrigger>
-          <TabsTrigger value="pending">대기 멤버</TabsTrigger>
-          <TabsTrigger value="bans">차단 목록</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="edit" className="mt-6 space-y-6">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-6">
           <section className="rounded-3xl border border-border/60 bg-background px-5 py-5 shadow-sm sm:px-6">
             <div className="mb-5 space-y-1">
               <h2 className="text-lg font-semibold text-foreground">기본 정보</h2>
               <p className="text-sm text-muted-foreground">
-                크루 이름, 소개, 공개 범위처럼 멤버가 가장 먼저 보는 정보만 정리합니다.
+                이름, 소개, 공개 범위, 지역 같은 멤버가 가장 먼저 보는 정보를 정리합니다.
               </p>
             </div>
 
@@ -284,6 +291,11 @@ export default function CrewSettingsClient() {
                 description: crew.description,
                 isPublic: crew.isPublic,
                 maxMembers: crew.maxMembers,
+                location: crew.location,
+                region: crew.region,
+                subRegion: crew.subRegion,
+                profileImageUrl: heroProfileImage,
+                coverImageUrl: heroCoverImage,
               }}
               onSubmit={handleEditSubmit}
               onCancel={() => navigate(`/crews/${crewId}`)}
@@ -311,45 +323,50 @@ export default function CrewSettingsClient() {
               </Button>
             </section>
           )}
-        </TabsContent>
+        </div>
 
-        <TabsContent value="members" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>멤버 관리 ({activeMembers.length}명)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CrewMemberList
-                crewId={crewId}
-                members={activeMembers}
-                currentUserId={user?.id}
-                currentUserRole={currentUserRole}
-                onUpdate={fetchCrew}
-              />
+        <aside className="space-y-6">
+          <Card className="border-border/60">
+            <CardContent className="p-5">
+              <div className="space-y-1.5">
+                <h2 className="text-base font-semibold">멤버 관리</h2>
+                <p className="text-sm text-muted-foreground">
+                  멤버 목록은 운영 편집 영역과 분리해 더 빠르게 훑을 수 있습니다.
+                </p>
+              </div>
+              <div className="mt-4">
+                <CrewMemberList
+                  crewId={crewId}
+                  members={activeMembers}
+                  currentUserId={user?.id}
+                  currentUserRole={currentUserRole}
+                  onUpdate={fetchCrew}
+                />
+              </div>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="pending" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>대기 멤버</CardTitle>
-              <CardDescription>가입 요청 승인이 필요한 멤버 목록입니다</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PendingMemberList crewId={crewId} onUpdate={fetchCrew} />
+          <Card className="border-border/60">
+            <CardContent className="p-5">
+              <div className="space-y-1.5">
+                <h2 className="text-base font-semibold">대기 멤버</h2>
+                <p className="text-sm text-muted-foreground">
+                  가입 요청은 여기서만 확인하고 승인합니다.
+                </p>
+              </div>
+              <div className="mt-4">
+                <PendingMemberList crewId={crewId} onUpdate={fetchCrew} />
+              </div>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="bans" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>차단 목록</CardTitle>
+          <Card className="border-border/60">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">차단 목록</CardTitle>
             </CardHeader>
             <CardContent>
               {bans.length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground py-8">
+                <p className="py-6 text-center text-sm text-muted-foreground">
                   차단된 사용자가 없습니다.
                 </p>
               ) : (
@@ -357,21 +374,18 @@ export default function CrewSettingsClient() {
                   {bans.map((ban) => (
                     <div
                       key={ban.id}
-                      className="flex items-center justify-between p-3 rounded-lg border"
+                      className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 p-3"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <UserAvatar user={ban.user} size="default" linkToProfile />
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{ban.user.name}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <TimeAgo date={ban.createdAt} />
-                            {ban.reason && (
-                              <>
-                                <span>•</span>
-                                <span className="truncate">사유: {ban.reason}</span>
-                              </>
-                            )}
-                          </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{ban.user.name}</p>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{new Date(ban.createdAt).toLocaleDateString("ko-KR")}</span>
+                          {ban.reason && (
+                            <>
+                              <span>•</span>
+                              <span className="truncate">사유: {ban.reason}</span>
+                            </>
+                          )}
                         </div>
                       </div>
                       <Button
@@ -388,8 +402,8 @@ export default function CrewSettingsClient() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </aside>
+      </div>
 
       <ConfirmDialog
         open={showDeleteDialog}

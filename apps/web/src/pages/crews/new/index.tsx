@@ -12,6 +12,8 @@ export default function NewCrewPage() {
   const handleSubmit = async (data: {
     name: string;
     description?: string;
+    profileImageUrl?: string | null;
+    coverImageUrl?: string | null;
     isPublic: boolean;
     maxMembers?: number;
     location?: string;

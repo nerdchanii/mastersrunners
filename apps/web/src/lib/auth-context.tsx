@@ -9,6 +9,14 @@ interface User {
   profileImage: string | null;
   backgroundImage: string | null;
   bio: string | null;
+  isPrivate: boolean;
+  workoutSharingDefault: "PRIVATE" | "FOLLOWERS" | "PUBLIC";
+  region: string | null;
+  subRegion: string | null;
+  pb5kSeconds: number | null;
+  pb10kSeconds: number | null;
+  pbHalfMarathonSeconds: number | null;
+  pbMarathonSeconds: number | null;
   createdAt: string;
 }
 

@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: product
-last_verified: 2026-04-01
+last_verified: 2026-04-03
 sources:
   - packages/database/prisma/schema.prisma
   - apps/api/src
@@ -19,7 +19,7 @@ sources:
 
 - `name`
 - `description`
-- `imageUrl`
+- `imageUrl` (`profile image` 역할의 대표 이미지)
 - `coverImageUrl`
 - `location`
 - `region`, `subRegion`
@@ -111,6 +111,8 @@ sources:
 ## 현재 제약
 
 - 크루 상세 화면은 멤버·활동·태그·통계·게시판·채팅을 한 route에 모은다.
+- 현재 persistence는 `imageUrl`와 `coverImageUrl`를 쓰지만, 제품 의미는 각각 `프로필 이미지`와 `커버 이미지`로 해석한다.
+- 커버 이미지가 비어 있으면 중립 배경을 쓰고, 프로필 이미지를 커버 이미지로 재사용하지 않는다.
 - 도메인 모델은 풍부하지만 UX와 코드 경계는 여전히 무겁다.
 
 ## 삭제 규칙

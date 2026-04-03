@@ -15,6 +15,7 @@ import NotFoundPage from "@/pages/not-found";
 
 // Lazy-loaded pages
 const FeedPage = lazy(() => import("@/pages/feed"));
+const IntroPage = lazy(() => import("@/pages/intro"));
 const WorkoutsPage = lazy(() => import("@/pages/workouts"));
 const NewWorkoutPage = lazy(() => import("@/pages/workouts/new"));
 const WorkoutDetailPage = lazy(() => import("@/pages/workouts/detail"));
@@ -75,6 +76,26 @@ function RootLayout() {
   );
 }
 
+function RootEntryRoute() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingPage />;
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/feed" replace />;
+  }
+
+  return (
+    <Suspense fallback={<LoadingPage />}>
+      <ErrorBoundary>
+        <IntroPage />
+      </ErrorBoundary>
+    </Suspense>
+  );
+}
+
 function MainLayout() {
   return (
     <div className="min-h-screen bg-background">
@@ -110,8 +131,8 @@ export const router = createBrowserRouter([
       </ErrorBoundary>
     ),
     children: [
-      // Root redirect
-      { path: "/", element: <Navigate to="/feed" replace /> },
+      // Root intro
+      { path: "/", element: <RootEntryRoute /> },
 
       // Auth layout
       {

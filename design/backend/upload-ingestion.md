@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-03-31
+last_verified: 2026-04-03
 sources:
   - apps/api/src/uploads/uploads.module.ts
   - apps/api/src/uploads/uploads.service.ts
@@ -79,3 +79,11 @@ Parser normalization details:
 
 - The upload boundary is shared, but the parse-and-create ingestion pipeline is still workout-specific rather than a generic asset-processing platform.
 - Public URL generation happens inside the adapter boundary, so downstream services should not build storage URLs manually.
+
+## Current Non-Goals
+
+- Post video upload is explicitly out of scope for the current web composer surface.
+- The current upload boundary should not imply support for video encoding, thumbnail extraction, streaming delivery, or moderation workflows.
+- Until a separate task defines video ingestion, playback, and lifecycle policy, the post composer should continue to promise image uploads only.
+- The current workout attachment/detail batch only consumes the safe summary fields already guaranteed by workout records: workout type, distance, duration, average pace, and workout date.
+- Route maps, elevation charts, lap tables, and other file-derived workout visuals remain out of scope for this batch until a later data-availability checkpoint.

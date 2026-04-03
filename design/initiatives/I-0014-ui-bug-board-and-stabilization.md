@@ -113,13 +113,13 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 
 ### Product Checkpoint Required
 
-- `tasks/todo/I-0014-070-web-auth-funnel-and-runner-identity-fields.md`
-- `tasks/todo/I-0014-110-web-service-intro-and-first-visit-orientation.md`
-- `tasks/todo/I-0014-120-web-empty-feed-explore-modules-and-recommendation-slots.md`
-- `tasks/todo/I-0014-150-web-crew-brand-media-fields.md`
-- `tasks/todo/I-0014-160-web-crew-detail-tab-hierarchy-cleanup.md`
-- `tasks/todo/I-0014-200-web-workout-attachment-deeplink-and-visuals.md`
-- `tasks/todo/I-0014-210-docs-post-video-upload-scope.md`
+- `tasks/archive/I-0014-070-web-auth-funnel-and-runner-identity-fields.md`
+- `tasks/archive/I-0014-110-web-service-intro-and-first-visit-orientation.md`
+- `tasks/archive/I-0014-120-web-empty-feed-explore-modules-and-recommendation-slots.md`
+- `tasks/archive/I-0014-150-web-crew-brand-media-fields.md`
+- `tasks/archive/I-0014-160-web-crew-detail-tab-hierarchy-cleanup.md`
+- `tasks/archive/I-0014-200-web-workout-attachment-deeplink-and-visuals.md`
+- `tasks/archive/I-0014-210-docs-post-video-upload-scope.md`
 - `tasks/archive/I-0014-230-web-feedback-backoffice-access-boundary.md`
 - `tasks/archive/I-0014-260-web-feedback-ops-inbox-and-triage.md`
 - `tasks/archive/I-0014-270-web-feedback-ops-handoff-actions.md`

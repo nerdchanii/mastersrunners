@@ -1,13 +1,13 @@
-import { Lock, LogOut, Settings, Share2, UserPlus, Users } from "lucide-react";
+import { LogOut, Settings, Share2, UserPlus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { TimeAgo } from "@/components/common/TimeAgo";
 import CrewActivityList from "@/components/crew/CrewActivityList";
 import CrewAttendanceStats from "@/components/crew/CrewAttendanceStats";
 import CrewBoardList from "@/components/crew/CrewBoardList";
+import CrewIdentityHero from "@/components/crew/CrewIdentityHero";
 import CrewMemberList from "@/components/crew/CrewMemberList";
 import CrewPostList from "@/components/crew/CrewPostList";
 import CrewTagManager from "@/components/crew/CrewTagManager";
@@ -43,6 +43,8 @@ interface CrewDetail {
   name: string;
   description: string | null;
   imageUrl: string | null;
+  profileImageUrl?: string | null;
+  coverImageUrl?: string | null;
   isPublic: boolean;
   maxMembers: number | null;
   createdAt: string;
@@ -70,7 +72,7 @@ export default function CrewDetailClient() {
   const [isJoining, setIsJoining] = useState(false);
   const [isSharingInvite, setIsSharingInvite] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState("members");
+  const [activeTab, setActiveTab] = useState("activities");
   const { data: chatData, isLoading: chatLoading } = useCrewChat(crewId);
 
   const fetchCrew = useCallback(async () => {
@@ -194,9 +196,11 @@ export default function CrewDetailClient() {
   }
 
   const activeMembers = crew.members.filter((m) => m.status === "ACTIVE");
+  const heroProfileImage = crew.profileImageUrl ?? crew.imageUrl ?? null;
+  const heroCoverImage = crew.coverImageUrl ?? null;
 
   return (
-    <div className="container max-w-4xl mx-auto py-6 space-y-6">
+    <div className="container mx-auto max-w-6xl space-y-6 px-4 py-6">
       {isInviteEntry && !isMember && (
         <section className="rounded-3xl border border-primary/20 bg-primary/5 px-5 py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -222,156 +226,210 @@ export default function CrewDetailClient() {
         </section>
       )}
 
-      {/* Crew Header */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4 mb-4">
-            <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              {crew.imageUrl ? (
-                <img
-                  src={crew.imageUrl}
-                  alt={crew.name}
-                  className="w-16 h-16 rounded-lg object-cover"
-                />
-              ) : (
-                <Users className="w-8 h-8 text-primary" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-2xl font-bold truncate">{crew.name}</h1>
-                {!crew.isPublic && <Lock className="w-5 h-5 text-muted-foreground" />}
-              </div>
-              <p className="text-sm text-muted-foreground">만든이: {crew.creator.name}</p>
-              <div className="flex items-center gap-3 mt-2">
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>
-                    {crew._count.members}명{crew.maxMembers && ` / ${crew.maxMembers}명`}
-                  </span>
+      <CrewIdentityHero
+        eyebrow="크루 허브"
+        name={crew.name}
+        description={crew.description}
+        creatorName={crew.creator.name}
+        createdAt={crew.createdAt}
+        memberCount={crew._count.members}
+        maxMembers={crew.maxMembers}
+        isPublic={crew.isPublic}
+        profileImageUrl={heroProfileImage}
+        coverImageUrl={heroCoverImage}
+        actions={
+          <>
+            {canJoinCrew && (
+              <Button onClick={handleJoin} disabled={isJoining}>
+                <UserPlus className="size-4 mr-2" />
+                {isJoining ? "가입 중..." : "크루 가입"}
+              </Button>
+            )}
+
+            {isMember && currentUserRole !== "OWNER" && (
+              <Button variant="destructive" onClick={() => setShowLeaveDialog(true)}>
+                <LogOut className="size-4 mr-2" />
+                크루 탈퇴
+              </Button>
+            )}
+
+            {isOwnerOrAdmin && (
+              <>
+                <Button variant="outline" onClick={handleShareInvite} disabled={isSharingInvite}>
+                  <Share2 className="mr-2 size-4" />
+                  {isSharingInvite ? "공유 준비 중..." : "초대 링크"}
+                </Button>
+                <Button variant="outline" onClick={() => navigate(`/crews/${crewId}/settings`)}>
+                  <Settings className="size-4 mr-2" />
+                  설정
+                </Button>
+              </>
+            )}
+          </>
+        }
+      />
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-6">
+          <Card className="overflow-hidden border-border/60">
+            <CardContent className="p-0">
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <div className="border-b border-border/60 px-4 pt-4 sm:px-6">
+                  <TabsList className="grid h-11 w-full grid-cols-3 bg-muted/60">
+                    <TabsTrigger value="activities">활동</TabsTrigger>
+                    <TabsTrigger value="chat" disabled={!isMember}>
+                      채팅
+                    </TabsTrigger>
+                    <TabsTrigger value="board">게시판</TabsTrigger>
+                  </TabsList>
                 </div>
-                <Badge variant={crew.isPublic ? "default" : "secondary"}>
-                  {crew.isPublic ? "공개" : "비공개"}
-                </Badge>
-              </div>
-            </div>
-          </div>
 
-          {crew.description && (
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-4">
-              {crew.description}
-            </p>
-          )}
+                <div className="p-4 sm:p-6">
+                  <TabsContent value="activities" className="mt-0">
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <h2 className="text-lg font-semibold">활동</h2>
+                        <p className="text-sm text-muted-foreground">
+                          일정과 참석 현황을 가장 먼저 확인하는 영역입니다.
+                        </p>
+                      </div>
+                      <CrewActivityList
+                        crewId={crewId}
+                        isAdmin={isOwnerOrAdmin}
+                        isMember={isMember}
+                      />
+                    </div>
+                  </TabsContent>
 
-          <div className="flex items-center justify-between">
-            <TimeAgo date={crew.createdAt} />
+                  <TabsContent value="chat" className="mt-0">
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <h2 className="text-lg font-semibold">채팅</h2>
+                        <p className="text-sm text-muted-foreground">
+                          멤버 전용 대화를 간단하게 확인하고 이어갈 수 있습니다.
+                        </p>
+                      </div>
+                      {isMember ? (
+                        <GroupChat
+                          data={chatData}
+                          isLoading={chatLoading}
+                          crewId={crewId}
+                          title={`${crew.name} 크루 채팅`}
+                          subtitle="멤버 전용 대화 공간"
+                          emptyMessage={`${crew.name} 크루에 첫 메시지를 남겨보세요.`}
+                          missingConversationMessage="크루 채팅방이 아직 준비되지 않았습니다."
+                          composerPlaceholder={`${crew.name} 크루에 메시지 보내기`}
+                        />
+                      ) : (
+                        <Card>
+                          <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                            멤버만 채팅에 참여할 수 있습니다.
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </TabsContent>
 
-            <div className="flex items-center gap-2">
-              {canJoinCrew && (
-                <Button onClick={handleJoin} disabled={isJoining}>
-                  <UserPlus className="size-4 mr-2" />
-                  {isJoining ? "가입 중..." : "크루 가입"}
-                </Button>
-              )}
+                  <TabsContent value="board" className="mt-0">
+                    <div className="space-y-6">
+                      <section className="space-y-3">
+                        <div className="space-y-1">
+                          <h2 className="text-lg font-semibold">게시판</h2>
+                          <p className="text-sm text-muted-foreground">
+                            공지와 자유글은 게시판에서 더 깊게 확인할 수 있습니다.
+                          </p>
+                        </div>
+                        <CrewBoardList
+                          crewId={crewId}
+                          isMember={isMember}
+                          isAdmin={isOwnerOrAdmin}
+                        />
+                      </section>
 
-              {isMember && currentUserRole !== "OWNER" && (
-                <Button variant="destructive" onClick={() => setShowLeaveDialog(true)}>
-                  <LogOut className="size-4 mr-2" />
-                  크루 탈퇴
-                </Button>
-              )}
-
-              {isOwnerOrAdmin && (
-                <>
-                  <Button variant="outline" onClick={handleShareInvite} disabled={isSharingInvite}>
-                    <Share2 className="mr-2 size-4" />
-                    {isSharingInvite ? "공유 준비 중..." : "초대 링크"}
-                  </Button>
-                  <Button variant="outline" onClick={() => navigate(`/crews/${crewId}/settings`)}>
-                    <Settings className="size-4 mr-2" />
-                    설정
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="members">멤버</TabsTrigger>
-          <TabsTrigger value="activities">활동</TabsTrigger>
-          <TabsTrigger value="tags">태그</TabsTrigger>
-          <TabsTrigger value="stats">통계</TabsTrigger>
-          <TabsTrigger value="boards">게시판</TabsTrigger>
-          <TabsTrigger value="posts">게시물</TabsTrigger>
-          {isMember && <TabsTrigger value="chat">채팅</TabsTrigger>}
-          {isOwnerOrAdmin && <TabsTrigger value="pending">대기 멤버</TabsTrigger>}
-        </TabsList>
-
-        <TabsContent value="members" className="mt-6">
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="text-lg font-semibold mb-4">멤버 ({activeMembers.length}명)</h2>
-              <CrewMemberList
-                crewId={crewId}
-                members={activeMembers}
-                currentUserId={user?.id}
-                currentUserRole={currentUserRole}
-                onUpdate={fetchCrew}
-              />
+                      <section className="space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-4">
+                        <div className="space-y-1">
+                          <h2 className="text-base font-semibold">크루 소식</h2>
+                          <p className="text-sm text-muted-foreground">
+                            짧은 공유 글은 게시판 아래의 보조 흐름으로 이어집니다.
+                          </p>
+                        </div>
+                        <CrewPostList crewId={crewId} isOwner={currentUserRole === "OWNER"} />
+                      </section>
+                    </div>
+                  </TabsContent>
+                </div>
+              </Tabs>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="activities" className="mt-6">
-          <CrewActivityList crewId={crewId} isAdmin={isOwnerOrAdmin} isMember={isMember} />
-        </TabsContent>
+        <aside className="space-y-6">
+          <Card className="border-border/60">
+            <CardContent className="p-5">
+              <div className="space-y-1.5">
+                <h2 className="text-base font-semibold">멤버</h2>
+                <p className="text-sm text-muted-foreground">
+                  현재 함께 달리는 사람들을 빠르게 훑어볼 수 있습니다.
+                </p>
+              </div>
+              <div className="mt-4">
+                <CrewMemberList
+                  crewId={crewId}
+                  members={activeMembers}
+                  currentUserId={user?.id}
+                  currentUserRole={currentUserRole}
+                  onUpdate={fetchCrew}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-        <TabsContent value="tags" className="mt-6">
-          <CrewTagManager crewId={crewId} isAdmin={isOwnerOrAdmin} members={activeMembers} />
-        </TabsContent>
-
-        <TabsContent value="stats" className="mt-6">
-          <CrewAttendanceStats crewId={crewId} />
-        </TabsContent>
-
-        <TabsContent value="boards" className="mt-6">
-          <CrewBoardList crewId={crewId} isMember={isMember} isAdmin={isOwnerOrAdmin} />
-        </TabsContent>
-
-        <TabsContent value="posts" className="mt-6">
-          <CrewPostList crewId={crewId} isOwner={currentUserRole === "OWNER"} />
-        </TabsContent>
-
-        {isMember && (
-          <TabsContent value="chat" className="mt-6">
-            <GroupChat
-              data={chatData}
-              isLoading={chatLoading}
-              crewId={crewId}
-              title={`${crew.name} 크루 채팅`}
-              subtitle="멤버 전용 대화 공간"
-              emptyMessage={`${crew.name} 크루에 첫 메시지를 남겨보세요.`}
-              missingConversationMessage="크루 채팅방이 아직 준비되지 않았습니다."
-              composerPlaceholder={`${crew.name} 크루에 메시지 보내기`}
-            />
-          </TabsContent>
-        )}
-
-        {isOwnerOrAdmin && (
-          <TabsContent value="pending" className="mt-6">
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-lg font-semibold mb-4">대기 멤버</h2>
-                <PendingMemberList crewId={crewId} onUpdate={fetchCrew} />
+          {isOwnerOrAdmin && (
+            <Card className="border-border/60">
+              <CardContent className="p-5">
+                <div className="space-y-1.5">
+                  <h2 className="text-base font-semibold">운영 현황</h2>
+                  <p className="text-sm text-muted-foreground">
+                    출석률과 최근 활동 흐름을 한 번에 확인합니다.
+                  </p>
+                </div>
+                <div className="mt-4">
+                  <CrewAttendanceStats crewId={crewId} />
+                </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        )}
-      </Tabs>
+          )}
+
+          {isOwnerOrAdmin && (
+            <Card className="border-amber-200 bg-amber-50/50">
+              <CardContent className="p-5">
+                <div className="space-y-1.5">
+                  <h2 className="text-base font-semibold text-foreground">운영 도구</h2>
+                  <p className="text-sm text-muted-foreground">
+                    태그와 가입 대기는 멤버 화면과 구분된 별도 영역에서 다룹니다.
+                  </p>
+                </div>
+                <div className="mt-5 space-y-6">
+                  <CrewTagManager
+                    crewId={crewId}
+                    isAdmin={isOwnerOrAdmin}
+                    members={activeMembers}
+                  />
+                  <div className="rounded-2xl border border-border/60 bg-background p-4">
+                    <div className="mb-3 space-y-1">
+                      <h3 className="text-sm font-semibold">대기 멤버</h3>
+                      <p className="text-xs text-muted-foreground">
+                        가입 요청은 운영자가 따로 확인하고 승인합니다.
+                      </p>
+                    </div>
+                    <PendingMemberList crewId={crewId} onUpdate={fetchCrew} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </aside>
+      </div>
 
       {/* Leave Confirmation Dialog */}
       <ConfirmDialog

@@ -81,6 +81,10 @@ model User {
   workoutSharingDefault String    @default("FOLLOWERS") // PRIVATE, FOLLOWERS, PUBLIC
   region                String?
   subRegion             String?
+  pb5kSeconds           Int?
+  pb10kSeconds          Int?
+  pbHalfMarathonSeconds Int?
+  pbMarathonSeconds     Int?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   deletedAt             DateTime? // soft delete (탈퇴)

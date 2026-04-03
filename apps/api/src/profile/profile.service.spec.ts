@@ -273,6 +273,48 @@ describe("ProfileService", () => {
       expect(mockUserRepo.update).toHaveBeenCalledWith(userId, dto);
       expect(result).toEqual(updatedUser);
     });
+
+    it("should update runner identity fields", async () => {
+      const userId = "u1";
+      const dto = {
+        region: "서울특별시",
+        subRegion: "마포구",
+        pb5kSeconds: 1320,
+        pb10kSeconds: 2815,
+        pbHalfMarathonSeconds: 6120,
+        pbMarathonSeconds: 13620,
+      };
+      const updatedUser = { id: userId, ...dto };
+
+      mockUserRepo.findById.mockResolvedValue({ id: userId });
+      mockUserRepo.update.mockResolvedValue(updatedUser);
+
+      const result = await service.updateProfile(userId, dto);
+
+      expect(mockUserRepo.update).toHaveBeenCalledWith(userId, dto);
+      expect(result).toEqual(updatedUser);
+    });
+
+    it("should allow clearing runner identity fields back to null", async () => {
+      const userId = "u1";
+      const dto = {
+        region: null,
+        subRegion: null,
+        pb5kSeconds: null,
+        pb10kSeconds: null,
+        pbHalfMarathonSeconds: null,
+        pbMarathonSeconds: null,
+      };
+      const updatedUser = { id: userId, ...dto };
+
+      mockUserRepo.findById.mockResolvedValue({ id: userId });
+      mockUserRepo.update.mockResolvedValue(updatedUser);
+
+      const result = await service.updateProfile(userId, dto);
+
+      expect(mockUserRepo.update).toHaveBeenCalledWith(userId, dto);
+      expect(result).toEqual(updatedUser);
+    });
   });
 
   describe("searchUsers", () => {

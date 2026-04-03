@@ -31,7 +31,7 @@ test.describe("워크아웃 상세 페이지", () => {
   });
 
   test("기본 정보가 표시된다 (거리, 시간, 페이스)", async ({ page }) => {
-    await page.goto(`/workouts/detail?id=${mockWorkoutDetail.id}`);
+    await page.goto(`/workouts/${mockWorkoutDetail.id}`);
 
     // 거리: "10.50 km" (StatItem)
     await expect(page.getByText(/10\.50.*km/)).toBeVisible();
@@ -44,54 +44,22 @@ test.describe("워크아웃 상세 페이지", () => {
   });
 
   test("워크아웃 타입과 신발 정보가 표시된다", async ({ page }) => {
-    await page.goto(`/workouts/detail?id=${mockWorkoutDetail.id}`);
+    await page.goto(`/workouts/${mockWorkoutDetail.id}`);
 
-    await expect(page.getByText("달리기")).toBeVisible();
+    await expect(page.getByText("달리기").first()).toBeVisible();
     await expect(page.getByText(/Nike.*Vaporfly 3/)).toBeVisible();
   });
 
-  test("GPS 경로 지도가 표시된다", async ({ page }) => {
-    await page.goto(`/workouts/detail?id=${mockWorkoutDetail.id}`);
+  test("파일 기반 시각화는 이번 라운드에서 노출하지 않는다", async ({ page }) => {
+    await page.goto(`/workouts/${mockWorkoutDetail.id}`);
 
-    // Leaflet map container
-    const mapContainer = page.locator(".leaflet-container");
-    await expect(mapContainer).toBeVisible();
-  });
-
-  test("고도 차트가 표시된다", async ({ page }) => {
-    await page.goto(`/workouts/detail?id=${mockWorkoutDetail.id}`);
-
-    // CardTitle with Mountain icon + "고도"
-    const elevationCard = page.locator("text=고도").first();
-    await expect(elevationCard).toBeVisible();
-  });
-
-  test("심박수 차트가 표시된다", async ({ page }) => {
-    await page.goto(`/workouts/detail?id=${mockWorkoutDetail.id}`);
-
-    await expect(page.getByText("심박수").first()).toBeVisible();
-  });
-
-  test("메트릭 카드가 표시된다 (칼로리, 고도, 심박수, 케이던스)", async ({ page }) => {
-    await page.goto(`/workouts/detail?id=${mockWorkoutDetail.id}`);
-
-    // 칼로리
-    await expect(page.getByText("680")).toBeVisible();
-
-    // 고도상승
-    await expect(page.getByText("125")).toBeVisible();
-  });
-
-  test("랩 테이블이 표시된다", async ({ page }) => {
-    await page.goto(`/workouts/detail?id=${mockWorkoutDetail.id}`);
-
-    // 랩 수 확인 (5개 랩)
-    const lapRows = page.locator("table tbody tr");
-    await expect(lapRows).toHaveCount(5);
+    await expect(page.locator(".leaflet-container")).toHaveCount(0);
+    await expect(page.locator("table")).toHaveCount(0);
+    await expect(page.getByText(/안전하게 보장되는 요약|거리와 시간처럼/)).toBeVisible();
   });
 
   test("소스 파일 정보가 표시된다 (FIT 배지)", async ({ page }) => {
-    await page.goto(`/workouts/detail?id=${mockWorkoutDetail.id}`);
+    await page.goto(`/workouts/${mockWorkoutDetail.id}`);
 
     // FIT badge (exact match to avoid matching 'morning_run.fit')
     await expect(page.getByText("FIT", { exact: true })).toBeVisible();
@@ -100,20 +68,30 @@ test.describe("워크아웃 상세 페이지", () => {
   });
 
   test("메모가 표시된다", async ({ page }) => {
-    await page.goto(`/workouts/detail?id=${mockWorkoutDetail.id}`);
+    await page.goto(`/workouts/${mockWorkoutDetail.id}`);
 
     await expect(page.getByText(mockWorkoutDetail.memo!)).toBeVisible();
   });
 
   test("소유자에게 삭제 버튼이 표시된다", async ({ page }) => {
-    await page.goto(`/workouts/detail?id=${mockWorkoutDetail.id}`);
+    await page.goto(`/workouts/${mockWorkoutDetail.id}`);
 
     await expect(page.getByRole("button", { name: /삭제/ })).toBeVisible();
   });
 
-  test("워크아웃 ID가 없으면 안내 메시지가 표시된다", async ({ page }) => {
-    await page.goto("/workouts/detail");
+  test("존재하지 않는 워크아웃이면 오류가 표시된다", async ({ page }) => {
+    await page.route(`${API_BASE}/workouts/missing-workout`, (route) => {
+      route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "Workout not found" }),
+      });
+    });
 
-    await expect(page.getByText("워크아웃 ID가 필요합니다")).toBeVisible();
+    await page.goto("/workouts/missing-workout");
+
+    await expect(
+      page.getByText(/워크아웃을 불러오는데 실패했습니다|Workout not found/),
+    ).toBeVisible();
   });
 });

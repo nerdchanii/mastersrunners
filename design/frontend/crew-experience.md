@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: frontend
-last_verified: 2026-04-01
+last_verified: 2026-04-03
 sources:
   - apps/web/src/pages/crews/index.tsx
   - apps/web/src/pages/crews/new/index.tsx
@@ -13,6 +13,7 @@ sources:
   - apps/web/src/pages/messages/index.tsx
   - apps/web/src/components/crew/CrewActivityList.tsx
   - apps/web/src/components/crew/CrewBoardList.tsx
+  - apps/web/src/components/crew/CrewIdentityHero.tsx
   - apps/web/src/components/crew/CrewMemberList.tsx
   - apps/web/src/components/crew/GroupChat.tsx
   - apps/web/src/hooks/useCrewActivities.ts
@@ -25,7 +26,7 @@ sources:
 
 ## Summary
 
-Crew UX combines discovery, membership management, discussion, activity scheduling, attendance, and chat. The detail route is the operational hub and still owns part of its fetch/mutation orchestration locally.
+Crew UX combines discovery, membership management, discussion, activity scheduling, attendance, and chat. The detail route is the operational hub, but the page now uses a clearer primary/secondary hierarchy so members can scan it without being overwhelmed by tabs.
 
 ## Route Model
 
@@ -40,30 +41,36 @@ Crew UX combines discovery, membership management, discussion, activity scheduli
 
 ## Crew Hub Composition
 
-The crew detail page currently assembles:
+The crew detail page now assembles a layered workspace instead of a flat tab bar:
 
-- crew header and membership actions
-- member and pending-member management
-- tag management
-- board/posts surfaces
-- attendance stats
-- activity list and creation entry point
-- crew chat
+- a hero area that treats crew profile image and cover image as separate roles, without reusing one slot as the other's fallback
+- three primary tabs only: 활동, 채팅, 게시판
+- a secondary member panel that keeps the roster visible without competing with the primary content
+- separate operator panels for attendance stats, tags, and pending members
+- invite entrants who land on `/crews/:id?invite=1` still see the lightweight shared-invite explainer above the hero until they join or their request becomes pending
 
-Membership state determines which tabs and controls are visible:
+Membership state now determines the primary affordances instead of the entire page structure:
 
 - non-members can request or join
-- active members can view internal tabs
-- owners/admins see moderation, settings, and attendance-management controls
-- invite entrants who land on `/crews/:id?invite=1` should see a lightweight shared-invite explainer above the crew header until they join or their request becomes pending
+- active members can use the chat tab
+- owners/admins see invite, moderation, stats, and settings actions
+- admin/operator tools are visually separated from member-facing surfaces so scanning the page does not feel like opening a control panel first
+
+Primary tab order is fixed to support fast scanning:
+
+1. 활동
+2. 채팅
+3. 게시판
 
 ### Settings Shell
 
-- `/crews/:id/settings` keeps basic-info editing in a single flat panel instead of nesting a generic form card inside another page card.
-- simple text inputs rely on placeholders and supporting copy where that reduces noise without hiding intent.
-- destructive owner actions remain visually separated, but they are no longer wrapped in the same card style as routine editing.
-- owner/admin surfaces now expose a dedicated invite-link share action in both the crew hub and settings so operators do not have to copy crew URLs manually
-- the current invite URL contract is `/crews/:id?invite=1`; when an unauthenticated user opens it, the login flow should preserve that destination and return the user to the same invite entry after authentication
+- `/crews/:id/settings` now uses the same profile/cover framing as the detail hero so the crew identity feels consistent across read and edit modes.
+- the routine edit form stays in the left/main column, while member management, pending approvals, and bans move into separate operational cards.
+- operators can edit profile-image URL and cover-image URL directly from the same settings form, with live previews for each slot.
+- simple text inputs still rely on placeholders and supporting copy where that reduces noise without hiding intent.
+- destructive owner actions remain visually separated from the routine edit form.
+- owner/admin surfaces expose a dedicated invite-link share action in both the crew hub and settings so operators do not have to copy crew URLs manually.
+- the current invite URL contract is `/crews/:id?invite=1`; when an unauthenticated user opens it, the login flow should preserve that destination and return the user to the same invite entry after authentication.
 
 ## Activity Model in the UI
 
@@ -102,6 +109,6 @@ Current attendance entry points are intentionally split:
 ## Current Constraints
 
 - `/crews/:id` still performs direct page-level fetches instead of a dedicated hook/query owner
-- crew hub scope is broad and spans social, admin, and activity flows in one route tree
+- crew hub scope is still broad, but the page is now split into a primary three-tab surface plus secondary operational zones
 - membership approval, tag management, and activity operations are implemented, but their state is not yet normalized through one shared crew query layer
 - group chat still polls every 10 seconds, so scroll behavior must protect users who are reading older messages during refreshes

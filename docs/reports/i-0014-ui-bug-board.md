@@ -95,13 +95,14 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
 
 - Type: `product gap`
 - Surface:
+  - `apps/web/src/pages/intro/index.tsx`
   - `apps/web/src/pages/login/index.tsx`
   - `apps/web/src/pages/onboarding/index.tsx`
   - `docs/domain/user-profile.md`
 - Current repo evidence:
-  - Logged-out entry is effectively a login surface.
-  - Onboarding collects `name`, `bio`, `isPrivate`, and workout interests only.
-  - `docs/domain/user-profile.md` explicitly excludes PB, running history, and goals from current truth.
+  - Logged-out entry now splits into a public intro route and a login-only handoff.
+  - Onboarding now collects `name`, `bio`, `region`, `subRegion`, optional PB 4종, and `isPrivate`.
+  - `docs/domain/user-profile.md` now treats PB and region fields as current truth.
 - User intake:
   - 회원가입/로그인 동작 차이는 이해하지만, 가입 전후 퍼널에서 더 많은 러너 정보 입력이 필요하다.
   - 10K, 하프, 풀 PB 같은 핵심 프로필 필드를 고려했었는데 현재 반영이 없다.
@@ -109,7 +110,7 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
   - Logged-out flow should explain the join funnel clearly.
   - Onboarding should capture the minimum runner identity fields needed for the intended product.
 - Actual:
-  - Current onboarding is intentionally shallow and does not model PB or running-profile metadata.
+  - The minimum runner-identity surface now exists, and the remaining risk is keeping edit/clear behavior and regression coverage aligned with that truth.
 - Repro steps:
   1. Log out and open the auth flow.
   2. Complete onboarding.
@@ -117,7 +118,7 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
 - Severity: `P1`
 - Frequency: `always`
 - Coverage status:
-  - No focused onboarding/browser regression coverage found for the missing runner-profile fields.
+  - No focused onboarding/browser regression coverage yet locks down the new PB/region/privacy flow.
 - Candidate fix pack: `auth-funnel-and-runner-profile-model`
 - Notes:
   - Do not rewrite domain docs to claim PB fields exist before implementation lands.
@@ -197,15 +198,15 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
   - logged-out/public entry surfaces
   - login and onboarding entry points
 - Current repo evidence:
-  - There is no dedicated service-intro or landing surface in the main current-state routes.
-  - The logged-out shell focuses on login rather than product explanation.
+  - `/` now renders a dedicated service-intro surface.
+  - `/login` remains a login-only shell, and logged-in `/` redirects to `/feed`.
 - User intake:
   - 서비스를 소개하는 페이지가 너무 없다.
   - Driver.js를 붙일 수도 있겠지만, 그 전에 서비스 소개가 먼저다.
 - Expected:
   - A new visitor should understand what the service is, why they should sign up, and where to begin.
 - Actual:
-  - The current unauthenticated experience is mostly utilitarian.
+  - The core intro surface now exists; guided product education such as Driver.js remains intentionally deferred.
 - Repro steps:
   1. Log out.
   2. Enter the app fresh.
@@ -213,7 +214,7 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
 - Severity: `P2`
 - Frequency: `always`
 - Coverage status:
-  - No focused coverage; there is no dedicated intro surface yet.
+  - No focused intro/browser regression coverage yet locks down the new entry contract.
 - Candidate fix pack: `service-intro-and-orientation`
 - Notes:
   - Driver.js should stay behind this work, not ahead of it.
@@ -225,15 +226,15 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
   - `apps/web/src/pages/feed/index.tsx`
   - `apps/web/src/components/feed/FeedSidebar.tsx`
 - Current repo evidence:
-  - Empty feed only says followed runners’ records appear there.
-  - There is no recommendation slot, follow-suggestion module, or fallback exploration module in the main mobile feed.
+  - Empty feed now opens recommendation-ready modules for runners, crews, events, and challenges.
+  - The feed distinguishes “empty feed” from “empty current tab” so one quiet tab does not masquerade as a dead-end home state.
 - User intake:
   - 추천 알고리즘을 붙일 준비가 필요하다.
   - 모바일 홈에 게시글이 없을 때 추천 기반 콘텐츠나 팔로우 탐색 유도가 필요하다.
 - Expected:
   - New or cold-start users should get an actionable home state that can later host recommendation logic.
 - Actual:
-  - The empty feed is a dead end.
+  - The empty feed is now exploration-first, while the recommendation algorithm itself is still intentionally lightweight.
 - Repro steps:
   1. Use a user with no follows or no available feed items.
   2. Open `/feed`.
@@ -301,21 +302,20 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
   - `apps/web/src/components/crew/CrewForm.tsx`
   - crew detail tabs and crew side surfaces
 - Current repo evidence:
-  - No invite-by-URL/share flow was found.
-  - Crew settings currently renders card shells around a `CrewForm` that also renders its own `Card`.
-  - Forms lean heavily on labels and required asterisks.
-  - Current crew form does not expose crew profile/banner image fields.
+  - Invite-by-URL/share flow now exists in both crew detail and settings.
+  - Crew detail primary order is now `활동 -> 채팅 -> 게시판`, with operator tools visually separated.
+  - Crew settings now uses flatter form shells and exposes separate profile-image and cover-image URL fields with live previews.
 - User intake:
   - 크루 URL로 초대할 수 있으면 좋겠다.
   - 크루 설정 > 기본정보의 카드 안 카드 UI는 정리해야 한다.
   - 라벨과 `*` 표시는 줄여도 된다.
-  - 크루 프로필 사진과 썸네일도 등록할 수 있어야 한다.
+  - 크루 프로필 사진과 커버 이미지를 등록할 수 있어야 한다.
   - 크루 상세 탭의 위계와 시각 구성을 전반적으로 손봐야 한다.
 - Expected:
   - Crew management should feel flatter, clearer, and easier to scan.
   - Invite/share, media, and IA hierarchy should match community-management priorities.
 - Actual:
-  - Settings and detail surfaces are dense, card-heavy, and missing invite/media affordances.
+  - Invite/share and IA hierarchy are substantially cleaner; the remaining long-term gap is richer media upload workflow beyond the current URL-entry contract.
 - Repro steps:
   1. Open a crew detail page.
   2. Open crew settings as owner/admin.
@@ -390,7 +390,7 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
   - No focused Playwright coverage found for the post-composer funnel.
 - Candidate fix pack: `post-composer-mobile-funnel`
 - Notes:
-  - Video support is not confirmed yet and should be scoped against the upload boundary before promise or UI work.
+  - Video support is intentionally out of scope in the current round and should not be implied by composer UI or copy.
   - Seeded task split: `I-0014-100`, `I-0014-180`, `I-0014-190`, and `I-0014-210`.
 
 ### UI-011 Workout Attachment, GPX/FIT Visualization, and Deep-Linking
@@ -403,18 +403,18 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
   - `design/backend/upload-ingestion.md`
   - `design/frontend/workout-experience.md`
 - Current repo evidence:
-  - Workout detail already supports route map, elevation, heart rate, laps, source info, and share-card generation.
-  - Post detail still renders attached workouts as isolated stat boxes and does not deep-link those boxes to the workout route.
+  - Workout detail deep-link exists, but file-derived visuals are intentionally being scoped down for the current batch.
+  - Post detail now renders attached workouts as summary cards that deep-link into `/workouts/:id`.
   - Upload preview already shows some parsed metrics, but GPX/FIT availability differs by parser and file content.
 - User intake:
   - 첨부된 운동기록 카드가 해당 워크아웃으로 연결되지 않는다.
   - 지도/거리/시간/심박/칼로리/훈련부하 같은 richer visual system이 필요하다.
   - GPX와 FIT는 데이터가 다르니 같이 검증해야 하며, 이 확인이 필요하다는 기록도 남겨달라.
 - Expected:
-  - Attached workouts should be navigable and visually richer wherever data exists.
-  - Data-driven metric choices must be validated against real GPX/FIT samples before implementation.
+  - Attached workouts should deep-link cleanly into workout detail.
+  - The current batch should stop at safe summary metrics until GPX/FIT sample review reopens richer visuals.
 - Actual:
-  - Detail richness exists on `/workouts/:id`, but not on attached-workout surfaces.
+  - Attached workouts now deep-link, and the active repo decision is to keep the linked detail surface inside a safe-summary contract.
 - Repro steps:
   1. Open a post with attached workouts.
   2. Inspect the attached workout module.
@@ -627,7 +627,7 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
 - `I-0014-160`
   - covers the hierarchy part of `UI-008`
 - `I-0014-200`
-  - covers `UI-011` workout attachment deeplinks and richer visuals
+  - covers `UI-011` workout attachment deeplinks and safe-summary detail
 - `I-0014-210`
   - covers the unresolved video-support question inside `UI-010`
 

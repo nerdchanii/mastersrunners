@@ -13,7 +13,7 @@ test.describe("파일 업로드 → 워크아웃 생성 E2E", () => {
     expect(res.ok()).toBeTruthy();
   });
 
-  test("FIT 파일 업로드 → 생성 → 상세 페이지에서 지도 표시", async ({ page }) => {
+  test("FIT 파일 업로드 → 생성 → 상세 페이지에서 안전한 요약 표시", async ({ page }) => {
     await page.goto("/workouts/new");
     const fileSelectBtn = page.getByRole("button", { name: "파일 선택" });
     await expect(fileSelectBtn).toBeVisible();
@@ -33,16 +33,14 @@ test.describe("파일 업로드 → 워크아웃 생성 E2E", () => {
     expect(latestWorkout).toBeTruthy();
 
     // Navigate to workout detail page
-    await page.goto(`/workouts/detail?id=${latestWorkout.id}`);
+    await page.goto(`/workouts/${latestWorkout.id}`);
 
-    // Verify route map is displayed (Leaflet map container)
-    await expect(page.locator(".leaflet-container")).toBeVisible({ timeout: 15000 });
-
-    // Verify "경로" card header
-    await expect(page.getByText("경로")).toBeVisible();
+    await expect(page.getByText("거리")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("시간")).toBeVisible();
+    await expect(page.locator(".leaflet-container")).toHaveCount(0);
   });
 
-  test("GPX 파일 업로드 → 생성 → 상세 페이지에서 지도 표시", async ({ page }) => {
+  test("GPX 파일 업로드 → 생성 → 상세 페이지에서 안전한 요약 표시", async ({ page }) => {
     await page.goto("/workouts/new");
     const fileSelectBtn = page.getByRole("button", { name: "파일 선택" });
     await expect(fileSelectBtn).toBeVisible();
@@ -61,10 +59,10 @@ test.describe("파일 업로드 → 워크아웃 생성 E2E", () => {
     expect(latestWorkout).toBeTruthy();
 
     // Navigate to detail
-    await page.goto(`/workouts/detail?id=${latestWorkout.id}`);
+    await page.goto(`/workouts/${latestWorkout.id}`);
 
-    // Verify route map
-    await expect(page.locator(".leaflet-container")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText("경로")).toBeVisible();
+    await expect(page.getByText("거리")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("시간")).toBeVisible();
+    await expect(page.locator(".leaflet-container")).toHaveCount(0);
   });
 });

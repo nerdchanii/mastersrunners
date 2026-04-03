@@ -1,3 +1,4 @@
+import { Image as ImageIcon, Users } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,8 @@ interface CrewFormData {
   location: string;
   region: string;
   subRegion: string;
+  profileImageUrl: string;
+  coverImageUrl: string;
 }
 
 interface CrewFormProps {
@@ -52,10 +55,14 @@ interface CrewFormProps {
     location?: string | null;
     region?: string | null;
     subRegion?: string | null;
+    profileImageUrl?: string | null;
+    coverImageUrl?: string | null;
   };
   onSubmit: (data: {
     name: string;
     description?: string;
+    profileImageUrl?: string | null;
+    coverImageUrl?: string | null;
     isPublic: boolean;
     maxMembers?: number;
     location?: string;
@@ -82,8 +89,21 @@ export default function CrewForm({
     location: initialValues?.location || "",
     region: initialValues?.region || "",
     subRegion: initialValues?.subRegion || "",
+    profileImageUrl: initialValues?.profileImageUrl || "",
+    coverImageUrl: initialValues?.coverImageUrl || "",
   });
   const [error, setError] = useState<string | null>(null);
+  const profileImageUrl = formData.profileImageUrl.trim() || null;
+  const coverImageUrl = formData.coverImageUrl.trim() || null;
+
+  const isValidMediaUrl = (value: string) => {
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -111,11 +131,21 @@ export default function CrewForm({
       setError("최대 인원은 2명 이상이어야 합니다.");
       return;
     }
+    if (profileImageUrl && !isValidMediaUrl(profileImageUrl)) {
+      setError("프로필 이미지는 http 또는 https URL로 입력해주세요.");
+      return;
+    }
+    if (coverImageUrl && !isValidMediaUrl(coverImageUrl)) {
+      setError("커버 이미지는 http 또는 https URL로 입력해주세요.");
+      return;
+    }
 
     try {
       await onSubmit({
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
+        profileImageUrl,
+        coverImageUrl,
         isPublic: formData.isPublic,
         maxMembers: maxMembersNum,
         location: formData.location.trim() || undefined,
@@ -136,6 +166,90 @@ export default function CrewForm({
       )}
 
       <div className="space-y-5">
+        <section className="space-y-4 rounded-3xl border border-border/60 bg-muted/20 p-4 sm:p-5">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-foreground">미디어</p>
+            <p className="text-xs leading-5 text-muted-foreground">
+              프로필 이미지는 목록과 멤버 카드에, 커버 이미지는 상세 상단에 먼저 보입니다. 현재는 두
+              슬롯 모두 URL로 연결해 미리보기와 저장을 함께 맞춥니다.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="overflow-hidden rounded-2xl border border-border/60 bg-background">
+              <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/15 via-background to-muted">
+                {coverImageUrl ? (
+                  <>
+                    <img
+                      src={coverImageUrl}
+                      alt="커버 이미지 미리보기"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-background/5" />
+                  </>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-muted-foreground">
+                    <div className="flex flex-col items-center gap-2">
+                      <ImageIcon className="size-8" />
+                      <span className="text-xs">커버 이미지 미리보기</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1 p-4">
+                <p className="text-sm font-medium text-foreground">커버 이미지</p>
+                <p className="text-xs leading-5 text-muted-foreground">
+                  상세 상단과 공유 화면에서 넓게 보이는 영역입니다.
+                </p>
+                <Input
+                  aria-label="커버 이미지 URL"
+                  value={formData.coverImageUrl}
+                  onChange={(event) =>
+                    setFormData((prev) => ({ ...prev, coverImageUrl: event.target.value }))
+                  }
+                  placeholder="https://example.com/crew-cover.jpg"
+                />
+                <p className="text-[11px] leading-5 text-muted-foreground">
+                  비워두면 중립 배경을 사용합니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-border/60 bg-background">
+              <div className="flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-primary/10 via-background to-muted p-6">
+                {profileImageUrl ? (
+                  <img
+                    src={profileImageUrl}
+                    alt="프로필 이미지 미리보기"
+                    className="h-24 w-24 rounded-3xl object-cover shadow-sm"
+                  />
+                ) : (
+                  <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-primary/10 text-primary">
+                    <Users className="size-10" />
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1 p-4">
+                <p className="text-sm font-medium text-foreground">프로필 이미지</p>
+                <p className="text-xs leading-5 text-muted-foreground">
+                  멤버 목록, 댓글, 작은 썸네일에서 쓰이는 대표 이미지입니다.
+                </p>
+                <Input
+                  aria-label="프로필 이미지 URL"
+                  value={formData.profileImageUrl}
+                  onChange={(event) =>
+                    setFormData((prev) => ({ ...prev, profileImageUrl: event.target.value }))
+                  }
+                  placeholder="https://example.com/crew-profile.jpg"
+                />
+                <p className="text-[11px] leading-5 text-muted-foreground">
+                  비워두면 기본 아이콘을 사용합니다.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <div className="space-y-2">
           <Label htmlFor="crew-name" className="sr-only">
             크루 이름

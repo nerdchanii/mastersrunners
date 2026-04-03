@@ -9,6 +9,14 @@ export const mockUser = {
   profileImage: null,
   backgroundImage: null,
   bio: "마스터즈 러닝 클럽 멤버",
+  isPrivate: false,
+  workoutSharingDefault: "FOLLOWERS",
+  region: "서울특별시",
+  subRegion: "마포구",
+  pb5kSeconds: 1260,
+  pb10kSeconds: 2700,
+  pbHalfMarathonSeconds: 5940,
+  pbMarathonSeconds: 12900,
   createdAt: "2026-01-01T00:00:00.000Z",
 };
 
@@ -117,7 +125,7 @@ export const mockWorkoutDetail = {
   workoutFiles: [
     {
       id: "file-1",
-      originalFilename: "morning_run.fit",
+      originalFileName: "morning_run.fit",
       fileType: "FIT",
       fileSize: 245760,
       createdAt: "2026-02-15T09:30:00.000Z",

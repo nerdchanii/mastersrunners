@@ -18,13 +18,14 @@ function LoginContent() {
   const { data: runtimeConfig, isPending: isRuntimeConfigPending } = usePublicRuntimeConfig();
   const error = searchParams.get("error");
   const nextPath = sanitizeAuthReturnPath(searchParams.get("next"));
+  const destination = nextPath && nextPath !== "/" ? nextPath : "/feed";
   const providers = runtimeConfig?.authProviders ?? defaultPublicRuntimeConfig.authProviders;
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      navigate(nextPath ?? "/", { replace: true });
+      navigate(destination, { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate, nextPath]);
+  }, [destination, isAuthenticated, isLoading, navigate]);
 
   const handleOAuth = (provider: string) => {
     rememberAuthReturnPath(nextPath);
@@ -63,7 +64,7 @@ function LoginContent() {
           </div>
           <CardTitle className="text-3xl font-bold">로그인</CardTitle>
           <CardDescription className="text-base">
-            마스터즈 러너스에 오신 것을 환영합니다
+            러너 커뮤니티에 로그인하고 피드와 온보딩을 이어가세요.
           </CardDescription>
         </CardHeader>
 
@@ -118,7 +119,7 @@ function LoginContent() {
                     try {
                       await performDevLogin();
                       await refreshUser();
-                      navigate(nextPath ?? "/", { replace: true });
+                      navigate(destination, { replace: true });
                     } catch {
                       // silently fail
                     }

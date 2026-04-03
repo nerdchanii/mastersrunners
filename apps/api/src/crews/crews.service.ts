@@ -49,17 +49,36 @@ export class CrewsService {
     this.readService = new CrewReadService(crewRepo, crewMemberRepo, conversationsRepo, db);
   }
 
+  private normalizeNullableString(value: string | null | undefined) {
+    if (value === undefined) return undefined;
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : null;
+  }
+
+  private resolveProfileImageUrl(profileImageUrl?: string | null, legacyImageUrl?: string | null) {
+    if (profileImageUrl !== undefined) {
+      return this.normalizeNullableString(profileImageUrl);
+    }
+    if (legacyImageUrl !== undefined) {
+      return this.normalizeNullableString(legacyImageUrl);
+    }
+    return undefined;
+  }
+
   async create(userId: string, dto: CreateCrewDto) {
+    const profileImageUrl = this.resolveProfileImageUrl(dto.profileImageUrl, dto.imageUrl) ?? null;
+
     const crew = await this.crewRepo.create({
       name: dto.name,
       description: dto.description || null,
-      imageUrl: dto.imageUrl || null,
+      imageUrl: profileImageUrl,
+      coverImageUrl: this.normalizeNullableString(dto.coverImageUrl) ?? null,
       creatorId: userId,
       isPublic: dto.isPublic ?? true,
       maxMembers: dto.maxMembers || null,
-      location: dto.location || null,
-      region: dto.region || null,
-      subRegion: dto.subRegion || null,
+      location: this.normalizeNullableString(dto.location) ?? null,
+      region: this.normalizeNullableString(dto.region) ?? null,
+      subRegion: this.normalizeNullableString(dto.subRegion) ?? null,
     });
 
     await this.crewMemberRepo.addMember(crew.id, userId, "OWNER", "ACTIVE");
@@ -120,7 +139,17 @@ export class CrewsService {
       throw new ForbiddenException("크루 관리자만 수정할 수 있습니다.");
     }
 
-    return this.crewRepo.update(id, dto);
+    return this.crewRepo.update(id, {
+      name: dto.name,
+      description: dto.description,
+      imageUrl: this.resolveProfileImageUrl(dto.profileImageUrl, dto.imageUrl),
+      coverImageUrl: this.normalizeNullableString(dto.coverImageUrl),
+      isPublic: dto.isPublic,
+      maxMembers: dto.maxMembers,
+      location: this.normalizeNullableString(dto.location),
+      region: this.normalizeNullableString(dto.region),
+      subRegion: this.normalizeNullableString(dto.subRegion),
+    });
   }
 
   async remove(id: string, userId: string) {

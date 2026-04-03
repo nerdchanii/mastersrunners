@@ -63,7 +63,7 @@ export function useWorkout(id: string) {
   });
 }
 
-export function useWorkoutFeed() {
+export function useWorkoutFeed(enabled = true) {
   return useInfiniteQuery({
     queryKey: workoutKeys.feed(),
     queryFn: ({ pageParam }) => {
@@ -71,6 +71,7 @@ export function useWorkoutFeed() {
       if (pageParam) path += `&cursor=${encodeURIComponent(pageParam as string)}`;
       return api.fetch<FeedResponse<WorkoutFeedItem>>(path);
     },
+    enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => (lastPage?.hasMore ? lastPage.nextCursor : undefined),
   });

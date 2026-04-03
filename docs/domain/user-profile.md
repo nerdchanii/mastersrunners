@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: product
-last_verified: 2026-03-30
+last_verified: 2026-04-03
 sources:
   - packages/database/prisma/schema.prisma
   - apps/api/src/profile/profile.controller.ts
@@ -26,6 +26,10 @@ sources:
 | `isPrivate`             | 계정 공개 여부                                             |
 | `workoutSharingDefault` | 워크아웃 기본 공개 범위 (`PRIVATE`, `FOLLOWERS`, `PUBLIC`) |
 | `region`, `subRegion`   | 지역 정보                                                  |
+| `pb5kSeconds`           | 5K PB 기록 (초)                                            |
+| `pb10kSeconds`          | 10K PB 기록 (초)                                           |
+| `pbHalfMarathonSeconds` | 하프 PB 기록 (초)                                          |
+| `pbMarathonSeconds`     | 풀코스 PB 기록 (초)                                        |
 | `deletedAt`             | 탈퇴 soft delete 시각                                      |
 
 OAuth 제공자 프로필 이미지 중 지원된 외부 avatar는 인증 경계에서 안전한 `https` URL로 정규화해 저장한다. 현재 이 정규화는 Kakao CDN avatar URL에 한정된다.
@@ -51,16 +55,23 @@ OAuth 제공자 프로필 이미지 중 지원된 외부 avatar는 인증 경계
 
 ## 현재 수정 가능한 프로필 정보
 
-설정 화면과 API 기준으로 현재 수정 surface는 아래에 집중된다.
+설정 화면, 온보딩, API 기준으로 현재 수정 surface는 아래에 집중된다.
 
 - `name`
 - `bio`
 - `profileImage`
 - `backgroundImage`
+- `region`
+- `subRegion`
 - `isPrivate`
 - `workoutSharingDefault` API 필드는 존재하지만 현재 설정 UI에서 적극적으로 노출되지는 않는다.
+- `pb5kSeconds`
+- `pb10kSeconds`
+- `pbHalfMarathonSeconds`
+- `pbMarathonSeconds`
 
-Onboarding에서는 `name`, `bio`, `isPrivate`를 먼저 설정한다.
+Onboarding에서는 `name`을 필수로 받고, `bio`, `region`, `subRegion`, PB 4종, `isPrivate`를 선택적으로 설정할 수 있다. 러닝 수준, 주력 거리, 관심 운동 타입은 현재 온보딩 current truth가 아니다.
+프로필 수정 화면에서는 `region`, `subRegion`, PB 4종을 다시 `null`로 비워둘 수 있어야 한다.
 
 ## 프로필 접근 규칙
 
@@ -96,7 +107,7 @@ Onboarding에서는 `name`, `bio`, `isPrivate`를 먼저 설정한다.
 
 ## 현재 truth에서 제외한 오래된 설명
 
-- 러닝 경력, 목표, PB를 프로필 기본 필드로 본 설명
+- 러닝 경력, 목표, 러닝 수준, 주력 거리까지 현재 기본 프로필 필드라고 본 설명
 - shoes 탭, race records 탭이 현재 프로필 탭에 존재한다는 설명
 - 사용자별 항목 ON/OFF 노출 제어가 구현되어 있다는 설명
 - 알림 유형별 ON/OFF, 푸시 분기 설정이 현재 제공된다는 설명

@@ -141,7 +141,8 @@ describe("CrewsService", () => {
       expect(mockCrewRepository.create).toHaveBeenCalledWith({
         name: dto.name,
         description: dto.description || null,
-        imageUrl: dto.imageUrl || null,
+        imageUrl: dto.imageUrl ?? null,
+        coverImageUrl: null,
         creatorId: userId,
         isPublic: dto.isPublic ?? true,
         maxMembers: dto.maxMembers || null,
@@ -173,6 +174,7 @@ describe("CrewsService", () => {
         name: dto.name,
         description: null,
         imageUrl: null,
+        coverImageUrl: null,
         creatorId: userId,
         isPublic: true,
         maxMembers: null,
@@ -181,6 +183,78 @@ describe("CrewsService", () => {
         subRegion: null,
       });
       expect(result).toEqual(mockCrew);
+    });
+  });
+
+  describe("update", () => {
+    it("should map profile and cover image fields into the crew media contract", async () => {
+      const crewId = "crew-123";
+      const userId = "user-1";
+      const dto: UpdateCrewDto = {
+        profileImageUrl: "https://example.com/profile.jpg",
+        coverImageUrl: "https://example.com/cover.jpg",
+        region: "서울특별시",
+        subRegion: "마포구",
+      };
+      const existingCrew = { id: crewId };
+      const updatedCrew = {
+        id: crewId,
+        imageUrl: dto.profileImageUrl,
+        coverImageUrl: dto.coverImageUrl,
+      };
+
+      mockCrewRepository.findById.mockResolvedValue(existingCrew);
+      mockCrewMemberRepository.findMember.mockResolvedValue({ role: "OWNER" });
+      mockCrewRepository.update.mockResolvedValue(updatedCrew);
+
+      const result = await service.update(crewId, userId, dto);
+
+      expect(mockCrewRepository.update).toHaveBeenCalledWith(crewId, {
+        name: undefined,
+        description: undefined,
+        imageUrl: "https://example.com/profile.jpg",
+        coverImageUrl: "https://example.com/cover.jpg",
+        isPublic: undefined,
+        maxMembers: undefined,
+        location: undefined,
+        region: "서울특별시",
+        subRegion: "마포구",
+      });
+      expect(result).toEqual(updatedCrew);
+    });
+
+    it("should normalize blank strings and allow clearing crew media and region fields", async () => {
+      const crewId = "crew-123";
+      const userId = "user-1";
+      const dto: UpdateCrewDto = {
+        profileImageUrl: null,
+        coverImageUrl: "   ",
+        location: "   ",
+        region: "   ",
+        subRegion: "",
+      };
+
+      mockCrewRepository.findById.mockResolvedValue({ id: crewId });
+      mockCrewMemberRepository.findMember.mockResolvedValue({ role: "OWNER" });
+      mockCrewRepository.update.mockResolvedValue({
+        id: crewId,
+        imageUrl: null,
+        coverImageUrl: null,
+      });
+
+      await service.update(crewId, userId, dto);
+
+      expect(mockCrewRepository.update).toHaveBeenCalledWith(crewId, {
+        name: undefined,
+        description: undefined,
+        imageUrl: null,
+        coverImageUrl: null,
+        isPublic: undefined,
+        maxMembers: undefined,
+        location: null,
+        region: null,
+        subRegion: null,
+      });
     });
   });
 

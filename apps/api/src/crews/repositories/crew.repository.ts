@@ -6,6 +6,7 @@ interface CreateCrewData {
   name: string;
   description?: string | null;
   imageUrl?: string | null;
+  coverImageUrl?: string | null;
   creatorId: string;
   isPublic?: boolean;
   maxMembers?: number | null;
@@ -18,6 +19,7 @@ interface UpdateCrewData {
   name?: string;
   description?: string | null;
   imageUrl?: string | null;
+  coverImageUrl?: string | null;
   isPublic?: boolean;
   maxMembers?: number | null;
   location?: string | null;

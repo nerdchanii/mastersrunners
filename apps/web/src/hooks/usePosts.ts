@@ -70,7 +70,7 @@ export function usePosts(params?: Record<string, string>) {
   });
 }
 
-export function usePostFeed() {
+export function usePostFeed(enabled = true) {
   return useInfiniteQuery({
     queryKey: postKeys.feed(),
     queryFn: ({ pageParam }) => {
@@ -78,6 +78,7 @@ export function usePostFeed() {
       if (pageParam) path += `&cursor=${encodeURIComponent(pageParam as string)}`;
       return api.fetch<FeedResponse<Post>>(path);
     },
+    enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => (lastPage?.hasMore ? lastPage.nextCursor : undefined),
   });

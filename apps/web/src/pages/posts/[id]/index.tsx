@@ -1,4 +1,4 @@
-import { ArrowLeft, Edit } from "lucide-react";
+import { ArrowLeft, ArrowRight, Edit } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -166,13 +166,18 @@ export default function PostDetailPage() {
               className="border-t border-border/60 px-1 py-5 sm:px-2"
             >
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-base font-semibold text-foreground">첨부된 훈련 기록</h2>
+                <div>
+                  <h2 className="text-base font-semibold text-foreground">연결된 훈련</h2>
+                  <p className="text-xs text-muted-foreground">
+                    누르면 워크아웃 상세의 안전 요약으로 이동합니다.
+                  </p>
+                </div>
                 <span className="text-xs text-muted-foreground">
                   {flatWorkouts.length.toLocaleString()}개
                 </span>
               </div>
 
-              <div className="divide-y divide-border/60 border-y border-border/60">
+              <div className="overflow-hidden rounded-2xl border border-border/60 bg-muted/15">
                 {flatWorkouts.map(
                   (workout: {
                     id: string;
@@ -184,29 +189,35 @@ export default function PostDetailPage() {
                   }) => (
                     <Link
                       key={workout.id}
-                      to={`/workouts/${workout.id}`}
-                      className="flex flex-col gap-4 px-3 py-4 transition-colors hover:bg-accent/30 sm:flex-row sm:items-start sm:justify-between"
+                      to={`/workouts/${encodeURIComponent(workout.id)}`}
+                      aria-label={`워크아웃 ${workout.workoutType?.name ?? "런닝"} 상세 열기`}
+                      className="group flex flex-col gap-4 border-b border-border/60 px-4 py-4 transition-colors last:border-b-0 hover:bg-accent/25 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-foreground">
-                          {workout.workoutType?.name || "런닝"}
-                        </p>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-medium text-foreground">
+                            {workout.workoutType?.name || "런닝"}
+                          </p>
+                          <span className="rounded-full border border-border/60 bg-background px-2 py-0.5 text-[11px] text-muted-foreground">
+                            워크아웃 열기
+                          </span>
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           {new Date(workout.date).toLocaleDateString("ko-KR")}
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-4 text-sm sm:min-w-80 sm:text-right">
+                      <div className="grid grid-cols-3 gap-3 text-sm sm:min-w-[18rem] sm:text-right">
                         <div>
-                          <p className="text-xs text-muted-foreground">거리</p>
+                          <p className="text-[11px] text-muted-foreground">거리</p>
                           <p className="font-medium">{formatDistance(workout.distance)} km</p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">시간</p>
+                          <p className="text-[11px] text-muted-foreground">시간</p>
                           <p className="font-medium">{formatDuration(workout.duration)}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">페이스</p>
+                          <p className="text-[11px] text-muted-foreground">평균 페이스</p>
                           <p className="font-medium">
                             {workout.distance > 0
                               ? formatPace(workout.duration / (workout.distance / 1000))
@@ -214,6 +225,11 @@ export default function PostDetailPage() {
                             /km
                           </p>
                         </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground sm:justify-end">
+                        <span>상세</span>
+                        <ArrowRight className="size-3.5" />
                       </div>
                     </Link>
                   ),

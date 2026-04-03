@@ -7,6 +7,9 @@ interface CreatedCrew {
 export async function createCrew(data: {
   name: string;
   description?: string;
+  imageUrl?: string;
+  profileImageUrl?: string | null;
+  coverImageUrl?: string | null;
   isPublic: boolean;
   maxMembers?: number;
   location?: string;
