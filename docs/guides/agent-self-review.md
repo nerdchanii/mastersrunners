@@ -42,6 +42,7 @@ Run this checklist after implementation and before specialist review.
 
 - Does the commit subject describe change intent with a normal type such as `feat`, `fix`, `refactor`, `docs`, or `ci`?
 - Did I keep task tracking out of the commit subject and reserve it for trailers?
+- If I am correcting already-shared history, am I using a dedicated `fix` or `revert` task and commit instead of hiding the mistake with rewritten history?
 - Is the task ready to move to `archive/` in the same changeset as the final commit?
 
 ## Recordkeeping

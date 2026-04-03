@@ -72,6 +72,7 @@ Read in this order:
 - If code diverges from approved design, record the gap as a `Current Divergence` note or task note, then create a follow-up task.
 - The default resolution path is delegated agent work, not direct human patching outside the task system.
 - A commit message should describe change intent, not replace intent with a task ID. Put task tracking in trailers.
+- If a bad change has already been pushed or merged, preserve that signal with a follow-up `fix` or `revert` commit plus a linked task instead of silently replacing shared history.
 - If the current worktree already has unrelated dirty changes, preserve them and run new parallel work in dedicated git worktrees.
 
 ## Task Workflow

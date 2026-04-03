@@ -66,6 +66,7 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `tasks/archive/I-0006-200-ci-tighten-dev-r2-browser-origin-allowlist.md`
 - `tasks/archive/I-0006-230-meta-ops-host-swagger-and-zero-trust-boundary.md`
 - `tasks/archive/I-0006-210-api-conversation-type-leak-knip-cleanup.md`
+- `tasks/archive/I-0006-240-meta-fix-revert-history-flow.md`
 
 ## Success Criteria
 
@@ -101,3 +102,4 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - 2026-04-01 browser upload triage then found the dev R2 bucket itself was missing a CORS policy, so `I-0006-190` now captures the bucket-side fix and the repo documentation needed to keep direct uploads aligned with the active frontend origins.
 - 2026-04-01 follow-up review then tightened that bucket rule further: `I-0006-200` removes `http://localhost:3000` from the deployed dev-bucket allowlist because the current dev lane does not intentionally support localhost browser sessions against the live bucket.
 - In-repo guardrail hardening is effectively complete; the remaining blockers are external platform settings and the exceptions recorded in `design/operating-rules/exceptions.md`.
+- 2026-04-03 repeated public-route recovery work exposed a workflow gap: the repo documented commit syntax and deploy rollback, but not how to preserve correction history for bad shared commits through explicit `fix` or `revert` follow-up tasks. `I-0006-240` now closes that gap.

@@ -86,6 +86,8 @@ This turns “forgot to archive a finished task” into a failing CI/pre-push si
 - Task IDs belong in trailers, not as the commit type.
 - Commit subject validation runs in the `commit-msg` hook via commitlint, not in `pre-commit`.
 - If work uncovers implementation/design divergence, keep the design intact and create a follow-up task before calling the change done.
+- If a pushed or merged change is wrong, route the recovery through a dedicated `fix` or `revert` task and commit rather than silently replacing shared history.
+- Use `docs/runbooks/correction-commit-flow.md` when deciding whether the recovery should be a forward `fix` or an operational `revert`.
 
 ## Review Notes Convention
 
