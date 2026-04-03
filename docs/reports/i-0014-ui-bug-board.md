@@ -403,8 +403,8 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
   - `design/backend/upload-ingestion.md`
   - `design/frontend/workout-experience.md`
 - Current repo evidence:
-  - Workout detail deep-link exists, but file-derived visuals are intentionally being scoped down for the current batch.
-  - Post detail now renders attached workouts as summary cards that deep-link into `/workouts/:id`.
+  - Workout detail deep-link exists and now renders as an analysis-first report with a top route map, linked charts, and laps when data exists.
+  - Post detail now renders attached workouts as richer previews before deep-linking into `/workouts/:id`.
   - Upload preview already shows some parsed metrics, but GPX/FIT availability differs by parser and file content.
 - User intake:
   - 첨부된 운동기록 카드가 해당 워크아웃으로 연결되지 않는다.
@@ -412,9 +412,9 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
   - GPX와 FIT는 데이터가 다르니 같이 검증해야 하며, 이 확인이 필요하다는 기록도 남겨달라.
 - Expected:
   - Attached workouts should deep-link cleanly into workout detail.
-  - The current batch should stop at safe summary metrics until GPX/FIT sample review reopens richer visuals.
+  - Workout detail should behave like a map-first analysis destination rather than a summary card.
 - Actual:
-  - Attached workouts now deep-link, and the active repo decision is to keep the linked detail surface inside a safe-summary contract.
+  - Attached workouts now deep-link into an analysis-first detail report, and missing GPS or sensor data degrade by hiding only the unavailable panels.
 - Repro steps:
   1. Open a post with attached workouts.
   2. Inspect the attached workout module.
@@ -426,7 +426,7 @@ Use this report to turn the 2026-04-01 UI intake into bounded follow-up tasks. T
   - No focused coverage found for attached-workout deep-linking or cross-surface metric parity.
 - Candidate fix pack: `workout-attachment-and-detail-visuals`
 - Notes:
-  - Mandatory checkpoint: before implementing GPX/FIT-driven metric or map changes, pause and review representative sample files with the product owner/user because file-format coverage and metric availability differ.
+  - GPX and FIT still differ in available point-level metrics, so the detail report must keep partial-render behavior instead of assuming every workout can show every chart.
 
 ### UI-012 Cardless Detail Layouts and Native Share Behavior
 

@@ -110,6 +110,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - `tasks/archive/I-0014-240-web-feed-media-and-analytics-regression-recovery.md`
 - `tasks/archive/I-0014-280-meta-ops-feedback-proxy-and-runtime-repair.md`
 - `tasks/archive/I-0014-290-api-ops-access-single-gate.md`
+- `tasks/archive/I-0014-300-web-workout-analysis-detail-and-post-preview.md`
 
 ### Product Checkpoint Required
 
@@ -152,3 +153,5 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - 2026-04-02: archived `I-0014-280` after repairing the shared ops proxy host allowlist plus `/api-docs*` routing, restoring the missing dev runtime env for Access verification, and updating `ops-web` to show request failures explicitly instead of masquerading as an empty inbox.
 - 2026-04-02: opened `I-0014-290` to remove the extra operator-email registry check from the current dev ops lane because the present single-operator setup should trust Cloudflare Access as the sole gate.
 - 2026-04-02: archived `I-0014-290` after simplifying the dev ops feedback lane to Access-only gating, removing the runtime dependency on `PlatformOperatorIdentity`, and updating the ops UI plus persistence docs so they no longer instruct the solo operator to perform separate email registration.
+- 2026-04-03: opened `I-0014-300` after product rejected the temporary safe-summary workout detail and clarified that workout detail should be a map-first analysis report with linked charts, laps, and a richer post-detail preview.
+- 2026-04-03: archived `I-0014-300` after restoring workout detail as a map-first analysis report with linked charts and lap analysis, strengthening post-detail workout previews, and preserving no-GPS workouts through a partial-render lap fallback instead of a summary-only downgrade.

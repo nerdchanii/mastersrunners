@@ -50,21 +50,50 @@ test.describe("워크아웃 상세 페이지", () => {
     await expect(page.getByText(/Nike.*Vaporfly 3/)).toBeVisible();
   });
 
-  test("파일 기반 시각화는 이번 라운드에서 노출하지 않는다", async ({ page }) => {
+  test("지도, 분석 차트, 랩 테이블이 함께 표시된다", async ({ page }) => {
     await page.goto(`/workouts/${mockWorkoutDetail.id}`);
 
-    await expect(page.locator(".leaflet-container")).toHaveCount(0);
-    await expect(page.locator("table")).toHaveCount(0);
-    await expect(page.getByText(/안전하게 보장되는 요약|거리와 시간처럼/)).toBeVisible();
+    await expect(page.locator(".leaflet-container")).toHaveCount(1);
+    await expect(page.getByTestId("workout-detail-analytics")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "고도" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "심박" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "케이던스" })).toBeVisible();
+    await expect(page.getByTestId("workout-laps-table")).toBeVisible();
   });
 
-  test("소스 파일 정보가 표시된다 (FIT 배지)", async ({ page }) => {
+  test("GPS 경로가 없어도 랩 기록은 계속 표시된다", async ({ page }) => {
+    await page.route(`${API_BASE}/workouts/route-less-workout`, (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...mockWorkoutDetail,
+          id: "route-less-workout",
+          workoutRoutes: [],
+        }),
+      });
+    });
+
+    await page.route(`${API_BASE}/workout-social/workout/route-less-workout/comments*`, (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: [], total: 0 }),
+      });
+    });
+
+    await page.goto("/workouts/route-less-workout");
+
+    await expect(page.getByTestId("workout-detail-map-empty")).toBeVisible();
+    await expect(page.getByTestId("workout-laps-table")).toBeVisible();
+    await expect(page.locator(".leaflet-container")).toHaveCount(0);
+  });
+
+  test("원본 파일 정보는 기본 화면에서 노출하지 않는다", async ({ page }) => {
     await page.goto(`/workouts/${mockWorkoutDetail.id}`);
 
-    // FIT badge (exact match to avoid matching 'morning_run.fit')
-    await expect(page.getByText("FIT", { exact: true })).toBeVisible();
-    // filename
-    await expect(page.getByText("morning_run.fit")).toBeVisible();
+    await expect(page.getByText("morning_run.fit")).toHaveCount(0);
+    await expect(page.getByText("FIT", { exact: true })).toHaveCount(0);
   });
 
   test("메모가 표시된다", async ({ page }) => {

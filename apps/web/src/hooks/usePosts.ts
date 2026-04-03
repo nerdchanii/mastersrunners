@@ -25,7 +25,12 @@ interface Post {
       duration: number;
       pace: number;
       date: string;
-      workoutType?: { name: string };
+      elevationGain?: number | null;
+      avgHeartRate?: number | null;
+      avgCadence?: number | null;
+      calories?: number | null;
+      workoutType?: { id?: string; name: string; category?: string };
+      route?: { encodedPolyline: string } | null;
     };
   }>;
 }

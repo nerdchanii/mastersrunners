@@ -74,11 +74,20 @@ export class FeedRepository {
                 duration: true,
                 pace: true,
                 date: true,
+                elevationGain: true,
+                avgHeartRate: true,
+                avgCadence: true,
+                calories: true,
                 workoutType: {
                   select: {
                     id: true,
                     name: true,
                     category: true,
+                  },
+                },
+                route: {
+                  select: {
+                    encodedPolyline: true,
                   },
                 },
               },

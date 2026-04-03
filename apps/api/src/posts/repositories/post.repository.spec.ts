@@ -86,9 +86,19 @@ describe("PostRepository", () => {
           workouts: {
             include: {
               workout: {
-                include: {
-                  workoutType: true,
-                },
+                select: expect.objectContaining({
+                  id: true,
+                  distance: true,
+                  duration: true,
+                  pace: true,
+                  date: true,
+                  elevationGain: true,
+                  avgHeartRate: true,
+                  avgCadence: true,
+                  calories: true,
+                  workoutType: expect.any(Object),
+                  route: expect.any(Object),
+                }),
               },
             },
           },
@@ -133,7 +143,21 @@ describe("PostRepository", () => {
           userId,
           deletedAt: null,
         },
-        include: expect.any(Object),
+        include: expect.objectContaining({
+          workouts: {
+            include: {
+              workout: {
+                select: expect.objectContaining({
+                  route: expect.any(Object),
+                  elevationGain: true,
+                  avgHeartRate: true,
+                  avgCadence: true,
+                  calories: true,
+                }),
+              },
+            },
+          },
+        }),
         orderBy: { createdAt: "desc" },
         take: 20,
       });
@@ -153,7 +177,21 @@ describe("PostRepository", () => {
           userId,
           deletedAt: null,
         },
-        include: expect.any(Object),
+        include: expect.objectContaining({
+          workouts: {
+            include: {
+              workout: {
+                select: expect.objectContaining({
+                  route: expect.any(Object),
+                  elevationGain: true,
+                  avgHeartRate: true,
+                  avgCadence: true,
+                  calories: true,
+                }),
+              },
+            },
+          },
+        }),
         orderBy: { createdAt: "desc" },
         take: 15,
         skip: 1,
@@ -180,7 +218,21 @@ describe("PostRepository", () => {
           userId: { in: followingIds },
           deletedAt: null,
         },
-        include: expect.any(Object),
+        include: expect.objectContaining({
+          workouts: {
+            include: {
+              workout: {
+                select: expect.objectContaining({
+                  route: expect.any(Object),
+                  elevationGain: true,
+                  avgHeartRate: true,
+                  avgCadence: true,
+                  calories: true,
+                }),
+              },
+            },
+          },
+        }),
         orderBy: { createdAt: "desc" },
         take: limit,
         skip: 1,

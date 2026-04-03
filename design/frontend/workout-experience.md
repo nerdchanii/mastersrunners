@@ -3,6 +3,9 @@ doc_state: current
 owner: frontend
 last_verified: 2026-04-03
 sources:
+  - apps/web/src/components/workout/WorkoutAnalysisMap.tsx
+  - apps/web/src/components/workout/WorkoutAnalysisCharts.tsx
+  - apps/web/src/components/workout/WorkoutAttachmentPreview.tsx
   - apps/web/src/pages/posts/[id]/index.tsx
   - apps/web/src/pages/workouts/index.tsx
   - apps/web/src/pages/workouts/new/index.tsx
@@ -10,6 +13,7 @@ sources:
   - apps/web/src/pages/workouts/detail/index.tsx
   - apps/web/src/pages/workouts/[id]/edit/index.tsx
   - apps/web/src/hooks/useWorkouts.ts
+  - apps/web/src/lib/workout-analysis.ts
   - apps/web/src/hooks/useMessages.ts
 ---
 
@@ -17,7 +21,7 @@ sources:
 
 ## Summary
 
-Workout UX centers on authenticated capture, review, and reuse of workout records. The creation flow supports both manual entry and FIT/GPX upload, and workouts can later be attached to posts or linked to event results. The current attachment/detail batch is summary-first: it deep-links into `/workouts/:id` and only relies on workout type, distance, duration, average pace, and workout date.
+Workout UX centers on authenticated capture, review, and reuse of workout records. The creation flow supports both manual entry and FIT/GPX upload, and workouts can later be attached to posts or linked to event results. The current detail route is now analysis-first: it leads with a large route map when GPS exists, then layers distance/time/pace summary, route-linked charts, and lap review below.
 
 ## Route Model
 
@@ -49,9 +53,10 @@ The page state is orchestrated by `useWorkoutEntry`, which owns:
 - workout type options are fetched from `/workout-types`
 - the post composer reuses existing workouts via `useWorkouts`
 - post detail keeps post-owned image media visible above attached workouts so feed-to-detail navigation does not drop the primary post content
-- attached workouts on post detail now live inside the same divided document flow as the post body and comment thread, and each row deep-links back to `/workouts/:id` with a safe summary block
+- attached workouts on post detail now render as richer previews with route thumbnails and analysis-oriented summary chips before they deep-link back to `/workouts/:id`
 - event result linking is handled from the event detail page rather than from workout detail
-- the current `/workouts/:id` route stays summary-first for this batch and does not ship route maps, elevation charts, lap tables, or similar file-derived panels
+- the current `/workouts/:id` route uses persisted route, lap, and point-level sensor data to render a map-first report with linked elevation, heart-rate, and cadence charts when those series exist
+- chart scrubbing and lap selection both share one route-selection model so the detail surface can grow into deeper analytics work later
 
 ## Visibility and Metadata
 
@@ -60,7 +65,7 @@ Current workout records expose:
 - visibility (`PRIVATE`, `FOLLOWERS`, `PUBLIC`)
 - memo
 - photos
-- parsed route and lap metrics may still exist in storage, but they are not part of the current workout-detail UI promise
+- parsed route and lap metrics are now part of the workout-detail UI promise when the underlying workout record has them
 - optional shoe association at the data-model level
 
 ## Current Constraints
@@ -68,5 +73,6 @@ Current workout records expose:
 - route pages still own a fair amount of orchestration instead of delegating fully to a hook/view-model layer
 - shoe selection and shoe review UX are not a first-class standalone surface yet even though workout records can point to a shoe
 - event linking is a neighboring workflow, not an integrated step in workout creation
-- v1 workout attachments and workout detail intentionally do not promise route maps, elevation charts, lap tables, or other file-derived visuals until a later data-availability checkpoint
+- workouts without GPS or sensor series intentionally degrade by partial rendering instead of switching to a separate detail layout
+- the current workout-detail report still stops short of long-horizon analytics such as trend comparison, effort scoring, or historical overlays
 - post video is out of scope for this batch and should stay out of the workout attachment story

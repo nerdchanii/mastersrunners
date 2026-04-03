@@ -109,7 +109,19 @@ describe("FeedRepository", () => {
           include: expect.objectContaining({
             user: expect.any(Object),
             images: expect.any(Object),
-            workouts: expect.any(Object),
+            workouts: {
+              include: {
+                workout: {
+                  select: expect.objectContaining({
+                    route: expect.any(Object),
+                    elevationGain: true,
+                    avgHeartRate: true,
+                    avgCadence: true,
+                    calories: true,
+                  }),
+                },
+              },
+            },
             _count: expect.any(Object),
           }),
         }),

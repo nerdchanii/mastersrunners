@@ -85,5 +85,5 @@ Parser normalization details:
 - Post video upload is explicitly out of scope for the current web composer surface.
 - The current upload boundary should not imply support for video encoding, thumbnail extraction, streaming delivery, or moderation workflows.
 - Until a separate task defines video ingestion, playback, and lifecycle policy, the post composer should continue to promise image uploads only.
-- The current workout attachment/detail batch only consumes the safe summary fields already guaranteed by workout records: workout type, distance, duration, average pace, and workout date.
-- Route maps, elevation charts, lap tables, and other file-derived workout visuals remain out of scope for this batch until a later data-availability checkpoint.
+- Workout detail may now consume the persisted route, lap, elevation, heart-rate, and cadence data that the ingestion pipeline already stores.
+- The current boundary still stops short of secondary media derivatives such as file-info-centric UI, offline map snapshots, video-like route playback exports, or trend analytics that aggregate across multiple workouts.
