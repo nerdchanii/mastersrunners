@@ -171,13 +171,7 @@ export default function PostDetailPage() {
               className="border-t border-border/60 px-1 py-5 sm:px-2"
             >
               <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-semibold text-foreground">연결된 훈련</h2>
-                  <p className="text-xs text-muted-foreground">
-                    포스트에서 바로 요약을 훑어본 뒤, 지도나 센서 데이터가 있으면 분석 리포트로
-                    이어집니다.
-                  </p>
-                </div>
+                <h2 className="text-base font-semibold text-foreground">연결된 훈련</h2>
                 <span className="text-xs text-muted-foreground">
                   {flatWorkouts.length.toLocaleString()}개
                 </span>

@@ -146,8 +146,7 @@ export function PostCard({
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
         nextPath={nextPath}
-        title="로그인하면 게시글에 반응을 남길 수 있습니다."
-        description="지금 보고 있는 게시글 위치는 그대로 유지되고, 좋아요는 로그인 뒤에 바로 이어집니다."
+        title="게시글에 반응 남기기"
       />
     </>
   );

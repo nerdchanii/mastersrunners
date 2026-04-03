@@ -54,6 +54,7 @@ The page state is orchestrated by `useWorkoutEntry`, which owns:
 - the post composer reuses existing workouts via `useWorkouts`
 - post detail keeps post-owned image media visible above attached workouts so feed-to-detail navigation does not drop the primary post content
 - attached workouts on post detail now render as richer previews with route thumbnails and analysis-oriented summary chips before they deep-link back to `/workouts/:id`
+- anonymous visitors can still see those attached-workout previews on public post detail, but clicking the preview should open an auth dialog in place instead of redirecting the current post page away to `/login`
 - event result linking is handled from the event detail page rather than from workout detail
 - the current `/workouts/:id` route uses persisted route, lap, and point-level sensor data to render a map-first report with linked elevation, heart-rate, and cadence charts when those series exist
 - chart scrubbing and lap selection both share one route-selection model so the detail surface can grow into deeper analytics work later

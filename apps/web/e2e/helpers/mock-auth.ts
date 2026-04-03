@@ -21,6 +21,23 @@ export const mockUser = {
 };
 
 export async function setupAuth(page: Page) {
+  await page.route(`${API_BASE}/config/public`, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        authProviders: {
+          google: true,
+          kakao: true,
+        },
+        features: {
+          challenges: false,
+          events: false,
+        },
+      }),
+    });
+  });
+
   // Mock /auth/me endpoint BEFORE any navigation
   await page.route(`${API_BASE}/auth/me`, (route) => {
     route.fulfill({
@@ -40,6 +57,27 @@ export async function setupAuth(page: Page) {
   await page.route(`${API_BASE}/auth/logout`, (route) => {
     route.fulfill({
       status: 204,
+    });
+  });
+
+  await page.route(`${API_BASE}/conversations?limit=100`, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: [],
+        nextCursor: null,
+      }),
+    });
+  });
+
+  await page.route(`${API_BASE}/notifications/unread-count`, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 0,
+      }),
     });
   });
 }

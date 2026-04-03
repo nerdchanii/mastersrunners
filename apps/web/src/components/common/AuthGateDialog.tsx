@@ -1,17 +1,17 @@
+import { Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 
 interface AuthGateDialogProps {
-  description: string;
+  description?: string;
   nextPath: string;
   onOpenChange: (open: boolean) => void;
   open: boolean;
@@ -28,9 +28,12 @@ export function AuthGateDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md rounded-3xl p-6 sm:p-7">
-        <DialogHeader className="space-y-2 text-left">
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription className="leading-6">{description}</DialogDescription>
+        <DialogHeader className="space-y-3 text-left">
+          <div className="flex size-11 items-center justify-center rounded-2xl bg-muted/40 text-foreground">
+            <Lock className="size-4" />
+          </div>
+          <DialogTitle className="text-xl font-semibold tracking-tight">{title}</DialogTitle>
+          {description ? <p className="leading-6 text-muted-foreground">{description}</p> : null}
         </DialogHeader>
 
         <DialogFooter className="mt-2 flex-col gap-2 sm:flex-row">

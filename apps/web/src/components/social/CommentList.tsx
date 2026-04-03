@@ -240,8 +240,7 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
         nextPath={nextPath}
-        title="로그인하면 댓글과 답글을 남길 수 있습니다."
-        description="지금 보고 있는 흐름은 그대로 두고, 참여만 로그인 뒤에 이어집니다."
+        title="댓글 남기기"
       />
     </div>
   );

@@ -90,8 +90,7 @@ export default function CrewsPage() {
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
         nextPath="/crews"
-        title="로그인하면 내 크루가 열립니다."
-        description="공개 크루는 계속 둘러볼 수 있고, 내가 속한 크루와 참여 중인 흐름은 로그인 뒤에 이어집니다."
+        title="내 크루"
       />
     </div>
   );
@@ -104,13 +103,7 @@ function MyCrewsList({ enabled, onRequireAuth }: { enabled: boolean; onRequireAu
     return (
       <Card>
         <CardContent className="space-y-4 py-8 text-center">
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">내 크루는 로그인 뒤에 열립니다.</p>
-            <p className="text-sm leading-6 text-muted-foreground">
-              지금은 공개 크루를 먼저 둘러보고, 가입한 크루와 활동 흐름은 로그인 뒤에 이어서 볼 수
-              있습니다.
-            </p>
-          </div>
+          <p className="text-sm font-medium text-foreground">내 크루</p>
           <Button onClick={onRequireAuth}>로그인하거나 회원가입</Button>
         </CardContent>
       </Card>

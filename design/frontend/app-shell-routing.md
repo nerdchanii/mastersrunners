@@ -84,8 +84,10 @@ Most route modules are lazy loaded with `lazy(() => import(...))`.
 - The first-touch route is public-feed-first:
   - `/` resolves to `/feed`
   - `/feed` stays publicly readable for anonymous visitors
+  - the guest `/feed` surface should stay as one main content column without a separate desktop explainer/sidebar rail
   - public navigation from that entry, including `/crews` and public post detail, should stay on-route instead of bouncing through `/login?next=...`
   - deeper participation actions should prefer an in-place auth dialog before a full `/login` handoff
+  - attached workout previews inside public post detail should keep the current post route for anonymous visitors and open an in-place auth dialog instead of navigating to `/workouts/:id`
   - onboarding can be skipped once the user is ready to reach the feed
 - Authenticated mobile navigation now owns the create entry directly:
   - the detached post-only FAB is removed

@@ -1,403 +1,207 @@
-import { useQuery } from "@tanstack/react-query";
-import { Lock, type LucideIcon, Search, Sparkles, Users, X } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { MessageCircle, Share2 } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 
+import { AuthGateDialog } from "@/components/common/AuthGateDialog";
 import { InfiniteScroll } from "@/components/common/InfiniteScroll";
 import { LoadingPage } from "@/components/common/LoadingPage";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import FeedCard from "@/components/feed/FeedCard";
-import { FeedSidebar } from "@/components/feed/FeedSidebar";
 import PostFeedCard from "@/components/feed/PostFeedCard";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LikeButton } from "@/components/social/LikeButton";
+import { WorkoutAttachmentPreview } from "@/components/workout/WorkoutAttachmentPreview";
 import { usePostFeed } from "@/hooks/usePosts";
-import { type SearchUser } from "@/hooks/useUserSearch";
 import { useWorkoutFeed } from "@/hooks/useWorkouts";
-import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { shareLink } from "@/lib/share-link";
 import { cn } from "@/lib/utils";
 
 type FeedTab = "posts" | "workouts";
 
-const runnerSeeds = ["김", "이", "박"];
-
-function useRunnerRecommendations(enabled: boolean) {
-  return useQuery({
-    queryKey: ["feed", "runner-recommendations"],
-    queryFn: async () => {
-      const results = await Promise.all(
-        runnerSeeds.map(async (seed) => {
-          try {
-            return await api.fetch<SearchUser[]>(
-              `/profile/search?q=${encodeURIComponent(seed)}&limit=4`,
-            );
-          } catch {
-            return [];
-          }
-        }),
-      );
-
-      const unique = results
-        .flat()
-        .filter(
-          (user, index, self) => self.findIndex((candidate) => candidate.id === user.id) === index,
-        )
-        .sort((left, right) => (right._count?.followers ?? 0) - (left._count?.followers ?? 0));
-
-      return unique.slice(0, 4);
-    },
-    enabled,
-    staleTime: 60_000,
-  });
-}
-
-function SectionCard({
-  icon: Icon,
-  title,
-  description,
-  children,
-}: {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-  children: ReactNode;
-}) {
-  return (
-    <Card className="overflow-hidden border-border/70 bg-card/95 shadow-sm">
-      <CardContent className="space-y-4 p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="flex size-9 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Icon className="size-4" />
-              </div>
-              <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-            </div>
-            <p className="text-sm leading-6 text-muted-foreground">{description}</p>
-          </div>
-        </div>
-        {children}
-      </CardContent>
-    </Card>
-  );
-}
-
-interface CrewSuggestion {
+interface GuestShowcasePost {
   id: string;
-  name: string;
-  description: string | null;
-  imageUrl: string | null;
-  _count: { members: number };
+  content: string;
+  hashtags: string[];
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    profileImage: string | null;
+  };
+  _count: {
+    likes: number;
+    comments: number;
+  };
+  images?: Array<{
+    id: string;
+    url: string;
+    order: number;
+  }>;
+  workouts: Array<{
+    workout: {
+      id: string;
+      distance: number;
+      duration: number;
+      pace: number;
+      date: string;
+      elevationGain?: number | null;
+      avgHeartRate?: number | null;
+      avgCadence?: number | null;
+      workoutType?: { name: string };
+      route?: { encodedPolyline: string };
+    };
+  }>;
 }
 
-function useCrewRecommendations(enabled: boolean) {
-  return useQuery({
-    queryKey: ["feed", "crew-recommendations"],
-    queryFn: async () => {
-      return api.fetch<CrewSuggestion[]>("/crews/recommend");
+const guestShowcasePosts: GuestShowcasePost[] = [
+  {
+    id: "guest-post-1",
+    content: "한강 반대편 둔치. 가볍게 시작하면 템포는 따라붙는다.",
+    hashtags: ["조깅", "한강", "런닝"],
+    createdAt: "2026-04-01T06:30:00.000Z",
+    user: {
+      id: "guest-runner-1",
+      name: "아침런너",
+      profileImage: null,
     },
-    enabled,
-    staleTime: 60_000,
-  });
-}
+    _count: {
+      likes: 82,
+      comments: 9,
+    },
+    workouts: [
+      {
+        workout: {
+          id: "guest-workout-1",
+          distance: 10500,
+          duration: 3320,
+          pace: 316,
+          date: "2026-04-01T06:00:00.000Z",
+          elevationGain: 42,
+          avgHeartRate: 148,
+          avgCadence: 168,
+          workoutType: {
+            name: "조깅",
+          },
+          route: {
+            encodedPolyline: "_p~iF~ps|U_ulLnnqC_mqNvxq`@",
+          },
+        },
+      },
+    ],
+  },
+  {
+    id: "guest-post-2",
+    content: "오늘은 천천히, 내일은 더 강하게.",
+    hashtags: ["회복", "저속러닝", "기록관리"],
+    createdAt: "2026-04-01T07:15:00.000Z",
+    user: {
+      id: "guest-runner-2",
+      name: "달리기연습생",
+      profileImage: null,
+    },
+    _count: {
+      likes: 64,
+      comments: 6,
+    },
+    workouts: [],
+  },
+];
 
-function RunnerList({ enabled }: { enabled: boolean }) {
-  const { data: runners = [], isLoading } = useRunnerRecommendations(enabled);
+function GuestFeedPostCard({ post }: { post: GuestShowcasePost }) {
+  const [showCommentDialog, setShowCommentDialog] = useState(false);
+  const location = useLocation();
+  const nextPath = `${location.pathname}${location.search}${location.hash}`;
 
-  if (!enabled) {
-    return (
-      <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4">
-        <p className="text-sm font-medium text-foreground">로그인하면 러너 추천을 볼 수 있어요.</p>
-        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          커뮤니티 추천은 로그인 후에 더 잘 맞는 방향으로 열립니다.
-        </p>
-        <Button asChild className="mt-4" size="sm">
-          <Link to="/login?next=/feed">
-            <Search className="size-4" />
-            로그인하기
-          </Link>
-        </Button>
-      </div>
-    );
-  }
+  const handleShare = async () => {
+    try {
+      await shareLink({
+        title: `${post.user.name}님의 기록`,
+        text: post.content.slice(0, 120),
+        url: `${window.location.origin}/feed`,
+      });
+      // no-op: if sharing succeeds, no further action is required
+    } catch {
+      // no-op: guest users can still view; sharing errors are non-blocking in showcase
+    }
+  };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div
-            key={index}
-            className="flex items-center gap-3 rounded-2xl border border-border/60 p-3"
-          >
-            <Skeleton className="size-11 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-1/3" />
-              <Skeleton className="h-3 w-2/3" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (runners.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4">
-        <p className="text-sm font-medium text-foreground">아직 추천할 러너를 찾는 중입니다.</p>
-        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          프로필을 조금 더 채우면, 더 가까운 러너를 먼저 보여줄 수 있습니다.
-        </p>
-        <Button asChild variant="outline" size="sm" className="mt-4">
-          <Link to="/search">
-            <Search className="size-4" />
-            러너 검색
-          </Link>
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      {runners.map((user) => (
-        <Link
-          key={user.id}
-          to={`/profile/${user.id}`}
-          className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background/80 p-3 transition-colors hover:bg-accent/50"
-        >
-          <UserAvatar user={user} size="default" linkToProfile={false} />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <p className="truncate text-sm font-semibold text-foreground">{user.name}</p>
-              {user.isFollowing && <Badge variant="secondary">팔로잉</Badge>}
-            </div>
-            {user.bio ? (
-              <p className="truncate text-xs text-muted-foreground">{user.bio}</p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                팔로워 {user._count?.followers ?? 0} · 워크아웃 {user._count?.workouts ?? 0}
-              </p>
-            )}
-          </div>
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-function CrewList({ enabled }: { enabled: boolean }) {
-  const { data: crews = [], isLoading } = useCrewRecommendations(enabled);
-
-  if (!enabled) {
-    return (
-      <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4">
-        <p className="text-sm font-medium text-foreground">로그인하면 크루 추천이 열립니다.</p>
-        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          크루 탐색은 로그인 뒤에 활동과 지역 흐름에 맞춰 이어집니다.
-        </p>
-        <Button asChild variant="outline" size="sm" className="mt-4">
-          <Link to="/login?next=/feed">
-            <Users className="size-4" />
-            로그인하기
-          </Link>
-        </Button>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div
-            key={index}
-            className="flex items-center gap-3 rounded-2xl border border-border/60 p-3"
-          >
-            <Skeleton className="size-11 rounded-2xl" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-3 w-2/3" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (crews.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4">
-        <p className="text-sm font-medium text-foreground">추천 크루를 불러올 수 없습니다.</p>
-        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          탐색 페이지에서 지역과 분위기로 크루를 직접 둘러볼 수 있습니다.
-        </p>
-        <Button asChild variant="outline" size="sm" className="mt-4">
-          <Link to="/crews">
-            <Users className="size-4" />
-            크루 둘러보기
-          </Link>
-        </Button>
-      </div>
-    );
-  }
+  const postHashtags =
+    post.hashtags?.map((tag, idx) => (
+      <Link
+        key={`${post.id}-${tag}-${idx}`}
+        to={`/search?hashtag=${encodeURIComponent(tag)}`}
+        onClick={(e) => e.preventDefault()}
+        className="rounded-full border border-border/70 px-2 py-1 text-xs text-muted-foreground"
+      >
+        #{tag}
+      </Link>
+    )) ?? [];
 
   return (
-    <div className="space-y-2">
-      {crews.slice(0, 4).map((crew) => (
-        <Link
-          key={crew.id}
-          to={`/crews/${crew.id}`}
-          className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background/80 p-3 transition-colors hover:bg-accent/50"
-        >
-          <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10">
-            {crew.imageUrl ? (
-              <img src={crew.imageUrl} alt={crew.name} className="size-full object-cover" />
-            ) : (
-              <Users className="size-5 text-primary" />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <p className="truncate text-sm font-semibold text-foreground">{crew.name}</p>
-              <Badge variant="outline">{crew._count?.members ?? 0}명</Badge>
-            </div>
-            {crew.description ? (
-              <p className="truncate text-xs text-muted-foreground">{crew.description}</p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                크루 활동과 채팅을 한 번에 볼 수 있습니다.
-              </p>
-            )}
-          </div>
-        </Link>
-      ))}
-    </div>
+    <>
+      <article className="border-b bg-card/65 px-4 py-5" aria-label={`공개 샘플 게시글 ${post.id}`}>
+        <UserAvatar
+          user={post.user}
+          showName
+          subtitle={<span className="text-xs text-muted-foreground">샘플 공개 피드</span>}
+        />
+
+        <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+          {post.content}
+        </p>
+
+        {postHashtags.length > 0 ? (
+          <div className="mt-2 flex flex-wrap gap-1.5">{postHashtags}</div>
+        ) : null}
+
+        {post.workouts.length > 0 ? (
+          <section className="mt-4 space-y-3">
+            {post.workouts.map(({ workout }) => (
+              <WorkoutAttachmentPreview key={workout.id} workout={workout} />
+            ))}
+          </section>
+        ) : null}
+
+        <div className="mt-4 flex items-center gap-1">
+          <LikeButton
+            entityType="post"
+            entityId={post.id}
+            initialLiked={false}
+            initialCount={post._count?.likes ?? 0}
+          />
+          <button
+            type="button"
+            onClick={() => setShowCommentDialog(true)}
+            className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-muted-foreground hover:bg-accent"
+          >
+            <MessageCircle className="size-5" />
+            <span className="text-xs font-medium">댓글</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="ml-auto rounded-lg p-1.5 text-muted-foreground hover:bg-accent"
+            aria-label="공유"
+          >
+            <Share2 className="size-5" />
+          </button>
+        </div>
+      </article>
+
+      <AuthGateDialog
+        open={showCommentDialog}
+        onOpenChange={setShowCommentDialog}
+        nextPath={nextPath}
+        title="댓글 남기기"
+      />
+    </>
   );
 }
 
 function EmptyFeedDiscovery() {
-  const { user, isAuthenticated } = useAuth();
-
   return (
-    <div className="mt-6 space-y-6">
-      <Card className="border-border/70 bg-gradient-to-br from-background via-background to-primary/5 shadow-sm">
-        <CardContent className="flex flex-col gap-5 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-3">
-            <Badge variant="secondary" className="rounded-full px-3 py-1">
-              <Sparkles className="size-3.5" />
-              {isAuthenticated ? "탐색 시작" : "공개 탐색"}
-            </Badge>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                {user
-                  ? `${user.name} 님이 다시 둘러볼 흐름부터 열어둘게요.`
-                  : "공개 크루와 공개 피드부터 먼저 둘러보세요."}
-              </h2>
-              <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                {isAuthenticated
-                  ? "러너와 크루를 먼저 둘러보고, 마음에 드는 흐름부터 다시 이어가면 됩니다."
-                  : "지금은 공개 크루와 공개 기록만 먼저 보고, 참여나 대화가 필요해질 때 로그인하면 됩니다."}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Button asChild variant="outline" className="rounded-full">
-              <Link to="/crews">
-                <Users className="size-4" />
-                크루 보기
-              </Link>
-            </Button>
-            <Button asChild className="rounded-full">
-              <Link to="/search">
-                <Search className="size-4" />
-                러너 검색
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {isAuthenticated ? (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-          <SectionCard
-            icon={Users}
-            title="추천 러너"
-            description="활동과 프로필을 바탕으로 먼저 만나볼 수 있는 러너를 보여줍니다."
-          >
-            <RunnerList enabled />
-          </SectionCard>
-
-          <SectionCard
-            icon={Users}
-            title="추천 크루"
-            description="러닝 스타일과 지역 흐름을 확인하면서 크루를 바로 비교해보세요."
-          >
-            <CrewList enabled />
-          </SectionCard>
-        </div>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.85fr)]">
-          <div className="rounded-3xl border border-border/70 bg-background/85 p-6 shadow-sm">
-            <p className="text-sm font-semibold text-foreground">크루가 가장 좋은 시작점입니다.</p>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              혼자 들어오더라도 보통은 크루를 통해 활동, 게시판, 채팅 흐름으로 이어집니다.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2 text-xs text-foreground">
-              <span className="rounded-full bg-muted/20 px-3 py-1.5">공개 크루</span>
-              <span className="rounded-full bg-muted/20 px-3 py-1.5">공개 게시글</span>
-              <span className="rounded-full bg-muted/20 px-3 py-1.5">공개 워크아웃</span>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-border/70 bg-background/85 p-6 shadow-sm">
-            <div className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
-              <Lock className="size-4 text-muted-foreground" />
-              로그인 후 가능
-            </div>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              댓글, 채팅, 크루 참여, 기록 작성은 둘러본 뒤 필요해질 때 열면 됩니다.
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function FeedAuthPrompt({ onDismiss }: { onDismiss: () => void }) {
-  return (
-    <div className="fixed inset-x-0 bottom-16 z-40 px-4 md:bottom-6">
-      <div className="mx-auto flex w-full max-w-2xl items-start justify-between gap-4 rounded-[28px] border border-border/70 bg-background/95 p-4 shadow-2xl shadow-black/10 backdrop-blur-lg">
-        <div className="space-y-1">
-          <p className="text-sm font-semibold text-foreground">
-            더 탐색하거나 참여하려면 계정을 열어두면 됩니다.
-          </p>
-          <p className="text-xs leading-5 text-muted-foreground">
-            공개 피드는 계속 볼 수 있고, 크루 참여와 댓글, 채팅, 기록 작성은 가입 뒤에 이어집니다.
-          </p>
-        </div>
-
-        <div className="flex shrink-0 items-start gap-2">
-          <Button asChild variant="outline" size="sm" className="rounded-full">
-            <Link to="/login?intent=login&next=/feed">로그인</Link>
-          </Button>
-          <Button asChild size="sm" className="rounded-full">
-            <Link to="/login?intent=signup&next=/feed">회원가입</Link>
-          </Button>
-          <button
-            type="button"
-            onClick={onDismiss}
-            className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
-            aria-label="로그인 유도 닫기"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-      </div>
+    <div className="mt-8 px-4">
+      <p className="text-xs text-muted-foreground">표시할 피드가 없습니다.</p>
     </div>
   );
 }
@@ -405,8 +209,6 @@ function FeedAuthPrompt({ onDismiss }: { onDismiss: () => void }) {
 export default function FeedPage() {
   const [activeTab, setActiveTab] = useState<FeedTab>("posts");
   const { isAuthenticated } = useAuth();
-  const [hasPassedAuthPromptThreshold, setHasPassedAuthPromptThreshold] = useState(false);
-  const [dismissedAuthPrompt, setDismissedAuthPrompt] = useState(false);
 
   const {
     data: postPages,
@@ -414,7 +216,7 @@ export default function FeedPage() {
     hasNextPage: postHasMore,
     isFetchingNextPage: postFetching,
     isLoading: postInitial,
-  } = usePostFeed();
+  } = usePostFeed(isAuthenticated);
 
   const {
     data: workoutPages,
@@ -422,10 +224,11 @@ export default function FeedPage() {
     hasNextPage: workoutHasMore,
     isFetchingNextPage: workoutFetching,
     isLoading: workoutInitial,
-  } = useWorkoutFeed();
+  } = useWorkoutFeed(isAuthenticated);
 
   const postItems = postPages?.pages.flatMap((p) => p?.items ?? []) ?? [];
   const workoutItems = workoutPages?.pages.flatMap((p) => p?.items ?? []) ?? [];
+  const showFeedShowcase = !isAuthenticated;
   const showFeedDiscovery =
     !postInitial && !workoutInitial && postItems.length === 0 && workoutItems.length === 0;
 
@@ -433,29 +236,6 @@ export default function FeedPage() {
   const items = activeTab === "posts" ? postItems : workoutItems;
   const loading = activeTab === "posts" ? postFetching : workoutFetching;
   const hasMore = activeTab === "posts" ? (postHasMore ?? false) : (workoutHasMore ?? false);
-  const showAuthPrompt =
-    !isAuthenticated &&
-    !dismissedAuthPrompt &&
-    hasPassedAuthPromptThreshold &&
-    (postItems.length > 0 || workoutItems.length > 0);
-
-  useEffect(() => {
-    if (isAuthenticated || dismissedAuthPrompt) {
-      return;
-    }
-
-    const handleScroll = () => {
-      if (window.scrollY >= 640) {
-        setHasPassedAuthPromptThreshold(true);
-      }
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [dismissedAuthPrompt, isAuthenticated]);
 
   const handleLoadMore = useCallback(() => {
     if (activeTab === "posts") {
@@ -466,34 +246,42 @@ export default function FeedPage() {
   }, [activeTab, fetchMorePosts, fetchMoreWorkouts]);
 
   return (
-    <div className="flex gap-8">
-      <div className="mx-auto min-w-0 flex-1 max-w-xl lg:mx-0">
-        <div className="sticky top-0 z-10 flex border-b bg-background/95 backdrop-blur-sm md:top-14">
-          <button
-            onClick={() => setActiveTab("posts")}
-            className={cn(
-              "flex-1 border-b-2 py-3 text-sm font-semibold transition-colors",
-              activeTab === "posts"
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )}
-          >
-            게시글
-          </button>
-          <button
-            onClick={() => setActiveTab("workouts")}
-            className={cn(
-              "flex-1 border-b-2 py-3 text-sm font-semibold transition-colors",
-              activeTab === "workouts"
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )}
-          >
-            워크아웃
-          </button>
-        </div>
+    <div className="mx-auto w-full max-w-2xl">
+      <div className="min-w-0">
+        {isAuthenticated ? (
+          <div className="sticky top-0 z-10 flex border-b bg-background/95 backdrop-blur-sm md:top-14">
+            <button
+              onClick={() => setActiveTab("posts")}
+              className={cn(
+                "flex-1 border-b-2 py-3 text-sm font-semibold transition-colors",
+                activeTab === "posts"
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              게시글
+            </button>
+            <button
+              onClick={() => setActiveTab("workouts")}
+              className={cn(
+                "flex-1 border-b-2 py-3 text-sm font-semibold transition-colors",
+                activeTab === "workouts"
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              워크아웃
+            </button>
+          </div>
+        ) : null}
 
-        {isInitial ? (
+        {showFeedShowcase ? (
+          <div className="mt-4">
+            {guestShowcasePosts.map((post) => (
+              <GuestFeedPostCard key={post.id} post={post} />
+            ))}
+          </div>
+        ) : isInitial ? (
           <LoadingPage variant="feed" className="mt-4" />
         ) : showFeedDiscovery ? (
           <EmptyFeedDiscovery />
@@ -511,10 +299,6 @@ export default function FeedPage() {
           </div>
         )}
       </div>
-
-      <FeedSidebar />
-
-      {showAuthPrompt ? <FeedAuthPrompt onDismiss={() => setDismissedAuthPrompt(true)} /> : null}
     </div>
   );
 }

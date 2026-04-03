@@ -81,7 +81,7 @@ test.describe("게시글 상세", () => {
     await expect(images.nth(1)).toHaveAttribute("src", /ordered-second\.jpg/);
     await expect(page.getByTestId("post-detail-workouts")).toBeVisible();
     await expect(page.getByTestId("post-workout-preview-workout-1")).toBeVisible();
-    await expect(page.getByText("분석 리포트 열기")).toBeVisible();
+    await expect(page.getByText("훈련 리포트")).toBeVisible();
     await expect(page.getByText("상승 125m")).toBeVisible();
     await expect(page.getByTestId("post-detail-comments")).toBeVisible();
     await expect(page.getByRole("button", { name: "공유" })).toBeVisible();

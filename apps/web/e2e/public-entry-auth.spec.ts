@@ -35,6 +35,21 @@ const guestCrew = {
   },
 };
 
+const guestWorkout = {
+  workout: {
+    id: "workout-1",
+    distance: 10000,
+    duration: 3000,
+    pace: 300,
+    date: "2026-04-01T06:00:00.000Z",
+    elevationGain: 125,
+    avgHeartRate: 152,
+    avgCadence: 174,
+    workoutType: { name: "조깅" },
+    route: { encodedPolyline: "_p~iF~ps|U_ulLnnqC_mqNvxq`@" },
+  },
+};
+
 async function setupGuest(page: import("@playwright/test").Page) {
   await page.route(`${API_BASE}/config/public`, (route) => {
     route.fulfill({
@@ -211,7 +226,7 @@ async function setupGuest(page: import("@playwright/test").Page) {
         createdAt: "2026-04-01T07:00:00.000Z",
         user: { id: "user-2", name: "공개러너", profileImage: null },
         images: [],
-        workouts: [],
+        workouts: [guestWorkout],
         _count: { likes: 0, comments: 0 },
         isLiked: false,
       }),
@@ -243,7 +258,10 @@ test.describe("public entry auth recovery", () => {
   test("feed에서 crews로 이동한 뒤 뒤로가기가 다시 feed로 돌아온다", async ({ page }) => {
     await page.goto("/feed");
 
-    await expect(page.getByText("공개 피드에서 볼 수 있는 러닝 기록입니다.")).toBeVisible();
+    await expect(
+      page.getByText("한강 반대편 둔치. 가볍게 시작하면 템포는 따라붙는다."),
+    ).toBeVisible();
+    await expect(page.getByText("오늘은 천천히, 내일은 더 강하게.")).toBeVisible();
     await expect(page.getByRole("link", { name: "내 기록", exact: true })).toHaveCount(0);
 
     await page.getByRole("link", { name: "크루", exact: true }).click();
@@ -252,22 +270,21 @@ test.describe("public entry auth recovery", () => {
 
     await page.goBack();
     await expect(page).toHaveURL(/\/feed$/);
-    await expect(page.getByText("공개 피드에서 볼 수 있는 러닝 기록입니다.")).toBeVisible();
+    await expect(
+      page.getByText("한강 반대편 둔치. 가볍게 시작하면 템포는 따라붙는다."),
+    ).toBeVisible();
   });
 
-  test("공개 feed의 쓰기 액션은 페이지 이동 대신 로그인 모달을 띄운다", async ({ page }) => {
-    await page.goto("/feed");
+  test("공개 게시글의 훈련 preview는 guest에서 로그인 모달을 띄우고 URL을 유지한다", async ({
+    page,
+  }) => {
+    await page.goto("/posts/post-1");
 
-    await page.getByRole("button", { name: "워크아웃 추가" }).click();
-    await expect(page).toHaveURL(/\/feed$/);
+    await page.getByTestId("post-workout-preview-workout-1").click();
+
+    await expect(page).toHaveURL(/\/posts\/post-1$/);
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByText("로그인하면 기록을 남길 수 있습니다.")).toBeVisible();
-
-    await page.keyboard.press("Escape");
-
-    await page.getByRole("button", { name: "게시글 작성" }).click();
-    await expect(page).toHaveURL(/\/feed$/);
-    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("dialog").getByText("훈련 리포트 보기")).toBeVisible();
   });
 
   test("공개 crews에서 내 크루는 로그인 모달로 막고 URL은 유지한다", async ({ page }) => {
@@ -277,29 +294,25 @@ test.describe("public entry auth recovery", () => {
 
     await expect(page).toHaveURL(/\/crews$/);
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByText("로그인하면 내 크루가 열립니다.")).toBeVisible();
+    await expect(page.getByRole("dialog").getByText("내 크루")).toBeVisible();
   });
 
-  test("공개 post detail은 읽을 수 있고 좋아요는 로그인 모달을 띄운다", async ({ page }) => {
-    await page.goto("/feed");
+  test("공개 post detail은 직접 접근되고 좋아요/댓글은 로그인 모달을 띄운다", async ({ page }) => {
+    await page.goto("/posts/post-1");
 
-    await page.getByText("공개 피드에서 볼 수 있는 러닝 기록입니다.").click();
     await expect(page).toHaveURL(/\/posts\/post-1$/);
     await expect(page.getByTestId("post-detail-document")).toBeVisible();
 
     await page.getByRole("button", { name: "좋아요" }).click();
     await expect(page).toHaveURL(/\/posts\/post-1$/);
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByText("로그인하면 게시글에 반응을 남길 수 있습니다.")).toBeVisible();
+    await expect(page.getByRole("dialog").getByText("게시글에 반응 남기기")).toBeVisible();
 
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "답글 달기" }).click();
     await expect(page).toHaveURL(/\/posts\/post-1$/);
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByText("로그인하면 댓글과 답글을 남길 수 있습니다.")).toBeVisible();
-
-    await page.goBack();
-    await expect(page).toHaveURL(/\/feed$/);
+    await expect(page.getByRole("dialog").getByText("댓글 남기기")).toBeVisible();
   });
 
   test("공개 crew detail의 가입과 활동 진입은 로그인 모달을 띄운다", async ({ page }) => {
@@ -310,7 +323,7 @@ test.describe("public entry auth recovery", () => {
     await page.getByRole("button", { name: "로그인하고 크루 가입" }).click();
     await expect(page).toHaveURL(/\/crews\/crew-1$/);
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByText("로그인하면 크루 흐름을 이어갈 수 있습니다.")).toBeVisible();
+    await expect(page.getByRole("dialog").getByText("크루 참여")).toBeVisible();
 
     await page.keyboard.press("Escape");
     await page.getByText("토요일 한강 10K").click();

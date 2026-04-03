@@ -409,8 +409,7 @@ function PostDetail({
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
         nextPath={nextPath}
-        title="로그인하면 반응을 남길 수 있습니다."
-        description="공개 게시판 글은 계속 읽을 수 있고, 좋아요 같은 반응은 로그인 뒤에 바로 이어집니다."
+        title="반응 남기기"
       />
     </div>
   );

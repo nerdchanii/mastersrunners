@@ -359,12 +359,7 @@ export default function CrewDetailClient() {
                       </section>
 
                       <section className="space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-4">
-                        <div className="space-y-1">
-                          <h2 className="text-base font-semibold">크루 소식</h2>
-                          <p className="text-sm text-muted-foreground">
-                            짧은 공유 글은 게시판 아래의 보조 흐름으로 이어집니다.
-                          </p>
-                        </div>
+                        <h2 className="text-base font-semibold">크루 소식</h2>
                         <CrewPostList crewId={crewId} isOwner={currentUserRole === "OWNER"} />
                       </section>
                     </div>
@@ -458,8 +453,7 @@ export default function CrewDetailClient() {
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
         nextPath={authReturnPath}
-        title="로그인하면 크루 흐름을 이어갈 수 있습니다."
-        description="공개 크루 상세는 계속 볼 수 있고, 가입이나 활동 참여, 초대 링크 진입은 로그인 뒤에 바로 이어집니다."
+        title="크루 참여"
       />
     </div>
   );
