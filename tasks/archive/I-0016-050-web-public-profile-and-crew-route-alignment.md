@@ -71,12 +71,15 @@ Codex Stop-hook review automation을 쓰려면 위 다섯 항목을 placeholder 
 ## 핸드오프
 
 - 공개 읽기 정책이 바뀌면 라우터 구현보다 문서를 먼저 내리는 대신, 새 정책과 divergence를 함께 남긴다.
+- 공개 프로필 workout 재노출 정책은 `tasks/todo/I-0016-060-web-profile-workout-visibility-policy-followup.md`에서 이어간다.
+- `/profile/:id/followers`, `/profile/:id/following`의 route-level 보호 정렬은 `tasks/todo/I-0016-070-web-follow-graph-route-protection-alignment.md`에서 이어간다.
 
 ## 설계 divergence
 
 - `/profile/:id/followers`, `/profile/:id/following`은 라우터상 공개 트리에 있지만 현재 제품 정책에서는 본인만 읽을 수 있다.
 - 공개 프로필의 workout 탭은 위치 민감도를 이유로 숨겼다. workout 자체 공개 설정을 프로필 surface에 다시 반영하는 작업은 별도 후속 태스크가 필요하다.
 - 공개 크루의 게시판/활동은 목록까지만 열고, 상세 읽기와 크루 게시글은 멤버십 경계 뒤에 남겼다.
+- follow-up tasks: `I-0016-060`, `I-0016-070`
 
 ## 시도 로그
 

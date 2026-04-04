@@ -94,6 +94,8 @@
 - `tasks/todo/I-0016-030-web-copy-and-auth-gate-alignment.md`
 - `tasks/archive/I-0016-040-meta-ux-guardrail-checks-expansion.md`
 - `tasks/archive/I-0016-050-web-public-profile-and-crew-route-alignment.md`
+- `tasks/todo/I-0016-060-web-profile-workout-visibility-policy-followup.md`
+- `tasks/todo/I-0016-070-web-follow-graph-route-protection-alignment.md`
 
 ## 성공 기준
 
@@ -110,3 +112,4 @@
 - 2026-04-03: 최종 UX 리뷰에서 남은 리스크를 `게스트 프리뷰 affordance 정리`와 `공개 UX 회귀 검증 강화` 두 갈래로 나눠 후속 active 태스크로 착수했다.
 - 2026-04-04: `I-0016-020`에서 게스트 `/feed` 프리뷰 affordance와 공개 게시글 참여 게이트를 정렬한 뒤, 남은 공개 프로필/크루 라우트 정렬 범위는 `I-0016-050`으로 분리했다.
 - 2026-04-04: `I-0016-050`에서 공개 프로필을 `헤더 + 게시글 + 크루` 읽기 표면으로 열고, 공개 크루를 `summary + activity list + board list`까지만 허용하는 계약으로 정렬했다.
+- 2026-04-04: `I-0016-050` closeout residual risk를 `공개 프로필 workout 정책`과 `followers/following 라우트 보호 정렬` 두 개의 후속 태스크로 다시 분리했다.
