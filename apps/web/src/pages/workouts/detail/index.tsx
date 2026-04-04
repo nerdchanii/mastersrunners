@@ -270,7 +270,7 @@ export default function WorkoutDetailPage() {
   const isOwner = currentUser?.id === workoutDetail.user.id;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 pb-10">
+    <div className="space-y-6 pb-10 md:mx-auto md:max-w-6xl md:px-4">
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
@@ -294,7 +294,7 @@ export default function WorkoutDetailPage() {
         }}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-2 md:px-0">
         <Button onClick={() => navigate(-1)} variant="ghost" size="sm" className="-ml-3">
           <ArrowLeft className="size-4" />
           돌아가기
@@ -332,7 +332,7 @@ export default function WorkoutDetailPage() {
 
       <section className="border-b border-border/60 pb-8">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)] lg:gap-10">
-          <div className="relative min-h-[360px] overflow-hidden rounded-[32px] bg-muted/15">
+          <div className="relative min-h-[280px] overflow-hidden bg-muted/15 sm:rounded-[28px] md:min-h-[320px]">
             {hasMap ? (
               <>
                 <WorkoutAnalysisMap
@@ -343,7 +343,7 @@ export default function WorkoutDetailPage() {
                       ? { startIndex: selectedLap.startIndex, endIndex: selectedLap.endIndex }
                       : null
                   }
-                  className="h-[420px] lg:h-full"
+                  className="h-[320px] sm:h-[380px] lg:h-full"
                 />
                 {selectedPoint && (
                   <div className="absolute bottom-4 left-4 right-4 rounded-[24px] border border-white/20 bg-slate-950/72 px-4 py-3 text-white shadow-lg backdrop-blur-sm sm:right-auto">
@@ -370,7 +370,7 @@ export default function WorkoutDetailPage() {
             ) : (
               <div
                 data-testid="workout-detail-map-empty"
-                className="flex h-[420px] items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.08),_transparent_55%),linear-gradient(180deg,_rgba(15,23,42,0.02),_transparent)] px-6 text-center"
+                className="flex h-[320px] items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.08),_transparent_55%),linear-gradient(180deg,_rgba(15,23,42,0.02),_transparent)] px-6 text-center sm:h-[380px]"
               >
                 <div className="max-w-sm space-y-2">
                   <h2 className="text-xl font-semibold text-foreground">
@@ -385,7 +385,7 @@ export default function WorkoutDetailPage() {
             )}
           </div>
 
-          <div className="space-y-6 lg:border-l lg:border-border/60 lg:pl-10">
+          <div className="space-y-6 px-4 sm:px-5 lg:border-l lg:border-border/60 lg:px-0 lg:pl-10">
             <div className="space-y-4">
               <UserAvatar
                 user={workoutDetail.user}
