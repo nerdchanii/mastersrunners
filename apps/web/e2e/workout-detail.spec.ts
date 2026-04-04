@@ -137,7 +137,9 @@ test.describe("워크아웃 상세 페이지", () => {
   test("소유자에게 삭제 버튼이 표시된다", async ({ page }) => {
     await page.goto(`/workouts/${mockWorkoutDetail.id}`);
 
-    await expect(page.getByRole("button", { name: /삭제/ })).toBeVisible();
+    await page.getByRole("button", { name: "더보기 메뉴 열기" }).click();
+
+    await expect(page.getByRole("menuitem", { name: /삭제/ })).toBeVisible();
   });
 
   test("존재하지 않는 워크아웃이면 오류가 표시된다", async ({ page }) => {

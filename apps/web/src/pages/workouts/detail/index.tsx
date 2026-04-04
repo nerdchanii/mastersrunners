@@ -7,6 +7,7 @@ import {
   Heart,
   HeartPulse,
   ImageIcon,
+  MoreHorizontal,
   Mountain,
   Share2,
   Trash2,
@@ -21,8 +22,13 @@ import { LoadingPage } from "@/components/common/LoadingPage";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { CommentList } from "@/components/social/CommentList";
 import { LikeButton } from "@/components/social/LikeButton";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ShareCardGenerator } from "@/components/workout/ShareCardGenerator";
 import { WorkoutAnalysisCharts } from "@/components/workout/WorkoutAnalysisCharts";
 import { WorkoutAnalysisMap } from "@/components/workout/WorkoutAnalysisMap";
@@ -268,6 +274,11 @@ export default function WorkoutDetailPage() {
   if (!workoutDetail) return null;
 
   const isOwner = currentUser?.id === workoutDetail.user.id;
+  const workoutDateLabel = new Date(workoutDetail.date).toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
   return (
     <div className="space-y-6 pb-10 md:mx-auto md:max-w-6xl md:px-4">
@@ -300,33 +311,73 @@ export default function WorkoutDetailPage() {
           돌아가기
         </Button>
         <div className="flex flex-wrap items-center gap-2">
-          {isOwner && (
-            <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button
-                onClick={() => navigate(`/workouts/${workoutId}/edit`)}
-                variant="outline"
-                size="sm"
+                variant="ghost"
+                size="icon"
+                className="size-9 rounded-full"
+                aria-label="공유 메뉴 열기"
               >
-                수정
+                <Share2 className="size-4" />
               </Button>
-              <Button onClick={() => setConfirmOpen(true)} variant="destructive" size="sm">
-                <Trash2 className="size-4" />
-                삭제
-              </Button>
-            </>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-48 rounded-2xl border-border/70 p-2 shadow-lg"
+            >
+              <DropdownMenuItem className="rounded-xl py-2" onClick={() => setShareCardOpen(true)}>
+                <ImageIcon className="size-4" />
+                카드 생성
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="rounded-xl py-2"
+                onClick={() => navigate(`/posts/new?workoutId=${workoutId}`)}
+              >
+                <Share2 className="size-4" />
+                포스트로 공유
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {isOwner && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-9 rounded-full"
+                  aria-label="더보기 메뉴 열기"
+                >
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-40 rounded-2xl border-border/70 p-2 shadow-lg"
+              >
+                <DropdownMenuItem
+                  className="rounded-xl py-2"
+                  onClick={() => navigate(`/workouts/${workoutId}/edit`)}
+                >
+                  수정
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="rounded-xl py-2 text-destructive focus:text-destructive"
+                  onClick={() => setConfirmOpen(true)}
+                >
+                  <Trash2 className="size-4" />
+                  삭제
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
-          <Button onClick={() => setShareCardOpen(true)} variant="outline" size="sm">
-            <ImageIcon className="size-4" />
-            카드 생성
-          </Button>
-          <Button
-            onClick={() => navigate(`/posts/new?workoutId=${workoutId}`)}
-            variant="outline"
-            size="sm"
-          >
-            <Share2 className="size-4" />
-            포스트로 공유
-          </Button>
+        </div>
+      </div>
+
+      <div className="px-4 md:px-0">
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Calendar className="size-3.5" />
+          <span>{workoutDateLabel}</span>
         </div>
       </div>
 
@@ -387,34 +438,12 @@ export default function WorkoutDetailPage() {
 
           <div className="space-y-6 px-4 sm:px-5 lg:border-l lg:border-border/60 lg:px-0 lg:pl-10">
             <div className="space-y-4">
-              <UserAvatar
-                user={workoutDetail.user}
-                showName
-                subtitle={
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Calendar className="size-3" />
-                    {new Date(workoutDetail.date).toLocaleDateString("ko-KR", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </div>
-                }
-              />
+              <UserAvatar user={workoutDetail.user} showName />
 
               <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary">{workoutDetail.workoutType?.name ?? "런닝"}</Badge>
-                  {workoutDetail.workoutType?.category && (
-                    <span className="text-xs text-muted-foreground">
-                      {workoutDetail.workoutType.category}
-                    </span>
-                  )}
-                  <Badge variant="outline" className="capitalize">
-                    {workoutDetail.visibility.toLowerCase()}
-                  </Badge>
-                </div>
-
+                {workoutDetail.workoutType?.name && (
+                  <p className="text-sm text-muted-foreground">{workoutDetail.workoutType.name}</p>
+                )}
                 {workoutDetail.shoe && (
                   <div className="flex items-center gap-2 text-sm text-foreground">
                     <Footprints className="size-4 text-muted-foreground" />
@@ -456,13 +485,7 @@ export default function WorkoutDetailPage() {
             </div>
 
             {highlightMetrics.length > 0 && (
-              <div className="space-y-3">
-                <div>
-                  <h2 className="text-sm font-semibold text-foreground">세부 기록</h2>
-                  <p className="text-xs text-muted-foreground">
-                    지도 아래 분석 섹션과 함께 읽을 수 있는 요약 지표입니다.
-                  </p>
-                </div>
+              <div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-4">
                   {highlightMetrics.map((metric) => (
                     <div key={metric.key} className="border-b border-border/60 pb-3">
