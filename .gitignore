@@ -52,9 +52,18 @@ next-env.d.ts
 
 # codex
 .codex/
+!.codex/agents/
+!.codex/agents/*.toml
+!.codex/config.toml
+!.codex/hooks.json
 
 # claude code
 .claude/
+!.claude/agents/
+!.claude/agents/*.md
+!.claude/skills/
+!.claude/skills/*/
+!.claude/skills/*/SKILL.md
 
 # oh-my-claudecode
 .omc/
@@ -73,3 +82,7 @@ next-env.d.ts
 # activity file samples
 *.fit
 *.gpx
+
+# python cache
+__pycache__/
+*.pyc
