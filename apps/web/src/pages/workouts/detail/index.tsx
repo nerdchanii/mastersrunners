@@ -50,16 +50,16 @@ interface WorkoutData {
   pace: number;
   date: string;
   memo: string | null;
-  visibility: string;
+  visibility?: string | null;
   calories: number | null;
   elevationGain: number | null;
   avgHeartRate: number | null;
   maxHeartRate: number | null;
   avgCadence: number | null;
   maxCadence: number | null;
-  liked: boolean;
-  likeCount: number;
-  commentCount: number;
+  liked?: boolean;
+  likeCount?: number;
+  commentCount?: number;
   user: { id: string; name: string; profileImage: string | null };
   workoutType: { id: string; name: string; category: string } | null;
   shoe: { id: string; brand: string; model: string } | null;
@@ -79,28 +79,42 @@ export default function WorkoutDetailPage() {
   const { data: workout, isLoading, error } = useWorkout(workoutId ?? "");
   const deleteWorkout = useDeleteWorkout();
 
-  const typedWorkout = workout as WorkoutData | undefined;
+  const workoutDetail = useMemo(() => {
+    if (!workout) {
+      return null;
+    }
+
+    const rawWorkout = workout as unknown as WorkoutData;
+
+    return {
+      ...rawWorkout,
+      visibility: rawWorkout.visibility ?? "FOLLOWERS",
+      liked: rawWorkout.liked ?? false,
+      likeCount: rawWorkout.likeCount ?? 0,
+      commentCount: rawWorkout.commentCount ?? 0,
+    };
+  }, [workout]);
 
   const rawRouteData = useMemo<WorkoutRoutePointLike[]>(() => {
-    if (!typedWorkout?.workoutRoutes?.[0]?.routeData) {
+    if (!workoutDetail?.workoutRoutes?.[0]?.routeData) {
       return [];
     }
 
     try {
-      const parsed = JSON.parse(typedWorkout.workoutRoutes[0].routeData);
+      const parsed = JSON.parse(workoutDetail.workoutRoutes[0].routeData);
       return Array.isArray(parsed) ? (parsed as WorkoutRoutePointLike[]) : [];
     } catch {
       return [];
     }
-  }, [typedWorkout?.workoutRoutes]);
+  }, [workoutDetail?.workoutRoutes]);
 
   const track = useMemo(
-    () => buildWorkoutTrack(rawRouteData, typedWorkout?.duration ?? 0),
-    [rawRouteData, typedWorkout?.duration],
+    () => buildWorkoutTrack(rawRouteData, workoutDetail?.duration ?? 0),
+    [rawRouteData, workoutDetail?.duration],
   );
   const lapSegments = useMemo(
-    () => buildLapSegments(typedWorkout?.workoutLaps ?? [], track),
-    [track, typedWorkout?.workoutLaps],
+    () => buildLapSegments(workoutDetail?.workoutLaps ?? [], track),
+    [track, workoutDetail?.workoutLaps],
   );
 
   useEffect(() => {
@@ -133,51 +147,51 @@ export default function WorkoutDetailPage() {
   const hasAnalysis = hasElevation || hasHeartRate || hasCadence;
 
   const highlightMetrics = [
-    typedWorkout?.calories != null && typedWorkout.calories > 0
+    workoutDetail?.calories != null && workoutDetail.calories > 0
       ? {
           key: "calories",
           label: "칼로리",
-          value: `${Math.round(typedWorkout.calories)} kcal`,
+          value: `${Math.round(workoutDetail.calories)} kcal`,
           icon: <Flame className="size-4 text-orange-500" />,
         }
       : null,
-    typedWorkout?.elevationGain != null && typedWorkout.elevationGain > 0
+    workoutDetail?.elevationGain != null && workoutDetail.elevationGain > 0
       ? {
           key: "elevation",
           label: "누적 고도",
-          value: `${Math.round(typedWorkout.elevationGain)} m`,
+          value: `${Math.round(workoutDetail.elevationGain)} m`,
           icon: <Mountain className="size-4 text-emerald-600" />,
         }
       : null,
-    typedWorkout?.avgHeartRate != null && typedWorkout.avgHeartRate > 0
+    workoutDetail?.avgHeartRate != null && workoutDetail.avgHeartRate > 0
       ? {
           key: "avg-heart-rate",
           label: "평균 심박",
-          value: `${Math.round(typedWorkout.avgHeartRate)} bpm`,
+          value: `${Math.round(workoutDetail.avgHeartRate)} bpm`,
           icon: <Heart className="size-4 text-rose-500" />,
         }
       : null,
-    typedWorkout?.maxHeartRate != null && typedWorkout.maxHeartRate > 0
+    workoutDetail?.maxHeartRate != null && workoutDetail.maxHeartRate > 0
       ? {
           key: "max-heart-rate",
           label: "최대 심박",
-          value: `${Math.round(typedWorkout.maxHeartRate)} bpm`,
+          value: `${Math.round(workoutDetail.maxHeartRate)} bpm`,
           icon: <HeartPulse className="size-4 text-rose-600" />,
         }
       : null,
-    typedWorkout?.avgCadence != null && typedWorkout.avgCadence > 0
+    workoutDetail?.avgCadence != null && workoutDetail.avgCadence > 0
       ? {
           key: "avg-cadence",
           label: "평균 케이던스",
-          value: `${Math.round(typedWorkout.avgCadence)} spm`,
+          value: `${Math.round(workoutDetail.avgCadence)} spm`,
           icon: <Footprints className="size-4 text-sky-600" />,
         }
       : null,
-    typedWorkout?.maxCadence != null && typedWorkout.maxCadence > 0
+    workoutDetail?.maxCadence != null && workoutDetail.maxCadence > 0
       ? {
           key: "max-cadence",
           label: "최대 케이던스",
-          value: `${Math.round(typedWorkout.maxCadence)} spm`,
+          value: `${Math.round(workoutDetail.maxCadence)} spm`,
           icon: <ActivityIcon className="size-4 text-sky-700" />,
         }
       : null,
@@ -251,9 +265,9 @@ export default function WorkoutDetailPage() {
     );
   }
 
-  if (!typedWorkout) return null;
+  if (!workoutDetail) return null;
 
-  const isOwner = currentUser?.id === typedWorkout.user.id;
+  const isOwner = currentUser?.id === workoutDetail.user.id;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 pb-10">
@@ -272,11 +286,11 @@ export default function WorkoutDetailPage() {
         open={shareCardOpen}
         onOpenChange={setShareCardOpen}
         data={{
-          distance: typedWorkout.distance,
-          duration: typedWorkout.duration,
-          pace: typedWorkout.pace,
-          date: typedWorkout.date,
-          userName: typedWorkout.user.name,
+          distance: workoutDetail.distance,
+          duration: workoutDetail.duration,
+          pace: workoutDetail.pace,
+          date: workoutDetail.date,
+          userName: workoutDetail.user.name,
         }}
       />
 
@@ -374,12 +388,12 @@ export default function WorkoutDetailPage() {
           <div className="space-y-6 p-6">
             <div className="space-y-4">
               <UserAvatar
-                user={typedWorkout.user}
+                user={workoutDetail.user}
                 showName
                 subtitle={
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <Calendar className="size-3" />
-                    {new Date(typedWorkout.date).toLocaleDateString("ko-KR", {
+                    {new Date(workoutDetail.date).toLocaleDateString("ko-KR", {
                       year: "numeric",
                       month: "long",
                       day: "numeric",
@@ -390,22 +404,22 @@ export default function WorkoutDetailPage() {
 
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary">{typedWorkout.workoutType?.name ?? "런닝"}</Badge>
-                  {typedWorkout.workoutType?.category && (
+                  <Badge variant="secondary">{workoutDetail.workoutType?.name ?? "런닝"}</Badge>
+                  {workoutDetail.workoutType?.category && (
                     <span className="text-xs text-muted-foreground">
-                      {typedWorkout.workoutType.category}
+                      {workoutDetail.workoutType.category}
                     </span>
                   )}
                   <Badge variant="outline" className="capitalize">
-                    {typedWorkout.visibility.toLowerCase()}
+                    {workoutDetail.visibility.toLowerCase()}
                   </Badge>
                 </div>
 
-                {typedWorkout.shoe && (
+                {workoutDetail.shoe && (
                   <div className="flex items-center gap-2 text-sm text-foreground">
                     <Footprints className="size-4 text-muted-foreground" />
                     <span>
-                      {typedWorkout.shoe.brand} {typedWorkout.shoe.model}
+                      {workoutDetail.shoe.brand} {workoutDetail.shoe.model}
                     </span>
                   </div>
                 )}
@@ -418,7 +432,7 @@ export default function WorkoutDetailPage() {
                   거리
                 </p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-                  {formatDistance(typedWorkout.distance)}
+                  {formatDistance(workoutDetail.distance)}
                   <span className="ml-1 text-sm font-normal text-muted-foreground">km</span>
                 </p>
               </div>
@@ -427,7 +441,7 @@ export default function WorkoutDetailPage() {
                   시간
                 </p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-                  {formatDuration(typedWorkout.duration)}
+                  {formatDuration(workoutDetail.duration)}
                 </p>
               </div>
               <div className="rounded-[24px] border border-border/60 bg-muted/15 px-4 py-4">
@@ -435,7 +449,7 @@ export default function WorkoutDetailPage() {
                   평균 페이스
                 </p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-                  {formatPace(typedWorkout.pace)}
+                  {formatPace(workoutDetail.pace)}
                   <span className="ml-1 text-sm font-normal text-muted-foreground">/km</span>
                 </p>
               </div>
@@ -466,11 +480,11 @@ export default function WorkoutDetailPage() {
               </div>
             )}
 
-            {typedWorkout.memo && (
+            {workoutDetail.memo && (
               <div className="rounded-[24px] border border-border/60 bg-muted/15 px-4 py-4">
                 <p className="text-sm font-medium text-foreground">메모</p>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                  {typedWorkout.memo}
+                  {workoutDetail.memo}
                 </p>
               </div>
             )}
@@ -478,12 +492,12 @@ export default function WorkoutDetailPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-1">
               <LikeButton
                 entityType="workout"
-                entityId={typedWorkout.id}
-                initialLiked={typedWorkout.liked}
-                initialCount={typedWorkout.likeCount}
+                entityId={workoutDetail.id}
+                initialLiked={workoutDetail.liked}
+                initialCount={workoutDetail.likeCount}
               />
               <span className="text-sm text-muted-foreground">
-                댓글 {typedWorkout.commentCount.toLocaleString()}개
+                댓글 {workoutDetail.commentCount.toLocaleString()}개
               </span>
             </div>
           </div>
@@ -549,10 +563,10 @@ export default function WorkoutDetailPage() {
             </p>
           </div>
           <span className="text-sm text-muted-foreground">
-            {typedWorkout.commentCount.toLocaleString()}개
+            {workoutDetail.commentCount.toLocaleString()}개
           </span>
         </div>
-        <CommentList entityType="workout" entityId={typedWorkout.id} />
+        <CommentList entityType="workout" entityId={workoutDetail.id} />
       </section>
     </div>
   );

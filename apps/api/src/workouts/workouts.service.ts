@@ -91,10 +91,10 @@ export class WorkoutsService {
     return workout;
   }
 
-  async findOne(id: string) {
-    const workout = await this.workoutRepo.findByIdWithUser(id);
+  async findOne(id: string, requesterUserId?: string) {
+    const workout = await this.workoutRepo.findByIdWithUser(id, requesterUserId);
     if (!workout) return null;
-    const { file, route, laps, ...rest } = workout;
+    const { file, route, laps, _count, workoutLikes, ...rest } = workout;
 
     // Extract firstPoint/lastPoint from gpsTrack if available
     let firstPoint: { lat: number; lon: number; elevation?: number } | null = null;
@@ -132,6 +132,9 @@ export class WorkoutsService {
 
     return {
       ...rest,
+      liked: Array.isArray(workoutLikes) ? workoutLikes.length > 0 : false,
+      likeCount: _count?.workoutLikes ?? 0,
+      commentCount: _count?.workoutComments ?? 0,
       workoutFiles: file ? [file] : [],
       workoutRoutes: route ? [route] : [],
       workoutLaps: laps,

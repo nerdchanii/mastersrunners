@@ -10,6 +10,9 @@ interface Workout {
   date: string;
   memo: string | null;
   visibility: "PRIVATE" | "FOLLOWERS" | "PUBLIC";
+  liked?: boolean;
+  likeCount?: number;
+  commentCount?: number;
   workoutType?: { id: string; name: string };
   shoe?: { id: string; name: string };
 }

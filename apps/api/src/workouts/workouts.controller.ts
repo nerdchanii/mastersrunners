@@ -58,11 +58,10 @@ export class WorkoutsController {
   @Public()
   @Get(":id")
   async findOne(@Param("id") id: string, @Req() req: Request) {
-    const workout = await this.workoutsService.findOne(id);
-    if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
-
     const user = req.user as { userId: string } | undefined;
     const requesterId = user?.userId;
+    const workout = await this.workoutsService.findOne(id, requesterId);
+    if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
 
     if (workout.visibility === "PRIVATE" && workout.userId !== requesterId) {
       throw new ForbiddenException("접근 권한이 없습니다.");
@@ -84,7 +83,7 @@ export class WorkoutsController {
   @Patch(":id")
   async update(@Param("id") id: string, @Req() req: Request, @Body() dto: UpdateWorkoutDto) {
     const { userId } = req.user as { userId: string };
-    const workout = await this.workoutsService.findOne(id);
+    const workout = await this.workoutsService.findOne(id, userId);
     if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
     if (workout.userId !== userId)
       throw new ForbiddenException("본인의 기록만 수정할 수 있습니다.");
@@ -94,7 +93,7 @@ export class WorkoutsController {
   @Delete(":id")
   async remove(@Param("id") id: string, @Req() req: Request) {
     const { userId } = req.user as { userId: string };
-    const workout = await this.workoutsService.findOne(id);
+    const workout = await this.workoutsService.findOne(id, userId);
     if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
     if (workout.userId !== userId)
       throw new ForbiddenException("본인의 기록만 삭제할 수 있습니다.");

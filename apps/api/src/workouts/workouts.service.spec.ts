@@ -185,14 +185,25 @@ describe("WorkoutsService", () => {
 
   describe("findOne", () => {
     it("should map Prisma relations to frontend field names", async () => {
-      const mockData = { id: "w1", user: { id: "u1" }, file: null, route: null, laps: [] };
+      const mockData = {
+        id: "w1",
+        user: { id: "u1" },
+        file: null,
+        route: null,
+        laps: [],
+        _count: { workoutLikes: 0, workoutComments: 0 },
+        workoutLikes: [],
+      };
       mockWorkoutRepo.findByIdWithUser.mockResolvedValue(mockData);
 
       const result = await service.findOne("w1");
 
-      expect(mockWorkoutRepo.findByIdWithUser).toHaveBeenCalledWith("w1");
+      expect(mockWorkoutRepo.findByIdWithUser).toHaveBeenCalledWith("w1", undefined);
       expect(result).toMatchObject({
         id: "w1",
+        liked: false,
+        likeCount: 0,
+        commentCount: 0,
         workoutFiles: [],
         workoutRoutes: [],
         workoutLaps: [],
@@ -210,6 +221,8 @@ describe("WorkoutsService", () => {
         id: "w1",
         user: { id: "u1", name: "Test", profileImage: null },
         workoutType: { id: "wt1", category: "EASY", name: "Easy Run" },
+        _count: { workoutLikes: 3, workoutComments: 2 },
+        workoutLikes: [{ id: "like-1" }],
         file: {
           id: "f1",
           fileType: "FIT",
@@ -237,6 +250,9 @@ describe("WorkoutsService", () => {
       const result = await service.findOne("w1");
 
       expect(result).toBeDefined();
+      expect(result!.liked).toBe(true);
+      expect(result!.likeCount).toBe(3);
+      expect(result!.commentCount).toBe(2);
       expect(result!.workoutFiles).toHaveLength(1);
       expect(result!.workoutFiles[0].id).toBe("f1");
       expect(result!.workoutRoutes).toHaveLength(1);

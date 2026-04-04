@@ -78,12 +78,14 @@ function RootLayout() {
 }
 
 function MainLayout() {
+  const location = useLocation();
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="mx-auto max-w-5xl px-4 py-4 pb-20 md:py-6 md:pb-6">
         <Suspense fallback={<LoadingPage />}>
-          <ErrorBoundary>
+          <ErrorBoundary key={location.key}>
             <Outlet />
           </ErrorBoundary>
         </Suspense>

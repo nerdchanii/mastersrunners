@@ -33,7 +33,7 @@ sources:
 
 - `RootLayout`: `ThemeProvider -> AuthProvider -> Outlet`
 - `AuthLayout`: login-only shell
-- `MainLayout`: `Header`, centered `<main>`, `BottomNav`, `Suspense`, `ErrorBoundary`
+- `MainLayout`: `Header`, centered `<main>`, `BottomNav`, `Suspense`, location-scoped `ErrorBoundary`
 
 ## 라우트 모델
 
@@ -75,6 +75,7 @@ sources:
 ## 현재 제약
 
 - 라우트 경로와 파일 경로가 항상 1:1은 아니다. 예를 들어 `/workouts/:id`는 `pages/workouts/detail/index.tsx`로 해석된다.
+- `MainLayout`의 page-scoped `ErrorBoundary`는 navigation이 바뀌면 reset되어야 하며, 사용자가 fallback에서 다른 라우트로 이동했을 때 이전 오류 UI를 붙잡고 있으면 안 된다.
 - 일부 큰 라우트 파일은 아직 오케스트레이션과 뷰 로직을 함께 담고 있으며, 이에 대한 가독성 후속 작업은 `I-0007`이다.
 - 로그인 이후 셸 진입점에는 이제 데스크톱 헤더와 모바일 하단 셸에 전용 피드백 진입이 포함되어, 사용자가 제품을 떠나지 않고도 버그를 제보할 수 있다.
 - 검색은 1급 셸 진입점이다.
