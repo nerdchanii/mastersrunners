@@ -82,7 +82,20 @@ import sys
 
 payload = json.loads(sys.argv[1])
 assert payload["decision"] == "block", payload
-assert "exactly one active task" in payload["reason"], payload
+assert "must not keep more than one active task" in payload["reason"], payload
+PY
+
+repo_zero="$fixture_root/repo-zero"
+make_repo "$repo_zero"
+touch "$repo_zero/dirty.txt"
+
+zero_output="$(run_hook "{\"hook_event_name\":\"Stop\",\"cwd\":\"$repo_zero\",\"stop_hook_active\":false}")"
+python3 - "$zero_output" <<'PY'
+import json
+import sys
+
+payload = json.loads(sys.argv[1])
+assert payload["continue"] is True, payload
 PY
 
 repo_candidate="$fixture_root/repo-candidate"

@@ -65,7 +65,8 @@ hook이 review continuation reason과 함께 `decision: "block"`을 반환하면
 
 ## 운영 규칙
 
-- dirty Codex worktree는 active task 하나만 유지한다.
+- dirty Codex worktree는 active task를 하나 이하로 유지한다.
+- active task가 0개면 Stop hook은 통과하고, active task가 2개 이상이면 Stop hook이 block한다.
 - 이 저장소는 single-active-task invariant를 즉시 강제한다. 따라서 rollout 직후에는 기존 multi-active backlog 때문에 Stop hook이 계속 block될 수 있고, 이는 버그가 아니라 의도된 정상 동작이다.
 - `Stop` hook은 review owner이고, `pre-push`는 closeout fallback gate다.
 - reviewer protocol을 바꾸면 `reviewers/protocols.json`, `.codex/agents/`, `.agents/skills/`, 이 runbook을 같이 갱신한다.

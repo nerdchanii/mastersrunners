@@ -61,6 +61,8 @@ repo-local specialist review와 PO review는 OpenAI Codex 및 Claude Code 문서
   5. `tasks/reviews/<task-id>/` JSON artifact와 task `리뷰 노트` 동기화
 - nested `codex review` subprocess는 v1 기본 경로가 아니다.
 - Stop hook은 dirty worktree에서 active task가 정확히 하나일 때만 deterministic하게 review ownership을 가진다.
+- dirty worktree에 active task가 없으면 hook은 review를 시작하지 않고 그대로 통과시킨다.
+- dirty worktree에 active task가 둘 이상이면 hook이 invariant failure로 block한다.
 - 이 저장소는 이 invariant를 immediate hard stop으로 채택한다. 즉, 기존 active backlog가 아직 여러 개인 상태라면 Stop hook이 바로 block하는 것이 설계된 rollout 동작이다.
 
 ## Structured Review Artifact

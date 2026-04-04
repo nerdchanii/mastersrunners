@@ -243,11 +243,14 @@ def main() -> int:
         if path.name != ".gitkeep"
     )
 
-    if len(active_tasks) != 1:
+    if len(active_tasks) == 0:
+        return emit({"continue": True})
+
+    if len(active_tasks) > 1:
         task_lines = "\n".join(f"- {path.relative_to(root).as_posix()}" for path in active_tasks) or "- none"
         return emit(
             invariant_block(
-                "Dirty worktrees must keep exactly one active task for Codex Stop-hook review automation.\n"
+                "Dirty worktrees must not keep more than one active task for Codex Stop-hook review automation.\n"
                 f"Current active tasks:\n{task_lines}"
             )
         )

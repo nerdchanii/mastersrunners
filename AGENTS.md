@@ -113,7 +113,7 @@ Active tasks also need machine-readable closeout state in frontmatter:
 
 `bash scripts/check-active-task-closeout.sh` is the deterministic gate for this state. A task that is ready to archive must not remain in `tasks/active/`.
 
-For Codex-driven work, the repository also expects review automation to kick in only when a dirty worktree has exactly one active task and that task has `verification_status: passed`, `review_status: pending`, and a fully written `## 셀프 리뷰` section. The authoritative trigger is the repo-local Codex `Stop` hook under `.codex/hooks.json`.
+For Codex-driven work, the repository expects review automation to kick in only when a dirty worktree has exactly one active task, and that task has `verification_status: passed`, `review_status: pending`, and a fully written `## 셀프 리뷰` section. Dirty worktrees with zero active tasks may exit normally; dirty worktrees with more than one active task are blocked by the repo-local Codex `Stop` hook under `.codex/hooks.json`.
 
 Initiative and ADR order:
 

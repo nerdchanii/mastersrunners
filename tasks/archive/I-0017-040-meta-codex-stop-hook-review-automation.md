@@ -45,7 +45,7 @@ Codex 공식 `Stop` 훅을 저장소에 연결해, verify와 self-review가 끝�
 ## 완료 기준
 
 - 저장소가 공식 `.codex/hooks.json` 경로에 Stop 훅을 가진다.
-- Stop 훅이 dirty worktree에서 active task가 정확히 하나인지 강제한다.
+- Stop 훅이 dirty worktree에서 active task가 둘 이상이면 block하고, 정확히 하나일 때만 review ownership을 가진다.
 - verify passed + self-review 완료 + review pending 상태의 task만 same-session review continuation prompt를 생성한다.
 - hook wiring과 smoke 검증이 CI/local CI에 연결된다.
 
@@ -58,7 +58,7 @@ Codex 공식 `Stop` 훅을 저장소에 연결해, verify와 self-review가 끝�
 
 - 범위와 의도: official Codex `Stop` hook을 repo-local reviewer overlay 계약에 연결하고, same-session review continuation prompt와 smoke 검증까지만 이번 범위에 포함했다.
 - source of truth: OpenAI Codex hooks/subagents/skills 문서, `AGENTS.md`, `docs/guides/review-harness.md`, `docs/runbooks/reviewer-capabilities.md`, `reviewers/protocols.json`
-- 설계 divergence: 저장소 규칙은 dirty worktree당 active task 하나를 요구하지만, 현재 repo에는 기존 active task가 여러 개 남아 있어 새 Stop hook이 즉시 invariant block을 반환한다. 이는 사용자 결정에 따른 immediate hard stop rollout이며, backlog normalization은 별도 운영 후속이다.
+- 설계 divergence: 저장소 규칙은 dirty worktree에서 active task가 둘 이상이면 block한다. review automation은 active task가 정확히 하나일 때만 시작되고, active task가 0개인 dirty worktree는 정상 종료된다. 당시 repo에는 기존 active task가 여러 개 남아 있어 새 Stop hook이 즉시 invariant block을 반환했고, 이는 immediate hard stop rollout의 일부였다.
 - 검증: `bash scripts/check-reviewer-protocols.sh`, `bash scripts/check-reviewer-protocol-wiring.sh`, `bash scripts/check-task-review-metadata.sh`, `bash scripts/check-active-task-closeout.sh`, `bash scripts/check-codex-stop-review-hook.sh`, `python3 -m py_compile scripts/codex-stop-review-hook.py`, current repo payload smoke
 - 리뷰 라우팅: `harness-reviewer`, `docs-reviewer`, `po-reviewer`
 
@@ -76,7 +76,7 @@ Codex 공식 `Stop` 훅을 저장소에 연결해, verify와 self-review가 끝�
 - 승인된 설계와 현재 구현 사이의 차이를 기록한다.
 - 이 태스크 이후에도 차이가 남는다면, 여기서 후속 태스크를 연결한다.
 - 미완성 코드를 맞추기 위해 승인된 설계 문서를 낮춰 다시 쓰지 않는다.
-- dirty worktree당 active task 하나 규칙은 문서와 hook에 반영됐지만, 현재 작업중인 repo backlog는 아직 그 규칙을 만족하지 않는다. 이 상태에서 block이 발생하는 것은 rollout 버그가 아니라 채택된 운영 정책이다.
+- dirty worktree에서 active task가 둘 이상이면 block하는 규칙은 문서와 hook에 반영됐다. 이 상태에서 block이 발생하는 것은 rollout 버그가 아니라 채택된 운영 정책이다.
 
 ## 시도 로그
 
@@ -94,7 +94,7 @@ Codex 공식 `Stop` 훅을 저장소에 연결해, verify와 self-review가 끝�
   - artifact: `tasks/reviews/I-0017-040/harness-reviewer.json`
   - decision: approved
   - findings: no findings
-  - residual risks: immediate hard stop rollout 때문에 dirty worktree에 active task가 여러 개 남아 있으면 Stop hook이 계속 block된다. 이는 wiring defect가 아니라 backlog normalization이 필요한 운영 리스크다.
+  - residual risks: immediate hard stop rollout 때문에 dirty worktree에 active task가 여러 개 남아 있으면 Stop hook이 계속 block된다. active task가 0개인 dirty worktree는 허용되므로, 실제 운영 리스크는 multi-active backlog에 한정된다.
   - reviewer: docs-reviewer
   - reviewer protocol: `.codex/agents/docs-reviewer.toml`, `.agents/skills/review-output-contract/SKILL.md`, `.agents/skills/docs-review-checklist/SKILL.md`
   - artifact: `tasks/reviews/I-0017-040/docs-reviewer.json`
