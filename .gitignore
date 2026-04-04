@@ -52,18 +52,22 @@ next-env.d.ts
 
 # codex
 .codex/
+!.codex/
 !.codex/agents/
 !.codex/agents/*.toml
 !.codex/config.toml
 !.codex/hooks.json
+.codex/environments/
 
 # claude code
 .claude/
+!.claude/
 !.claude/agents/
 !.claude/agents/*.md
 !.claude/skills/
 !.claude/skills/*/
 !.claude/skills/*/SKILL.md
+.claude/commands/
 
 # oh-my-claudecode
 .omc/
