@@ -91,11 +91,11 @@
 
 - `tasks/archive/I-0016-010-meta-web-ux-guardrail-foundation.md`
 - `tasks/archive/I-0016-020-web-public-social-surface-alignment.md`
-- `tasks/todo/I-0016-030-web-copy-and-auth-gate-alignment.md`
+- `tasks/archive/I-0016-030-web-copy-and-auth-gate-alignment.md`
 - `tasks/archive/I-0016-040-meta-ux-guardrail-checks-expansion.md`
 - `tasks/archive/I-0016-050-web-public-profile-and-crew-route-alignment.md`
-- `tasks/todo/I-0016-060-web-profile-workout-visibility-policy-followup.md`
-- `tasks/todo/I-0016-070-web-follow-graph-route-protection-alignment.md`
+- `tasks/archive/I-0016-060-web-profile-workout-visibility-policy-followup.md`
+- `tasks/archive/I-0016-070-web-follow-graph-route-protection-alignment.md`
 - `tasks/archive/I-0016-080-web-mobile-profile-and-feed-edge-alignment.md`
 
 ## 성공 기준
@@ -115,3 +115,6 @@
 - 2026-04-04: `I-0016-050`에서 공개 프로필을 `헤더 + 게시글 + 크루` 읽기 표면으로 열고, 공개 크루를 `summary + activity list + board list`까지만 허용하는 계약으로 정렬했다.
 - 2026-04-04: `I-0016-050` closeout residual risk를 `공개 프로필 workout 정책`과 `followers/following 라우트 보호 정렬` 두 개의 후속 태스크로 다시 분리했다.
 - 2026-04-04: 모바일 프로필 헤더 카드 UI와 피드/프로필 거터가 소비자용 소셜 표면과 어긋난다는 피드백에 따라 `I-0016-080`을 추가했다.
+- 2026-04-04: `I-0016-030`을 닫으면서 공개 크루 상세와 메시지 허브의 설명형 helper copy를 줄이고, 섹션 제목과 empty state가 이미 말하는 내용을 반복하지 않는 문구 규칙을 문서 truth로 보강했다.
+- 2026-04-04: `I-0016-060`에서 타인 공개 프로필의 workout 비노출을 영구 정책으로 닫고, web surface뿐 아니라 profile API aggregate도 같은 privacy 경계를 따르도록 정렬했다.
+- 2026-04-04: `I-0016-070`에서 followers/following을 공개 트리 밖의 본인 전용 보호 라우트로 옮기고, follow controller와 페이지 진입 흐름을 같은 정책으로 정렬했다.

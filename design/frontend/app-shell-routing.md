@@ -54,6 +54,8 @@ sources:
 - `/workouts/*`
 - `/posts/new`
 - `/profile`
+- `/profile/:id/followers`
+- `/profile/:id/following`
 - `/settings/profile`
 - `/messages/*`
 - `/notifications`
@@ -71,7 +73,7 @@ sources:
 - 인증되지 않은 접근은 `/login`으로 리다이렉트한다
 - `/profile`, `/settings/profile`를 포함한 일부 보호 페이지는 `ProtectedRoute` 위에 페이지 전용 auth/bootstrap 로직을 추가로 유지한다
 - `/profile/:id`는 공개 트리에 존재하며, 공개 계정은 비로그인 사용자도 직접 읽을 수 있다
-- `/profile/:id/followers`, `/profile/:id/following`은 공개 트리에 남아 있지만 현재 정책에서는 보호된 목록 라우트로 동작한다
+- `/profile/:id/followers`, `/profile/:id/following`은 본인 전용 보호 라우트다
 
 ## 현재 제약
 
@@ -94,6 +96,7 @@ sources:
   - 더 깊은 참여 액션은 전체 `/login` handoff보다 온페이지 인증 다이얼로그를 우선한다
   - 공개 게시글 안의 워크아웃 preview는 비로그인 사용자가 `/workouts/:id`로 바로 이동하는 대신 현재 게시글 라우트를 유지한 채 인증 다이얼로그를 열어야 한다
   - 공개 프로필 `/profile/:id`는 헤더, 게시글, 크루 표면까지 직접 읽을 수 있어야 하며, 팔로우/메시지 같은 행동은 제자리 auth gate로 막아야 한다
+  - 팔로우 그래프 목록 `/profile/:id/followers`, `/profile/:id/following`은 공개 프로필 surface에 포함되지 않으며, 본인 세션에서만 직접 연다
   - 공개 크루 `/crews/:id`는 summary, activity list, board list까지만 직접 읽을 수 있어야 하며, activity detail과 board posts 같은 deeper read는 멤버십 또는 auth gate 뒤에 남긴다
   - 공개 라우트의 다이얼로그와 오버레이는 인증 우회 동선을 만드는 대신, 사용자가 기대하는 브라우저 뒤로가기 동작을 보존해야 한다
   - 사용자가 피드로 바로 가고 싶다면 onboarding은 건너뛸 수 있다

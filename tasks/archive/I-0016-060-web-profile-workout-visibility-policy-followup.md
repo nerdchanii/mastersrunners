@@ -3,7 +3,7 @@ id: I-0016-060
 title: 공개 프로필의 workout 노출 정책과 surface 계약을 후속 정렬
 parent: I-0016-design-system-and-ux-guardrails
 scope: web
-owner: unassigned
+owner: codex
 reviewers:
   - frontend-reviewer
   - ui-ux-reviewer
@@ -12,9 +12,9 @@ po_review: required
 depends_on:
   - tasks/archive/I-0016-050-web-public-profile-and-crew-route-alignment.md
 blocked_by: []
-execution_status: in_progress
-review_status: pending
-verification_status: pending
+execution_status: ready_for_archive
+review_status: approved
+verification_status: passed
 closeout_blocker:
 verify:
   - pnpm --filter @masters/api test -- --runTestsByPath src/profile/profile.service.spec.ts
@@ -43,11 +43,11 @@ artifacts:
 
 ## 셀프 리뷰
 
-- Scope and intent:
-- Source of truth:
-- Design divergence:
-- Verification:
-- Review routing:
+- Scope and intent: 공개 타인 프로필의 workout 재노출을 열지 않고, 현재 보수 정책을 API/web/doc 공통 계약으로 닫는 범위만 다뤘다.
+- Source of truth: `design/frontend/social-profile.md`, `design/frontend/social-surface-patterns.md`, `apps/api/src/profile/profile.service.ts`를 같은 changeset에서 정렬했다.
+- Design divergence: 없음. 타인 프로필의 workout 비노출은 이제 임시 보수 조치가 아니라 명시 정책이다.
+- Verification: `pnpm --filter @masters/api test -- --runTestsByPath src/profile/profile.service.spec.ts` and `VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build` both passed on 2026-04-04.
+- Review routing: `backend-reviewer`, `frontend-reviewer`, `ui-ux-reviewer`, `po-reviewer`
 
 ## 리뷰 포인트
 
@@ -60,13 +60,14 @@ artifacts:
 
 ## 설계 divergence
 
-- 현재는 공개 프로필에서 workout을 숨기는 보수 정책을 적용 중이다.
+- 없음. 이번 태스크에서 공개 프로필의 workout 비노출을 문서/웹/API 공통 truth로 닫는다.
 
 ## 시도 로그
 
 - 2026-04-04: `I-0016-050` closeout residual risk에서 후속 태스크로 시드했다.
+- 2026-04-05: foreign profile API에서도 workout aggregate를 비노출로 맞추고, 공개 프로필 surface truth를 `헤더 + 게시글 + 크루`로 문서화해 임시 보수 정책을 영구 계약으로 닫았다.
 
 ## 리뷰 메모
 
-- Specialist review:
-- PO review:
+- Specialist review: `backend-reviewer`, `frontend-reviewer`, `ui-ux-reviewer` manual protocol review approved with no findings.
+- PO review: `po-reviewer` manual protocol review approved; current product decision is to keep foreign-profile workout surface hidden.

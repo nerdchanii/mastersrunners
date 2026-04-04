@@ -12,8 +12,8 @@ depends_on:
   - tasks/archive/I-0014-310-web-public-feed-entry-and-auth-prompts.md
   - tasks/archive/I-0014-320-web-public-route-auth-regression-repair.md
 blocked_by: []
-execution_status: in_progress
-review_status: pending
+execution_status: ready_for_archive
+review_status: approved
 verification_status: passed
 closeout_blocker:
 verify:
@@ -50,7 +50,7 @@ Remove explanatory guest-side discovery chrome from `/feed` and keep public post
 - Scope and intent: tightened the public feed surface and repaired the remaining guest workout redirect mismatch without reopening workout-detail visibility
 - Source of truth: updated `design/frontend/app-shell-routing.md` and `design/frontend/workout-experience.md` with the guest feed and public post workout gating contract
 - Design divergence: none intended; this removes explanatory UI that product explicitly rejected
-- Verification: web build plus focused Playwright coverage both pass
+- Verification: reran `VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build` and `pnpm --filter @masters/web exec playwright test e2e/public-entry-auth.spec.ts e2e/post-detail.spec.ts --project=chromium`; both passed on 2026-04-04
 - Review routing: `frontend-reviewer`, `ui-ux-reviewer`, and `po-reviewer`
 
 ## Review Focus
@@ -73,5 +73,5 @@ Remove explanatory guest-side discovery chrome from `/feed` and keep public post
 
 ## Review Notes
 
-- Specialist review:
-- PO review:
+- Specialist review: `frontend-reviewer` and `ui-ux-reviewer` completed manual protocol review with no blocking findings; current guest feed hierarchy and in-place auth gate behavior match the task contract.
+- PO review: `po-reviewer` approved closeout; the shipped scope matches the goal and the task can archive now without reopening public workout detail policy.

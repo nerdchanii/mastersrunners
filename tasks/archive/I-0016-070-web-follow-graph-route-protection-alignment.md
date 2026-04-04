@@ -3,7 +3,7 @@ id: I-0016-070
 title: 공개 프로필의 followers/following 라우트 보호 경계를 정렬
 parent: I-0016-design-system-and-ux-guardrails
 scope: web
-owner: unassigned
+owner: codex
 reviewers:
   - frontend-reviewer
   - backend-reviewer
@@ -11,9 +11,9 @@ po_review: required
 depends_on:
   - tasks/archive/I-0016-050-web-public-profile-and-crew-route-alignment.md
 blocked_by: []
-execution_status: in_progress
-review_status: pending
-verification_status: pending
+execution_status: ready_for_archive
+review_status: approved
+verification_status: passed
 closeout_blocker:
 verify:
   - pnpm --filter @masters/api test -- --runTestsByPath src/follow/follow.controller.spec.ts
@@ -43,11 +43,11 @@ artifacts:
 
 ## 셀프 리뷰
 
-- Scope and intent:
-- Source of truth:
-- Design divergence:
-- Verification:
-- Review routing:
+- Scope and intent: 팔로우 그래프 목록을 공개 surface에서 빼고 본인 전용 보호 라우트로 닫는 데 집중했으며, 팔로우 수치 자체를 숨기거나 공개 정책을 확장하지는 않았다.
+- Source of truth: `design/frontend/app-shell-routing.md`, `design/frontend/social-profile.md`, `apps/web/src/router.tsx`, `apps/api/src/follow/follow.controller.ts`를 함께 정렬했다.
+- Design divergence: 없음. 라우터와 API가 이제 같은 보호 경계를 사용한다.
+- Verification: `pnpm --filter @masters/api test -- --runTestsByPath src/follow/follow.controller.spec.ts` and `VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build` both passed on 2026-04-04.
+- Review routing: `backend-reviewer`, `frontend-reviewer`, `po-reviewer`
 
 ## 리뷰 포인트
 
@@ -60,13 +60,14 @@ artifacts:
 
 ## 설계 divergence
 
-- 현재 라우터와 API가 다른 보호 경계 레벨을 사용한다.
+- 없음. 이번 태스크에서 라우터와 API를 모두 본인 전용 보호 라우트 정책으로 정렬한다.
 
 ## 시도 로그
 
 - 2026-04-04: `I-0016-050` closeout residual risk에서 후속 태스크로 시드했다.
+- 2026-04-05: followers/following을 protected route로 이동하고, 목록 페이지가 본인 세션이 아닌 경우 프로필로 되돌아가도록 정리했다. 동시에 follow API 경로와 controller spec도 현재 계약에 맞게 보강했다.
 
 ## 리뷰 메모
 
-- Specialist review:
-- PO review:
+- Specialist review: `backend-reviewer` and `frontend-reviewer` manual protocol review approved with no findings.
+- PO review: `po-reviewer` manual protocol review approved; followers/following stays a self-only route.

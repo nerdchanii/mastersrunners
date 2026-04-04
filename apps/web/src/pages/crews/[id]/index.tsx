@@ -239,7 +239,6 @@ export default function CrewDetailClient() {
       )}
 
       <CrewIdentityHero
-        eyebrow="크루 허브"
         name={crew.name}
         description={crew.description}
         creatorName={crew.creator.name}
@@ -299,12 +298,7 @@ export default function CrewDetailClient() {
                 <div className="p-4 sm:p-6">
                   <TabsContent value="activities" className="mt-0">
                     <div className="space-y-3">
-                      <div className="space-y-1">
-                        <h2 className="text-lg font-semibold">활동</h2>
-                        <p className="text-sm text-muted-foreground">
-                          공개 일정과 참석 규모를 먼저 훑어볼 수 있습니다.
-                        </p>
-                      </div>
+                      <h2 className="text-lg font-semibold">활동</h2>
                       <CrewActivityList
                         canOpenActivityDetails={isMember}
                         crewId={crewId}
@@ -321,20 +315,15 @@ export default function CrewDetailClient() {
 
                   <TabsContent value="chat" className="mt-0">
                     <div className="space-y-3">
-                      <div className="space-y-1">
-                        <h2 className="text-lg font-semibold">채팅</h2>
-                        <p className="text-sm text-muted-foreground">
-                          멤버 전용 대화를 간단하게 확인하고 이어갈 수 있습니다.
-                        </p>
-                      </div>
+                      <h2 className="text-lg font-semibold">채팅</h2>
                       {isMember ? (
                         <GroupChat
                           data={chatData}
                           isLoading={chatLoading}
                           crewId={crewId}
                           title={`${crew.name} 크루 채팅`}
-                          subtitle="멤버 전용 대화 공간"
-                          emptyMessage={`${crew.name} 크루에 첫 메시지를 남겨보세요.`}
+                          subtitle="멤버 전용"
+                          emptyMessage="아직 메시지가 없습니다."
                           missingConversationMessage="크루 채팅방이 아직 준비되지 않았습니다."
                           composerPlaceholder={`${crew.name} 크루에 메시지 보내기`}
                         />
@@ -351,12 +340,7 @@ export default function CrewDetailClient() {
                   <TabsContent value="board" className="mt-0">
                     <div className="space-y-6">
                       <section className="space-y-3">
-                        <div className="space-y-1">
-                          <h2 className="text-lg font-semibold">게시판</h2>
-                          <p className="text-sm text-muted-foreground">
-                            공개로 보이는 게시판 목록을 확인할 수 있습니다.
-                          </p>
-                        </div>
+                        <h2 className="text-lg font-semibold">게시판</h2>
                         <CrewBoardList
                           canOpenBoardPosts={isMember}
                           crewId={crewId}
@@ -387,12 +371,7 @@ export default function CrewDetailClient() {
         <aside className="space-y-6">
           <Card className="border-border/60">
             <CardContent className="p-5">
-              <div className="space-y-1.5">
-                <h2 className="text-base font-semibold">멤버</h2>
-                <p className="text-sm text-muted-foreground">
-                  현재 함께 달리는 사람들을 빠르게 훑어볼 수 있습니다.
-                </p>
-              </div>
+              <h2 className="text-base font-semibold">멤버</h2>
               <div className="mt-4">
                 <CrewMemberList
                   crewId={crewId}
@@ -408,12 +387,7 @@ export default function CrewDetailClient() {
           {isOwnerOrAdmin && (
             <Card className="border-border/60">
               <CardContent className="p-5">
-                <div className="space-y-1.5">
-                  <h2 className="text-base font-semibold">운영 현황</h2>
-                  <p className="text-sm text-muted-foreground">
-                    출석률과 최근 활동 흐름을 한 번에 확인합니다.
-                  </p>
-                </div>
+                <h2 className="text-base font-semibold">운영 현황</h2>
                 <div className="mt-4">
                   <CrewAttendanceStats crewId={crewId} />
                 </div>
@@ -424,12 +398,7 @@ export default function CrewDetailClient() {
           {isOwnerOrAdmin && (
             <Card className="border-amber-200 bg-amber-50/50">
               <CardContent className="p-5">
-                <div className="space-y-1.5">
-                  <h2 className="text-base font-semibold text-foreground">운영 도구</h2>
-                  <p className="text-sm text-muted-foreground">
-                    태그와 가입 대기는 멤버 화면과 구분된 별도 영역에서 다룹니다.
-                  </p>
-                </div>
+                <h2 className="text-base font-semibold text-foreground">운영 도구</h2>
                 <div className="mt-5 space-y-6">
                   <CrewTagManager
                     crewId={crewId}
@@ -437,12 +406,7 @@ export default function CrewDetailClient() {
                     members={activeMembers}
                   />
                   <div className="rounded-2xl border border-border/60 bg-background p-4">
-                    <div className="mb-3 space-y-1">
-                      <h3 className="text-sm font-semibold">대기 멤버</h3>
-                      <p className="text-xs text-muted-foreground">
-                        가입 요청은 운영자가 따로 확인하고 승인합니다.
-                      </p>
-                    </div>
+                    <h3 className="mb-3 text-sm font-semibold">대기 멤버</h3>
                     <PendingMemberList crewId={crewId} onUpdate={fetchCrew} />
                   </div>
                 </div>

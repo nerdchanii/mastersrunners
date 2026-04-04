@@ -100,11 +100,7 @@ export default function CrewIdentityHero({
                   <p className="max-w-3xl whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
                     {description}
                   </p>
-                ) : (
-                  <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                    크루 소개가 아직 없습니다.
-                  </p>
-                )}
+                ) : null}
               </div>
 
               {actions && (

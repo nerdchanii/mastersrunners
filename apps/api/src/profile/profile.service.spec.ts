@@ -88,7 +88,7 @@ describe("ProfileService", () => {
       mockFollowRepo.countFollowers.mockResolvedValue(5);
       mockFollowRepo.countFollowing.mockResolvedValue(3);
 
-      const result = await service.getProfile("u1");
+      const result = await service.getProfile("u1", "u1");
 
       expect(result.user).toEqual(mockUser);
       expect(result.stats.totalWorkouts).toBe(10);
@@ -107,7 +107,7 @@ describe("ProfileService", () => {
         _sum: { distance: 50000, duration: 18000 },
       });
 
-      const result = await service.getProfile("u1");
+      const result = await service.getProfile("u1", "u1");
 
       // 18000 / (50000 / 1000) = 360 sec/km
       expect(result.stats.averagePace).toBe(360);
@@ -229,6 +229,39 @@ describe("ProfileService", () => {
       expect(result.crewCount).toBeNull();
       expect(result.user.bio).toBeNull();
       expect(result.user.backgroundImage).toBeNull();
+    });
+
+    it("should hide workout aggregates on another user's readable profile", async () => {
+      const targetUserId = "target";
+      const currentUserId = "viewer";
+
+      mockUserRepo.findByIdBasicSelect.mockResolvedValue({
+        id: targetUserId,
+        email: "runner@example.com",
+        name: "공개 러너",
+        profileImage: null,
+        backgroundImage: null,
+        bio: null,
+        isPrivate: false,
+        createdAt: new Date(),
+      });
+      mockFollowRepo.countFollowers.mockResolvedValue(12);
+      mockFollowRepo.countFollowing.mockResolvedValue(7);
+      mockUserRepo.countVisiblePostsByUser.mockResolvedValue(5);
+      mockCrewMemberRepo.countPublicCrewsForUser.mockResolvedValue(3);
+
+      const result = await service.getProfile(targetUserId, currentUserId);
+
+      expect(result.accessLevel).toBe("FULL");
+      expect(result.stats).toEqual({
+        totalWorkouts: 0,
+        totalDistance: 0,
+        totalDuration: 0,
+        averagePace: 0,
+        postCount: 5,
+      });
+      expect(mockCrewMemberRepo.countPublicCrewsForUser).toHaveBeenCalledWith(targetUserId);
+      expect(mockWorkoutRepo.aggregateByUser).not.toHaveBeenCalled();
     });
   });
 

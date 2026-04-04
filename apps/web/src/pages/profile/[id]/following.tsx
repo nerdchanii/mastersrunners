@@ -32,12 +32,22 @@ export default function FollowingPage() {
   const [followingStates, setFollowingStates] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !currentUser) {
+      return;
+    }
+
+    if (currentUser.id !== userId) {
+      navigate(`/profile/${userId}`, { replace: true });
+    }
+  }, [currentUser, navigate, userId]);
+
+  useEffect(() => {
+    if (!userId || !currentUser || currentUser.id !== userId) return;
 
     const fetchFollowing = async () => {
       try {
         const data = await api.fetch<FollowingResponse | FollowUser[]>(
-          `/follow/following/${userId}`,
+          `/follow/${userId}/following`,
         );
         const items = Array.isArray(data) ? data : ((data as FollowingResponse).items ?? []);
         setFollowing(items);
@@ -72,7 +82,7 @@ export default function FollowingPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !currentUser || currentUser.id !== userId) {
     return <LoadingPage />;
   }
 

@@ -69,9 +69,9 @@ export function ProfileTabs({
   activeTab,
   onTabChange,
   showWorkoutsTab = true,
-  postsEmptyDescription = "아직 작성한 게시글이 없습니다.",
-  crewsEmptyTitle = "표시할 크루가 없습니다",
-  crewsEmptyDescription = "공개로 읽을 수 있는 크루가 없습니다.",
+  postsEmptyDescription = "게시글이 없습니다.",
+  crewsEmptyTitle = "크루가 없습니다",
+  crewsEmptyDescription = "크루가 없습니다.",
 }: ProfileTabsProps) {
   const visibleTabCount = showWorkoutsTab ? 3 : 2;
 

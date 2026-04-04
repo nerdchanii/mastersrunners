@@ -167,8 +167,6 @@ export const router = createBrowserRouter([
           },
           { path: "/posts/:id", element: <PostDetailPage /> },
           { path: "/profile/:id", element: <UserProfilePage /> },
-          { path: "/profile/:id/followers", element: <FollowersPage /> },
-          { path: "/profile/:id/following", element: <FollowingPage /> },
           { path: "/search", element: <SearchPage /> },
 
           // Protected routes (auth required)
@@ -198,6 +196,8 @@ export const router = createBrowserRouter([
               { path: "/posts/new", element: <PostNewPage /> },
               { path: "/posts/:id/edit", element: <EditPostPage /> },
               { path: "/profile", element: <ProfilePage /> },
+              { path: "/profile/:id/followers", element: <FollowersPage /> },
+              { path: "/profile/:id/following", element: <FollowingPage /> },
               { path: "/settings/profile", element: <EditProfilePage /> },
               { path: "/crews/new", element: <CrewNewPage /> },
               { path: "/crews/:id/settings", element: <CrewSettingsPage /> },

@@ -67,19 +67,24 @@ export class ProfileService {
       };
     }
 
-    const [stats, followersCount, followingCount, postCount, crewCount] = await Promise.all([
-      this.workoutRepo.aggregateByUser(userId),
+    const [followersCount, followingCount, postCount, crewCount, workoutStats] = await Promise.all([
       this.followRepo.countFollowers(userId),
       this.followRepo.countFollowing(userId),
       this.userRepo.countVisiblePostsByUser(userId, currentUserId),
       isOwnProfile
         ? this.crewMemberRepo.countActiveCrewsForUser(userId)
         : this.crewMemberRepo.countPublicCrewsForUser(userId),
+      isOwnProfile
+        ? this.workoutRepo.aggregateByUser(userId)
+        : Promise.resolve({
+            _count: 0,
+            _sum: { distance: 0, duration: 0 },
+          }),
     ]);
 
-    const totalWorkouts = stats._count;
-    const totalDistance = stats._sum.distance ?? 0;
-    const totalDuration = stats._sum.duration ?? 0;
+    const totalWorkouts = workoutStats._count;
+    const totalDistance = workoutStats._sum.distance ?? 0;
+    const totalDuration = workoutStats._sum.duration ?? 0;
     const averagePace = totalDistance > 0 ? totalDuration / (totalDistance / 1000) : 0;
 
     return {

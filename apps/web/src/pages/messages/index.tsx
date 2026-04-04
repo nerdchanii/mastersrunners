@@ -83,7 +83,7 @@ export default function MessagesPage() {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-3xl space-y-6">
-        <PageHeader title="메시지" description="1:1, 크루, 활동 대화를 한곳에서 모아보세요." />
+        <PageHeader title="메시지" />
         <section className="overflow-hidden rounded-3xl border border-border/60 bg-background/80 shadow-sm">
           <div className="border-b border-border/60 px-4 py-4">
             <Skeleton className="h-10 w-full rounded-2xl" />
@@ -113,7 +113,7 @@ export default function MessagesPage() {
   if (isError) {
     return (
       <div className="mx-auto max-w-3xl space-y-6">
-        <PageHeader title="메시지" description="1:1, 크루, 활동 대화를 한곳에서 모아보세요." />
+        <PageHeader title="메시지" />
         <section className="rounded-3xl border border-destructive/30 bg-destructive/5 px-5 py-6">
           <p className="text-sm text-destructive">
             {error instanceof Error ? error.message : "오류가 발생했습니다."}
@@ -125,7 +125,7 @@ export default function MessagesPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <PageHeader title="메시지" description="1:1, 크루, 활동 대화를 한곳에서 모아보세요." />
+      <PageHeader title="메시지" />
 
       <section className="overflow-hidden rounded-3xl border border-border/60 bg-background/80 shadow-sm">
         <div className="border-b border-border/60 px-4 py-4">
@@ -287,11 +287,11 @@ function RoomAvatar({
 
 function getFallbackPreview(conversation: Conversation) {
   if (conversation.type === "ACTIVITY") {
-    return "활동 참석자들과 대화를 시작해보세요.";
+    return "아직 메시지가 없습니다.";
   }
 
   if (conversation.type === "CREW") {
-    return "크루 멤버들과 공지를 나누거나 대화를 시작해보세요.";
+    return "아직 메시지가 없습니다.";
   }
 
   return "아직 메시지가 없습니다.";
@@ -301,33 +301,29 @@ function getEmptyState(filter: ConversationFilter, query: string) {
   if (query.trim()) {
     return {
       title: "검색 결과가 없습니다",
-      description: "다른 이름, 크루명, 활동명으로 다시 찾아보세요.",
+      description: "검색어를 다시 확인해 주세요.",
     };
   }
 
   if (filter === "DIRECT") {
     return {
-      title: "아직 1:1 메시지가 없습니다",
-      description: "러너 프로필에서 직접 메시지를 시작하면 여기에 표시됩니다.",
+      title: "1:1 메시지가 없습니다",
     };
   }
 
   if (filter === "CREW") {
     return {
-      title: "참여 중인 크루 채팅이 없습니다",
-      description: "가입한 크루의 단체 대화방이 여기에 모입니다.",
+      title: "크루 채팅이 없습니다",
     };
   }
 
   if (filter === "ACTIVITY") {
     return {
       title: "활동 채팅이 없습니다",
-      description: "RSVP 또는 체크인한 활동 채팅방이 여기에 표시됩니다.",
     };
   }
 
   return {
-    title: "아직 대화가 없습니다",
-    description: "프로필, 크루, 활동에서 대화를 시작하면 여기에서 한 번에 확인할 수 있습니다.",
+    title: "대화가 없습니다",
   };
 }

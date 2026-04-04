@@ -26,7 +26,7 @@ sources:
 
 - `/profile`은 로그인한 현재 사용자의 프로필이다.
 - `/profile/:id`는 공개 라우트 트리에 존재하며, 공개 계정이라면 비로그인 사용자도 직접 읽을 수 있다.
-- `/profile/:id/followers`, `/profile/:id/following`은 라우트는 남아 있지만 공개 탐색 표면이 아니라 보호된 팔로우 목록으로 취급한다.
+- `/profile/:id/followers`, `/profile/:id/following`은 본인 세션에서만 여는 보호된 팔로우 목록 라우트다.
 - `/settings/profile`은 프로필 메타데이터를 수정하는 전용 편집 폼이다.
 
 공개 프로필 라우트는 요청한 사용자 id가 현재 세션과 같으면 `/profile`로 다시 돌려보낸다.
@@ -55,7 +55,7 @@ sources:
 - `posts`
 - `crews`
 
-공개 타인 프로필에서는 workout 탭을 숨긴다. 각 탭은 공용 라우트 레벨 query 레이어를 쓰지 않고, 활성화될 때 자기 목록을 개별 조회한다.
+공개 타인 프로필에서는 workout 탭을 숨긴다. 각 탭은 공용 라우트 레벨 query 레이어를 쓰지 않고, 활성화될 때 자기 목록을 개별 조회한다. 이 정책은 UI만의 편의 처리에 그치지 않으며, foreign profile API 응답도 workout aggregate를 0으로 고정해 profile surface 밖의 workout 힌트를 만들지 않는다.
 
 ### 온보딩 입력
 
@@ -75,7 +75,8 @@ sources:
 - auth와 current-user bootstrap은 여전히 `AuthProvider` 안에 있다
 - `/profile/:id`는 팔로우 상태, 탭 상태, 탭 fetch를 로컬에서 직접 소유한다
 - 재사용 가능한 시각 구조는 `ProfileHeader`, `ProfileTabs`로 나뉜다
-- 팔로워/팔로잉 목록 페이지는 모달 오버레이가 아니라 별도 라우트지만, 현재 정책에서는 본인만 읽을 수 있다
+- 팔로워/팔로잉 목록 페이지는 모달 오버레이가 아니라 별도 라우트지만, 현재 정책에서는 본인만 직접 연다. 타인 프로필에서 이 경계는 공개 surface가 아니라 프로필 헤더 수치까지만 드러난다.
+- 타인 프로필 API는 공개 읽기가 허용되더라도 workout aggregate를 사실상 비노출로 다룬다. 현재 헤더 수치 surface는 `게시물`, `팔로워`, `팔로잉`, `크루`까지만 product truth다.
 
 ## 현재 제약
 
