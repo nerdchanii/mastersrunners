@@ -68,6 +68,7 @@ task 시스템은 reviewer 역할 이름을 요구하지만, 현재 저장소에
 - `tasks/archive/I-0017-020-meta-official-reviewer-protocol-alignment.md`
 - `tasks/archive/I-0017-030-meta-review-artifact-contract-refinement.md`
 - `tasks/archive/I-0017-040-meta-codex-stop-hook-review-automation.md`
+- `tasks/archive/I-0017-050-meta-reviewer-protocol-files-tracked-in-git.md`
 
 ## 성공 기준
 
@@ -84,3 +85,4 @@ task 시스템은 reviewer 역할 이름을 요구하지만, 현재 저장소에
 - 2026-04-04: `I-0017-020`에서 `.codex/agents`, `.agents/skills`, `.claude/agents`, `.claude/skills`, `reviewers/protocols.json`, `tasks/reviews/<task-id>/<reviewer>.json`을 기준으로 reviewer protocol과 closeout gate를 재정렬했다.
 - 2026-04-04: changes-requested review도 구조화 artifact로 남기고, protocol 용어와 artifact schema를 실제 실행 흔적 기준으로 정교화하기 위한 `I-0017-030` 후속 정리를 시작했다.
 - 2026-04-04: `I-0017-040`에서 official Codex `Stop` hook을 reviewer overlay 계약과 연결하고, same-session reviewer subagent review automation을 붙인다.
+- 2026-04-04: `.gitignore`가 `.codex/`와 `.claude/` 전체를 막고 있어 실제 reviewer protocol files가 git에 올라가지 않던 누락을 `I-0017-050`에서 수정하고, repo가 공식 protocol artifact 자체를 실제 버전 관리 대상으로 갖도록 정리했다.

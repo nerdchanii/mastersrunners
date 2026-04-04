@@ -1,8 +1,8 @@
 {
-  "task_id": "I-0017-040",
+  "task_id": "I-0017-050",
   "reviewer": "po-reviewer",
   "decision": "approved",
-  "tool": "codex-spawn-agent",
+  "tool": "codex-manual-review",
   "review_contract": "repo-reviewer-artifact-v1",
   "executed_protocol_paths": [
     ".codex/agents/po-reviewer.toml",
@@ -14,10 +14,9 @@
     ".claude/skills/review-output-contract/SKILL.md",
     ".claude/skills/po-review-checklist/SKILL.md"
   ],
-  "reviewed_at": "2026-04-04T07:56:50Z",
+  "reviewed_at": "2026-04-04T07:51:54Z",
   "findings": [],
   "residual_risks": [
-    "Rare malformed-metadata branches remain more dependent on runtime invariants and existing verification gates than on dedicated fixture coverage.",
-    "The Stop hook intentionally blocks only dirty worktrees with multiple active tasks; zero-active dirty worktrees may finish normally."
+    "protocol artifact tracking은 복구됐지만, 이후 reviewer taxonomy 변경 시 ignore 규칙도 함께 유지하는 운영 습관이 계속 필요하다."
   ]
 }

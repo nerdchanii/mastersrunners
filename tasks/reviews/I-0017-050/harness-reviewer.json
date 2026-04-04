@@ -1,8 +1,8 @@
 {
-  "task_id": "I-0017-040",
+  "task_id": "I-0017-050",
   "reviewer": "harness-reviewer",
   "decision": "approved",
-  "tool": "codex-spawn-agent",
+  "tool": "codex-manual-review",
   "review_contract": "repo-reviewer-artifact-v1",
   "executed_protocol_paths": [
     ".codex/agents/harness-reviewer.toml",
@@ -14,10 +14,7 @@
     ".claude/skills/review-output-contract/SKILL.md",
     ".claude/skills/harness-review-checklist/SKILL.md"
   ],
-  "reviewed_at": "2026-04-04T07:56:50Z",
+  "reviewed_at": "2026-04-04T07:51:54Z",
   "findings": [],
-  "residual_risks": [
-    "Dirty worktrees with multiple active tasks will keep hitting the Stop-hook invariant block until backlog normalization is completed.",
-    "Dirty worktrees with zero active tasks now pass through without starting review; the remaining operational issue is limited to multi-active backlog normalization."
-  ]
+  "residual_risks": ["추후 reviewer protocol 경로가 늘어나면 .gitignore 예외도 함께 유지해야 한다."]
 }

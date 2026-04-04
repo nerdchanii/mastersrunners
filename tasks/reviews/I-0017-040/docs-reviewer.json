@@ -14,10 +14,10 @@
     ".claude/skills/review-output-contract/SKILL.md",
     ".claude/skills/docs-review-checklist/SKILL.md"
   ],
-  "reviewed_at": "2026-04-04T06:35:13Z",
+  "reviewed_at": "2026-04-04T07:56:50Z",
   "findings": [],
   "residual_risks": [
-    "The Stop-hook block remains active until the repository reduces the dirty worktree to exactly one active task.",
-    "That multi-active block is documented as accepted immediate hard-stop rollout behavior, not a wording defect."
+    "The Stop-hook block now applies only to dirty worktrees with multiple active tasks.",
+    "The docs distinguish between zero-active dirty worktrees that may exit normally and multi-active dirty worktrees that are intentionally blocked."
   ]
 }
