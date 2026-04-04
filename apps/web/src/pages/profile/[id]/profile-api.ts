@@ -1,15 +1,18 @@
 import { api } from "@/lib/api-client";
 
-interface User {
+export type ProfileAccessLevel = "FULL" | "LOCKED";
+
+export interface ProfileUser {
   id: string;
   email: string;
   name: string;
   profileImage: string | null;
   backgroundImage: string | null;
   bio: string | null;
+  isPrivate?: boolean;
 }
 
-interface Post {
+export interface ProfilePost {
   id: string;
   content: string;
   createdAt: string;
@@ -19,23 +22,10 @@ interface Post {
     likes: number;
     comments: number;
   };
-  user: User;
+  user: ProfileUser;
 }
 
-interface Workout {
-  id: string;
-  distance: number;
-  duration: number;
-  pace: number;
-  date: string;
-  memo: string | null;
-  workoutType?: {
-    id: string;
-    name: string;
-  };
-}
-
-interface Crew {
+export interface ProfileCrew {
   id: string;
   name: string;
   description: string | null;
@@ -45,24 +35,49 @@ interface Crew {
   };
 }
 
-interface ProfileApiResponse {
-  user: User;
-  stats: {
-    postCount: number;
-    totalWorkouts: number;
-    totalDistance: number;
-    totalDuration: number;
-    averagePace: number;
+export interface ProfileStats {
+  postCount: number;
+  totalWorkouts: number;
+  totalDistance: number;
+  totalDuration: number;
+  averagePace: number;
+}
+
+export interface ProfileApiResponse {
+  accessLevel: ProfileAccessLevel;
+  user: ProfileUser & {
+    workoutSharingDefault?: "PRIVATE" | "FOLLOWERS" | "PUBLIC";
+    region?: string | null;
+    subRegion?: string | null;
+    pb5kSeconds?: number | null;
+    pb10kSeconds?: number | null;
+    pbHalfMarathonSeconds?: number | null;
+    pbMarathonSeconds?: number | null;
+    createdAt?: string;
   };
-  followersCount: number;
-  followingCount: number;
+  stats: ProfileStats | null;
+  followersCount: number | null;
+  followingCount: number | null;
+  crewCount: number | null;
   isFollowing?: boolean;
   isPending?: boolean;
   isPrivate?: boolean;
 }
 
-function normalizeCollection<T>(data: T[] | { data: T[] }) {
-  return Array.isArray(data) ? data : (data?.data ?? []);
+function normalizeCollection<T>(data: T[] | { data: T[] } | { items: T[] }) {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if ("data" in data) {
+    return data.data;
+  }
+
+  if ("items" in data) {
+    return data.items;
+  }
+
+  return [];
 }
 
 export async function fetchUserProfile(userId: string) {
@@ -70,17 +85,14 @@ export async function fetchUserProfile(userId: string) {
 }
 
 export async function fetchUserPosts(userId: string) {
-  const data = await api.fetch<Post[] | { data: Post[] }>(`/posts?userId=${userId}&limit=12`);
-  return normalizeCollection(data);
-}
-
-export async function fetchUserWorkouts(userId: string) {
-  const data = await api.fetch<Workout[] | { data: Workout[] }>(`/workouts?userId=${userId}`);
+  const data = await api.fetch<ProfilePost[] | { data: ProfilePost[] }>(
+    `/posts?userId=${userId}&limit=12`,
+  );
   return normalizeCollection(data);
 }
 
 export async function fetchUserCrews(userId: string) {
-  const data = await api.fetch<Crew[] | { data: Crew[] }>(`/crews?userId=${userId}`);
+  const data = await api.fetch<ProfileCrew[] | { data: ProfileCrew[] }>(`/crews?userId=${userId}`);
   return normalizeCollection(data);
 }
 

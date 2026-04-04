@@ -59,7 +59,6 @@ export class CrewBoardsController {
   }
 
   @Get(":id/boards/:boardId/posts")
-  @Public()
   getPosts(
     @Param("id") id: string,
     @Param("boardId") boardId: string,
@@ -79,7 +78,6 @@ export class CrewBoardsController {
   }
 
   @Get(":id/boards/:boardId/posts/:postId")
-  @Public()
   getPost(
     @Param("id") id: string,
     @Param("boardId") boardId: string,

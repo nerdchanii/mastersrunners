@@ -80,6 +80,37 @@ export class UserRepository {
     });
   }
 
+  async countVisiblePostsByUser(userId: string, currentUserId?: string) {
+    const visibilityWhere = !currentUserId
+      ? { visibility: "PUBLIC" as const }
+      : currentUserId === userId
+        ? {}
+        : {
+            OR: [
+              { visibility: "PUBLIC" as const },
+              {
+                visibility: "FOLLOWERS" as const,
+                user: {
+                  followers: {
+                    some: {
+                      followerId: currentUserId,
+                      status: "ACCEPTED" as const,
+                    },
+                  },
+                },
+              },
+            ],
+          };
+
+    return this.db.prisma.post.count({
+      where: {
+        userId,
+        deletedAt: null,
+        ...visibilityWhere,
+      },
+    });
+  }
+
   async findByEmail(email: string) {
     return this.db.prisma.user.findUnique({
       where: { email },

@@ -134,6 +134,14 @@ export class CrewsService {
     return this.crewRepo.findByUser(userId);
   }
 
+  async findVisibleProfileCrews(targetUserId: string, currentUserId?: string) {
+    if (currentUserId && currentUserId === targetUserId) {
+      return this.crewRepo.findByUser(targetUserId);
+    }
+
+    return this.crewRepo.findPublicByUser(targetUserId);
+  }
+
   async update(id: string, userId: string, dto: UpdateCrewDto) {
     const crew = await this.crewRepo.findById(id);
     if (!crew) {

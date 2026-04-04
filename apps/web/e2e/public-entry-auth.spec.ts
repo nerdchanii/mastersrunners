@@ -48,7 +48,7 @@ test.describe("public entry auth recovery", () => {
 
     await expect(page).toHaveURL(/\/crews$/);
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByRole("dialog").getByText("내 크루")).toBeVisible();
+    await expect(page.getByRole("dialog").getByText("내 크루 보기")).toBeVisible();
   });
 
   test("공개 post detail은 직접 접근되고 좋아요/댓글은 로그인 모달을 띄운다", async ({ page }) => {
@@ -60,7 +60,7 @@ test.describe("public entry auth recovery", () => {
     await page.getByRole("button", { name: "좋아요" }).click();
     await expect(page).toHaveURL(/\/posts\/post-1$/);
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByRole("dialog").getByText("게시글에 반응 남기기")).toBeVisible();
+    await expect(page.getByRole("dialog").getByText("좋아요 남기기")).toBeVisible();
 
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "답글 달기" }).click();
@@ -74,7 +74,7 @@ test.describe("public entry auth recovery", () => {
 
     await expect(page.getByText("한강 러너스")).toBeVisible();
 
-    await page.getByRole("button", { name: "로그인하고 크루 가입" }).click();
+    await page.getByRole("button", { name: "크루 가입" }).click();
     await expect(page).toHaveURL(/\/crews\/crew-1$/);
     await expect(page.getByRole("dialog")).toBeVisible();
     await expect(page.getByRole("dialog").getByText("크루 참여")).toBeVisible();
@@ -89,12 +89,31 @@ test.describe("public entry auth recovery", () => {
   test("invite 진입의 로그인 모달은 원래 crew invite URL을 next로 보존한다", async ({ page }) => {
     await page.goto("/crews/crew-1?invite=1");
 
-    await page.getByRole("button", { name: "로그인하고 가입하기" }).click();
+    await page.getByRole("button", { name: "이 링크로 가입하기" }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await expect(page.getByRole("link", { name: "로그인" })).toHaveAttribute(
       "href",
       "/login?intent=login&next=%2Fcrews%2Fcrew-1%3Finvite%3D1",
     );
+  });
+
+  test("공개 프로필은 익명으로 읽히고 팔로우와 메시지는 로그인 모달로 막는다", async ({ page }) => {
+    await page.goto("/profile/user-2");
+
+    await expect(page.getByText("공개러너")).toBeVisible();
+    await expect(page.getByRole("tab", { name: "게시글" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "워크아웃" })).toHaveCount(0);
+
+    await page.getByRole("button", { name: "팔로우" }).click();
+    await expect(page).toHaveURL(/\/profile\/user-2$/);
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("dialog").getByText("팔로우")).toBeVisible();
+
+    await page.goto("/profile/user-2");
+    await page.getByRole("button", { name: "메시지" }).click();
+    await expect(page).toHaveURL(/\/profile\/user-2$/);
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByRole("dialog").getByText("메시지 보내기")).toBeVisible();
   });
 
   test("protected deep link는 로그인 화면으로 가되 next 경로를 보존한다", async ({ page }) => {

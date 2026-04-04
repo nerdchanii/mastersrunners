@@ -15,6 +15,7 @@ const mockUserRepo = {
   update: jest.fn(),
   searchByName: jest.fn(),
   countPostsByUser: jest.fn(),
+  countVisiblePostsByUser: jest.fn(),
 };
 
 const mockWorkoutRepo = {
@@ -35,6 +36,8 @@ const mockFollowRepo = {
 
 const mockCrewMemberRepo = {
   deleteAllForUser: jest.fn(),
+  countActiveCrewsForUser: jest.fn(),
+  countPublicCrewsForUser: jest.fn(),
 };
 
 describe("ProfileService", () => {
@@ -49,7 +52,10 @@ describe("ProfileService", () => {
     mockFollowRepo.findFollow.mockResolvedValue(null);
     mockFollowRepo.deleteAllForUser.mockResolvedValue(undefined);
     mockUserRepo.countPostsByUser.mockResolvedValue(0);
+    mockUserRepo.countVisiblePostsByUser.mockResolvedValue(0);
     mockCrewMemberRepo.deleteAllForUser.mockResolvedValue(undefined);
+    mockCrewMemberRepo.countActiveCrewsForUser.mockResolvedValue(0);
+    mockCrewMemberRepo.countPublicCrewsForUser.mockResolvedValue(0);
 
     const module = await Test.createTestingModule({
       providers: [
@@ -90,6 +96,8 @@ describe("ProfileService", () => {
       expect(result.stats.totalDuration).toBe(36000);
       expect(result.followersCount).toBe(5);
       expect(result.followingCount).toBe(3);
+      expect(result.crewCount).toBe(0);
+      expect(result.accessLevel).toBe("FULL");
     });
 
     it("should calculate averagePace as totalDuration / (totalDistance / 1000)", async () => {
@@ -191,6 +199,36 @@ describe("ProfileService", () => {
       const result = await service.getProfile(targetUserId, currentUserId);
 
       expect(result.isFollowing).toBe(false);
+    });
+
+    it("should return a locked shell for a private profile when viewer is not accepted", async () => {
+      mockUserRepo.findByIdBasicSelect.mockResolvedValue({
+        id: "target",
+        email: "runner@example.com",
+        name: "비공개 러너",
+        profileImage: null,
+        backgroundImage: "https://example.com/bg.png",
+        bio: "숨겨질 소개",
+        isPrivate: true,
+        workoutSharingDefault: "FOLLOWERS",
+        region: "서울",
+        subRegion: "마포구",
+        pb5kSeconds: 1200,
+        pb10kSeconds: 2500,
+        pbHalfMarathonSeconds: null,
+        pbMarathonSeconds: null,
+        createdAt: new Date(),
+      });
+
+      const result = await service.getProfile("target");
+
+      expect(result.accessLevel).toBe("LOCKED");
+      expect(result.stats).toBeNull();
+      expect(result.followersCount).toBeNull();
+      expect(result.followingCount).toBeNull();
+      expect(result.crewCount).toBeNull();
+      expect(result.user.bio).toBeNull();
+      expect(result.user.backgroundImage).toBeNull();
     });
   });
 

@@ -135,6 +135,33 @@ export class CrewRepository {
     });
   }
 
+  async findPublicByUser(userId: string) {
+    return this.db.prisma.crew.findMany({
+      where: {
+        deletedAt: null,
+        isPublic: true,
+        members: {
+          some: { userId, status: "ACTIVE" },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: {
+          select: {
+            members: { where: { status: "ACTIVE" } },
+          },
+        },
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            profileImage: true,
+          },
+        },
+      },
+    });
+  }
+
   async update(id: string, data: UpdateCrewData) {
     return this.db.prisma.crew.update({
       where: { id },

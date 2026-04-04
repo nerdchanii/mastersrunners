@@ -19,6 +19,7 @@ interface ProfileHeaderProps {
     followerCount: number;
     followingCount: number;
     workoutCount: number;
+    crewCount?: number;
   };
   isOwnProfile: boolean;
   isFollowing?: boolean;
@@ -141,7 +142,10 @@ export function ProfileHeader({
             <ProfileStat label="게시물" value={stats.postCount} />
             <ProfileStat label="팔로워" value={stats.followerCount} onClick={onFollowersClick} />
             <ProfileStat label="팔로잉" value={stats.followingCount} onClick={onFollowingClick} />
-            <ProfileStat label="워크아웃" value={stats.workoutCount} />
+            <ProfileStat
+              label={stats.crewCount !== undefined ? "크루" : "워크아웃"}
+              value={stats.crewCount ?? stats.workoutCount}
+            />
           </div>
         )}
       </div>

@@ -80,7 +80,7 @@ export class CrewReadService {
   }
 
   async getCrewPosts(crewId: string, cursor?: string, currentUserId?: string) {
-    await this.requireReadableCrew(crewId, currentUserId);
+    await this.requireActiveMember(crewId, currentUserId);
     return this.crewRepo.findCrewPosts(crewId, cursor);
   }
 
@@ -115,5 +115,16 @@ export class CrewReadService {
     }
 
     return crew;
+  }
+
+  private async requireActiveMember(crewId: string, currentUserId?: string) {
+    await this.getCrewOrThrow(crewId);
+
+    const member = currentUserId
+      ? await this.crewMemberRepo.findMember(crewId, currentUserId)
+      : null;
+    if (!member || member.status !== "ACTIVE") {
+      throw new ForbiddenException("크루 멤버만 크루 소식을 확인할 수 있습니다.");
+    }
   }
 }

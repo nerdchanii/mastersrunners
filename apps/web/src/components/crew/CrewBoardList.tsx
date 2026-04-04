@@ -23,11 +23,21 @@ import { useAuth } from "@/lib/auth-context";
 
 interface Props {
   crewId: string;
+  canOpenBoardPosts: boolean;
+  isAuthenticated: boolean;
   isMember: boolean;
   isAdmin: boolean;
+  onRequireAuth: () => void;
 }
 
-export default function CrewBoardList({ crewId, isMember, isAdmin }: Props) {
+export default function CrewBoardList({
+  crewId,
+  canOpenBoardPosts,
+  isAuthenticated,
+  isMember,
+  isAdmin,
+  onRequireAuth,
+}: Props) {
   const { data: boards, isLoading } = useBoards(crewId);
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
@@ -75,30 +85,47 @@ export default function CrewBoardList({ crewId, isMember, isAdmin }: Props) {
           </CardContent>
         </Card>
       ) : (
-        boards.map((board) => (
-          <Card
-            key={board.id}
-            className="cursor-pointer hover:bg-accent/50 transition-colors"
-            onClick={() => setSelectedBoard(board)}
-          >
-            <CardContent className="py-4 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium">{board.name}</h3>
-                  <Badge variant="outline" className="text-xs">
-                    {board.type === "ANNOUNCEMENT"
-                      ? "공지"
-                      : board.type === "FREE"
-                        ? "자유"
-                        : "일반"}
-                  </Badge>
+        boards.map((board) => {
+          const canAttemptOpen = canOpenBoardPosts || !isAuthenticated;
+
+          return (
+            <Card
+              key={board.id}
+              className={
+                canAttemptOpen
+                  ? "cursor-pointer transition-colors hover:bg-accent/50"
+                  : "transition-colors"
+              }
+              onClick={() => {
+                if (canOpenBoardPosts) {
+                  setSelectedBoard(board);
+                  return;
+                }
+
+                if (!isAuthenticated) {
+                  onRequireAuth();
+                }
+              }}
+            >
+              <CardContent className="py-4 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium">{board.name}</h3>
+                    <Badge variant="outline" className="text-xs">
+                      {board.type === "ANNOUNCEMENT"
+                        ? "공지"
+                        : board.type === "FREE"
+                          ? "자유"
+                          : "일반"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{board._count.posts}개 글</p>
                 </div>
-                <p className="text-sm text-muted-foreground">{board._count.posts}개 글</p>
-              </div>
-              <ChevronRight className="size-5 text-muted-foreground" />
-            </CardContent>
-          </Card>
-        ))
+                <ChevronRight className="size-5 text-muted-foreground" />
+              </CardContent>
+            </Card>
+          );
+        })
       )}
     </div>
   );

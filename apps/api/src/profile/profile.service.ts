@@ -32,18 +32,6 @@ export class ProfileService {
       throw new NotFoundException("사용자를 찾을 수 없습니다.");
     }
 
-    const [stats, followersCount, followingCount, postCount] = await Promise.all([
-      this.workoutRepo.aggregateByUser(userId),
-      this.followRepo.countFollowers(userId),
-      this.followRepo.countFollowing(userId),
-      this.userRepo.countPostsByUser(userId),
-    ]);
-
-    const totalWorkouts = stats._count;
-    const totalDistance = stats._sum.distance ?? 0;
-    const totalDuration = stats._sum.duration ?? 0;
-    const averagePace = totalDistance > 0 ? totalDuration / (totalDistance / 1000) : 0;
-
     let isFollowing: boolean | undefined;
     let isPending: boolean | undefined;
     if (currentUserId && currentUserId !== userId) {
@@ -52,11 +40,55 @@ export class ProfileService {
       isPending = follow?.status === "PENDING";
     }
 
+    const isOwnProfile = currentUserId === userId;
+    const hasFullAccess = isOwnProfile || !user.isPrivate || isFollowing;
+
+    if (!hasFullAccess) {
+      return {
+        accessLevel: "LOCKED" as const,
+        user: {
+          ...user,
+          backgroundImage: null,
+          bio: null,
+          region: null,
+          subRegion: null,
+          pb5kSeconds: null,
+          pb10kSeconds: null,
+          pbHalfMarathonSeconds: null,
+          pbMarathonSeconds: null,
+        },
+        stats: null,
+        followersCount: null,
+        followingCount: null,
+        crewCount: null,
+        isFollowing,
+        isPending,
+        isPrivate: user.isPrivate,
+      };
+    }
+
+    const [stats, followersCount, followingCount, postCount, crewCount] = await Promise.all([
+      this.workoutRepo.aggregateByUser(userId),
+      this.followRepo.countFollowers(userId),
+      this.followRepo.countFollowing(userId),
+      this.userRepo.countVisiblePostsByUser(userId, currentUserId),
+      isOwnProfile
+        ? this.crewMemberRepo.countActiveCrewsForUser(userId)
+        : this.crewMemberRepo.countPublicCrewsForUser(userId),
+    ]);
+
+    const totalWorkouts = stats._count;
+    const totalDistance = stats._sum.distance ?? 0;
+    const totalDuration = stats._sum.duration ?? 0;
+    const averagePace = totalDistance > 0 ? totalDuration / (totalDistance / 1000) : 0;
+
     return {
+      accessLevel: "FULL" as const,
       user,
       stats: { totalWorkouts, totalDistance, totalDuration, averagePace, postCount },
       followersCount,
       followingCount,
+      crewCount,
       isFollowing,
       isPending,
       isPrivate: user.isPrivate,

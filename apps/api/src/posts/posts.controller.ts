@@ -35,10 +35,13 @@ export class PostsController {
   }
 
   @Get()
+  @Public()
   findAll(@Req() req: Request, @Query() query: ListPostsQueryDto) {
-    const { userId } = req.user as { userId: string };
-    const viewerUserId = userId;
+    const viewerUserId = (req.user as { userId: string } | undefined)?.userId;
     const resolvedUserId = query.userId || viewerUserId;
+    if (!resolvedUserId) {
+      throw new ForbiddenException("사용자 ID가 필요합니다.");
+    }
     return this.postsService.findByUser(
       resolvedUserId,
       viewerUserId,

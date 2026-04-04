@@ -14,6 +14,7 @@ const mockCrewsService = {
   create: jest.fn(),
   findAll: jest.fn(),
   findMyCrews: jest.fn(),
+  findVisibleProfileCrews: jest.fn(),
   findOne: jest.fn(),
   getCrewProfile: jest.fn(),
   getCrewPosts: jest.fn(),
@@ -58,6 +59,7 @@ describe("CrewsController", () => {
 
   describe("public read metadata", () => {
     it("marks logged-out crew discovery endpoints as public", () => {
+      expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.findAll)).toBe(true);
       expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.explore)).toBe(true);
       expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.getRegions)).toBe(true);
       expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.getSubRegions)).toBe(
@@ -70,7 +72,9 @@ describe("CrewsController", () => {
       expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.getCrewProfile)).toBe(
         true,
       );
-      expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.getCrewPosts)).toBe(true);
+      expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.getCrewPosts)).toBe(
+        undefined,
+      );
       expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewsController.prototype.getActivities)).toBe(
         true,
       );
@@ -81,11 +85,13 @@ describe("CrewsController", () => {
     it("passes optional user identity through public detail reads", async () => {
       await controller.findOne("crew-1", mockAnonymousReq);
       await controller.getCrewProfile("crew-1", mockReq);
-      await controller.getCrewPosts("crew-1", mockAnonymousReq, {} as any);
+      await controller.getCrewPosts("crew-1", mockReq, {} as any);
+      await controller.findAll(mockAnonymousReq, { userId: "user-2" } as any);
 
       expect(mockCrewsService.findOne).toHaveBeenCalledWith("crew-1", undefined);
       expect(mockCrewsService.getCrewProfile).toHaveBeenCalledWith("crew-1", "user-123");
-      expect(mockCrewsService.getCrewPosts).toHaveBeenCalledWith("crew-1", undefined, undefined);
+      expect(mockCrewsService.getCrewPosts).toHaveBeenCalledWith("crew-1", undefined, "user-123");
+      expect(mockCrewsService.findVisibleProfileCrews).toHaveBeenCalledWith("user-2", undefined);
     });
   });
 

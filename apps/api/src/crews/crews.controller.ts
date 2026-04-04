@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+} from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
@@ -40,15 +51,19 @@ export class CrewsController {
   @ApiOperation({ summary: "크루 목록 조회" })
   @ApiResponse({ status: 200, description: "성공" })
   @Get()
+  @Public()
   findAll(@Req() req: Request, @Query() query: ListCrewsQueryDto) {
-    const { userId: requesterId } = req.user as { userId: string };
+    const requesterId = (req.user as { userId: string } | undefined)?.userId;
 
     if (query.my) {
+      if (!requesterId) {
+        throw new ForbiddenException("로그인이 필요합니다.");
+      }
       return this.crewsService.findMyCrews(requesterId);
     }
 
     if (query.userId) {
-      return this.crewsService.findMyCrews(query.userId);
+      return this.crewsService.findVisibleProfileCrews(query.userId, requesterId);
     }
 
     return this.crewsService.findAll({
@@ -122,9 +137,8 @@ export class CrewsController {
   @ApiOperation({ summary: "크루 게시물 목록 조회" })
   @ApiResponse({ status: 200, description: "성공" })
   @Get(":id/posts")
-  @Public()
   getCrewPosts(@Param("id") id: string, @Req() req: Request, @Query() query: CursorQueryDto) {
-    const userId = (req.user as { userId: string } | undefined)?.userId;
+    const { userId } = req.user as { userId: string };
     return this.crewsService.getCrewPosts(id, query.cursor, userId);
   }
 

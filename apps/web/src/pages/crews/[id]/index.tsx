@@ -74,6 +74,7 @@ export default function CrewDetailClient() {
   const [isSharingInvite, setIsSharingInvite] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [authDialogTitle, setAuthDialogTitle] = useState("크루 참여");
   const [activeTab, setActiveTab] = useState("activities");
   const currentMember = crew?.members?.find((member) => member.userId === user?.id);
   const isMember = !!currentMember && currentMember.status === "ACTIVE";
@@ -108,6 +109,7 @@ export default function CrewDetailClient() {
   const handleJoin = async () => {
     if (!crewId) return;
     if (!user) {
+      setAuthDialogTitle("크루 참여");
       setShowAuthDialog(true);
       return;
     }
@@ -228,7 +230,7 @@ export default function CrewDetailClient() {
               canJoinCrew && (
                 <Button onClick={handleJoin} disabled={isJoining}>
                   <UserPlus className="mr-2 size-4" />
-                  {!user ? "로그인하고 가입하기" : isJoining ? "가입 중..." : "이 링크로 가입하기"}
+                  {isJoining ? "가입 중..." : "이 링크로 가입하기"}
                 </Button>
               )
             )}
@@ -252,7 +254,7 @@ export default function CrewDetailClient() {
             {canJoinCrew && (
               <Button onClick={handleJoin} disabled={isJoining}>
                 <UserPlus className="size-4 mr-2" />
-                {!user ? "로그인하고 크루 가입" : isJoining ? "가입 중..." : "크루 가입"}
+                {isJoining ? "가입 중..." : "크루 가입"}
               </Button>
             )}
 
@@ -300,15 +302,19 @@ export default function CrewDetailClient() {
                       <div className="space-y-1">
                         <h2 className="text-lg font-semibold">활동</h2>
                         <p className="text-sm text-muted-foreground">
-                          일정과 참석 현황을 가장 먼저 확인하는 영역입니다.
+                          공개 일정과 참석 규모를 먼저 훑어볼 수 있습니다.
                         </p>
                       </div>
                       <CrewActivityList
+                        canOpenActivityDetails={isMember}
                         crewId={crewId}
                         isAdmin={isOwnerOrAdmin}
                         isMember={isMember}
                         isAuthenticated={!!user}
-                        onRequireAuth={() => setShowAuthDialog(true)}
+                        onRequireAuth={() => {
+                          setAuthDialogTitle("활동 자세히 보기");
+                          setShowAuthDialog(true);
+                        }}
                       />
                     </div>
                   </TabsContent>
@@ -348,20 +354,28 @@ export default function CrewDetailClient() {
                         <div className="space-y-1">
                           <h2 className="text-lg font-semibold">게시판</h2>
                           <p className="text-sm text-muted-foreground">
-                            공지와 자유글은 게시판에서 더 깊게 확인할 수 있습니다.
+                            공개로 보이는 게시판 목록을 확인할 수 있습니다.
                           </p>
                         </div>
                         <CrewBoardList
+                          canOpenBoardPosts={isMember}
                           crewId={crewId}
+                          isAuthenticated={!!user}
                           isMember={isMember}
                           isAdmin={isOwnerOrAdmin}
+                          onRequireAuth={() => {
+                            setAuthDialogTitle("게시판 열기");
+                            setShowAuthDialog(true);
+                          }}
                         />
                       </section>
 
-                      <section className="space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-4">
-                        <h2 className="text-base font-semibold">크루 소식</h2>
-                        <CrewPostList crewId={crewId} isOwner={currentUserRole === "OWNER"} />
-                      </section>
+                      {isMember ? (
+                        <section className="space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-4">
+                          <h2 className="text-base font-semibold">크루 소식</h2>
+                          <CrewPostList crewId={crewId} isOwner={currentUserRole === "OWNER"} />
+                        </section>
+                      ) : null}
                     </div>
                   </TabsContent>
                 </div>
@@ -453,7 +467,7 @@ export default function CrewDetailClient() {
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
         nextPath={authReturnPath}
-        title="크루 참여"
+        title={authDialogTitle}
       />
     </div>
   );

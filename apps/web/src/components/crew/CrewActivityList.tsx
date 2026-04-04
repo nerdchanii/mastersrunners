@@ -15,6 +15,7 @@ import { useCrewActivities } from "@/hooks/useCrewActivities";
 import CrewActivityForm from "./CrewActivityForm";
 
 interface CrewActivityListProps {
+  canOpenActivityDetails: boolean;
   crewId: string;
   isAdmin: boolean;
   isAuthenticated: boolean;
@@ -26,6 +27,7 @@ type ActivityTypeFilter = "ALL" | "OFFICIAL" | "POP_UP";
 type StatusFilter = "ALL" | "SCHEDULED" | "ACTIVE" | "COMPLETED" | "CANCELLED";
 
 export default function CrewActivityList({
+  canOpenActivityDetails,
   crewId,
   isAdmin,
   isAuthenticated,
@@ -59,6 +61,9 @@ export default function CrewActivityList({
   const handleOpenActivity = (activityId: string) => {
     if (!isAuthenticated) {
       onRequireAuth();
+      return;
+    }
+    if (!canOpenActivityDetails) {
       return;
     }
 
@@ -154,11 +159,16 @@ export default function CrewActivityList({
             ).length;
             const rsvpCount = activity.attendances.filter((a) => a.status === "RSVP").length;
             const totalActive = checkedInCount + rsvpCount;
+            const canAttemptOpen = canOpenActivityDetails || !isAuthenticated;
 
             return (
               <Card
                 key={activity.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
+                className={
+                  canAttemptOpen
+                    ? "cursor-pointer transition-shadow hover:shadow-lg"
+                    : "transition-shadow"
+                }
                 onClick={() => handleOpenActivity(activity.id)}
               >
                 <CardHeader>

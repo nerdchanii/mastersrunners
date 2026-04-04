@@ -90,7 +90,7 @@ export default function CrewsPage() {
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
         nextPath="/crews"
-        title="내 크루"
+        title="내 크루 보기"
       />
     </div>
   );
@@ -104,7 +104,7 @@ function MyCrewsList({ enabled, onRequireAuth }: { enabled: boolean; onRequireAu
       <Card>
         <CardContent className="space-y-4 py-8 text-center">
           <p className="text-sm font-medium text-foreground">내 크루</p>
-          <Button onClick={onRequireAuth}>로그인하거나 회원가입</Button>
+          <Button onClick={onRequireAuth}>로그인</Button>
         </CardContent>
       </Card>
     );

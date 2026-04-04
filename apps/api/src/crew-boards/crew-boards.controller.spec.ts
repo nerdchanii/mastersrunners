@@ -41,9 +41,11 @@ describe("CrewBoardsController", () => {
         true,
       );
       expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewBoardsController.prototype.getPosts)).toBe(
-        true,
+        undefined,
       );
-      expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewBoardsController.prototype.getPost)).toBe(true);
+      expect(Reflect.getMetadata(IS_PUBLIC_KEY, CrewBoardsController.prototype.getPost)).toBe(
+        undefined,
+      );
     });
   });
 

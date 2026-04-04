@@ -50,6 +50,32 @@ const guestWorkout = {
   },
 };
 
+const publicProfile = {
+  accessLevel: "FULL",
+  user: {
+    id: "user-2",
+    email: "public@example.com",
+    name: "공개러너",
+    profileImage: null,
+    backgroundImage: null,
+    bio: "한강과 올림픽공원을 자주 뜁니다.",
+    isPrivate: false,
+  },
+  stats: {
+    postCount: 1,
+    totalWorkouts: 12,
+    totalDistance: 120000,
+    totalDuration: 36000,
+    averagePace: 300,
+  },
+  followersCount: 18,
+  followingCount: 12,
+  crewCount: 1,
+  isFollowing: false,
+  isPending: false,
+  isPrivate: false,
+};
+
 export async function setupGuestPublicEntry(page: Page) {
   await page.route(`${API_BASE}/config/public`, (route) => {
     route.fulfill({
@@ -211,6 +237,55 @@ export async function setupGuestPublicEntry(page: Page) {
         items: [],
         nextCursor: null,
       }),
+    });
+  });
+
+  await page.route(`${API_BASE}/profile/user-2`, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(publicProfile),
+    });
+  });
+
+  await page.route(`${API_BASE}/posts?userId=user-2&limit=12`, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          id: "post-1",
+          content: "공개 피드에서 볼 수 있는 러닝 기록입니다.",
+          createdAt: "2026-04-01T07:00:00.000Z",
+          likesCount: 0,
+          commentsCount: 0,
+          _count: { likes: 0, comments: 0 },
+          user: {
+            id: "user-2",
+            email: "public@example.com",
+            name: "공개러너",
+            profileImage: null,
+            backgroundImage: null,
+            bio: "한강과 올림픽공원을 자주 뜁니다.",
+          },
+        },
+      ]),
+    });
+  });
+
+  await page.route(`${API_BASE}/crews?userId=user-2`, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          id: "crew-1",
+          name: "한강 러너스",
+          description: "한강에서 함께 달리는 공개 크루",
+          imageUrl: null,
+          _count: { members: 12 },
+        },
+      ]),
     });
   });
 

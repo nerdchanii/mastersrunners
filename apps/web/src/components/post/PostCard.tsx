@@ -146,7 +146,7 @@ export function PostCard({
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
         nextPath={nextPath}
-        title="게시글에 반응 남기기"
+        title="좋아요 남기기"
       />
     </>
   );

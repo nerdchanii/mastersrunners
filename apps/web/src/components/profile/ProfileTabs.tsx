@@ -55,6 +55,10 @@ interface ProfileTabsProps {
   isLoading: boolean;
   activeTab: string;
   onTabChange: (tab: string) => void;
+  showWorkoutsTab?: boolean;
+  postsEmptyDescription?: string;
+  crewsEmptyTitle?: string;
+  crewsEmptyDescription?: string;
 }
 
 export function ProfileTabs({
@@ -64,18 +68,30 @@ export function ProfileTabs({
   isLoading,
   activeTab,
   onTabChange,
+  showWorkoutsTab = true,
+  postsEmptyDescription = "아직 작성한 게시글이 없습니다.",
+  crewsEmptyTitle = "표시할 크루가 없습니다",
+  crewsEmptyDescription = "공개로 읽을 수 있는 크루가 없습니다.",
 }: ProfileTabsProps) {
+  const visibleTabCount = showWorkoutsTab ? 3 : 2;
+
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-      <TabsList variant="line" className="w-full justify-around border-b">
+      <TabsList
+        variant="line"
+        className="w-full justify-around border-b"
+        style={{ gridTemplateColumns: `repeat(${visibleTabCount}, minmax(0, 1fr))` }}
+      >
         <TabsTrigger value="posts" className="flex-1 gap-2">
           <Grid3x3 className="size-4" />
           <span className="hidden sm:inline">게시글</span>
         </TabsTrigger>
-        <TabsTrigger value="workouts" className="flex-1 gap-2">
-          <Activity className="size-4" />
-          <span className="hidden sm:inline">워크아웃</span>
-        </TabsTrigger>
+        {showWorkoutsTab ? (
+          <TabsTrigger value="workouts" className="flex-1 gap-2">
+            <Activity className="size-4" />
+            <span className="hidden sm:inline">워크아웃</span>
+          </TabsTrigger>
+        ) : null}
         <TabsTrigger value="crews" className="flex-1 gap-2">
           <Users className="size-4" />
           <span className="hidden sm:inline">크루</span>
@@ -89,7 +105,7 @@ export function ProfileTabs({
           <EmptyState
             icon={Grid3x3}
             title="게시글이 없습니다"
-            description="아직 작성한 게시글이 없습니다."
+            description={postsEmptyDescription}
           />
         ) : (
           <div className="grid grid-cols-3 gap-1 sm:gap-2">
@@ -116,81 +132,81 @@ export function ProfileTabs({
         )}
       </TabsContent>
 
-      <TabsContent value="workouts" className="mt-6">
-        {isLoading ? (
-          <div className="text-center py-8 text-muted-foreground">로딩 중...</div>
-        ) : workouts.length === 0 ? (
-          <EmptyState
-            icon={Activity}
-            title="워크아웃이 없습니다"
-            description="아직 기록한 러닝 활동이 없습니다."
-          />
-        ) : (
-          <div className="space-y-3">
-            {workouts.map((workout) => (
-              <Link
-                key={workout.id}
-                to={`/workouts/${workout.id}`}
-                className={cn(
-                  "block rounded-lg border bg-card p-4",
-                  "hover:bg-accent hover:border-accent-foreground/20 transition-colors",
-                )}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-foreground">
-                        {workout.workoutType?.name || "러닝"}
-                      </h3>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(workout.date).toLocaleDateString("ko-KR", {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </span>
-                    </div>
+      {showWorkoutsTab ? (
+        <TabsContent value="workouts" className="mt-6">
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">로딩 중...</div>
+          ) : workouts.length === 0 ? (
+            <EmptyState
+              icon={Activity}
+              title="워크아웃이 없습니다"
+              description="아직 기록한 러닝 활동이 없습니다."
+            />
+          ) : (
+            <div className="space-y-3">
+              {workouts.map((workout) => (
+                <Link
+                  key={workout.id}
+                  to={`/workouts/${workout.id}`}
+                  className={cn(
+                    "block rounded-lg border bg-card p-4",
+                    "hover:bg-accent hover:border-accent-foreground/20 transition-colors",
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold text-foreground">
+                          {workout.workoutType?.name || "러닝"}
+                        </h3>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(workout.date).toLocaleDateString("ko-KR", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      </div>
 
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground text-xs">거리</p>
-                        <p className="font-semibold tabular-nums">
-                          {formatDistance(workout.distance)} km
-                        </p>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground text-xs">거리</p>
+                          <p className="font-semibold tabular-nums">
+                            {formatDistance(workout.distance)} km
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs">시간</p>
+                          <p className="font-semibold tabular-nums">
+                            {formatDuration(workout.duration)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs">페이스</p>
+                          <p className="font-semibold tabular-nums">
+                            {formatPace(workout.pace)}/km
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs">시간</p>
-                        <p className="font-semibold tabular-nums">
-                          {formatDuration(workout.duration)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs">페이스</p>
-                        <p className="font-semibold tabular-nums">{formatPace(workout.pace)}/km</p>
-                      </div>
-                    </div>
 
-                    {workout.memo && (
-                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                        {workout.memo}
-                      </p>
-                    )}
+                      {workout.memo && (
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                          {workout.memo}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </TabsContent>
+                </Link>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      ) : null}
 
       <TabsContent value="crews" className="mt-6">
         {isLoading ? (
           <div className="text-center py-8 text-muted-foreground">로딩 중...</div>
         ) : crews.length === 0 ? (
-          <EmptyState
-            icon={Users}
-            title="소속 크루가 없습니다"
-            description="크루에 가입하여 함께 러닝을 즐겨보세요."
-          />
+          <EmptyState icon={Users} title={crewsEmptyTitle} description={crewsEmptyDescription} />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {crews.map((crew) => (
