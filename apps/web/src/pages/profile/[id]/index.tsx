@@ -153,7 +153,7 @@ export default function UserProfilePage() {
 
   if (!userId || userId === "_") {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="text-center py-12">
           <p className="text-muted-foreground">사용자 ID가 필요합니다.</p>
         </div>
@@ -163,7 +163,7 @@ export default function UserProfilePage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-8">
         <LoadingPage variant="profile" />
       </div>
     );
@@ -171,7 +171,7 @@ export default function UserProfilePage() {
 
   if (error || !profileData) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="rounded-xl border border-destructive bg-destructive/10 p-6">
           <h2 className="text-lg font-semibold text-destructive mb-2">오류</h2>
           <p className="text-destructive/90">{error || "프로필을 찾을 수 없습니다."}</p>
@@ -202,7 +202,7 @@ export default function UserProfilePage() {
 
   return (
     <>
-      <div className="mx-auto max-w-4xl space-y-6 px-4 pb-8">
+      <div className="-mx-4 space-y-5 pb-8 md:mx-auto md:max-w-4xl md:px-4">
         <ProfileHeader
           user={profileData.user}
           stats={headerStats}
@@ -217,7 +217,7 @@ export default function UserProfilePage() {
         />
 
         {profileData.accessLevel === "LOCKED" ? (
-          <Card className="border-border/60">
+          <Card className="mx-4 border-border/60 md:mx-0">
             <CardContent className="flex flex-col gap-3 py-8">
               <div className="flex size-11 items-center justify-center rounded-2xl bg-muted text-foreground">
                 <Lock className="size-4" />

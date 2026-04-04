@@ -189,7 +189,7 @@ function GuestFeedPostCard({ post }: { post: GuestShowcasePost }) {
 
 function EmptyFeedDiscovery() {
   return (
-    <div className="mt-8 px-4">
+    <div className="mt-8 px-4 md:px-0">
       <p className="text-xs text-muted-foreground">표시할 피드가 없습니다.</p>
     </div>
   );
@@ -235,7 +235,7 @@ export default function FeedPage() {
   }, [activeTab, fetchMorePosts, fetchMoreWorkouts]);
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
+    <div className="-mx-4 w-auto md:mx-auto md:w-full md:max-w-2xl">
       <div className="min-w-0">
         {isAuthenticated ? (
           <div className="sticky top-0 z-10 flex border-b bg-background/95 backdrop-blur-sm md:top-14">

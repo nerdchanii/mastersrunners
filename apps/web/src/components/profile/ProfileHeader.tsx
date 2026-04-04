@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface ProfileHeaderProps {
@@ -13,6 +14,10 @@ interface ProfileHeaderProps {
     profileImage: string | null;
     backgroundImage?: string | null;
     bio?: string | null;
+    pb5kSeconds?: number | null;
+    pb10kSeconds?: number | null;
+    pbHalfMarathonSeconds?: number | null;
+    pbMarathonSeconds?: number | null;
   };
   stats?: {
     postCount: number;
@@ -60,12 +65,15 @@ export function ProfileHeader({
   };
 
   const initials = user.name.charAt(0).toUpperCase();
+  const personalBests = [
+    { label: "5K", value: user.pb5kSeconds },
+    { label: "10K", value: user.pb10kSeconds },
+    { label: "하프", value: user.pbHalfMarathonSeconds },
+    { label: "풀", value: user.pbMarathonSeconds },
+  ].filter((item) => item.value != null);
 
   return (
-    <section
-      data-testid="profile-header"
-      className="rounded-3xl border border-border/60 bg-background px-4 py-5 shadow-sm sm:px-6"
-    >
+    <section data-testid="profile-header" className="border-b border-border/60 px-4 py-5 sm:px-6">
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-4">
@@ -79,8 +87,8 @@ export function ProfileHeader({
               </AvatarFallback>
             </Avatar>
 
-            <div className="min-w-0 space-y-2 pt-1">
-              <div className="space-y-1">
+            <div className="min-w-0 space-y-3 pt-1">
+              <div className="space-y-1.5">
                 <h1 className="truncate text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
                   {user.name}
                 </h1>
@@ -92,6 +100,21 @@ export function ProfileHeader({
                   <p className="text-sm text-muted-foreground">아직 자기소개가 없습니다.</p>
                 )}
               </div>
+
+              {personalBests.length > 0 ? (
+                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                  {personalBests.map((record) => (
+                    <div key={record.label} className="min-w-0">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                        {record.label}
+                      </p>
+                      <p className="text-sm font-semibold tabular-nums text-foreground">
+                        {formatDuration(record.value ?? 0)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -138,7 +161,7 @@ export function ProfileHeader({
         </div>
 
         {stats && (
-          <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border/60 pt-4 sm:grid-cols-4">
+          <div className="grid grid-cols-4 gap-x-3 gap-y-3 border-t border-border/60 pt-4">
             <ProfileStat label="게시물" value={stats.postCount} />
             <ProfileStat label="팔로워" value={stats.followerCount} onClick={onFollowersClick} />
             <ProfileStat label="팔로잉" value={stats.followingCount} onClick={onFollowingClick} />
@@ -164,8 +187,8 @@ function ProfileStat({
 }) {
   const body = (
     <>
-      <span className="text-lg font-semibold tabular-nums text-foreground">{value}</span>
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-lg font-semibold tabular-nums text-foreground sm:text-xl">{value}</span>
+      <span className="text-[11px] text-muted-foreground sm:text-xs">{label}</span>
     </>
   );
 

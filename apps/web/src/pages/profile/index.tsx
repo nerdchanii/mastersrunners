@@ -163,7 +163,7 @@ export default function ProfilePage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-8">
         <LoadingPage variant="profile" />
       </div>
     );
@@ -171,7 +171,7 @@ export default function ProfilePage() {
 
   if (!user || !profileStats) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="text-center py-12">
           <p className="text-muted-foreground">프로필을 불러올 수 없습니다.</p>
         </div>
@@ -180,7 +180,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-4 pb-8">
+    <div className="-mx-4 space-y-5 pb-8 md:mx-auto md:max-w-4xl md:px-4">
       <ProfileHeader
         user={profileUser || user}
         stats={profileStats}

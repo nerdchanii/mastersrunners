@@ -96,6 +96,7 @@
 - `tasks/archive/I-0016-050-web-public-profile-and-crew-route-alignment.md`
 - `tasks/todo/I-0016-060-web-profile-workout-visibility-policy-followup.md`
 - `tasks/todo/I-0016-070-web-follow-graph-route-protection-alignment.md`
+- `tasks/archive/I-0016-080-web-mobile-profile-and-feed-edge-alignment.md`
 
 ## 성공 기준
 
@@ -113,3 +114,4 @@
 - 2026-04-04: `I-0016-020`에서 게스트 `/feed` 프리뷰 affordance와 공개 게시글 참여 게이트를 정렬한 뒤, 남은 공개 프로필/크루 라우트 정렬 범위는 `I-0016-050`으로 분리했다.
 - 2026-04-04: `I-0016-050`에서 공개 프로필을 `헤더 + 게시글 + 크루` 읽기 표면으로 열고, 공개 크루를 `summary + activity list + board list`까지만 허용하는 계약으로 정렬했다.
 - 2026-04-04: `I-0016-050` closeout residual risk를 `공개 프로필 workout 정책`과 `followers/following 라우트 보호 정렬` 두 개의 후속 태스크로 다시 분리했다.
+- 2026-04-04: 모바일 프로필 헤더 카드 UI와 피드/프로필 거터가 소비자용 소셜 표면과 어긋난다는 피드백에 따라 `I-0016-080`을 추가했다.

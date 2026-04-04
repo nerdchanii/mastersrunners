@@ -50,6 +50,10 @@ interface ProfileApiResponse {
     bio: string | null;
     createdAt: string;
     isPrivate: boolean;
+    pb5kSeconds?: number | null;
+    pb10kSeconds?: number | null;
+    pbHalfMarathonSeconds?: number | null;
+    pbMarathonSeconds?: number | null;
   };
   stats: {
     postCount: number;
