@@ -48,7 +48,7 @@ export function WorkoutAnalysisMap({
     activePointIndex != null && track[activePointIndex] ? track[activePointIndex] : null;
 
   return (
-    <div className={cn("h-full min-h-[360px] overflow-hidden", className)}>
+    <div className={cn("relative z-0 h-full min-h-[360px] overflow-hidden", className)}>
       <MapContainer
         bounds={bounds}
         boundsOptions={{ padding: [40, 40] }}

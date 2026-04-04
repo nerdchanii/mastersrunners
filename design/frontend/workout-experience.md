@@ -67,6 +67,7 @@ sources:
 - 날짜는 workout detail 상단에서 지도보다 먼저 보이는 단일 메타로 다루고, workout type이나 visibility 같은 badge성 라벨은 hero에서 기본 노출하지 않는다
 - owner action은 3점 메뉴 안으로 숨기고, share action은 별도 share trigger가 카드 생성과 포스트 공유를 드롭다운으로 펼치는 조용한 상단 제어로 정리한다
 - 세부 지표는 별도 섹션 제목 없이 바로 보여줘도 읽히는 것이 우선이며, 실제 AI 분석이 없는 상태에서 과한 “분석 리포트”류 헤더를 덧붙이지 않는다
+- 지도 위에 열리는 dropdown, dialog, share-card overlay는 Leaflet pane보다 항상 앞에 그려져야 하며, workout detail에서는 삭제/공유/카드 생성 제어가 지도에 가려지면 안 된다
 
 ## 공개 범위와 메타데이터
 

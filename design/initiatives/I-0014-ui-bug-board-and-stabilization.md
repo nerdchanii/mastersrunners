@@ -118,6 +118,8 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - `tasks/archive/I-0014-350-web-workout-detail-hero-card-removal.md`
 - `tasks/archive/I-0014-360-web-workout-detail-mobile-density-followup.md`
 - `tasks/archive/I-0014-370-web-workout-detail-action-and-meta-simplification.md`
+- `tasks/archive/I-0014-380-web-workout-detail-overlay-layer-fix.md`
+- `tasks/archive/I-0014-370-web-workout-detail-action-and-meta-simplification.md`
 
 ### Product Checkpoint Required
 
@@ -175,4 +177,6 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - 2026-04-04: opened `I-0014-360` as a focused follow-up after product still rejected the mobile workout detail first screen for wasting horizontal space and letting the map grow too tall relative to the analysis summary.
 - 2026-04-04: archived `I-0014-360` after tightening the mobile workout detail first screen to feel more edge-aligned, lowering the default map height on small screens, and keeping the cardless analysis-first hero direction intact.
 - 2026-04-04: opened `I-0014-370` after product asked to move the workout date above the map, remove badge-like hero chrome, and consolidate edit/share actions into quieter dropdown menus.
+- 2026-04-05: opened `I-0014-380` after product found that the Leaflet map still sat above dropdowns and dialogs, causing delete/share/card-generation overlays to render behind the workout detail map.
+- 2026-04-05: archived `I-0014-380` after raising dialog and dropdown overlay layers above Leaflet panes, keeping the workout map as a base layer, and re-verifying the workout detail route build plus Playwright regression pack.
 - 2026-04-05: archived `I-0014-370` after moving the workout date above the hero map, replacing badge-like hero chrome with quieter text meta, and collapsing edit/share controls into dropdown menus that preserve the same actions with less noise.
