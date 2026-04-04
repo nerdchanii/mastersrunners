@@ -19,6 +19,7 @@ verification_status: passed
 closeout_blocker:
 verify:
   - pnpm --filter @masters/api test -- --runTestsByPath src/workouts/workouts.service.spec.ts
+  - pnpm --filter @masters/api test -- --runTestsByPath src/workouts/repositories/workout.repository.spec.ts
   - pnpm --filter @masters/api test:e2e -- --runTestsByPath test/workouts.e2e-spec.ts
   - VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build
   - pnpm --filter @masters/web exec playwright test e2e/workout-detail.spec.ts --project=chromium
@@ -28,6 +29,7 @@ artifacts:
   - apps/api/src/workouts/workouts.controller.ts
   - apps/api/src/workouts/workouts.service.ts
   - apps/api/src/workouts/repositories/workout.repository.ts
+  - apps/api/src/workouts/repositories/workout.repository.spec.ts
   - apps/api/jest-e2e.config.ts
   - apps/api/src/workouts/workouts.service.spec.ts
   - apps/api/test/workouts.e2e-spec.ts
@@ -83,6 +85,7 @@ Close the `/workouts/:id` runtime crash, restore the detail API contract the pag
 - 2026-04-04: verified the web route with a passing workout-detail Playwright run and a successful web build; API unit tests also passed, while API e2e initially remained blocked by the Prisma/Jest ESM parsing failure during test bootstrap.
 - 2026-04-04: unblocked the focused workout API e2e path by mapping Prisma runtime `.mjs` imports to the shipped `.js` runtime build in `apps/api/jest-e2e.config.ts`, then updated `test/workouts.e2e-spec.ts` to use the current cookie-auth helper contract and to assert the restored social summary fields in public detail responses.
 - 2026-04-04: re-ran the task verify set successfully with passing workout service unit coverage, passing workout e2e coverage, a successful web production build, and passing workout-detail Playwright coverage.
+- 2026-04-04: pre-push local CI exposed a stale `WorkoutRepository` unit spec that still expected the old detail include shape, so the task was tightened with explicit repository-spec coverage for `_count` and requester-aware `workoutLikes`.
 
 ## Review Notes
 
