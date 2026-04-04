@@ -90,9 +90,10 @@
 ## 태스크 분해
 
 - `tasks/archive/I-0016-010-meta-web-ux-guardrail-foundation.md`
-- `tasks/todo/I-0016-020-web-public-social-surface-alignment.md`
+- `tasks/archive/I-0016-020-web-public-social-surface-alignment.md`
 - `tasks/todo/I-0016-030-web-copy-and-auth-gate-alignment.md`
-- `tasks/todo/I-0016-040-meta-ux-guardrail-checks-expansion.md`
+- `tasks/archive/I-0016-040-meta-ux-guardrail-checks-expansion.md`
+- `tasks/todo/I-0016-050-web-public-profile-and-crew-route-alignment.md`
 
 ## 성공 기준
 
@@ -105,3 +106,6 @@
 ## 진행 메모
 
 - 2026-04-03: 현재 frontend conventions가 코드 중심적일 뿐, 공개 소셜 화면의 UX 품질과 제품 톤을 보호하지 못한다는 제품 피드백을 바탕으로 이 이니셔티브를 열었다.
+- 2026-04-03: 제품 결정에 따라 게스트 `/feed`는 당분간 실시간 전체 공개 피드가 아니라 privacy-safe한 큐레이션 프리뷰 또는 제한된 목 데이터 표면으로 운영할 수 있도록 공개 정책을 정리했다.
+- 2026-04-03: 최종 UX 리뷰에서 남은 리스크를 `게스트 프리뷰 affordance 정리`와 `공개 UX 회귀 검증 강화` 두 갈래로 나눠 후속 active 태스크로 착수했다.
+- 2026-04-04: `I-0016-020`에서 게스트 `/feed` 프리뷰 affordance와 공개 게시글 참여 게이트를 정렬한 뒤, 남은 공개 프로필/크루 라우트 정렬 범위는 `I-0016-050`으로 분리했다.

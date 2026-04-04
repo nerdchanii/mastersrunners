@@ -10,10 +10,13 @@
 - 문서 전용 태스크도 예외가 아니다.
 - 여러 scope를 건드리는 태스크는 여러 specialist reviewer가 필요하다.
 - GitHub PR 댓글, 승인, AI 피드백은 협업에 도움이 될 수 있지만, 태스크 완료 기준에서 specialist review나 PO review를 대체하지는 못한다.
+- 공식 reviewer 경로와 저장소 reviewer overlay 계약이 있다면 specialist review와 PO review는 그 계약을 기준으로 수행한다.
+- Codex Stop-hook review automation을 쓰는 dirty worktree는 `tasks/active/`에 정확히 하나의 active task만 둘 수 있다.
 
 ## 리뷰어 역할
 
 에스컬레이션 리뷰어를 포함한 전체 리뷰어 목록은 `docs/guides/reviewer-taxonomy.md`에서 확인한다.
+공식 reviewer protocol 실행 규칙은 `docs/runbooks/reviewer-capabilities.md`에서 확인한다.
 
 - `docs-reviewer`
   - 명확성, 구조, 교차 참조 품질, source-of-truth 정렬을 점검한다
@@ -29,6 +32,8 @@
   - 사용자 가치, acceptance criteria, 범위 적합성, 배포 리스크, 태스크가 의도한 문제를 해결하는지 점검한다
 
 ## 라우팅 매트릭스
+
+아래 매트릭스가 기본 규칙이다. 예시나 후속 가이드는 이 baseline을 덮어쓰는 것이 아니라, task가 추가 concern을 함께 건드릴 때 reviewer를 더하는 방식으로 해석한다.
 
 - `docs` scope
   - `docs-reviewer` + `po-reviewer`
@@ -54,6 +59,19 @@
 5. PO review has been completed.
 6. The task file has been updated with review notes.
 7. The task is moved from `tasks/active/` to `tasks/archive/` in the same changeset that finalizes the work.
+
+## 리뷰 실행 순서
+
+1. implement
+2. verify
+3. self-review 기록
+4. specialist review
+5. PO review
+6. archive/commit
+
+이 순서는 문서상의 권고가 아니라 task file, reviewer protocol, metadata gate가 함께 지켜야 하는 저장소 계약이다.
+
+Codex Stop hook은 이 순서를 건너뛰지 않는다. verify와 self-review가 끝난 단일 active task만 같은 세션에서 specialist review -> PO review로 이어지게 만들 뿐이다.
 
 ## UX 가드레일 안내
 
@@ -105,3 +123,24 @@
 - specialist review는 리뷰어 역할과 핵심 점검 항목을 남겨야 한다
 - PO review는 acceptance criteria와 범위가 충족됐는지 남겨야 한다
 - 리뷰에서 이슈가 발견되면 archive로 넘기지 말고, 태스크를 다시 열거나 `tasks/active/`에 유지한다
+- `review_status: approved`로 올릴 때는 task의 `Specialist review`와 `PO review`가 빈 placeholder가 아니어야 하고, `tasks/reviews/<task-id>/` 아래 structured review artifact가 있어야 한다
+- `changes_requested` review를 task note에 남겼다면, `review_status`가 아직 `pending`이어도 같은 위치에 artifact가 있어야 한다
+- review note는 reviewer 이름, artifact 경로, decision을 함께 적어 reviewer identity와 artifact가 직접 매핑되게 남긴다
+
+structured review artifact의 필수 필드와 위치 규약은 `docs/runbooks/reviewer-capabilities.md`를 canonical truth로 본다.
+
+## Codex Stop-hook 자동화
+
+- 공식 Codex hook 경로는 `.codex/hooks.json`이다.
+- 저장소는 `Stop` hook을 authoritative review trigger로 사용한다.
+- `Stop` hook은 nested Codex subprocess를 띄우지 않고, 같은 Codex session을 계속 이어서 reviewer subagent를 수행하게 해야 한다.
+- 이 저장소는 single-active-task invariant를 단계적 경고가 아니라 immediate hard stop으로 채택한다. 따라서 기존 backlog가 아직 여러 active task를 갖고 있으면 session 종료 시 invariant block이 발생하는 것이 의도된 동작이다.
+- trigger 조건:
+  - dirty worktree
+  - `tasks/active/`에 active task 정확히 1개
+  - 해당 task가 `execution_status: in_progress`
+  - `review_status: pending`
+  - `verification_status: passed`
+  - `## 셀프 리뷰` 항목이 placeholder 없이 채워짐
+- 위 조건을 만족하지 않으면 Stop hook은 review를 시작하지 않거나 invariant failure로 block한다.
+- Git `pre-push`는 review automation owner가 아니라 fallback closeout gate다.

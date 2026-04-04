@@ -42,6 +42,8 @@ artifacts:
 - 검증:
 - 리뷰 라우팅:
 
+Codex Stop-hook review automation을 쓰려면 위 다섯 항목을 placeholder 없이 채운다.
+
 ## 리뷰 초점
 
 - Specialist reviewer가 확인할 내용:
@@ -64,4 +66,16 @@ artifacts:
 ## 리뷰 노트
 
 - Specialist review:
+  - reviewer:
+  - reviewer protocol:
+  - artifact:
+  - decision:
+  - findings:
+  - residual risks:
 - PO review:
+  - reviewer:
+  - reviewer protocol:
+  - artifact:
+  - decision:
+  - findings:
+  - residual risks:

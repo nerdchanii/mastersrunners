@@ -31,6 +31,7 @@ export function LikeButton({
     typeof window === "undefined"
       ? "/feed"
       : `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const buttonLabel = liked ? "좋아요 취소" : "좋아요";
 
   const handleToggleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -73,8 +74,11 @@ export function LikeButton({
   return (
     <>
       <button
+        type="button"
         onClick={handleToggleLike}
         disabled={isLoading}
+        aria-label={buttonLabel}
+        aria-pressed={liked}
         className={cn(
           "flex items-center gap-1.5 transition-colors disabled:opacity-50",
           compact ? "p-1" : "rounded-lg px-2 py-1.5 hover:bg-accent",

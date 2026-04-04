@@ -82,13 +82,15 @@ sources:
   - 모바일 하단 내비게이션은 라우트 지식 없이도 `/search`를 볼 수 있게 유지한다
   - 검색 페이지는 사용자 질의를 URL에 반영해 재진입과 뒤로가기에 맥락을 보존한다
 - 첫 진입 라우트는 공개 피드 우선이다.
-  - `/` resolves to `/feed`
-  - `/feed` stays publicly readable for anonymous visitors
-  - the guest `/feed` surface should stay as one main content column without a separate desktop explainer/sidebar rail
+  - `/`는 `/feed`로 해석된다
+  - `/feed`는 비로그인 사용자도 접근 가능한 공개 진입 라우트다
+  - 게스트 `/feed`는 별도 데스크톱 설명 rail 없이 하나의 메인 콘텐츠 컬럼으로 유지한다
+  - 게스트 `/feed`는 현재 단계에서 실시간 전체 공개 피드를 보장하는 화면이 아니라, 큐레이션 프리뷰 또는 제한된 목 데이터 표면으로 운영할 수 있다
   - 게스트 `/feed` 화면은 스스로를 샘플, 프리뷰, 데모 콘텐츠라고 라벨링하지 않는다
-  - public navigation from that entry, including `/crews` and public post detail, should stay on-route instead of bouncing through `/login?next=...`
-  - deeper participation actions should prefer an in-place auth dialog before a full `/login` handoff
-  - attached workout previews inside public post detail should keep the current post route for anonymous visitors and open an in-place auth dialog instead of navigating to `/workouts/:id`
+  - `/feed` 프리뷰에 보이는 affordance는 실제로 동작하거나 인증 게이트로 이어져야 하며, 죽은 링크처럼 보이면 안 된다
+  - 이 진입점에서의 공개 탐색은 `/crews`, 공개 게시글 상세 등으로 이어질 때 `/login?next=...`를 거치지 않고 현재 라우트 위에서 계속 진행되어야 한다
+  - 더 깊은 참여 액션은 전체 `/login` handoff보다 온페이지 인증 다이얼로그를 우선한다
+  - 공개 게시글 안의 워크아웃 preview는 비로그인 사용자가 `/workouts/:id`로 바로 이동하는 대신 현재 게시글 라우트를 유지한 채 인증 다이얼로그를 열어야 한다
   - 공개 라우트의 다이얼로그와 오버레이는 인증 우회 동선을 만드는 대신, 사용자가 기대하는 브라우저 뒤로가기 동작을 보존해야 한다
   - 사용자가 피드로 바로 가고 싶다면 onboarding은 건너뛸 수 있다
 - 로그인 사용자의 모바일 내비게이션은 이제 생성 진입점을 직접 소유한다.

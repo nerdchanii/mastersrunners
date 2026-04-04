@@ -1,6 +1,6 @@
-import { MessageCircle, Share2 } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { useCallback, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 import { AuthGateDialog } from "@/components/common/AuthGateDialog";
 import { InfiniteScroll } from "@/components/common/InfiniteScroll";
@@ -13,7 +13,6 @@ import { WorkoutAttachmentPreview } from "@/components/workout/WorkoutAttachment
 import { usePostFeed } from "@/hooks/usePosts";
 import { useWorkoutFeed } from "@/hooks/useWorkouts";
 import { useAuth } from "@/lib/auth-context";
-import { shareLink } from "@/lib/share-link";
 import { cn } from "@/lib/utils";
 
 type FeedTab = "posts" | "workouts";
@@ -65,8 +64,8 @@ const guestShowcasePosts: GuestShowcasePost[] = [
       profileImage: null,
     },
     _count: {
-      likes: 82,
-      comments: 9,
+      likes: 0,
+      comments: 0,
     },
     workouts: [
       {
@@ -100,41 +99,35 @@ const guestShowcasePosts: GuestShowcasePost[] = [
       profileImage: null,
     },
     _count: {
-      likes: 64,
-      comments: 6,
+      likes: 0,
+      comments: 0,
     },
     workouts: [],
   },
 ];
 
 function GuestFeedPostCard({ post }: { post: GuestShowcasePost }) {
-  const [showCommentDialog, setShowCommentDialog] = useState(false);
+  const [authDialogTitle, setAuthDialogTitle] = useState<string | null>(null);
   const location = useLocation();
   const nextPath = `${location.pathname}${location.search}${location.hash}`;
-
-  const handleShare = async () => {
-    try {
-      await shareLink({
-        title: `${post.user.name}님의 기록`,
-        text: post.content.slice(0, 120),
-        url: `${window.location.origin}/feed`,
-      });
-      // no-op: if sharing succeeds, no further action is required
-    } catch {
-      // no-op: guest users can still view; sharing errors are non-blocking in showcase
-    }
-  };
+  const createdAtLabel = new Date(post.createdAt).toLocaleString("ko-KR", {
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 
   const postHashtags =
     post.hashtags?.map((tag, idx) => (
-      <Link
+      <button
+        type="button"
         key={`${post.id}-${tag}-${idx}`}
-        to={`/search?hashtag=${encodeURIComponent(tag)}`}
-        onClick={(e) => e.preventDefault()}
-        className="rounded-full border border-border/70 px-2 py-1 text-xs text-muted-foreground"
+        onClick={() => setAuthDialogTitle("태그 더 보기")}
+        aria-label={`${tag} 태그 더 보기`}
+        className="rounded-full border border-border/70 px-2 py-1 text-xs text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
       >
         #{tag}
-      </Link>
+      </button>
     )) ?? [];
 
   return (
@@ -143,7 +136,7 @@ function GuestFeedPostCard({ post }: { post: GuestShowcasePost }) {
         className="border-b bg-card/65 px-4 py-5"
         aria-label={`${post.user.name}님의 게시글`}
       >
-        <UserAvatar user={post.user} showName />
+        <UserAvatar user={post.user} showName linkToProfile={false} subtitle={createdAtLabel} />
 
         <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
           {post.content}
@@ -170,28 +163,25 @@ function GuestFeedPostCard({ post }: { post: GuestShowcasePost }) {
           />
           <button
             type="button"
-            onClick={() => setShowCommentDialog(true)}
+            onClick={() => setAuthDialogTitle("댓글 남기기")}
+            aria-label="댓글 남기기"
             className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-muted-foreground hover:bg-accent"
           >
             <MessageCircle className="size-5" />
             <span className="text-xs font-medium">댓글</span>
           </button>
-          <button
-            type="button"
-            onClick={handleShare}
-            className="ml-auto rounded-lg p-1.5 text-muted-foreground hover:bg-accent"
-            aria-label="공유"
-          >
-            <Share2 className="size-5" />
-          </button>
         </div>
       </article>
 
       <AuthGateDialog
-        open={showCommentDialog}
-        onOpenChange={setShowCommentDialog}
+        open={authDialogTitle !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAuthDialogTitle(null);
+          }
+        }}
         nextPath={nextPath}
-        title="댓글 남기기"
+        title={authDialogTitle ?? "로그인"}
       />
     </>
   );

@@ -2,6 +2,8 @@
 
 Run this checklist after implementation and before specialist review.
 
+Codex Stop-hook review automation only triggers once this checklist has been recorded in the task's `## 셀프 리뷰` section with non-placeholder answers.
+
 ## 1. Scope and Intent
 
 - Does this changeset stay within the task's stated scope?
@@ -52,3 +54,4 @@ Capture any important self-review outcome in the task file, especially:
 - unresolved divergence
 - verify limitations
 - reasons for extra reviewer routing
+- whether the task is now a closeout candidate for Stop-hook review automation
