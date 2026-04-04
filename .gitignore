@@ -58,6 +58,7 @@ next-env.d.ts
 !.codex/config.toml
 !.codex/hooks.json
 .codex/environments/
+.codex/environments/*
 
 # claude code
 .claude/
@@ -68,6 +69,7 @@ next-env.d.ts
 !.claude/skills/*/
 !.claude/skills/*/SKILL.md
 .claude/commands/
+.claude/commands/*
 
 # oh-my-claudecode
 .omc/
