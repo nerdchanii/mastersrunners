@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: frontend
-last_verified: 2026-04-03
+last_verified: 2026-04-04
 sources:
   - apps/web/src/components/workout/WorkoutAnalysisMap.tsx
   - apps/web/src/components/workout/WorkoutAnalysisCharts.tsx
@@ -21,7 +21,7 @@ sources:
 
 ## 요약
 
-워크아웃 UX는 인증된 상태에서의 기록 생성, 검토, 재사용을 중심으로 한다. 생성 흐름은 수기 입력과 FIT/GPX 업로드를 모두 지원하며, 이후 워크아웃은 게시글에 첨부하거나 이벤트 결과와 연결할 수 있다. 현재 상세 라우트는 분석 우선 구조를 따른다. GPS가 있으면 큰 경로 지도를 먼저 보여주고, 그 아래에 거리/시간/페이스 요약, 경로와 연결된 차트, 랩 리뷰를 순서대로 쌓는다.
+워크아웃 UX는 인증된 상태에서의 기록 생성, 검토, 재사용을 중심으로 한다. 생성 흐름은 수기 입력과 FIT/GPX 업로드를 모두 지원하며, 이후 워크아웃은 게시글에 첨부하거나 이벤트 결과와 연결할 수 있다. 현재 상세 라우트는 분석 우선 구조를 따른다. GPS가 있으면 큰 경로 지도를 먼저 보여주고, 그 옆 또는 아래에 거리/시간/페이스 요약, 경로와 연결된 차트, 랩 리뷰를 순서대로 쌓는다.
 
 ## 라우트 모델
 
@@ -60,6 +60,8 @@ sources:
 - `/workouts/:id` 상세 payload는 지도/랩 데이터 외에도 현재 사용자 기준 `liked`와 집계용 `likeCount`, `commentCount`를 안정적으로 포함해야 하며, 웹 상세는 이 social summary를 route body 안에서 바로 사용한다
 - 차트 스크럽과 랩 선택은 하나의 공통 route-selection 모델을 공유해, 상세 화면이 나중에 더 깊은 분석 기능으로 확장될 수 있게 한다
 - 이 분석 우선 방향은 러너 상세 화면의 현재 UX 계약 일부이며, 명시적인 후속 태스크 없이 일반적인 소셜 요약 카드 수준으로 낮춰서는 안 된다
+- workout detail의 상단 hero 섹션은 큰 둥근 카드 하나로 지도와 메타를 감싸는 방식보다, 지도 media block과 우측 분석 메타가 divider 기반 레이아웃으로 이어지는 쪽을 우선한다
+- 거리, 시간, 평균 페이스는 타일형 카드보다 한 줄에 안정적으로 읽히는 summary metrics여야 하며, 단위 표시는 줄바꿈 없이 값과 함께 붙어야 한다
 
 ## 공개 범위와 메타데이터
 

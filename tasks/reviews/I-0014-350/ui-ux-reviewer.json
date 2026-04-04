@@ -1,0 +1,22 @@
+{
+  "task_id": "I-0014-350",
+  "reviewer": "ui-ux-reviewer",
+  "decision": "approved",
+  "tool": "codex-manual-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/ui-ux-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/ui-ux-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/ui-ux-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/ui-ux-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-04-04T21:15:00+09:00",
+  "findings": [],
+  "residual_risks": [
+    "상단 hero는 카드감이 많이 줄었지만, 향후 세부 기록 항목이 더 늘어나면 다시 타일형 블록으로 회귀하지 않도록 주의가 필요하다."
+  ]
+}

@@ -115,6 +115,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - `tasks/archive/I-0014-320-web-public-route-auth-regression-repair.md`
 - `tasks/todo/I-0014-330-web-guest-feed-surface-and-workout-auth-gate.md`
 - `tasks/archive/I-0014-340-web-workout-detail-runtime-and-error-recovery.md`
+- `tasks/archive/I-0014-350-web-workout-detail-hero-card-removal.md`
 
 ### Product Checkpoint Required
 
@@ -167,3 +168,5 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - 2026-04-04: normalized `I-0014-330` back to `tasks/todo/` so the repo can honor the new single-active-task Stop-hook rule while leaving the already-landed public guest-feed fix pack as a resumable follow-up instead of a second simultaneous active task.
 - 2026-04-04: opened `I-0014-340` after `/workouts/:id` started crashing on missing workout social counts and the shared error fallback would keep trapping users on the same UI even after the browser URL changed.
 - 2026-04-04: `I-0014-340` restored the workout-detail social summary contract, added navigation escape from the page-scoped error fallback, and unblocked the focused workout API e2e verifier by mapping Prisma runtime `.mjs` imports to the shipped `.js` runtime inside `apps/api/jest-e2e.config.ts`.
+- 2026-04-04: opened `I-0014-350` after product rejected the desktop workout detail hero section as too card-like and called out a desktop average-pace line break inside the top summary metrics.
+- 2026-04-04: archived `I-0014-350` after flattening the workout detail hero into a cardless analysis layout, keeping map-first hierarchy, and fixing the desktop average-pace wrap regression.

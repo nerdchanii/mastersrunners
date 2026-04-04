@@ -330,9 +330,9 @@ export default function WorkoutDetailPage() {
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-[32px] border border-border/70 bg-background shadow-sm">
-        <div className="grid gap-0 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-          <div className="relative min-h-[360px] border-b border-border/60 lg:border-b-0 lg:border-r">
+      <section className="border-b border-border/60 pb-8">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.7fr)] lg:gap-10">
+          <div className="relative min-h-[360px] overflow-hidden rounded-[32px] bg-muted/15">
             {hasMap ? (
               <>
                 <WorkoutAnalysisMap
@@ -385,7 +385,7 @@ export default function WorkoutDetailPage() {
             )}
           </div>
 
-          <div className="space-y-6 p-6">
+          <div className="space-y-6 lg:border-l lg:border-border/60 lg:pl-10">
             <div className="space-y-4">
               <UserAvatar
                 user={workoutDetail.user}
@@ -426,31 +426,31 @@ export default function WorkoutDetailPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-[24px] border border-border/60 bg-muted/15 px-4 py-4">
+            <div className="grid grid-cols-3 gap-4 border-y border-border/60 py-4">
+              <div className="min-w-0 border-r border-border/60 pr-4">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
                   거리
                 </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+                <p className="mt-2 whitespace-nowrap text-2xl font-semibold tracking-tight text-foreground">
                   {formatDistance(workoutDetail.distance)}
                   <span className="ml-1 text-sm font-normal text-muted-foreground">km</span>
                 </p>
               </div>
-              <div className="rounded-[24px] border border-border/60 bg-muted/15 px-4 py-4">
+              <div className="min-w-0 border-r border-border/60 pr-4">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
                   시간
                 </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+                <p className="mt-2 whitespace-nowrap text-2xl font-semibold tracking-tight text-foreground">
                   {formatDuration(workoutDetail.duration)}
                 </p>
               </div>
-              <div className="rounded-[24px] border border-border/60 bg-muted/15 px-4 py-4">
+              <div className="min-w-0">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
                   평균 페이스
                 </p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+                <p className="mt-2 flex items-baseline gap-1 whitespace-nowrap text-2xl font-semibold tracking-tight text-foreground">
                   {formatPace(workoutDetail.pace)}
-                  <span className="ml-1 text-sm font-normal text-muted-foreground">/km</span>
+                  <span className="text-sm font-normal text-muted-foreground">/km</span>
                 </p>
               </div>
             </div>
@@ -463,12 +463,9 @@ export default function WorkoutDetailPage() {
                     지도 아래 분석 섹션과 함께 읽을 수 있는 요약 지표입니다.
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-4">
                   {highlightMetrics.map((metric) => (
-                    <div
-                      key={metric.key}
-                      className="rounded-[24px] border border-border/60 bg-background/70 px-4 py-3"
-                    >
+                    <div key={metric.key} className="border-b border-border/60 pb-3">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         {metric.icon}
                         <span>{metric.label}</span>
@@ -481,7 +478,7 @@ export default function WorkoutDetailPage() {
             )}
 
             {workoutDetail.memo && (
-              <div className="rounded-[24px] border border-border/60 bg-muted/15 px-4 py-4">
+              <div className="border-t border-border/60 pt-4">
                 <p className="text-sm font-medium text-foreground">메모</p>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
                   {workoutDetail.memo}
