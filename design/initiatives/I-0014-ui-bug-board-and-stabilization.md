@@ -120,6 +120,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - `tasks/archive/I-0014-370-web-workout-detail-action-and-meta-simplification.md`
 - `tasks/archive/I-0014-380-web-workout-detail-overlay-layer-fix.md`
 - `tasks/archive/I-0014-370-web-workout-detail-action-and-meta-simplification.md`
+- `tasks/archive/I-0014-390-web-messaging-and-search-hub-surface-alignment.md`
 
 ### Product Checkpoint Required
 
@@ -181,3 +182,5 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - 2026-04-05: opened `I-0014-380` after product found that the Leaflet map still sat above dropdowns and dialogs, causing delete/share/card-generation overlays to render behind the workout detail map.
 - 2026-04-05: archived `I-0014-380` after raising dialog and dropdown overlay layers above Leaflet panes, keeping the workout map as a base layer, and re-verifying the workout detail route build plus Playwright regression pack.
 - 2026-04-05: archived `I-0014-370` after moving the workout date above the hero map, replacing badge-like hero chrome with quieter text meta, and collapsing edit/share controls into dropdown menus that preserve the same actions with less noise.
+- 2026-04-05: opened `I-0014-390` to flatten the remaining messaging and search hub shells now that public social follow-ups are closed; crew surfaces stay out of scope for this batch because the hub/detail/settings/chat stack is still too broad for a safe mixed task.
+- 2026-04-05: archived `I-0014-390` after flattening the messages and search hub shells, adding deterministic search Playwright coverage, and completing frontend, UI/UX, and PO review with crew surfaces still deferred to a later batch.

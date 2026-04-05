@@ -84,10 +84,10 @@ export default function MessagesPage() {
     return (
       <div className="mx-auto max-w-3xl space-y-6">
         <PageHeader title="메시지" />
-        <section className="overflow-hidden rounded-3xl border border-border/60 bg-background/80 shadow-sm">
-          <div className="border-b border-border/60 px-4 py-4">
-            <Skeleton className="h-10 w-full rounded-2xl" />
-            <div className="mt-3 flex gap-2">
+        <section className="border-y border-border/60">
+          <div className="border-b border-border/60 px-1 py-4 sm:px-2">
+            <Skeleton className="h-10 w-full rounded-full" />
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
               {Array.from({ length: 4 }).map((_, index) => (
                 <Skeleton key={index} className="h-9 w-16 rounded-full" />
               ))}
@@ -114,7 +114,7 @@ export default function MessagesPage() {
     return (
       <div className="mx-auto max-w-3xl space-y-6">
         <PageHeader title="메시지" />
-        <section className="rounded-3xl border border-destructive/30 bg-destructive/5 px-5 py-6">
+        <section className="border-y border-destructive/30 bg-destructive/5 px-1 py-5 sm:px-2">
           <p className="text-sm text-destructive">
             {error instanceof Error ? error.message : "오류가 발생했습니다."}
           </p>
@@ -127,15 +127,15 @@ export default function MessagesPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader title="메시지" />
 
-      <section className="overflow-hidden rounded-3xl border border-border/60 bg-background/80 shadow-sm">
-        <div className="border-b border-border/60 px-4 py-4">
+      <section className="border-y border-border/60">
+        <div className="border-b border-border/60 px-1 py-4 sm:px-2">
           <label className="relative block">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="이름, 크루명, 활동명으로 찾기"
-              className="h-10 rounded-2xl border-none bg-muted/70 pl-9 shadow-none focus-visible:ring-1"
+              className="h-10 rounded-full border-none bg-muted/70 pl-9 shadow-none focus-visible:ring-1"
             />
           </label>
 
@@ -169,7 +169,7 @@ export default function MessagesPage() {
         </div>
 
         {filteredRooms.length === 0 ? (
-          <div className="px-4 py-10">
+          <div className="px-1 py-10 sm:px-2">
             <EmptyState
               icon={MessageCircle}
               title={emptyState.title}
@@ -182,7 +182,7 @@ export default function MessagesPage() {
               <button
                 key={conversation.id}
                 type="button"
-                className="flex w-full items-start gap-3 px-4 py-4 text-left transition-colors hover:bg-accent/40"
+                className="flex w-full items-start gap-3 px-1 py-4 text-left transition-colors hover:bg-accent/30 sm:px-2"
                 onClick={() => navigate(meta.href)}
               >
                 <RoomAvatar conversation={conversation} otherUser={otherUser} />
@@ -287,21 +287,21 @@ function RoomAvatar({
 
 function getFallbackPreview(conversation: Conversation) {
   if (conversation.type === "ACTIVITY") {
-    return "아직 메시지가 없습니다.";
+    return "첫 메시지를 기다리고 있습니다.";
   }
 
   if (conversation.type === "CREW") {
-    return "아직 메시지가 없습니다.";
+    return "첫 메시지를 기다리고 있습니다.";
   }
 
-  return "아직 메시지가 없습니다.";
+  return "대화를 시작해 보세요.";
 }
 
 function getEmptyState(filter: ConversationFilter, query: string) {
   if (query.trim()) {
     return {
       title: "검색 결과가 없습니다",
-      description: "검색어를 다시 확인해 주세요.",
+      description: "다른 이름이나 방 이름으로 다시 찾아보세요.",
     };
   }
 

@@ -90,14 +90,14 @@ export default function MessageDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col h-[calc(100vh-7.5rem)] md:h-[calc(100vh-4rem)]">
-        <div className="border-b bg-background p-4">
+      <div className="mx-auto flex h-[calc(100vh-7.5rem)] max-w-3xl flex-col md:h-[calc(100vh-4rem)]">
+        <div className="border-b border-border/60 bg-background/95 px-1 py-4 backdrop-blur-sm sm:px-2">
           <div className="flex items-center gap-3">
             <Skeleton className="h-10 w-10 rounded-full" />
             <Skeleton className="h-6 w-32" />
           </div>
         </div>
-        <div className="flex-1 p-4 space-y-4">
+        <div className="flex-1 space-y-4 px-1 py-4 sm:px-2">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className={`flex ${i % 2 === 0 ? "justify-end" : "justify-start"}`}>
               <Skeleton className="h-16 w-64 rounded-lg" />
@@ -110,8 +110,8 @@ export default function MessageDetailPage() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-7.5rem)] md:h-[calc(100vh-4rem)] p-4">
-        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 max-w-md">
+      <div className="flex h-[calc(100vh-7.5rem)] flex-col items-center justify-center p-4 md:h-[calc(100vh-4rem)]">
+        <div className="max-w-md border-y border-destructive/30 bg-destructive/5 px-4 py-4">
           <p className="text-destructive">{error}</p>
           <button
             onClick={retry}
@@ -129,7 +129,7 @@ export default function MessageDetailPage() {
 
   if (!conversation || !roomMeta) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-7.5rem)] md:h-[calc(100vh-4rem)] p-4">
+      <div className="flex h-[calc(100vh-7.5rem)] flex-col items-center justify-center p-4 md:h-[calc(100vh-4rem)]">
         <p className="text-muted-foreground">대화를 찾을 수 없습니다</p>
         <Button onClick={() => navigate("/messages")} className="mt-4">
           메시지 목록으로
@@ -139,9 +139,9 @@ export default function MessageDetailPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-7.5rem)] md:h-[calc(100vh-7.5rem)] md:h-[calc(100vh-4rem)] max-w-4xl mx-auto">
+    <div className="mx-auto flex h-[calc(100vh-7.5rem)] max-w-3xl flex-col md:h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="border-b bg-background/95 backdrop-blur-sm p-4">
+      <div className="border-b border-border/60 bg-background/95 px-1 py-4 backdrop-blur-sm sm:px-2">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -175,7 +175,7 @@ export default function MessageDetailPage() {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea className="flex-1 px-1 py-4 sm:px-2">
         {nextCursor && (
           <div className="flex justify-center mb-4">
             <Button variant="outline" size="sm" onClick={handleLoadMore} disabled={loadingMore}>
@@ -248,7 +248,7 @@ export default function MessageDetailPage() {
       </ScrollArea>
 
       {/* Input area */}
-      <div className="border-t bg-background/95 backdrop-blur-sm p-4">
+      <div className="border-t border-border/60 bg-background/95 px-1 py-4 backdrop-blur-sm sm:px-2">
         <div className="flex gap-2">
           <Textarea
             value={content}
