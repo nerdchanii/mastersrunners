@@ -119,7 +119,7 @@ export function LikeButton({
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
         nextPath={nextPath}
-        title="좋아요를 남기려면 로그인해 주세요"
+        title="좋아요 남기기"
         description="지금 보고 있는 글에서 바로 이어서 반응할 수 있습니다."
       />
     </>

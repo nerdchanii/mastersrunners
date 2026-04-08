@@ -50,7 +50,7 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
 
   const endpoint =
     entityType === "workout" ? `/workouts/${entityId}/comments` : `/posts/${entityId}/comments`;
-  const authGateTitle = "댓글을 남기려면 로그인해 주세요";
+  const authGateTitle = "댓글 남기기";
   const guestEntryDescription =
     entityType === "workout"
       ? "로그인 후 이 기록에서 바로 대화를 이어갈 수 있습니다."
