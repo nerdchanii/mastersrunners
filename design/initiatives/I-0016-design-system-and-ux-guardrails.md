@@ -106,6 +106,7 @@
 - `tasks/todo/I-0016-120-web-crew-participation-flow-polish.md`
 - `tasks/todo/I-0016-130-web-workout-capture-and-analysis-flow-polish.md`
 - `tasks/todo/I-0016-140-web-discovery-and-participation-surface-flow-polish.md`
+- `tasks/archive/I-0016-150-meta-storybook-build-output-depcruise-guard.md`
 
 ## 성공 기준
 
@@ -132,3 +133,4 @@
 - 2026-04-08: `I-0016-090`에서 `apps/web`용 Storybook foundation과 shared preview decorator, starter stories, review guidance를 구현해 visual workbench를 실제로 열었다.
 - 2026-04-08: 같은 `I-0016-090` 안에서 Storybook harness를 browser/api mock 레이어로 확장하고, `apps/web/src/components/**` 전 컴포넌트에 co-located stories를 채워 coverage gate까지 붙였다.
 - 2026-04-08: Storybook foundation을 closeout 후보로 고정하고, 이후 UI 다듬기 작업을 `Feed/Post`, `Profile`, `Crew`, `Workout`, `Discovery` 5개 polishing task로 분리했다.
+- 2026-04-08: `I-0016-090` push 단계에서 Storybook generated output이 dependency-cruiser 입력으로 섞여 merge를 막아, generated 산출물 제외 규칙을 `I-0016-150` follow-up으로 분리했다.
