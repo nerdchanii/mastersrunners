@@ -1,12 +1,15 @@
 ---
 doc_state: target
 owner: frontend
-last_verified: 2026-03-12
+last_verified: 2026-04-08
 sources:
   - apps/web/package.json
+  - .storybook/main.ts
+  - .storybook/preview.tsx
   - apps/web/src/router.tsx
   - apps/web/src/hooks
   - apps/web/src/pages
+  - apps/web/src/components
   - scripts/check-size-budgets.targets.json
 ---
 
@@ -33,6 +36,8 @@ sources:
 
 - 재사용 가능한 UI는 `components/`에 둔다.
 - 특정 라우트에서만 쓰는 UI는 재사용 필요가 분명해질 때까지 라우트 옆에 둔다.
+- reusable primitive와 stable presentational section은 story 파일을 같은 디렉터리에 co-locate할 수 있다.
+- Storybook story는 라우트 전체 복제보다 section-level workbench를 우선한다.
 - raw spacing이나 color 값을 반복하기보다, 기존 Tailwind v4와 shadcn 스타일 토큰 시스템을 사용한다.
 - 이름 없는 긴 JSX 블록보다 역할이 분명한 섹션 컴포넌트를 우선한다.
 - 소셜 상세 화면은 콘텐츠가 하나의 흐름으로 읽혀야 할 때, 제네릭 `Card`를 여러 장 쌓기보다 하나의 연속된 문서와 섹션 구분선 구성을 우선한다.
@@ -41,6 +46,17 @@ sources:
 - 소비자용 웹 카피는 `design/frontend/writing-and-copy.md`를 따른다. 샘플/데모 톤과 과잉 설명형 UI를 피한다.
 - 플랫폼이 지원한다면 네이티브 공유 affordance를 우선 사용한다. 클립보드 복사만 하는 공유는 모바일 기본 동작이 아니라 fallback이다.
 - 날짜 선택은 폼 곳곳에 native `type="date"`를 흩뿌리기보다 `components/ui/` 아래 공용 date-picker 래퍼를 통해 처리한다.
+
+## Visual Workbench 운용
+
+- 시각 polish, typography, spacing, theme 검토는 Storybook을 먼저 사용한다.
+- 인증 경계, 브라우저 뒤로가기, 라우트 전환, data loader 계약 검증은 실라우트와 Playwright로 확인한다.
+- Storybook decorator가 이미 query/theme/auth/router shell을 제공하므로, story 안에서 ad hoc provider를 중복 선언하지 않는다.
+- story fixture와 Storybook preview mock은 외부 API 호출 없이 재현 가능한 deterministic data를 사용한다.
+- `components/**/*.tsx`는 같은 디렉터리에 `*.stories.tsx`를 함께 두는 것을 기본값으로 삼는다.
+- interactive component는 정적 스냅샷 하나로 끝내지 말고, open/close/select/auth gate 같은 대표 상태를 story args나 interaction story로 드러낸다.
+- raw object prop을 control에 그대로 노출하기보다 story-level fixture preset으로 감싼다.
+- Storybook coverage는 `pnpm --filter @masters/web storybook:coverage`로 확인한다.
 
 ## 네이밍
 

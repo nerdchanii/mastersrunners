@@ -19,6 +19,7 @@ interface User {
   pbMarathonSeconds: number | null;
   createdAt: string;
 }
+export type { User };
 
 interface AuthContextType {
   user: User | null;
@@ -36,9 +37,19 @@ const AuthContext = createContext<AuthContextType>({
   refreshUser: async () => null,
 });
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+interface AuthProviderProps {
+  children: ReactNode;
+  initialUser?: User | null;
+  disableSessionSync?: boolean;
+}
+
+export function AuthProvider({
+  children,
+  initialUser = null,
+  disableSessionSync = false,
+}: AuthProviderProps) {
+  const [user, setUser] = useState<User | null>(initialUser);
+  const [isLoading, setIsLoading] = useState(!disableSessionSync && initialUser == null);
 
   const refreshUser = useCallback(async () => {
     try {
@@ -54,8 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (disableSessionSync) {
+      setIsLoading(false);
+      return;
+    }
+
     refreshUser();
-  }, [refreshUser]);
+  }, [disableSessionSync, refreshUser]);
 
   useEffect(() => {
     const handleLogout = () => {

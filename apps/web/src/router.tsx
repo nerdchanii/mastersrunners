@@ -6,8 +6,7 @@ import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { FeatureRoute } from "@/components/common/FeatureRoute";
 import { LoadingPage } from "@/components/common/LoadingPage";
 import Header from "@/components/layout/Header";
-import { AuthProvider, useAuth } from "@/lib/auth-context";
-import { ThemeProvider } from "@/lib/theme-context";
+import { useAuth } from "@/lib/auth-context";
 import AuthCallbackPage from "@/pages/auth/callback";
 // Auth pages (small, load eagerly)
 import LoginPage from "@/pages/login";
@@ -68,13 +67,7 @@ function ProtectedRoute() {
 }
 
 function RootLayout() {
-  return (
-    <ThemeProvider>
-      <AuthProvider>
-        <Outlet />
-      </AuthProvider>
-    </ThemeProvider>
-  );
+  return <Outlet />;
 }
 
 function MainLayout() {

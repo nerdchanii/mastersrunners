@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "storybook": "node ./scripts/run-storybook.mjs dev --port 6006 --config-dir ../../.storybook",
+    "build-storybook": "node ./scripts/run-storybook.mjs build -c ../../.storybook",
+    "storybook:coverage": "node ./scripts/check-storybook-coverage.mjs"
   },
   "dependencies": {
     "@masters/types": "workspace:*",
@@ -18,7 +21,6 @@
     "html5-qrcode": "^2.3.8",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.577.0",
-    "next-themes": "^0.4.6",
     "qrcode.react": "^4.2.0",
     "radix-ui": "^1.4.3",
     "react": "^19.0.0",
@@ -32,6 +34,11 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.58.2",
+    "@storybook/addon-a11y": "^10.3.5",
+    "@storybook/addon-docs": "^10.3.5",
+    "@storybook/addon-vitest": "^10.3.5",
+    "@storybook/react-vite": "^10.3.5",
+    "@storybook/test": "^8.6.15",
     "@tailwindcss/vite": "^4",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^22",
@@ -40,6 +47,7 @@
     "@vitejs/plugin-react": "^5",
     "eslint": "^10",
     "shadcn": "^4.0.5",
+    "storybook": "^10.3.5",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.4.0",
     "typescript": "^5",

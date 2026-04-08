@@ -21,6 +21,8 @@
 - Stop hook entrypoint: `scripts/codex-stop-review-hook.py`
 - smoke check: `scripts/check-codex-stop-review-hook.sh`
 
+`.codex/hooks.json`의 Stop hook command는 worktree에서는 `git rev-parse --show-toplevel`을 우선 사용하고, bare 저장소처럼 worktree top-level 해석이 실패하는 경우에는 현재 작업 디렉터리로 fallback해야 한다. 그렇지 않으면 hook script path가 `/scripts/...`로 잘못 풀려 same-session review automation이 시작되기 전에 wiring 단계에서 실패할 수 있다.
+
 `.codex/config.toml`은 최소한 아래 기능을 켜둔다.
 
 - `codex_hooks = true`

@@ -2,7 +2,7 @@
 
 ## 요약
 
-소비자용 웹 앱의 UX 방향을 리서치 기반 제품 UX 규칙, 비주얼 시스템 규칙, 카피 규칙, 가벼운 자동 가드레일로 명시해 레포의 현재 truth로 고정한다. 즉시 목표는 화면 전체를 다시 그리는 것이 아니라, 설명이 과하고 데모처럼 보이며 상호작용이 들쭉날쭉한 패턴이 다시 생기지 않도록 막는 것이다. 동시에 앱이 러너 중심 소셜 제품이라는 방향을 유지해야 한다.
+소비자용 웹 앱의 UX 방향을 리서치 기반 제품 UX 규칙, 비주얼 시스템 규칙, 카피 규칙, 가벼운 자동 가드레일, 그리고 재사용 UI를 격리해서 다듬을 수 있는 시각 작업대 기준으로 명시해 레포의 현재 truth로 고정한다. 즉시 목표는 화면 전체를 다시 그리는 것이 아니라, 설명이 과하고 데모처럼 보이며 상호작용이 들쭉날쭉한 패턴이 다시 생기지 않도록 막는 것이다. 동시에 앱이 러너 중심 소셜 제품이라는 방향을 유지해야 한다.
 
 ## 문제
 
@@ -24,6 +24,7 @@
 - 데모처럼 보이거나 과도하게 설명하는 언어를 막는 1차 문구 규칙을 정의한다.
 - 카드 사용, 위계, 화면 구성에 대한 비주얼 시스템 규칙을 정의한다.
 - 금지 카피와 공개 진입 UX 회귀를 잡아내는 좁고 명확한 자동 가드레일을 추가한다.
+- 자주 손보는 consumer-web UI를 전체 라우트를 매번 순회하지 않고도 점검할 수 있는 시각 작업대 방향을 정리한다.
 
 ## 비목표
 
@@ -56,6 +57,7 @@
 - `scripts/ci-local.sh`
 - `.github/workflows/ci.yml`
 - `package.json`
+- `tasks/archive/I-0016-090-web-storybook-workbench-foundation.md`
 
 ## 설계 참고 문서
 
@@ -85,6 +87,7 @@
 
 - UX 기반 문서와 사용자 가드레일: `frontend-reviewer`, `ui-ux-reviewer`, `docs-reviewer`
 - 레포 자동화와 태스크 템플릿 변경: `harness-reviewer`
+- Storybook 기반 visual workbench follow-up은 consumer-web UI 계층은 `frontend-reviewer`, `ui-ux-reviewer`, 실행 스크립트/작업흐름은 `harness-reviewer`로 본다.
 - PO 리뷰는 결과물이 마케팅용 셸이 아니라 러너 중심 소셜 제품 방향을 유지하는지 확인한다.
 
 ## 태스크 분해
@@ -97,6 +100,12 @@
 - `tasks/archive/I-0016-060-web-profile-workout-visibility-policy-followup.md`
 - `tasks/archive/I-0016-070-web-follow-graph-route-protection-alignment.md`
 - `tasks/archive/I-0016-080-web-mobile-profile-and-feed-edge-alignment.md`
+- `tasks/active/I-0016-090-web-storybook-workbench-foundation.md`
+- `tasks/todo/I-0016-100-web-feed-post-action-flow-polish.md`
+- `tasks/todo/I-0016-110-web-profile-identity-flow-polish.md`
+- `tasks/todo/I-0016-120-web-crew-participation-flow-polish.md`
+- `tasks/todo/I-0016-130-web-workout-capture-and-analysis-flow-polish.md`
+- `tasks/todo/I-0016-140-web-discovery-and-participation-surface-flow-polish.md`
 
 ## 성공 기준
 
@@ -105,6 +114,7 @@
 - 레포가 명백한 데모/설명형 문구에 대한 금지 패턴을 정의한다.
 - CI/local 검사에서 1차 금지 문구와 공개 진입 UX 회귀를 잡아낸다.
 - 이후 사용자용 웹 태스크를 채팅 기억이 아니라 구체적인 UX 문서 기준으로 리뷰할 수 있다.
+- 후속 UI 다듬기 작업이 전체 라우트 순회 대신 격리된 visual workbench와 실라우트 검증을 병행하는 방식으로 진행될 수 있다.
 
 ## 진행 메모
 
@@ -118,3 +128,7 @@
 - 2026-04-04: `I-0016-030`을 닫으면서 공개 크루 상세와 메시지 허브의 설명형 helper copy를 줄이고, 섹션 제목과 empty state가 이미 말하는 내용을 반복하지 않는 문구 규칙을 문서 truth로 보강했다.
 - 2026-04-04: `I-0016-060`에서 타인 공개 프로필의 workout 비노출을 영구 정책으로 닫고, web surface뿐 아니라 profile API aggregate도 같은 privacy 경계를 따르도록 정렬했다.
 - 2026-04-04: `I-0016-070`에서 followers/following을 공개 트리 밖의 본인 전용 보호 라우트로 옮기고, follow controller와 페이지 진입 흐름을 같은 정책으로 정렬했다.
+- 2026-04-07: 전체 web surface를 매번 수동 순회하지 않고 consumer UI를 빠르게 다듬을 수 있도록, `I-0016-090`에서 Storybook 기반 visual workbench follow-up을 backlog로 시드했다.
+- 2026-04-08: `I-0016-090`에서 `apps/web`용 Storybook foundation과 shared preview decorator, starter stories, review guidance를 구현해 visual workbench를 실제로 열었다.
+- 2026-04-08: 같은 `I-0016-090` 안에서 Storybook harness를 browser/api mock 레이어로 확장하고, `apps/web/src/components/**` 전 컴포넌트에 co-located stories를 채워 coverage gate까지 붙였다.
+- 2026-04-08: Storybook foundation을 closeout 후보로 고정하고, 이후 UI 다듬기 작업을 `Feed/Post`, `Profile`, `Crew`, `Workout`, `Discovery` 5개 polishing task로 분리했다.
