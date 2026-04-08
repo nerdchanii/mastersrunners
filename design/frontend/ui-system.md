@@ -51,6 +51,7 @@ sources:
 - 각 component story의 최소 계약은 `Playground` 또는 직접 조작 가능한 대표 story 1개와, 필요 시 `States`/`Variants`/`Interaction`로 상태 차이를 드러내는 것이다.
 - `pnpm --filter @masters/web storybook:coverage`는 모든 `components/**/*.tsx`에 대응하는 `*.stories.tsx`가 있는지 확인하는 coverage gate다.
 - `/feed`, `/posts/:id`, `/profile/:id`, `/crews/:id`, `/workouts/:id` 같은 실제 라우트 계약의 truth는 여전히 실앱과 Playwright다.
+- feed/post action row와 guest gate는 signed-in/guest 비교 story를 기본으로 두고, 행동이 막히는 순간의 copy와 affordance를 같은 언어로 검토한다.
 - stories는 `components/ui`, `components/common`, `components/layout`, `components/feed`, `components/profile`, `components/post`, `components/social`, `components/challenge`, `components/event`, `components/crew`, `components/workout` 아래에 co-locate한다.
 
 ## 컴포넌트 컨벤션

@@ -101,7 +101,7 @@
 - `tasks/archive/I-0016-070-web-follow-graph-route-protection-alignment.md`
 - `tasks/archive/I-0016-080-web-mobile-profile-and-feed-edge-alignment.md`
 - `tasks/archive/I-0016-090-web-storybook-workbench-foundation.md`
-- `tasks/todo/I-0016-100-web-feed-post-action-flow-polish.md`
+- `tasks/archive/I-0016-100-web-feed-post-action-flow-polish.md`
 - `tasks/todo/I-0016-110-web-profile-identity-flow-polish.md`
 - `tasks/todo/I-0016-120-web-crew-participation-flow-polish.md`
 - `tasks/todo/I-0016-130-web-workout-capture-and-analysis-flow-polish.md`

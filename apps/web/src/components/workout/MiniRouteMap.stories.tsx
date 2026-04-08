@@ -15,6 +15,7 @@ export const Default: Story = {
   args: {
     encodedPolyline: "}_seFf~ejVg@tCgBzDmBfCuCnB{A",
     size: 96,
+    strokeColor: "var(--primary)",
     strokeWidth: 2.4,
   },
 };

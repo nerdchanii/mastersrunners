@@ -28,6 +28,14 @@ export const Default: Story = {
     isLiked: storybookPost.isLiked,
     createdAt: storybookPost.createdAt,
     images: [...storybookPost.images],
+    commentHref: "#post-comments",
     onShare: () => undefined,
+  },
+};
+
+export const Guest: Story = {
+  args: Default.args,
+  globals: {
+    authMode: "guest",
   },
 };

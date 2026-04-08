@@ -1,4 +1,3 @@
-import { Lock } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
@@ -83,16 +82,15 @@ export function AuthGateDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md rounded-3xl p-6 sm:p-7">
-        <DialogHeader className="space-y-3 text-left">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-muted/40 text-foreground">
-            <Lock className="size-4" />
-          </div>
-          <DialogTitle className="text-xl font-semibold tracking-tight">{title}</DialogTitle>
-          {description ? <p className="leading-6 text-muted-foreground">{description}</p> : null}
+      <DialogContent className="max-w-sm rounded-3xl p-5 sm:p-6">
+        <DialogHeader className="space-y-1.5 text-left">
+          <DialogTitle className="text-lg font-semibold tracking-tight">{title}</DialogTitle>
+          {description ? (
+            <p className="text-sm leading-6 text-muted-foreground">{description}</p>
+          ) : null}
         </DialogHeader>
 
-        <DialogFooter className="mt-2 flex-col gap-2 sm:flex-row">
+        <DialogFooter className="mt-1 flex-col gap-2 sm:flex-row">
           <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link replace to={`/login?intent=login&next=${encodeURIComponent(nextPath)}`}>
               로그인

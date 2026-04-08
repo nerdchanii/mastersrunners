@@ -24,3 +24,17 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+export const LikeGate: Story = {
+  args: {
+    title: "좋아요를 남기려면 로그인해 주세요",
+    description: "지금 보고 있는 글에서 바로 이어서 반응할 수 있습니다.",
+  },
+};
+
+export const CommentGate: Story = {
+  args: {
+    title: "댓글을 남기려면 로그인해 주세요",
+    description: "현재 보고 있는 글 위치를 그대로 유지한 채 바로 이어서 작성할 수 있습니다.",
+  },
+};

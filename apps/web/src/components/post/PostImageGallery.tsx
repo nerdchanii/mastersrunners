@@ -10,9 +10,10 @@ interface PostImageGalleryProps {
     order: number;
   }>;
   className?: string;
+  layout?: "grid" | "scroll-square";
 }
 
-export function PostImageGallery({ images, className }: PostImageGalleryProps) {
+export function PostImageGallery({ images, className, layout = "grid" }: PostImageGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
@@ -45,7 +46,25 @@ export function PostImageGallery({ images, className }: PostImageGalleryProps) {
       />
 
       <div className={cn(className)}>
-        {orderedImages.length === 1 ? (
+        {layout === "scroll-square" ? (
+          <div className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain">
+            {orderedImages.map((image, index) => (
+              <button
+                key={image.id}
+                type="button"
+                className="relative aspect-square w-full shrink-0 snap-center overflow-hidden"
+                onClick={() => handleImageClick(index)}
+              >
+                <img
+                  src={image.url}
+                  alt={`게시글 이미지 ${index + 1}번`}
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        ) : orderedImages.length === 1 ? (
           <button type="button" className="w-full text-left" onClick={() => handleImageClick(0)}>
             <img
               src={orderedImages[0].url}

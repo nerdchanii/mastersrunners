@@ -36,6 +36,8 @@ const meta = {
     initialLiked: true,
     initialCount: 12,
     compact: false,
+    disabled: false,
+    pending: false,
   },
 } satisfies Meta<typeof LikeButton>;
 
@@ -83,6 +85,24 @@ export const Guest: Story = {
   },
   globals: {
     authMode: "guest",
+  },
+  render: Playground.render,
+};
+
+export const Pending: Story = {
+  args: {
+    initialLiked: true,
+    initialCount: 12,
+    pending: true,
+  },
+  render: Playground.render,
+};
+
+export const Disabled: Story = {
+  args: {
+    initialLiked: false,
+    initialCount: 0,
+    disabled: true,
   },
   render: Playground.render,
 };

@@ -45,18 +45,18 @@ export default function FeedCard({ workout }: FeedCardProps) {
 
       {/* Workout Hero Stats — Strava style */}
       <Link to={`/workouts/${workout.id}`}>
-        <div className="mx-4 rounded-xl bg-muted/50 p-4">
+        <div className="mx-4 rounded-xl bg-muted/50 p-3">
           <div className="flex items-center gap-3">
-            <div className="grid grid-cols-3 gap-2 flex-1">
-              <StatItem value={formatDistance(workout.distance)} label="km" size="lg" />
-              <StatItem value={formatDuration(workout.duration)} label="시간" size="lg" />
-              <StatItem value={formatPace(workout.pace)} label="/km" size="lg" />
+            <div className="grid min-w-0 flex-1 grid-cols-3 gap-2">
+              <StatItem value={formatDistance(workout.distance)} label="km" size="sm" />
+              <StatItem value={formatDuration(workout.duration)} label="시간" size="sm" />
+              <StatItem value={formatPace(workout.pace)} label="/km" size="sm" />
             </div>
             {workout.encodedPolyline && (
               <MiniRouteMap
                 encodedPolyline={workout.encodedPolyline}
-                size={72}
-                strokeColor="hsl(var(--primary))"
+                size={56}
+                strokeColor="var(--primary)"
                 strokeWidth={2}
                 className="shrink-0 opacity-80"
               />

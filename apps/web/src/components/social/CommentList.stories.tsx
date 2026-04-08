@@ -30,3 +30,9 @@ export const Empty: Story = {
     },
   },
 };
+
+export const GuestEntry: Story = {
+  globals: {
+    authMode: "guest",
+  },
+};

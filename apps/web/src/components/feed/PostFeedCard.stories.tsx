@@ -44,6 +44,7 @@ export const WithGallery: Story = {
       images: [
         { id: "image-1", url: storybookMedia.postGalleryOne, order: 1 },
         { id: "image-2", url: storybookMedia.postGalleryTwo, order: 2 },
+        { id: "image-3", url: storybookMedia.postGalleryOne, order: 3 },
       ],
       workouts: [],
     },
@@ -78,7 +79,23 @@ export const WithWorkoutSummary: Story = {
             date: "2026-04-07T06:10:00.000Z",
           },
         },
+        {
+          workout: {
+            id: "workout-3",
+            distance: 6.2,
+            duration: 1760,
+            pace: 284,
+            date: "2026-04-05T07:10:00.000Z",
+          },
+        },
       ],
     },
+  },
+};
+
+export const GuestPreview: Story = {
+  args: WithGallery.args,
+  globals: {
+    authMode: "guest",
   },
 };

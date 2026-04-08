@@ -161,6 +161,7 @@ export default function PostDetailPage() {
               commentsCount={commentsCount}
               isLiked={post.isLiked ?? false}
               createdAt={post.createdAt}
+              commentHref="#post-comments"
               onShare={handleShare}
             />
           </section>
@@ -200,6 +201,7 @@ export default function PostDetailPage() {
           )}
 
           <section
+            id="post-comments"
             data-testid="post-detail-comments"
             className="border-t border-border/60 px-1 py-5 sm:px-2"
           >

@@ -9,6 +9,7 @@ import { CommentContent } from "@/components/social/MentionLink";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { cn } from "@/lib/utils";
 
 interface Comment {
   id: string;
@@ -49,6 +50,15 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
 
   const endpoint =
     entityType === "workout" ? `/workouts/${entityId}/comments` : `/posts/${entityId}/comments`;
+  const authGateTitle = "댓글을 남기려면 로그인해 주세요";
+  const guestEntryDescription =
+    entityType === "workout"
+      ? "로그인 후 이 기록에서 바로 대화를 이어갈 수 있습니다."
+      : "로그인 후 이 글에서 바로 대화를 이어갈 수 있습니다.";
+  const authGateDescription =
+    entityType === "workout"
+      ? "현재 보고 있는 기록 위치를 그대로 유지한 채 바로 이어서 작성할 수 있습니다."
+      : "현재 보고 있는 글 위치를 그대로 유지한 채 바로 이어서 작성할 수 있습니다.";
 
   const fetchComments = async () => {
     try {
@@ -148,16 +158,19 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
           <div className="flex items-center gap-3 mt-1">
             {!isReply && (
               <button
+                type="button"
                 onClick={() => handleReply(comment)}
-                className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                className="rounded-full px-2 py-1 text-xs font-medium text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 답글 달기
               </button>
             )}
             {user?.id === comment.user.id && (
               <button
+                type="button"
                 onClick={() => setDeleteTarget(comment.id)}
-                className="text-xs text-muted-foreground hover:text-destructive"
+                className="rounded-full p-1 text-xs text-muted-foreground outline-none transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                aria-label="댓글 삭제"
               >
                 <Trash2 className="size-3" />
               </button>
@@ -189,7 +202,7 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
       )}
 
       {/* Comment input */}
-      {user && (
+      {user ? (
         <form onSubmit={handleSubmit} className="border-t pt-3">
           {replyingTo && (
             <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
@@ -203,14 +216,14 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
               </button>
             </div>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex min-h-10 items-center gap-2">
             <UserAvatar user={user} size="sm" linkToProfile={false} />
             <input
               ref={inputRef}
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="댓글 달기..."
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              className="h-10 flex-1 bg-transparent py-2 text-sm leading-5 outline-none placeholder:text-muted-foreground"
             />
             <Button
               type="submit"
@@ -223,6 +236,23 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
             </Button>
           </div>
         </form>
+      ) : (
+        <div className="border-t pt-3">
+          <button
+            type="button"
+            onClick={() => setShowAuthDialog(true)}
+            className={cn(
+              "flex w-full items-center justify-between rounded-xl border border-border/70 px-3 py-2.5 text-left transition-colors",
+              "hover:border-border hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            )}
+          >
+            <div className="space-y-0.5">
+              <p className="text-sm font-medium text-foreground">댓글 남기기</p>
+              <p className="text-xs text-muted-foreground">{guestEntryDescription}</p>
+            </div>
+            <span className="text-xs font-medium text-muted-foreground">로그인 필요</span>
+          </button>
+        </div>
       )}
 
       {/* Delete confirmation */}
@@ -240,7 +270,8 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
         nextPath={nextPath}
-        title="댓글 남기기"
+        title={authGateTitle}
+        description={authGateDescription}
       />
     </div>
   );
