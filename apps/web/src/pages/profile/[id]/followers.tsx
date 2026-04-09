@@ -64,7 +64,7 @@ export default function FollowersPage() {
     };
 
     fetchFollowers();
-  }, [userId]);
+  }, [currentUser, userId]);
 
   const handleFollowToggle = async (targetId: string) => {
     const isCurrentlyFollowing = followingStates[targetId];
