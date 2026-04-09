@@ -5,6 +5,8 @@ interface StatItemProps {
   label: string;
   className?: string;
   valueClassName?: string;
+  labelClassName?: string;
+  align?: "center" | "left";
   size?: "sm" | "default" | "lg";
 }
 
@@ -25,14 +27,22 @@ export function StatItem({
   label,
   className,
   valueClassName,
+  labelClassName,
+  align = "center",
   size = "default",
 }: StatItemProps) {
   return (
-    <div className={cn("text-center", className)}>
+    <div className={cn(align === "left" ? "text-left" : "text-center", className)}>
       <p className={cn(valueSizes[size], "text-foreground tabular-nums", valueClassName)}>
         {value}
       </p>
-      <p className={cn(labelSizes[size], "text-muted-foreground uppercase tracking-wide mt-0.5")}>
+      <p
+        className={cn(
+          labelSizes[size],
+          "mt-0.5 text-muted-foreground uppercase tracking-wide",
+          labelClassName,
+        )}
+      >
         {label}
       </p>
     </div>

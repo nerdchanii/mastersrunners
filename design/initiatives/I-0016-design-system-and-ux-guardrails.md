@@ -102,7 +102,7 @@
 - `tasks/archive/I-0016-080-web-mobile-profile-and-feed-edge-alignment.md`
 - `tasks/archive/I-0016-090-web-storybook-workbench-foundation.md`
 - `tasks/archive/I-0016-100-web-feed-post-action-flow-polish.md`
-- `tasks/todo/I-0016-110-web-profile-identity-flow-polish.md`
+- `tasks/archive/I-0016-110-web-profile-identity-flow-polish.md`
 - `tasks/todo/I-0016-120-web-crew-participation-flow-polish.md`
 - `tasks/todo/I-0016-130-web-workout-capture-and-analysis-flow-polish.md`
 - `tasks/todo/I-0016-140-web-discovery-and-participation-surface-flow-polish.md`
@@ -134,5 +134,7 @@
 - 2026-04-08: `I-0016-090`에서 `apps/web`용 Storybook foundation과 shared preview decorator, starter stories, review guidance를 구현해 visual workbench를 실제로 열었다.
 - 2026-04-08: 같은 `I-0016-090` 안에서 Storybook harness를 browser/api mock 레이어로 확장하고, `apps/web/src/components/**` 전 컴포넌트에 co-located stories를 채워 coverage gate까지 붙였다.
 - 2026-04-08: Storybook foundation을 closeout 후보로 고정하고, 이후 UI 다듬기 작업을 `Feed/Post`, `Profile`, `Crew`, `Workout`, `Discovery` 5개 polishing task로 분리했다.
+- 2026-04-09: `I-0016-110`에서 profile identity flow를 `ProfileHeader` / `ProfileStats` / `ProfileTabs`로 분리해, Storybook에서 header → stats → tabs → preview list rhythm을 한 번에 검토할 수 있게 정리했다.
+- 2026-04-09: 같은 `I-0016-110` 후속 polish에서 stats를 다시 header identity block 안으로 합치고, posts/workouts/crew posts를 `/feed` surface language에 맞춰 profile 전용 preview card보다 feed-like interaction을 우선하도록 조정했다.
 - 2026-04-08: `I-0016-090` push 단계에서 Storybook generated output이 dependency-cruiser 입력으로 섞여 merge를 막아, generated 산출물 제외 규칙을 `I-0016-150` follow-up으로 분리했다.
 - 2026-04-08: 같은 push 단계에서 knip가 Storybook wiring을 false positive로 잡아, Storybook baseline 예외를 `I-0016-160` follow-up으로 분리했다.

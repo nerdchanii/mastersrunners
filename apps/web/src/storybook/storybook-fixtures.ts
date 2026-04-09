@@ -114,8 +114,35 @@ export const storybookProfileStats = {
 } as const;
 
 export const storybookProfileTabs = {
-  posts: [storybookPost],
-  workouts: [storybookWorkout],
+  posts: [
+    storybookPost,
+    {
+      ...storybookPost,
+      id: "post-2",
+      content: "토요일 장거리 전에 5km 회복 조깅. 다리는 무거웠지만 리듬은 부드러웠습니다.",
+      createdAt: "2026-04-06T10:10:00.000Z",
+      _count: {
+        likes: 7,
+        comments: 1,
+      },
+    },
+  ],
+  workouts: [
+    storybookWorkout,
+    {
+      ...storybookWorkout,
+      id: "workout-2",
+      distance: 8.2,
+      duration: 2664,
+      pace: 325,
+      date: "2026-04-05T20:10:00.000Z",
+      memo: "업다운이 있는 코스였지만 마지막까지 페이스를 유지했습니다.",
+      _count: {
+        likes: 9,
+        comments: 2,
+      },
+    },
+  ],
   crews: [
     {
       id: "crew-1",
@@ -123,6 +150,13 @@ export const storybookProfileTabs = {
       description: "한강과 서울숲을 중심으로 아침 러닝을 이어가는 크루",
       memberCount: 28,
       imageUrl: storybookMedia.crewBadge,
+    },
+    {
+      id: "crew-2",
+      name: "성수 템포 클럽",
+      description: "평일 저녁 템포런과 주말 롱런을 함께 이어가는 도심 크루",
+      memberCount: 41,
+      imageUrl: null,
     },
   ],
 } as const;

@@ -1,7 +1,17 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
-import { storybookMedia, storybookUser } from "@/storybook/storybook-fixtures";
+import {
+  storybookMedia,
+  storybookProfileStats,
+  storybookProfileTabs,
+  storybookUser,
+} from "@/storybook/storybook-fixtures";
+
+const crewMentions = storybookProfileTabs.crews.map((crew) => ({
+  id: crew.id,
+  name: crew.name,
+}));
 
 const meta = {
   title: "Surfaces/Profile/ProfileHeader",
@@ -30,14 +40,9 @@ export const OwnProfile: Story = {
       ...storybookUser,
       profileImage: storybookMedia.feedCover,
     },
-    stats: {
-      postCount: 42,
-      followerCount: 318,
-      followingCount: 167,
-      workoutCount: 121,
-      crewCount: 4,
-    },
     isOwnProfile: true,
+    stats: storybookProfileStats,
+    crews: crewMentions,
   },
 };
 
@@ -50,14 +55,15 @@ export const FollowingRunner: Story = {
       profileImage: storybookMedia.crewBadge,
       bio: "주말마다 서울숲과 중랑천을 오가며 하프를 준비합니다.",
     },
+    isOwnProfile: false,
+    isFollowing: true,
     stats: {
       postCount: 17,
       followerCount: 128,
       followingCount: 84,
-      workoutCount: 88,
+      crewCount: 3,
     },
-    isOwnProfile: false,
-    isFollowing: true,
+    crews: crewMentions,
     onFollowToggle: () => undefined,
     onMessageClick: () => undefined,
   },
@@ -70,16 +76,48 @@ export const PrivateRunner: Story = {
       id: "runner-4",
       name: "최조용",
       profileImage: null,
-      bio: "기록보다 꾸준함을 더 중요하게 생각합니다.",
-    },
-    stats: {
-      postCount: 9,
-      followerCount: 52,
-      followingCount: 40,
-      workoutCount: 64,
+      bio: null,
+      pb5kSeconds: null,
+      pb10kSeconds: null,
+      pbHalfMarathonSeconds: null,
+      pbMarathonSeconds: null,
     },
     isOwnProfile: false,
     isPrivate: true,
+    stats: {
+      postCount: 17,
+      followerCount: 128,
+      followingCount: 84,
+      crewCount: 3,
+    },
+    crews: crewMentions,
+    onFollowToggle: () => undefined,
+  },
+};
+
+export const PendingRunner: Story = {
+  args: {
+    user: {
+      ...storybookUser,
+      id: "runner-5",
+      name: "윤새벽",
+      profileImage: storybookMedia.feedCover,
+      bio: null,
+      pb5kSeconds: null,
+      pb10kSeconds: null,
+      pbHalfMarathonSeconds: null,
+      pbMarathonSeconds: null,
+    },
+    isOwnProfile: false,
+    isPrivate: true,
+    isPending: true,
+    stats: {
+      postCount: 17,
+      followerCount: 128,
+      followingCount: 84,
+      crewCount: 3,
+    },
+    crews: crewMentions,
     onFollowToggle: () => undefined,
   },
 };

@@ -116,12 +116,29 @@
 }
 
 @layer base {
+  html {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar {
+    display: none;
+  }
+
   * {
     @apply border-border outline-ring/50;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
+
   button:not(:disabled) {
     cursor: pointer;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: "Geist", Arial, Helvetica, sans-serif;
