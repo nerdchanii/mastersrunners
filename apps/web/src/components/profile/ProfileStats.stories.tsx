@@ -16,3 +16,12 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+export const PublicRunner: Story = {
+  args: {
+    postCount: 17,
+    followerCount: 128,
+    followingCount: 84,
+    crewCount: 6,
+  },
+};

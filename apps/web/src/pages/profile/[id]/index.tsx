@@ -10,22 +10,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
 
 import {
+  fetchCrewPostsFromCrews,
   fetchUserCrews,
   fetchUserPosts,
   fetchUserProfile,
   type ProfileApiResponse,
   type ProfileCrew,
+  type ProfileCrewPost,
   type ProfilePost,
   startConversation,
   toggleFollowUser,
 } from "./profile-api";
 
 interface ProfileHeaderStats {
-  crewCount?: number;
-  followerCount: number;
-  followingCount: number;
-  postCount: number;
-  workoutCount: number;
+  crewCount?: string | number;
+  followerCount: string | number;
+  followingCount: string | number;
+  postCount: string | number;
+  workoutCount: string | number;
 }
 
 export default function UserProfilePage() {
@@ -38,6 +40,7 @@ export default function UserProfilePage() {
   const [activeTab, setActiveTab] = useState("posts");
   const [posts, setPosts] = useState<ProfilePost[]>([]);
   const [crews, setCrews] = useState<ProfileCrew[]>([]);
+  const [crewPosts, setCrewPosts] = useState<ProfileCrewPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isTabDataLoading, setIsTabDataLoading] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
@@ -59,6 +62,12 @@ export default function UserProfilePage() {
         setIsLoading(true);
         const data = await fetchUserProfile(userId);
         setProfileData(data);
+        if (data.accessLevel === "FULL") {
+          const visibleCrews = await fetchUserCrews(userId);
+          setCrews(visibleCrews);
+        } else {
+          setCrews([]);
+        }
         setActiveTab("posts");
       } catch (err) {
         setError(err instanceof Error ? err.message : "프로필을 불러오는데 실패했습니다.");
@@ -82,8 +91,8 @@ export default function UserProfilePage() {
           const data = await fetchUserPosts(userId);
           setPosts(data);
         } else if (activeTab === "crews") {
-          const data = await fetchUserCrews(userId);
-          setCrews(data);
+          const data = await fetchCrewPostsFromCrews(crews);
+          setCrewPosts(data);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "프로필 목록을 불러오지 못했습니다.");
@@ -93,7 +102,7 @@ export default function UserProfilePage() {
     };
 
     void fetchTabData();
-  }, [activeTab, profileData, userId]);
+  }, [activeTab, crews, profileData, userId]);
 
   const handleFollowToggle = async () => {
     if (!profileData || isFollowLoading || profileData.isPending) return;
@@ -151,6 +160,14 @@ export default function UserProfilePage() {
     }
   };
 
+  const handleFollowersClick = () => {
+    navigate(`/profile/${userId}/followers`);
+  };
+
+  const handleFollowingClick = () => {
+    navigate(`/profile/${userId}/following`);
+  };
+
   if (!userId || userId === "_") {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
@@ -181,16 +198,16 @@ export default function UserProfilePage() {
   }
 
   const headerStats: ProfileHeaderStats | undefined =
-    profileData.accessLevel === "FULL" &&
-    profileData.stats &&
-    profileData.followersCount !== null &&
-    profileData.followingCount !== null
+    profileData.followersCount !== null ||
+    profileData.followingCount !== null ||
+    profileData.crewCount !== null ||
+    profileData.stats !== null
       ? {
-          postCount: profileData.stats.postCount,
-          followerCount: profileData.followersCount,
-          followingCount: profileData.followingCount,
-          workoutCount: 0,
-          crewCount: profileData.crewCount ?? 0,
+          postCount: profileData.stats?.postCount ?? "비공개",
+          followerCount: profileData.followersCount ?? "비공개",
+          followingCount: profileData.followingCount ?? "비공개",
+          workoutCount: "비공개",
+          crewCount: profileData.crewCount ?? "비공개",
         }
       : undefined;
 
@@ -205,15 +222,18 @@ export default function UserProfilePage() {
       <div className="-mx-4 space-y-5 pb-8 md:mx-auto md:max-w-4xl md:px-4">
         <ProfileHeader
           user={profileData.user}
-          stats={headerStats}
           isOwnProfile={false}
           isFollowing={profileData.isFollowing}
           isPending={profileData.isPending}
           isPrivate={profileData.isPrivate}
+          stats={headerStats}
+          crews={crews}
           onFollowToggle={handleFollowToggle}
           onMessageClick={canShowMessage ? handleMessageClick : undefined}
           isFollowLoading={isFollowLoading}
           isMessageLoading={isMessageLoading}
+          onFollowersClick={handleFollowersClick}
+          onFollowingClick={handleFollowingClick}
         />
 
         {profileData.accessLevel === "LOCKED" ? (
@@ -235,6 +255,7 @@ export default function UserProfilePage() {
             posts={posts}
             workouts={[]}
             crews={crews}
+            crewPosts={crewPosts}
             isLoading={isTabDataLoading}
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -242,6 +263,7 @@ export default function UserProfilePage() {
             postsEmptyDescription="게시글이 없습니다."
             crewsEmptyTitle="크루가 없습니다"
             crewsEmptyDescription="크루가 없습니다."
+            desktopStickyTopOffset={56}
           />
         )}
       </div>

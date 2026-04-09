@@ -100,7 +100,7 @@ test.describe("public entry auth recovery", () => {
   test("공개 프로필은 익명으로 읽히고 팔로우와 메시지는 로그인 모달로 막는다", async ({ page }) => {
     await page.goto("/profile/user-2");
 
-    await expect(page.getByText("공개러너")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "공개러너" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "게시글" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "워크아웃" })).toHaveCount(0);
 

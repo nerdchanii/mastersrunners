@@ -1,10 +1,24 @@
-import { Activity, Grid3x3, Users } from "lucide-react";
+import { Activity, Grid3x3, MessageCircle, Users } from "lucide-react";
+import {
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link } from "react-router-dom";
 
 import { EmptyState } from "@/components/common/EmptyState";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatDistance, formatDuration, formatPace } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { TimeAgo } from "@/components/common/TimeAgo";
+import { UserAvatar } from "@/components/common/UserAvatar";
+import FeedCard from "@/components/feed/FeedCard";
+import PostFeedCard from "@/components/feed/PostFeedCard";
+import { PostImageGallery } from "@/components/post/PostImageGallery";
+import { LikeButton } from "@/components/social/LikeButton";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface User {
   id: string;
@@ -15,6 +29,8 @@ interface User {
 interface Post {
   id: string;
   content: string;
+  visibility?: string;
+  hashtags?: string[];
   createdAt: string;
   likesCount?: number;
   commentsCount?: number;
@@ -22,6 +38,23 @@ interface Post {
     likes: number;
     comments: number;
   };
+  isLiked?: boolean;
+  images?: Array<{
+    id: string;
+    url?: string;
+    imageUrl?: string;
+    order?: number;
+    sortOrder?: number;
+  }>;
+  workouts?: Array<{
+    workout: {
+      id: string;
+      distance: number;
+      duration: number;
+      pace: number;
+      date: string;
+    };
+  }>;
   user: User;
 }
 
@@ -31,10 +64,19 @@ interface Workout {
   duration: number;
   pace: number;
   date: string;
+  visibility?: string;
   memo: string | null;
+  createdAt?: string;
+  encodedPolyline?: string | null;
+  isLiked?: boolean;
   workoutType?: {
     id: string;
     name: string;
+  };
+  user?: User;
+  _count?: {
+    likes: number;
+    comments: number;
   };
 }
 
@@ -48,10 +90,33 @@ interface Crew {
   };
 }
 
+interface CrewPost {
+  id: string;
+  crewId: string;
+  content: string;
+  createdAt: string;
+  user: User;
+  _count: {
+    likes: number;
+    comments: number;
+  };
+  images: Array<{
+    id: string;
+    url: string;
+    order: number;
+  }>;
+  crew: {
+    id: string;
+    name: string;
+    imageUrl: string | null;
+  };
+}
+
 interface ProfileTabsProps {
   posts: Post[];
   workouts: Workout[];
   crews: Crew[];
+  crewPosts: CrewPost[];
   isLoading: boolean;
   activeTab: string;
   onTabChange: (tab: string) => void;
@@ -59,194 +124,560 @@ interface ProfileTabsProps {
   postsEmptyDescription?: string;
   crewsEmptyTitle?: string;
   crewsEmptyDescription?: string;
+  desktopStickyTopOffset?: number;
+  mobileStickyTopOffset?: number;
+}
+
+function useStickyTabsVisibility({
+  desktopStickyTopOffset,
+  mobileStickyTopOffset,
+}: {
+  desktopStickyTopOffset: number;
+  mobileStickyTopOffset: number;
+}) {
+  const stickyTabsRef = useRef<HTMLDivElement | null>(null);
+  const lastScrollYRef = useRef(0);
+  const stickyStartYRef = useRef(0);
+  const [isStickyTabsVisible, setIsStickyTabsVisible] = useState(true);
+
+  const getStickyTopOffset = () =>
+    window.matchMedia("(min-width: 768px)").matches
+      ? desktopStickyTopOffset
+      : mobileStickyTopOffset;
+
+  const updateStickyStartY = useEffectEvent(() => {
+    const stickyTabs = stickyTabsRef.current;
+    if (!stickyTabs || typeof window === "undefined") {
+      return;
+    }
+
+    stickyStartYRef.current = stickyTabs.getBoundingClientRect().top + window.scrollY;
+  });
+
+  const updateStickyVisibility = useEffectEvent(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const currentScrollY = window.scrollY;
+    const deltaY = currentScrollY - lastScrollYRef.current;
+    const stickyTopOffset = getStickyTopOffset();
+    const hasReachedStickyPosition =
+      currentScrollY + stickyTopOffset >= stickyStartYRef.current - 1;
+
+    if (!hasReachedStickyPosition || currentScrollY <= 24) {
+      setIsStickyTabsVisible(true);
+      lastScrollYRef.current = currentScrollY;
+      return;
+    }
+
+    if (Math.abs(deltaY) < 8) {
+      return;
+    }
+
+    setIsStickyTabsVisible(deltaY < 0);
+    lastScrollYRef.current = currentScrollY;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    updateStickyStartY();
+    lastScrollYRef.current = window.scrollY;
+    updateStickyVisibility();
+  }, [desktopStickyTopOffset, mobileStickyTopOffset]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleResize = () => {
+      updateStickyStartY();
+      updateStickyVisibility();
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [desktopStickyTopOffset, mobileStickyTopOffset]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleScroll = () => {
+      updateStickyVisibility();
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [desktopStickyTopOffset, mobileStickyTopOffset]);
+
+  return { isStickyTabsVisible, stickyTabsRef };
 }
 
 export function ProfileTabs({
   posts,
   workouts,
   crews,
+  crewPosts,
   isLoading,
   activeTab,
   onTabChange,
   showWorkoutsTab = true,
   postsEmptyDescription = "게시글이 없습니다.",
   crewsEmptyTitle = "크루가 없습니다",
-  crewsEmptyDescription = "크루가 없습니다.",
+  crewsEmptyDescription = "참여 중인 크루가 없습니다.",
+  desktopStickyTopOffset = 0,
+  mobileStickyTopOffset = 0,
 }: ProfileTabsProps) {
-  const visibleTabCount = showWorkoutsTab ? 3 : 2;
+  const visibleTabs = useMemo(
+    () => (showWorkoutsTab ? ["posts", "workouts", "crews"] : ["posts", "crews"]),
+    [showWorkoutsTab],
+  );
+  const visibleTabCount = visibleTabs.length;
+  const resolvedActiveTab = !showWorkoutsTab && activeTab === "workouts" ? "posts" : activeTab;
+  const activeTabIndex = Math.max(visibleTabs.indexOf(resolvedActiveTab), 0);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const touchStateRef = useRef<{
+    startX: number;
+    startY: number;
+    isHorizontalSwipe: boolean;
+    pointerId: number;
+  } | null>(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const { isStickyTabsVisible, stickyTabsRef } = useStickyTabsVisibility({
+    desktopStickyTopOffset,
+    mobileStickyTopOffset,
+  });
+
+  useEffect(() => {
+    if (!showWorkoutsTab && activeTab === "workouts") {
+      onTabChange("posts");
+    }
+  }, [activeTab, onTabChange, showWorkoutsTab]);
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== "touch") {
+      return;
+    }
+
+    touchStateRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      isHorizontalSwipe: false,
+      pointerId: event.pointerId,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDragOffset(0);
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const touchState = touchStateRef.current;
+
+    if (!touchState || event.pointerType !== "touch" || event.pointerId !== touchState.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - touchState.startX;
+    const deltaY = event.clientY - touchState.startY;
+
+    if (!touchState.isHorizontalSwipe) {
+      if (Math.abs(deltaX) < 8 || Math.abs(deltaX) <= Math.abs(deltaY)) {
+        return;
+      }
+
+      touchState.isHorizontalSwipe = true;
+    }
+
+    const isSwipingPastFirstTab = activeTabIndex === 0 && deltaX > 0;
+    const isSwipingPastLastTab = activeTabIndex === visibleTabCount - 1 && deltaX < 0;
+    const constrainedDeltaX =
+      isSwipingPastFirstTab || isSwipingPastLastTab ? deltaX * 0.35 : deltaX;
+
+    setDragOffset(constrainedDeltaX);
+  };
+
+  const finishSwipe = (currentOffset: number) => {
+    const touchState = touchStateRef.current;
+    const viewportWidth = viewportRef.current?.offsetWidth ?? 0;
+    const swipeThreshold = Math.max(viewportWidth * 0.18, 48);
+
+    if (touchState?.isHorizontalSwipe && Math.abs(currentOffset) > swipeThreshold) {
+      if (currentOffset < 0 && activeTabIndex < visibleTabCount - 1) {
+        onTabChange(visibleTabs[activeTabIndex + 1] ?? resolvedActiveTab);
+      }
+
+      if (currentOffset > 0 && activeTabIndex > 0) {
+        onTabChange(visibleTabs[activeTabIndex - 1] ?? resolvedActiveTab);
+      }
+    }
+
+    touchStateRef.current = null;
+    setDragOffset(0);
+  };
+
+  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const touchState = touchStateRef.current;
+    if (!touchState || event.pointerType !== "touch" || event.pointerId !== touchState.pointerId) {
+      return;
+    }
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    finishSwipe(dragOffset);
+  };
+
+  const handlePointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    touchStateRef.current = null;
+    setDragOffset(0);
+  };
 
   return (
-    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-      <TabsList
-        variant="line"
-        className="w-full justify-around border-b"
-        style={{ gridTemplateColumns: `repeat(${visibleTabCount}, minmax(0, 1fr))` }}
+    <Tabs value={resolvedActiveTab} onValueChange={onTabChange} className="w-full">
+      <div
+        ref={stickyTabsRef}
+        className={`sticky top-[var(--profile-tabs-mobile-top)] z-30 border-b border-border/60 bg-background/95 backdrop-blur-lg transition-transform duration-300 ease-out md:top-[var(--profile-tabs-desktop-top)] ${
+          isStickyTabsVisible ? "translate-y-0" : "-translate-y-full"
+        }`}
+        style={{
+          ["--profile-tabs-mobile-top" as string]: `${mobileStickyTopOffset}px`,
+          ["--profile-tabs-desktop-top" as string]: `${desktopStickyTopOffset}px`,
+        }}
       >
-        <TabsTrigger value="posts" className="flex-1 gap-2">
-          <Grid3x3 className="size-4" />
-          <span className="hidden sm:inline">게시글</span>
-        </TabsTrigger>
-        {showWorkoutsTab ? (
-          <TabsTrigger value="workouts" className="flex-1 gap-2">
-            <Activity className="size-4" />
-            <span className="hidden sm:inline">워크아웃</span>
+        <TabsList
+          variant="line"
+          className="w-full justify-around border-b-0 px-4 sm:px-6"
+          style={{ gridTemplateColumns: `repeat(${visibleTabCount}, minmax(0, 1fr))` }}
+        >
+          <TabsTrigger value="posts" className="flex-1 gap-2 py-3">
+            <Grid3x3 className="size-4" />
+            <span>게시글</span>
           </TabsTrigger>
-        ) : null}
-        <TabsTrigger value="crews" className="flex-1 gap-2">
-          <Users className="size-4" />
-          <span className="hidden sm:inline">크루</span>
-        </TabsTrigger>
-      </TabsList>
+          {showWorkoutsTab ? (
+            <TabsTrigger value="workouts" className="flex-1 gap-2 py-3">
+              <Activity className="size-4" />
+              <span>워크아웃</span>
+            </TabsTrigger>
+          ) : null}
+          <TabsTrigger value="crews" className="flex-1 gap-2 py-3">
+            <Users className="size-4" />
+            <span>크루</span>
+          </TabsTrigger>
+        </TabsList>
+      </div>
 
-      <TabsContent value="posts" className="mt-6">
-        {isLoading ? (
-          <div className="text-center py-8 text-muted-foreground">로딩 중...</div>
-        ) : posts.length === 0 ? (
-          <EmptyState
-            icon={Grid3x3}
-            title="게시글이 없습니다"
-            description={postsEmptyDescription}
-          />
-        ) : (
-          <div className="grid grid-cols-3 gap-1 sm:gap-2">
-            {posts.map((post) => (
-              <Link
-                key={post.id}
-                to={`/posts/${post.id}`}
-                className="aspect-square bg-muted rounded-sm overflow-hidden hover:opacity-80 transition-opacity group relative"
-              >
-                <div className="absolute inset-0 flex items-center justify-center p-4">
-                  <p className="text-xs text-center line-clamp-4 text-foreground/80">
-                    {post.content}
-                  </p>
-                </div>
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <p className="text-xs text-white">
-                    {post._count?.likes ?? post.likesCount ?? 0} 좋아요 ·{" "}
-                    {post._count?.comments ?? post.commentsCount ?? 0} 댓글
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </TabsContent>
+      <div
+        ref={viewportRef}
+        className="overflow-hidden touch-pan-y"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+      >
+        <div
+          className={`flex will-change-transform motion-reduce:transition-none ${
+            dragOffset === 0
+              ? "transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+              : "transition-none"
+          }`}
+          style={{
+            width: `${visibleTabCount * 100}%`,
+            transform: `translate3d(calc(-${activeTabIndex * (100 / visibleTabCount)}% + ${dragOffset}px), 0, 0)`,
+          }}
+        >
+          <ProfileTabPanel visibleTabCount={visibleTabCount}>
+            {isLoading ? (
+              <ProfileStatePanel>
+                <ProfileFeedStack>
+                  {Array.from({ length: 3 }, (_, index) => (
+                    <PostPreviewSkeleton key={`posts-skeleton-${index}`} />
+                  ))}
+                </ProfileFeedStack>
+              </ProfileStatePanel>
+            ) : posts.length === 0 ? (
+              <ProfileStatePanel>
+                <ProfileEmptyState
+                  icon={Grid3x3}
+                  title="게시글이 없습니다"
+                  description={postsEmptyDescription}
+                />
+              </ProfileStatePanel>
+            ) : (
+              <ProfileFeedStack>
+                {posts.map((post) => (
+                  <PostFeedCard key={post.id} post={normalizePost(post)} />
+                ))}
+              </ProfileFeedStack>
+            )}
+          </ProfileTabPanel>
 
-      {showWorkoutsTab ? (
-        <TabsContent value="workouts" className="mt-6">
-          {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">로딩 중...</div>
-          ) : workouts.length === 0 ? (
-            <EmptyState
-              icon={Activity}
-              title="워크아웃이 없습니다"
-              description="아직 기록한 러닝 활동이 없습니다."
-            />
-          ) : (
-            <div className="space-y-3">
-              {workouts.map((workout) => (
-                <Link
-                  key={workout.id}
-                  to={`/workouts/${workout.id}`}
-                  className={cn(
-                    "block rounded-lg border bg-card p-4",
-                    "hover:bg-accent hover:border-accent-foreground/20 transition-colors",
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-foreground">
-                          {workout.workoutType?.name || "러닝"}
-                        </h3>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(workout.date).toLocaleDateString("ko-KR", {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
-                      </div>
+          {showWorkoutsTab ? (
+            <ProfileTabPanel visibleTabCount={visibleTabCount}>
+              {isLoading ? (
+                <ProfileStatePanel>
+                  <ProfileFeedStack>
+                    {Array.from({ length: 2 }, (_, index) => (
+                      <WorkoutPreviewSkeleton key={`workouts-skeleton-${index}`} />
+                    ))}
+                  </ProfileFeedStack>
+                </ProfileStatePanel>
+              ) : workouts.length === 0 ? (
+                <ProfileStatePanel>
+                  <ProfileEmptyState
+                    icon={Activity}
+                    title="워크아웃이 없습니다"
+                    description="아직 기록한 러닝 활동이 없습니다."
+                  />
+                </ProfileStatePanel>
+              ) : (
+                <ProfileFeedStack>
+                  {workouts.map((workout) => (
+                    <FeedCard key={workout.id} workout={normalizeWorkout(workout)} />
+                  ))}
+                </ProfileFeedStack>
+              )}
+            </ProfileTabPanel>
+          ) : null}
 
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground text-xs">거리</p>
-                          <p className="font-semibold tabular-nums">
-                            {formatDistance(workout.distance)} km
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground text-xs">시간</p>
-                          <p className="font-semibold tabular-nums">
-                            {formatDuration(workout.duration)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground text-xs">페이스</p>
-                          <p className="font-semibold tabular-nums">
-                            {formatPace(workout.pace)}/km
-                          </p>
-                        </div>
-                      </div>
-
-                      {workout.memo && (
-                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                          {workout.memo}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      ) : null}
-
-      <TabsContent value="crews" className="mt-6">
-        {isLoading ? (
-          <div className="text-center py-8 text-muted-foreground">로딩 중...</div>
-        ) : crews.length === 0 ? (
-          <EmptyState icon={Users} title={crewsEmptyTitle} description={crewsEmptyDescription} />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {crews.map((crew) => (
-              <Link
-                key={crew.id}
-                to={`/crews/${crew.id}`}
-                className={cn(
-                  "block rounded-lg border bg-card p-4",
-                  "hover:bg-accent hover:border-accent-foreground/20 transition-colors",
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  {crew.imageUrl ? (
-                    <img
-                      src={crew.imageUrl}
-                      alt={crew.name}
-                      className="size-12 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="size-12 rounded-lg bg-muted flex items-center justify-center">
-                      <Users className="size-6 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground truncate">{crew.name}</h3>
-                    {crew.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                        {crew.description}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      멤버 {crew._count.members}명
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </TabsContent>
+          <ProfileTabPanel visibleTabCount={visibleTabCount}>
+            {isLoading ? (
+              <ProfileStatePanel>
+                <ProfileFeedStack>
+                  {Array.from({ length: 2 }, (_, index) => (
+                    <CrewPostPreviewSkeleton key={`crews-skeleton-${index}`} />
+                  ))}
+                </ProfileFeedStack>
+              </ProfileStatePanel>
+            ) : crewPosts.length === 0 ? (
+              <ProfileStatePanel>
+                <ProfileEmptyState
+                  icon={Users}
+                  title={crews.length === 0 ? crewsEmptyTitle : "크루 게시글이 없습니다"}
+                  description={
+                    crews.length === 0
+                      ? crewsEmptyDescription
+                      : "참여 중인 크루의 최근 소식이 아직 없습니다."
+                  }
+                />
+              </ProfileStatePanel>
+            ) : (
+              <ProfileFeedStack>
+                {crewPosts.map((post) => (
+                  <ProfileCrewPostCard key={post.id} post={post} />
+                ))}
+              </ProfileFeedStack>
+            )}
+          </ProfileTabPanel>
+        </div>
+      </div>
     </Tabs>
+  );
+}
+
+function normalizePost(post: Post) {
+  return {
+    ...post,
+    visibility: post.visibility ?? "PUBLIC",
+    hashtags: post.hashtags ?? [],
+    _count: {
+      likes: post._count?.likes ?? post.likesCount ?? 0,
+      comments: post._count?.comments ?? post.commentsCount ?? 0,
+    },
+    images: (post.images ?? [])
+      .map((image) => ({
+        id: image.id,
+        url: image.url ?? image.imageUrl ?? "",
+        order: image.order ?? image.sortOrder ?? 0,
+      }))
+      .filter((image) => image.url.length > 0),
+    workouts: post.workouts ?? [],
+  };
+}
+
+function normalizeWorkout(workout: Workout) {
+  return {
+    ...workout,
+    visibility: workout.visibility ?? "PUBLIC",
+    createdAt: workout.createdAt ?? workout.date,
+    user: workout.user ?? {
+      id: "profile-workout",
+      name: "러너",
+      profileImage: null,
+    },
+    _count: {
+      likes: workout._count?.likes ?? 0,
+      comments: workout._count?.comments ?? 0,
+    },
+  };
+}
+
+function ProfileCrewPostCard({ post }: { post: CrewPost }) {
+  return (
+    <article className="border-b bg-card">
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <UserAvatar
+          user={post.user}
+          showName
+          subtitle={
+            <span className="flex items-center gap-1">
+              <span>@{post.crew.name}</span>
+              <span>·</span>
+              <TimeAgo date={post.createdAt} />
+            </span>
+          }
+        />
+        <Link
+          to={`/crews/${post.crew.id}`}
+          className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          크루 보기
+        </Link>
+      </div>
+
+      <div className="px-4 pb-3">
+        <Link to={`/crews/${post.crew.id}`} className="block">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+            {post.content}
+          </p>
+        </Link>
+      </div>
+
+      {post.images.length > 0 ? <PostImageGallery images={post.images} className="mt-1" /> : null}
+
+      <div className="flex items-center gap-1 px-2 py-2">
+        <LikeButton entityType="post" entityId={post.id} initialCount={post._count.likes} />
+        <Link
+          to={`/crews/${post.crew.id}`}
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-muted-foreground transition-colors hover:bg-accent"
+        >
+          <MessageCircle className="size-5" />
+          {post._count.comments > 0 ? (
+            <span className="text-sm font-medium tabular-nums">{post._count.comments}</span>
+          ) : null}
+        </Link>
+        <Link
+          to={`/crews/${post.crew.id}`}
+          className="ml-auto rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          크루로 이동
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+function ProfileFeedStack({ children }: { children: ReactNode }) {
+  return <div>{children}</div>;
+}
+
+function ProfileEmptyState({
+  icon,
+  title,
+  description,
+}: {
+  icon: typeof Grid3x3;
+  title: string;
+  description: string;
+}) {
+  return (
+    <EmptyState
+      icon={icon}
+      title={title}
+      description={description}
+      className="rounded-3xl border border-dashed border-border/70 bg-muted/20"
+    />
+  );
+}
+
+function ProfileStatePanel({ children }: { children: ReactNode }) {
+  return <div className="px-4 py-6 sm:px-6">{children}</div>;
+}
+
+function ProfileTabPanel({
+  children,
+  visibleTabCount,
+}: {
+  children: ReactNode;
+  visibleTabCount: number;
+}) {
+  return (
+    <div className="shrink-0" style={{ width: `${100 / visibleTabCount}%` }}>
+      {children}
+    </div>
+  );
+}
+
+function PostPreviewSkeleton() {
+  return (
+    <article className="border-b bg-card px-4 py-4">
+      <div className="flex items-center gap-3">
+        <Skeleton className="size-10 rounded-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+      </div>
+      <Skeleton className="mt-4 h-20 w-full rounded-xl" />
+      <div className="mt-4 space-y-2">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-[84%]" />
+      </div>
+      <div className="mt-4 flex gap-3">
+        <Skeleton className="h-9 w-20 rounded-full" />
+        <Skeleton className="h-9 w-20 rounded-full" />
+      </div>
+    </article>
+  );
+}
+
+function WorkoutPreviewSkeleton() {
+  return (
+    <article className="border-b bg-card px-4 py-4">
+      <div className="flex items-center gap-3">
+        <Skeleton className="size-10 rounded-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+      </div>
+      <Skeleton className="mt-4 h-24 w-full rounded-xl" />
+      <div className="mt-4 flex gap-3">
+        <Skeleton className="h-9 w-20 rounded-full" />
+        <Skeleton className="h-9 w-20 rounded-full" />
+      </div>
+    </article>
+  );
+}
+
+function CrewPostPreviewSkeleton() {
+  return (
+    <article className="border-b bg-card px-4 py-4">
+      <div className="flex items-center gap-3">
+        <Skeleton className="size-10 rounded-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-3 w-32" />
+        </div>
+      </div>
+      <div className="mt-4 space-y-2">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-[78%]" />
+      </div>
+      <Skeleton className="mt-4 h-28 w-full rounded-xl" />
+    </article>
   );
 }

@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: frontend
-last_verified: 2026-04-08
+last_verified: 2026-04-09
 sources:
   - apps/web/package.json
   - apps/web/vite.config.ts
@@ -52,6 +52,10 @@ sources:
 - `pnpm --filter @masters/web storybook:coverage`는 모든 `components/**/*.tsx`에 대응하는 `*.stories.tsx`가 있는지 확인하는 coverage gate다.
 - `/feed`, `/posts/:id`, `/profile/:id`, `/crews/:id`, `/workouts/:id` 같은 실제 라우트 계약의 truth는 여전히 실앱과 Playwright다.
 - feed/post action row와 guest gate는 signed-in/guest 비교 story를 기본으로 두고, 행동이 막히는 순간의 copy와 affordance를 같은 언어로 검토한다.
+- profile identity flow는 `ProfileHeader`, `ProfileStats`, `ProfileTabs`를 따로 떼어 보되, 실제 프로필 화면에서는 stats가 header 안의 같은 identity block으로 읽혀야 한다. Storybook에서는 `header(embedded stats) → tabs → preview feed`의 리듬이 `/feed`와 어긋나지 않는지 확인한다.
+- profile header의 own/following/private/pending variant는 avatar, name, bio, record block, action area 높이 차이가 과도하지 않게 같은 baseline을 유지해야 한다.
+- profile header의 PB는 outline chip이 아니라 bio 아래 이어지는 record line으로 표시한다. 현재 schema/API는 초 단위 PB만 저장하므로 race name/date 같은 메타데이터 표시는 별도 후속 과업 없이는 넣지 않는다.
+- profile tabs의 posts/workouts는 profile 전용 preview card를 새로 만들기보다 `/feed` surface language를 재사용하고, crews tab도 crew info card가 아니라 crew post feed처럼 읽혀야 한다.
 - stories는 `components/ui`, `components/common`, `components/layout`, `components/feed`, `components/profile`, `components/post`, `components/social`, `components/challenge`, `components/event`, `components/crew`, `components/workout` 아래에 co-locate한다.
 
 ## 컴포넌트 컨벤션
