@@ -3,6 +3,8 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   useEffect,
+  useEffectEvent,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -126,6 +128,101 @@ interface ProfileTabsProps {
   mobileStickyTopOffset?: number;
 }
 
+function useStickyTabsVisibility({
+  desktopStickyTopOffset,
+  mobileStickyTopOffset,
+}: {
+  desktopStickyTopOffset: number;
+  mobileStickyTopOffset: number;
+}) {
+  const stickyTabsRef = useRef<HTMLDivElement | null>(null);
+  const lastScrollYRef = useRef(0);
+  const stickyStartYRef = useRef(0);
+  const [isStickyTabsVisible, setIsStickyTabsVisible] = useState(true);
+
+  const getStickyTopOffset = () =>
+    window.matchMedia("(min-width: 768px)").matches
+      ? desktopStickyTopOffset
+      : mobileStickyTopOffset;
+
+  const updateStickyStartY = useEffectEvent(() => {
+    const stickyTabs = stickyTabsRef.current;
+    if (!stickyTabs || typeof window === "undefined") {
+      return;
+    }
+
+    stickyStartYRef.current = stickyTabs.getBoundingClientRect().top + window.scrollY;
+  });
+
+  const updateStickyVisibility = useEffectEvent(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const currentScrollY = window.scrollY;
+    const deltaY = currentScrollY - lastScrollYRef.current;
+    const stickyTopOffset = getStickyTopOffset();
+    const hasReachedStickyPosition =
+      currentScrollY + stickyTopOffset >= stickyStartYRef.current - 1;
+
+    if (!hasReachedStickyPosition || currentScrollY <= 24) {
+      setIsStickyTabsVisible(true);
+      lastScrollYRef.current = currentScrollY;
+      return;
+    }
+
+    if (Math.abs(deltaY) < 8) {
+      return;
+    }
+
+    setIsStickyTabsVisible(deltaY < 0);
+    lastScrollYRef.current = currentScrollY;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    updateStickyStartY();
+    lastScrollYRef.current = window.scrollY;
+    updateStickyVisibility();
+  }, [desktopStickyTopOffset, mobileStickyTopOffset]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleResize = () => {
+      updateStickyStartY();
+      updateStickyVisibility();
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [desktopStickyTopOffset, mobileStickyTopOffset]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleScroll = () => {
+      updateStickyVisibility();
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [desktopStickyTopOffset, mobileStickyTopOffset]);
+
+  return { isStickyTabsVisible, stickyTabsRef };
+}
+
 export function ProfileTabs({
   posts,
   workouts,
@@ -141,14 +238,14 @@ export function ProfileTabs({
   desktopStickyTopOffset = 0,
   mobileStickyTopOffset = 0,
 }: ProfileTabsProps) {
-  const visibleTabs = showWorkoutsTab ? ["posts", "workouts", "crews"] : ["posts", "crews"];
+  const visibleTabs = useMemo(
+    () => (showWorkoutsTab ? ["posts", "workouts", "crews"] : ["posts", "crews"]),
+    [showWorkoutsTab],
+  );
   const visibleTabCount = visibleTabs.length;
   const resolvedActiveTab = !showWorkoutsTab && activeTab === "workouts" ? "posts" : activeTab;
   const activeTabIndex = Math.max(visibleTabs.indexOf(resolvedActiveTab), 0);
-  const stickyTabsRef = useRef<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const lastScrollYRef = useRef(0);
-  const stickyStartYRef = useRef(0);
   const touchStateRef = useRef<{
     startX: number;
     startY: number;
@@ -156,76 +253,16 @@ export function ProfileTabs({
     pointerId: number;
   } | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
-  const [isStickyTabsVisible, setIsStickyTabsVisible] = useState(true);
+  const { isStickyTabsVisible, stickyTabsRef } = useStickyTabsVisibility({
+    desktopStickyTopOffset,
+    mobileStickyTopOffset,
+  });
 
   useEffect(() => {
     if (!showWorkoutsTab && activeTab === "workouts") {
       onTabChange("posts");
     }
   }, [activeTab, onTabChange, showWorkoutsTab]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const getStickyTopOffset = () =>
-      window.matchMedia("(min-width: 768px)").matches
-        ? desktopStickyTopOffset
-        : mobileStickyTopOffset;
-
-    const updateStickyStartY = () => {
-      const stickyTabs = stickyTabsRef.current;
-      if (!stickyTabs) {
-        return;
-      }
-
-      stickyStartYRef.current = stickyTabs.getBoundingClientRect().top + window.scrollY;
-    };
-
-    updateStickyStartY();
-    lastScrollYRef.current = window.scrollY;
-
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const deltaY = currentScrollY - lastScrollYRef.current;
-      const stickyTopOffset = getStickyTopOffset();
-      const hasReachedStickyPosition =
-        currentScrollY + stickyTopOffset >= stickyStartYRef.current - 1;
-
-      if (!hasReachedStickyPosition) {
-        setIsStickyTabsVisible(true);
-        lastScrollYRef.current = currentScrollY;
-        return;
-      }
-
-      if (currentScrollY <= 24) {
-        setIsStickyTabsVisible(true);
-        lastScrollYRef.current = currentScrollY;
-        return;
-      }
-
-      if (Math.abs(deltaY) < 8) {
-        return;
-      }
-
-      setIsStickyTabsVisible(deltaY < 0);
-      lastScrollYRef.current = currentScrollY;
-    };
-
-    const handleResize = () => {
-      updateStickyStartY();
-      handleScroll();
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [desktopStickyTopOffset, mobileStickyTopOffset]);
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== "touch") {
