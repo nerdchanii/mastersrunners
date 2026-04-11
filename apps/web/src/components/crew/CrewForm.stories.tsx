@@ -5,13 +5,13 @@ import CrewForm from "@/components/crew/CrewForm";
 const meta = {
   title: "Surfaces/Crew/CrewForm",
   component: CrewForm,
-  parameters: { layout: "padded" },
+  parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof CrewForm>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Create: Story = {
+export const CreateWithWrapper: Story = {
   args: {
     submitLabel: "크루 만들기",
     isSubmitting: false,
@@ -20,7 +20,7 @@ export const Create: Story = {
   },
 };
 
-export const Edit: Story = {
+export const EditWithWrapper: Story = {
   args: {
     submitLabel: "수정 저장",
     isSubmitting: false,
