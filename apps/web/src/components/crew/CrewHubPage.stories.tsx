@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Lock, LogOut, MoreHorizontal, Settings, Share2, UserPlus } from "lucide-react";
+import { LogOut, MoreHorizontal, Settings, Share2, UserPlus } from "lucide-react";
 import { useState } from "react";
 
 import { AuthGateDialog } from "@/components/common/AuthGateDialog";
@@ -10,10 +10,10 @@ import CrewIdentityHero from "@/components/crew/CrewIdentityHero";
 import CrewMemberList from "@/components/crew/CrewMemberList";
 import CrewPostList from "@/components/crew/CrewPostList";
 import CrewTagManager from "@/components/crew/CrewTagManager";
-import GroupChat from "@/components/crew/GroupChat";
 import PendingMemberList from "@/components/crew/PendingMemberList";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +24,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   storybookCrew,
   storybookCrewAttendanceStats,
-  storybookCrewChat,
   storybookCrewMembers,
   storybookCrewPosts,
   storybookCrewTags,
@@ -83,27 +82,14 @@ const memberHubMembers = [
   },
 ];
 
-function createCrewChatData() {
-  return {
-    ...storybookCrewChat,
-    conversation: storybookCrewChat.conversation
-      ? {
-          ...storybookCrewChat.conversation,
-          participants: [...storybookCrewChat.conversation.participants],
-        }
-      : null,
-    messages: [...storybookCrewChat.messages],
-  };
-}
-
 function SecondaryMemberMenu() {
   return (
     <div className="rounded-full border border-background/35 bg-background/55 p-1 shadow-xs backdrop-blur-sm">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label="크루 멤버 메뉴">
+          <IconButton variant="ghost" aria-label="크루 멤버 메뉴">
             <MoreHorizontal className="size-4" />
-          </Button>
+          </IconButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem variant="destructive">
@@ -117,7 +103,6 @@ function SecondaryMemberMenu() {
 }
 
 function CrewHubPageStory({ role, inviteEntry = false }: { role: HubRole; inviteEntry?: boolean }) {
-  const [activeTab, setActiveTab] = useState("activities");
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authDialogTitle, setAuthDialogTitle] = useState("크루 참여");
 
@@ -146,11 +131,7 @@ function CrewHubPageStory({ role, inviteEntry = false }: { role: HubRole; invite
                 이 크루가 마음에 드시나요? 지금 바로 가입하여 함께 달리세요.
               </p>
             </div>
-            <Button
-              size="lg"
-              className="rounded-full shadow-md"
-              onClick={() => openAuthGate("크루 참여")}
-            >
+            <Button size="lg" className="rounded-full shadow-md" onClick={() => openAuthGate("크루 참여")}>
               <UserPlus className="mr-2 size-4" />
               크루 가입하기
             </Button>
@@ -168,6 +149,12 @@ function CrewHubPageStory({ role, inviteEntry = false }: { role: HubRole; invite
         isPublic
         profileImageUrl={storybookMedia.crewBadge}
         coverImageUrl={storybookMedia.feedCover}
+        crewId={storybookCrew.id}
+        members={members}
+        currentUserId={currentUserId}
+        currentUserRole={currentUserRole}
+        onMembersUpdate={() => undefined}
+        chatHref={`/messages/crew/${storybookCrew.id}`}
         topActions={role === "member" ? <SecondaryMemberMenu /> : undefined}
         actions={
           <div className="flex items-center gap-3">
@@ -202,7 +189,7 @@ function CrewHubPageStory({ role, inviteEntry = false }: { role: HubRole; invite
       <div className="grid gap-12 px-0 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-6">
         <div className="space-y-16">
           <section>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs defaultValue="activities" className="w-full">
               <div className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-md">
                 <TabsList className="flex h-14 w-full justify-start gap-8 rounded-none bg-transparent p-0">
                   <TabsTrigger
@@ -210,13 +197,6 @@ function CrewHubPageStory({ role, inviteEntry = false }: { role: HubRole; invite
                     className="h-full rounded-none border-b-2 border-transparent px-2 text-base font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"
                   >
                     활동
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="chat"
-                    disabled={!isMember}
-                    className="h-full rounded-none border-b-2 border-transparent px-2 text-base font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"
-                  >
-                    채팅
                   </TabsTrigger>
                   <TabsTrigger
                     value="board"
@@ -241,31 +221,6 @@ function CrewHubPageStory({ role, inviteEntry = false }: { role: HubRole; invite
                       canOpenActivityDetails={isMember}
                       onRequireAuth={() => openAuthGate("활동 자세히 보기")}
                     />
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="chat" className="mt-0 focus-visible:outline-none">
-                  <div className="space-y-8">
-                    <div className="flex items-center justify-between px-4 sm:px-0">
-                      <h2 className="text-2xl font-bold tracking-tight">채팅</h2>
-                    </div>
-                    {isMember ? (
-                      <GroupChat
-                        crewId={storybookCrew.id}
-                        data={createCrewChatData()}
-                        isLoading={false}
-                        title={`${storybookCrew.name} 크루 채팅`}
-                        subtitle="멤버 전용"
-                        emptyMessage="아직 메시지가 없습니다."
-                        missingConversationMessage="크루 채팅방이 아직 준비되지 않았습니다."
-                        composerPlaceholder={`${storybookCrew.name} 크루에 메시지 보내기`}
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed py-20 text-muted-foreground">
-                        <Lock className="mb-4 size-10 opacity-20" />
-                        <p className="font-medium">멤버만 채팅에 참여할 수 있습니다.</p>
-                      </div>
-                    )}
                   </div>
                 </TabsContent>
 

@@ -1,12 +1,39 @@
-import { Lock, Users } from "lucide-react";
+import { Lock, MessageCircle, Users } from "lucide-react";
+import { useState } from "react";
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 import { TimeAgo } from "@/components/common/TimeAgo";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarGroup,
+  AvatarGroupCount,
+  AvatarImage,
+} from "@/components/ui/avatar";
+import { IconButton } from "@/components/ui/icon-button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
+
+import CrewMemberList from "./CrewMemberList";
+
+interface CrewMemberSummary {
+  id: string;
+  userId: string;
+  role: "OWNER" | "ADMIN" | "MEMBER";
+  status: "ACTIVE" | "PENDING" | "LEFT";
+  joinedAt: string;
+  user: {
+    id: string;
+    name: string;
+    profileImage: string | null;
+  };
+}
 
 interface CrewIdentityHeroProps {
+  className?: string;
   eyebrow?: string;
+  crewId?: string;
   name: string;
   description?: string | null;
   creatorName: string;
@@ -16,100 +43,169 @@ interface CrewIdentityHeroProps {
   isPublic: boolean;
   profileImageUrl?: string | null;
   coverImageUrl?: string | null;
+  members?: CrewMemberSummary[];
+  currentUserId?: string;
+  currentUserRole?: "OWNER" | "ADMIN" | "MEMBER" | null;
+  onMembersUpdate?: () => void;
+  chatHref: string;
+  topActions?: ReactNode;
   actions?: ReactNode;
 }
 
 export default function CrewIdentityHero({
-  eyebrow,
+  className,
+  crewId,
   name,
   description,
-  creatorName,
   createdAt,
   memberCount,
   maxMembers,
   isPublic,
   profileImageUrl,
   coverImageUrl,
+  members,
+  currentUserId,
+  currentUserRole,
+  onMembersUpdate,
+  chatHref,
+  topActions,
   actions,
 }: CrewIdentityHeroProps) {
+  const [isMemberSheetOpen, setIsMemberSheetOpen] = useState(false);
   const memberLabel = maxMembers ? `${memberCount}명 / ${maxMembers}명` : `${memberCount}명`;
+  const activeMembers = members?.filter((member) => member.status === "ACTIVE") ?? [];
+  const visibleMembers = activeMembers.slice(0, 4);
+  const hasMemberSummary = !!crewId && activeMembers.length > 0;
 
   return (
-    <Card className="overflow-hidden border-border/60 shadow-sm">
+    <section className={cn("relative", className)}>
       <div className="relative">
-        <div className="relative h-44 overflow-hidden bg-gradient-to-br from-primary/20 via-background to-muted sm:h-56">
-          {coverImageUrl ? (
-            <>
+        <div className="relative z-10">
+          <div className="relative h-48 overflow-hidden bg-muted/20 sm:h-64 sm:rounded-3xl">
+            {coverImageUrl ? (
               <img
                 src={coverImageUrl}
                 alt={`${name} 커버 이미지`}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-background" />
-            </>
-          ) : (
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_hsl(var(--primary)/0.22),_transparent_34%),radial-gradient(circle_at_bottom_left,_hsl(var(--muted)/0.55),_transparent_36%)]" />
-          )}
-
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background via-background/80 to-transparent" />
-
-          <div className="absolute left-5 top-5 flex flex-wrap items-center gap-2">
-            {eyebrow && (
-              <Badge variant="secondary" className="backdrop-blur">
-                {eyebrow}
-              </Badge>
-            )}
-            <Badge variant={isPublic ? "default" : "secondary"} className="backdrop-blur">
-              {isPublic ? "공개" : "비공개"}
-            </Badge>
-          </div>
-
-          <div className="absolute -bottom-10 left-5 flex h-20 w-20 items-center justify-center overflow-hidden rounded-3xl border border-background/80 bg-background p-1.5 shadow-xl">
-            {profileImageUrl ? (
-              <img
-                src={profileImageUrl}
-                alt={`${name} 프로필 이미지`}
-                className="h-full w-full rounded-[1rem] object-cover"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 hover:scale-105"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center rounded-[1rem] bg-primary/10 text-primary">
-                <Users className="size-8" />
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-muted/30 to-muted/5" />
             )}
+
+            <div className="absolute right-4 top-4 z-30 flex items-center gap-2">
+              {topActions}
+            </div>
+          </div>
+
+          <div className="relative z-20 -mt-10 flex items-end justify-between px-4 sm:-mt-16 sm:px-10">
+            <div className="flex size-24 items-center justify-center overflow-hidden rounded-[2.2rem] border-4 border-background bg-background shadow-xl transition-transform hover:scale-105 sm:size-36 sm:rounded-[3rem] sm:border-8">
+              <div className="size-full overflow-hidden rounded-[1.6rem] sm:rounded-[2.2rem]">
+                {profileImageUrl ? (
+                  <img
+                    src={profileImageUrl}
+                    alt={`${name} 썸네일`}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <div className="flex size-full items-center justify-center bg-primary/5 text-primary">
+                    <Users className="size-10 sm:size-14" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-end gap-2 pb-1 sm:gap-3 sm:pb-3">
+              {actions}
+              <IconButton
+                asChild
+                variant="secondary"
+                className="shadow-sm"
+                aria-label="크루 채팅 열기"
+              >
+                <Link to={chatHref}>
+                  <MessageCircle className="size-4" />
+                </Link>
+              </IconButton>
+            </div>
           </div>
         </div>
 
-        <CardContent className="space-y-6 pt-14 sm:pt-16">
-          <div className="space-y-5">
-            <div className="space-y-3 sm:flex sm:items-start sm:justify-between sm:gap-6">
-              <div className="min-w-0 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                    {name}
-                  </h1>
-                  {!isPublic && <Lock className="size-5 text-muted-foreground" />}
+        <div className="relative z-10 space-y-4 px-5 pt-6 pb-4 sm:px-10 sm:pt-8 sm:pb-8">
+          <div className="min-w-0 space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-4xl">
+                {name}
+              </h1>
+              {!isPublic && (
+                <div className="flex items-center gap-1 rounded-full bg-muted/50 px-2.5 py-1 text-muted-foreground">
+                  <Lock className="size-3" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Private</span>
                 </div>
-
-                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                  <span className="truncate">만든이 {creatorName}</span>
-                  <TimeAgo date={createdAt} />
-                  <span>{memberLabel}</span>
-                </div>
-
-                {description ? (
-                  <p className="max-w-3xl whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
-                    {description}
-                  </p>
-                ) : null}
-              </div>
-
-              {actions && (
-                <div className="flex flex-wrap items-center gap-2 sm:justify-end">{actions}</div>
               )}
             </div>
+
+            <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-muted-foreground">
+              <TimeAgo date={createdAt} />
+              {hasMemberSummary ? (
+                <Sheet open={isMemberSheetOpen} onOpenChange={setIsMemberSheetOpen}>
+                  <SheetTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <AvatarGroup className="items-center">
+                        {visibleMembers.map((member) => (
+                          <Avatar key={member.id} className="size-6">
+                            {member.user.profileImage && (
+                              <AvatarImage src={member.user.profileImage} alt={member.user.name} />
+                            )}
+                            <AvatarFallback className="text-[10px]">
+                              {member.user.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
+                        {activeMembers.length > visibleMembers.length ? (
+                          <AvatarGroupCount className="size-6 text-[10px]">
+                            +{activeMembers.length - visibleMembers.length}
+                          </AvatarGroupCount>
+                        ) : null}
+                      </AvatarGroup>
+                      <span className="font-medium">{memberLabel}</span>
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent side="bottom" className="max-h-[85vh] rounded-t-3xl">
+                    <SheetHeader>
+                      <SheetTitle>{name} 멤버</SheetTitle>
+                    </SheetHeader>
+                    <div className="max-h-[70vh] overflow-y-auto px-4 pb-4">
+                      {crewId && (
+                        <CrewMemberList
+                          crewId={crewId}
+                          members={members ?? []}
+                          currentUserId={currentUserId}
+                          currentUserRole={currentUserRole}
+                          onUpdate={onMembersUpdate ?? (() => {})}
+                        />
+                      )}
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <Users className="size-4" />
+                  {memberLabel}
+                </span>
+              )}
+            </div>
+
+            {description ? (
+              <p className="max-w-3xl whitespace-pre-wrap text-[15px] leading-relaxed text-muted-foreground/90 sm:text-base">
+                {description}
+              </p>
+            ) : null}
           </div>
-        </CardContent>
+        </div>
       </div>
-    </Card>
+    </section>
   );
 }

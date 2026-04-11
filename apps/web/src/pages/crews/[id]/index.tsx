@@ -1,4 +1,4 @@
-import { LogOut, Settings, Share2, UserPlus } from "lucide-react";
+import { Lock, LogOut, MoreHorizontal, Settings, Share2, UserPlus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -12,19 +12,22 @@ import CrewIdentityHero from "@/components/crew/CrewIdentityHero";
 import CrewMemberList from "@/components/crew/CrewMemberList";
 import CrewPostList from "@/components/crew/CrewPostList";
 import CrewTagManager from "@/components/crew/CrewTagManager";
-import GroupChat from "@/components/crew/GroupChat";
 import PendingMemberList from "@/components/crew/PendingMemberList";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { IconButton } from "@/components/ui/icon-button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCrewChat } from "@/hooks/useGroupChat";
 import { useAuth } from "@/lib/auth-context";
 import { shareLink } from "@/lib/share-link";
 
 import { fetchCrewDetail, joinCrew, leaveCrew } from "./crew-detail-api";
-import { fetchCrewInviteLink, resolveCrewInviteUrl } from "./crew-invite-api";
 
 interface CrewMember {
   id: string;
@@ -75,10 +78,8 @@ export default function CrewDetailClient() {
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authDialogTitle, setAuthDialogTitle] = useState("크루 참여");
-  const [activeTab, setActiveTab] = useState("activities");
   const currentMember = crew?.members?.find((member) => member.userId === user?.id);
   const isMember = !!currentMember && currentMember.status === "ACTIVE";
-  const { data: chatData, isLoading: chatLoading } = useCrewChat(crewId, isMember);
 
   const fetchCrew = useCallback(async () => {
     if (!crewId || crewId === "_") return;
@@ -131,20 +132,19 @@ export default function CrewDetailClient() {
 
     setIsSharingInvite(true);
     try {
-      const invite = await fetchCrewInviteLink(crewId);
       const result = await shareLink({
-        title: `${crew.name} 크루 초대`,
-        text: `${crew.name} 크루에 참여해보세요.`,
-        url: resolveCrewInviteUrl(invite.path),
+        title: `${crew.name} 크루`,
+        text: `${crew.name} 크루 페이지를 확인해보세요.`,
+        url: typeof window === "undefined" ? `/crews/${crewId}` : window.location.href,
       });
 
       if (result === "shared") {
-        toast.success("크루 초대 링크 공유 창을 열었습니다.");
+        toast.success("크루 페이지 공유 창을 열었습니다.");
       } else if (result === "copied") {
-        toast.success("크루 초대 링크를 복사했습니다.");
+        toast.success("크루 페이지를 복사했습니다.");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "초대 링크를 공유하지 못했습니다.");
+      toast.error(err instanceof Error ? err.message : "크루 페이지를 공유하지 못했습니다.");
     } finally {
       setIsSharingInvite(false);
     }
@@ -175,18 +175,16 @@ export default function CrewDetailClient() {
   if (isLoading) {
     return (
       <div className="container max-w-4xl mx-auto py-6 space-y-6">
-        <Card>
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-start gap-4">
-              <Skeleton className="w-16 h-16 rounded-lg" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-8 w-1/3" />
-                <Skeleton className="h-4 w-1/4" />
-              </div>
+        <div className="rounded-3xl border border-border/60 bg-background/80 p-6">
+          <div className="flex items-start gap-4">
+            <Skeleton className="w-16 h-16 rounded-lg" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-8 w-1/3" />
+              <Skeleton className="h-4 w-1/4" />
             </div>
-            <Skeleton className="h-20 w-full" />
-          </CardContent>
-        </Card>
+          </div>
+          <Skeleton className="mt-4 h-20 w-full" />
+        </div>
       </div>
     );
   }
@@ -194,15 +192,13 @@ export default function CrewDetailClient() {
   if (error || !crew) {
     return (
       <div className="container max-w-2xl mx-auto py-6">
-        <Card className="border-destructive">
-          <CardContent className="p-6">
-            <h2 className="text-lg font-semibold text-destructive mb-2">오류</h2>
-            <p className="text-muted-foreground mb-4">{error || "크루를 찾을 수 없습니다."}</p>
-            <Button variant="outline" onClick={() => navigate("/crews")}>
-              크루 목록으로
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-3xl border border-destructive bg-background/80 p-6">
+          <h2 className="text-lg font-semibold text-destructive mb-2">오류</h2>
+          <p className="text-muted-foreground mb-4">{error || "크루를 찾을 수 없습니다."}</p>
+          <Button variant="outline" onClick={() => navigate("/crews")}>
+            크루 목록으로
+          </Button>
+        </div>
       </div>
     );
   }
@@ -212,14 +208,15 @@ export default function CrewDetailClient() {
   const heroCoverImage = crew.coverImageUrl ?? null;
 
   return (
-    <div className="container mx-auto max-w-6xl space-y-6 px-4 py-6">
+    <div className="mx-auto max-w-6xl sm:space-y-5">
       {isInviteEntry && !isMember && (
-        <section className="rounded-3xl border border-primary/20 bg-primary/5 px-5 py-4">
+        <section className="border-primary/20 bg-primary/5 px-5 py-4 sm:mx-6 sm:rounded-3xl sm:border">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
-              <p className="text-sm font-semibold text-foreground">운영진이 보낸 초대 링크예요.</p>
+              <p className="text-sm font-semibold text-foreground">공유 링크로 들어왔어요.</p>
               <p className="text-sm text-muted-foreground">
-                공개 크루는 바로 가입되고, 비공개 크루는 가입 요청이 대기 멤버로 전달됩니다.
+                크루를 둘러본 뒤 가입할 수 있어요. 공개 크루는 바로 가입되고, 비공개 크루는 가입
+                요청이 대기 멤버로 전달됩니다.
               </p>
             </div>
             {currentMember?.status === "PENDING" ? (
@@ -228,7 +225,11 @@ export default function CrewDetailClient() {
               </Badge>
             ) : (
               canJoinCrew && (
-                <Button onClick={handleJoin} disabled={isJoining}>
+                <Button
+                  onClick={handleJoin}
+                  disabled={isJoining}
+                  className="h-10 rounded-full font-bold shadow-md"
+                >
                   <UserPlus className="mr-2 size-4" />
                   {isJoining ? "가입 중..." : "이 링크로 가입하기"}
                 </Button>
@@ -239,6 +240,7 @@ export default function CrewDetailClient() {
       )}
 
       <CrewIdentityHero
+        crewId={crewId}
         name={crew.name}
         description={crew.description}
         creatorName={crew.creator.name}
@@ -248,170 +250,197 @@ export default function CrewDetailClient() {
         isPublic={crew.isPublic}
         profileImageUrl={heroProfileImage}
         coverImageUrl={heroCoverImage}
+        members={activeMembers}
+        currentUserId={user?.id}
+        currentUserRole={currentUserRole}
+        onMembersUpdate={fetchCrew}
+        chatHref={`/messages/crew/${crewId}`}
+        topActions={
+          isMember && currentUserRole !== "OWNER" ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  variant="ghost"
+                  className="border border-background/35 bg-background/55 shadow-xs backdrop-blur-sm"
+                  aria-label="크루 멤버 메뉴"
+                >
+                  <MoreHorizontal className="size-4" />
+                </IconButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem variant="destructive" onClick={() => setShowLeaveDialog(true)}>
+                  <LogOut className="size-4" />
+                  크루 탈퇴
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null
+        }
         actions={
           <>
             {canJoinCrew && (
-              <Button onClick={handleJoin} disabled={isJoining}>
-                <UserPlus className="size-4 mr-2" />
-                {isJoining ? "가입 중..." : "크루 가입"}
-              </Button>
+              <IconButton
+                variant="default"
+                onClick={handleJoin}
+                disabled={isJoining}
+                aria-label={isJoining ? "가입 중" : "크루 가입"}
+              >
+                <UserPlus className="size-4" />
+              </IconButton>
             )}
 
-            {isMember && currentUserRole !== "OWNER" && (
-              <Button variant="destructive" onClick={() => setShowLeaveDialog(true)}>
-                <LogOut className="size-4 mr-2" />
-                크루 탈퇴
-              </Button>
+            {isMember && (
+              <IconButton
+                variant="outline"
+                onClick={handleShareInvite}
+                disabled={isSharingInvite}
+                aria-label={isSharingInvite ? "공유 준비 중" : "크루 페이지 공유"}
+              >
+                <Share2 className="size-4" />
+              </IconButton>
             )}
 
             {isOwnerOrAdmin && (
-              <>
-                <Button variant="outline" onClick={handleShareInvite} disabled={isSharingInvite}>
-                  <Share2 className="mr-2 size-4" />
-                  {isSharingInvite ? "공유 준비 중..." : "초대 링크"}
-                </Button>
-                <Button variant="outline" onClick={() => navigate(`/crews/${crewId}/settings`)}>
-                  <Settings className="size-4 mr-2" />
-                  설정
-                </Button>
-              </>
+              <IconButton
+                variant="outline"
+                onClick={() => navigate(`/crews/${crewId}/settings`)}
+                aria-label="설정"
+              >
+                <Settings className="size-4" />
+              </IconButton>
             )}
           </>
         }
       />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="space-y-6">
-          <Card className="overflow-hidden border-border/60">
-            <CardContent className="p-0">
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <div className="border-b border-border/60 px-4 pt-4 sm:px-6">
-                  <TabsList className="grid h-11 w-full grid-cols-3 bg-muted/60">
-                    <TabsTrigger value="activities">활동</TabsTrigger>
-                    <TabsTrigger value="chat" disabled={!isMember}>
-                      채팅
-                    </TabsTrigger>
-                    <TabsTrigger value="board">게시판</TabsTrigger>
-                  </TabsList>
-                </div>
+      <div className="grid gap-8 px-0 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-6">
+        <div className="space-y-10">
+          <section>
+            <Tabs defaultValue="activities" className="w-full">
+              <div className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-md">
+                <TabsList className="flex h-14 w-full justify-start gap-8 rounded-none bg-transparent p-0">
+                  <TabsTrigger
+                    value="activities"
+                    className="h-full rounded-none border-b-2 border-transparent px-2 text-base font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"
+                  >
+                    활동
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="board"
+                    className="h-full rounded-none border-b-2 border-transparent px-2 text-base font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"
+                  >
+                    게시판
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
-                <div className="p-4 sm:p-6">
-                  <TabsContent value="activities" className="mt-0">
-                    <div className="space-y-3">
-                      <h2 className="text-lg font-semibold">활동</h2>
-                      <CrewActivityList
-                        canOpenActivityDetails={isMember}
+              <div className="py-6 sm:py-8">
+                <TabsContent value="activities" className="mt-0 focus-visible:outline-none">
+                  <div className="space-y-6 px-2 sm:px-4">
+                    <CrewActivityList
+                      canOpenActivityDetails={isMember}
+                      crewId={crewId}
+                      isAdmin={isOwnerOrAdmin}
+                      isMember={isMember}
+                      isAuthenticated={!!user}
+                      onRequireAuth={() => {
+                        setAuthDialogTitle("활동 자세히 보기");
+                        setShowAuthDialog(true);
+                      }}
+                    />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="board" className="mt-0 focus-visible:outline-none">
+                  <div className="space-y-12">
+                    <section className="space-y-6">
+                      <CrewBoardList
+                        canOpenBoardPosts={isMember}
                         crewId={crewId}
-                        isAdmin={isOwnerOrAdmin}
-                        isMember={isMember}
                         isAuthenticated={!!user}
+                        isMember={isMember}
+                        isAdmin={isOwnerOrAdmin}
                         onRequireAuth={() => {
-                          setAuthDialogTitle("활동 자세히 보기");
+                          setAuthDialogTitle("게시판 열기");
                           setShowAuthDialog(true);
                         }}
                       />
-                    </div>
-                  </TabsContent>
+                    </section>
 
-                  <TabsContent value="chat" className="mt-0">
-                    <div className="space-y-3">
-                      <h2 className="text-lg font-semibold">채팅</h2>
-                      {isMember ? (
-                        <GroupChat
-                          data={chatData}
-                          isLoading={chatLoading}
-                          crewId={crewId}
-                          title={`${crew.name} 크루 채팅`}
-                          subtitle="멤버 전용"
-                          emptyMessage="아직 메시지가 없습니다."
-                          missingConversationMessage="크루 채팅방이 아직 준비되지 않았습니다."
-                          composerPlaceholder={`${crew.name} 크루에 메시지 보내기`}
-                        />
-                      ) : (
-                        <Card>
-                          <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                            멤버만 채팅에 참여할 수 있습니다.
-                          </CardContent>
-                        </Card>
-                      )}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="board" className="mt-0">
-                    <div className="space-y-6">
-                      <section className="space-y-3">
-                        <h2 className="text-lg font-semibold">게시판</h2>
-                        <CrewBoardList
-                          canOpenBoardPosts={isMember}
-                          crewId={crewId}
-                          isAuthenticated={!!user}
-                          isMember={isMember}
-                          isAdmin={isOwnerOrAdmin}
-                          onRequireAuth={() => {
-                            setAuthDialogTitle("게시판 열기");
-                            setShowAuthDialog(true);
-                          }}
-                        />
+                    {isMember ? (
+                      <section className="space-y-6 border-t border-border/60 pt-10">
+                        <div className="flex items-center justify-between">
+                          <h2 className="text-xl font-bold tracking-tight text-foreground">
+                            크루 소식
+                          </h2>
+                        </div>
+                        <CrewPostList crewId={crewId} isOwner={currentUserRole === "OWNER"} />
                       </section>
-
-                      {isMember ? (
-                        <section className="space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-4">
-                          <h2 className="text-base font-semibold">크루 소식</h2>
-                          <CrewPostList crewId={crewId} isOwner={currentUserRole === "OWNER"} />
-                        </section>
-                      ) : null}
-                    </div>
-                  </TabsContent>
-                </div>
-              </Tabs>
-            </CardContent>
-          </Card>
+                    ) : null}
+                  </div>
+                </TabsContent>
+              </div>
+            </Tabs>
+          </section>
         </div>
 
-        <aside className="space-y-6">
-          <Card className="border-border/60">
-            <CardContent className="p-5">
-              <h2 className="text-base font-semibold">멤버</h2>
-              <div className="mt-4">
-                <CrewMemberList
-                  crewId={crewId}
-                  members={activeMembers}
-                  currentUserId={user?.id}
-                  currentUserRole={currentUserRole}
-                  onUpdate={fetchCrew}
-                />
-              </div>
-            </CardContent>
-          </Card>
+        <aside className="space-y-12">
+          <section className="space-y-6">
+            <div className="px-4 sm:px-0">
+              <h2 className="text-xl font-bold tracking-tight text-foreground">멤버</h2>
+            </div>
+            <div className="border-t border-border/40 pt-4">
+              <CrewMemberList
+                crewId={crewId}
+                members={activeMembers}
+                currentUserId={user?.id}
+                currentUserRole={currentUserRole}
+                onUpdate={fetchCrew}
+              />
+            </div>
+          </section>
 
           {isOwnerOrAdmin && (
-            <Card className="border-border/60">
-              <CardContent className="p-5">
-                <h2 className="text-base font-semibold">운영 현황</h2>
-                <div className="mt-4">
-                  <CrewAttendanceStats crewId={crewId} />
-                </div>
-              </CardContent>
-            </Card>
+            <section className="space-y-6">
+              <div className="px-4 sm:px-0">
+                <h2 className="text-xl font-bold tracking-tight text-foreground">운영 현황</h2>
+              </div>
+              <div className="rounded-3xl border bg-muted/10 p-6">
+                <CrewAttendanceStats crewId={crewId} />
+              </div>
+            </section>
           )}
 
           {isOwnerOrAdmin && (
-            <Card className="border-amber-200 bg-amber-50/50">
-              <CardContent className="p-5">
-                <h2 className="text-base font-semibold text-foreground">운영 도구</h2>
-                <div className="mt-5 space-y-6">
+            <section className="space-y-8">
+              <div className="px-4 sm:px-0">
+                <h2 className="text-xl font-bold tracking-tight text-foreground">운영 도구</h2>
+              </div>
+              <div className="space-y-10">
+                <section className="space-y-4 px-4 sm:px-0">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    태그 관리
+                  </h3>
                   <CrewTagManager
                     crewId={crewId}
                     isAdmin={isOwnerOrAdmin}
                     members={activeMembers}
                   />
-                  <div className="rounded-2xl border border-border/60 bg-background p-4">
-                    <h3 className="mb-3 text-sm font-semibold">대기 멤버</h3>
-                    <PendingMemberList crewId={crewId} onUpdate={fetchCrew} />
+                </section>
+
+                <section className="space-y-4 px-4 sm:px-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      가입 대기
+                    </h3>
+                    <Badge variant="secondary" className="rounded-full px-2.5 font-bold">
+                      {crew.members.filter((m) => m.status === "PENDING").length}
+                    </Badge>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                  <PendingMemberList crewId={crewId} onUpdate={fetchCrew} />
+                </section>
+              </div>
+            </section>
           )}
         </aside>
       </div>
