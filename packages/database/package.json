@@ -22,15 +22,15 @@
     "postinstall": "node ../../scripts/run-if-bin.mjs prisma generate"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.5.0",
-    "@prisma/client": "^7.5.0",
-    "dotenv": "^17.3.1",
+    "@prisma/adapter-pg": "^7.7.0",
+    "@prisma/client": "^7.7.0",
+    "dotenv": "^17.4.2",
     "pg": "^8.20.0"
   },
   "devDependencies": {
-    "@types/node": "^22",
-    "prisma": "^7.5.0",
+    "@types/node": "^25",
+    "prisma": "^7.7.0",
     "tsup": "^8.5.1",
-    "typescript": "^5"
+    "typescript": "^6"
   }
 }
