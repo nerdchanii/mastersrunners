@@ -4,7 +4,6 @@ import { toast } from "sonner";
 
 import CrewActivityForm from "@/components/crew/CrewActivityForm";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCrewActivity, useUpdateActivity } from "@/hooks/useCrewActivities";
 import { useCrew } from "@/hooks/useCrews";
@@ -53,6 +52,7 @@ export default function CrewActivityEditPage() {
     description: string;
     location: string;
     activityDate: string;
+    activityIcon: string;
   }) => {
     await updateActivity.mutateAsync({
       crewId: crewId!,
@@ -62,6 +62,7 @@ export default function CrewActivityEditPage() {
         description: data.description || undefined,
         location: data.location || undefined,
         activityDate: new Date(data.activityDate).toISOString(),
+        activityIcon: data.activityIcon,
       },
     });
     toast.success("활동이 수정되었습니다.");
@@ -81,26 +82,23 @@ export default function CrewActivityEditPage() {
         <h1 className="text-xl font-bold">활동 수정</h1>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>활동 정보 수정</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CrewActivityForm
-            crewId={crewId!}
-            mode="edit"
-            initialValues={{
-              title: activity?.title,
-              description: activity?.description ?? "",
-              location: activity?.location ?? "",
-              activityDate: activity?.activityDate,
-            }}
-            onSubmitData={handleSubmitData}
-            onSuccess={() => {}}
-            onCancel={() => navigate(`/crews/${crewId}/activities/${activityId}`)}
-          />
-        </CardContent>
-      </Card>
+      <section className="space-y-4 border-t border-border/50 pt-4">
+        <h2 className="text-base font-semibold">활동 정보 수정</h2>
+        <CrewActivityForm
+          crewId={crewId!}
+          mode="edit"
+          initialValues={{
+            title: activity?.title,
+            description: activity?.description ?? "",
+            location: activity?.location ?? "",
+            activityDate: activity?.activityDate,
+            activityIcon: activity?.activityIcon ?? undefined,
+          }}
+          onSubmitData={handleSubmitData}
+          onSuccess={() => {}}
+          onCancel={() => navigate(`/crews/${crewId}/activities/${activityId}`)}
+        />
+      </section>
     </div>
   );
 }

@@ -19,6 +19,7 @@ interface CreateCrewActivityData {
   latitude?: number;
   longitude?: number;
   activityType?: string;
+  activityIcon?: string;
   workoutTypeId?: string;
 }
 
@@ -29,6 +30,7 @@ interface UpdateCrewActivityData {
   location?: string;
   latitude?: number;
   longitude?: number;
+  activityIcon?: string;
 }
 
 export class CrewActivitiesService {
@@ -64,6 +66,7 @@ export class CrewActivitiesService {
       createdBy: userId,
       qrCode,
       activityType,
+      activityIcon: data.activityType === "POP_UP" ? null : data.activityIcon ?? null,
       workoutTypeId: data.workoutTypeId,
     });
 

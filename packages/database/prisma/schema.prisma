@@ -555,6 +555,7 @@ model CrewActivity {
 
   // 활동 타입 & 상태
   activityType  String    @default("OFFICIAL") // OFFICIAL, POP_UP
+  activityIcon  String?
   status        String    @default("SCHEDULED") // SCHEDULED, ACTIVE, COMPLETED, CANCELLED
   completedAt   DateTime?
 

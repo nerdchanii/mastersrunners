@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -44,4 +45,39 @@ function SelectPreview() {
 
 export const Playground: Story = {
   render: () => <SelectPreview />,
+};
+
+function CrewRegionPreview() {
+  const [region, setRegion] = useState("");
+
+  return (
+    <div className="w-[320px] space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="crew-region">지역</Label>
+        <Select value={region} onValueChange={setRegion}>
+          <SelectTrigger id="crew-region" aria-invalid={region ? undefined : true}>
+            <SelectValue placeholder="지역 선택" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="서울특별시">서울특별시</SelectItem>
+            <SelectItem value="경기도">경기도</SelectItem>
+            <SelectItem value="부산광역시">부산광역시</SelectItem>
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          크루 탐색과 참여 요청에서 먼저 보이는 필터 기준입니다.
+        </p>
+      </div>
+
+      {!region && (
+        <p className="text-xs text-destructive">
+          지역을 선택하면 멤버가 활동권을 더 빠르게 이해할 수 있습니다.
+        </p>
+      )}
+    </div>
+  );
+}
+
+export const CrewRegionState: Story = {
+  render: () => <CrewRegionPreview />,
 };

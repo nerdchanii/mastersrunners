@@ -360,8 +360,8 @@ export const storybookCrewMembers = [
     id: "member-3",
     userId: "user-3",
     role: "ADMIN",
-    status: "PENDING",
-    joinedAt: "2026-04-06T12:00:00.000Z",
+    status: "ACTIVE",
+    joinedAt: "2026-03-18T06:40:00.000Z",
     user: {
       id: "user-3",
       name: "박지구력",
@@ -370,15 +370,58 @@ export const storybookCrewMembers = [
   },
 ] as const;
 
+export const storybookPendingCrewMembers = [
+  {
+    id: "pending-member-1",
+    userId: "user-3",
+    role: "MEMBER",
+    status: "PENDING",
+    joinedAt: "2026-04-06T12:00:00.000Z",
+    user: {
+      id: "user-3",
+      name: "박지구력",
+      profileImage: null,
+    },
+  },
+  {
+    id: "pending-member-2",
+    userId: "user-4",
+    role: "MEMBER",
+    status: "PENDING",
+    joinedAt: "2026-04-09T02:30:00.000Z",
+    user: {
+      id: "user-4",
+      name: "최지속",
+      profileImage: null,
+    },
+  },
+] as const;
+
+export const storybookAllCrewMembers = [
+  ...storybookCrewMembers,
+  ...storybookPendingCrewMembers,
+] as const;
+
 export const storybookCrewAttendance = [
   {
     id: "attendance-1",
+    userId: storybookUser.id,
     user: {
       id: storybookUser.id,
       name: storybookUser.name,
       profileImage: storybookUser.profileImage,
     },
     checkedInAt: "2026-04-08T06:02:00.000Z",
+  },
+  {
+    id: "attendance-2",
+    userId: "user-2",
+    user: {
+      id: "user-2",
+      name: "이페이서",
+      profileImage: null,
+    },
+    checkedInAt: "2026-04-08T06:04:00.000Z",
   },
 ] as const;
 
@@ -414,6 +457,7 @@ export const storybookCrewActivities = {
       createdAt: "2026-04-08T06:20:00.000Z",
       qrCode: "crew-activity-1",
       activityType: "OFFICIAL",
+      activityIcon: "🏃",
       status: "SCHEDULED",
       completedAt: null,
       workoutTypeId: null,
@@ -442,6 +486,7 @@ export const storybookCrewActivities = {
       createdAt: "2026-04-08T10:40:00.000Z",
       qrCode: "crew-activity-2",
       activityType: "POP_UP",
+      activityIcon: null,
       status: "ACTIVE",
       completedAt: null,
       workoutTypeId: null,
@@ -469,6 +514,7 @@ export const storybookCrewAttendanceStats = {
       title: "수요일 아침 템포런",
       activityDate: "2026-04-10T21:30:00.000Z",
       activityType: "OFFICIAL",
+      activityIcon: "🏃",
       total: 18,
       checkedIn: 15,
       noShow: 3,
@@ -479,6 +525,7 @@ export const storybookCrewAttendanceStats = {
       title: "금요일 야간 번개",
       activityDate: "2026-04-12T11:00:00.000Z",
       activityType: "POP_UP",
+      activityIcon: null,
       total: 14,
       checkedIn: 11,
       noShow: 3,

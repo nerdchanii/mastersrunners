@@ -22,6 +22,18 @@ export const MemberView: Story = {
   },
 };
 
+export const CreateOpen: Story = {
+  args: {
+    crewId: "crew-1",
+    isAdmin: true,
+    isAuthenticated: true,
+    isMember: true,
+    canOpenActivityDetails: true,
+    onRequireAuth: () => undefined,
+    defaultShowForm: true,
+  },
+};
+
 export const GuestView: Story = {
   args: {
     crewId: "crew-1",
@@ -33,5 +45,21 @@ export const GuestView: Story = {
   },
   globals: {
     authMode: "guest",
+  },
+};
+
+export const Empty: Story = {
+  args: {
+    crewId: "crew-1",
+    isAdmin: false,
+    isAuthenticated: true,
+    isMember: true,
+    canOpenActivityDetails: true,
+    onRequireAuth: () => undefined,
+  },
+  parameters: {
+    storybook: {
+      apiScenario: "empty",
+    },
   },
 };

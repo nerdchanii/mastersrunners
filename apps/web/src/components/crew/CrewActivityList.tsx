@@ -6,13 +6,13 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { TimeAgo } from "@/components/common/TimeAgo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ActivitiesResponse } from "@/hooks/useCrewActivities";
 import { useCrewActivities } from "@/hooks/useCrewActivities";
 
 import CrewActivityForm from "./CrewActivityForm";
+import { getCrewActivityIcon } from "./crew-activity-icons";
 
 interface CrewActivityListProps {
   canOpenActivityDetails: boolean;
@@ -21,10 +21,16 @@ interface CrewActivityListProps {
   isAuthenticated: boolean;
   isMember: boolean;
   onRequireAuth: () => void;
+  defaultShowForm?: boolean;
 }
 
-type ActivityTypeFilter = "ALL" | "OFFICIAL" | "POP_UP";
-type StatusFilter = "ALL" | "SCHEDULED" | "ACTIVE" | "COMPLETED" | "CANCELLED";
+function getLocalDateKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function isSameLocalDay(left: Date, right: Date) {
+  return getLocalDateKey(left) === getLocalDateKey(right);
+}
 
 export default function CrewActivityList({
   canOpenActivityDetails,
@@ -33,27 +39,43 @@ export default function CrewActivityList({
   isAuthenticated,
   isMember,
   onRequireAuth,
+  defaultShowForm = false,
 }: CrewActivityListProps) {
   const navigate = useNavigate();
-  const [showForm, setShowForm] = useState(false);
-  const [typeFilter, setTypeFilter] = useState<ActivityTypeFilter>("ALL");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [showForm, setShowForm] = useState(defaultShowForm);
 
   const { data, isLoading, refetch } = useCrewActivities(crewId);
 
   const activities = (data as ActivitiesResponse | undefined)?.items ?? [];
+  const now = new Date();
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
 
   const handleActivityCreated = () => {
     setShowForm(false);
     refetch();
   };
 
-  // 클라이언트 사이드 필터링
-  const filtered = activities.filter((a) => {
-    if (typeFilter !== "ALL" && a.activityType !== typeFilter) return false;
-    if (statusFilter !== "ALL" && a.status !== statusFilter) return false;
-    return true;
-  });
+  const visibleActivities = activities
+    .map((activity) => ({
+      activity,
+      scheduledDate: new Date(activity.activityDate),
+    }))
+    .filter(({ scheduledDate }) => scheduledDate >= today)
+    .sort((left, right) => {
+      const leftIsToday = isSameLocalDay(left.scheduledDate, now);
+      const rightIsToday = isSameLocalDay(right.scheduledDate, now);
+
+      if (leftIsToday !== rightIsToday) {
+        return leftIsToday ? -1 : 1;
+      }
+
+      if (leftIsToday && rightIsToday) {
+        return left.scheduledDate.getTime() - right.scheduledDate.getTime();
+      }
+
+      return right.scheduledDate.getTime() - left.scheduledDate.getTime();
+    });
 
   // POP_UP은 일반 멤버도 생성 가능
   const canCreate = isAdmin || isMember;
@@ -82,24 +104,19 @@ export default function CrewActivityList({
 
   if (showForm) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>새 활동 만들기</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CrewActivityForm
-            crewId={crewId}
-            onSuccess={handleActivityCreated}
-            onCancel={() => setShowForm(false)}
-          />
-        </CardContent>
-      </Card>
+      <section className="space-y-4 border-t border-border/50 pt-4">
+        <h3 className="text-base font-semibold">새 활동 만들기</h3>
+        <CrewActivityForm
+          crewId={crewId}
+          onSuccess={handleActivityCreated}
+          onCancel={() => setShowForm(false)}
+        />
+      </section>
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* 헤더: 생성 버튼 */}
       {canCreate && (
         <div className="flex justify-end">
           <Button onClick={() => setShowForm(true)}>
@@ -109,51 +126,19 @@ export default function CrewActivityList({
         </div>
       )}
 
-      {/* 타입 탭 필터 */}
-      <Tabs value={typeFilter} onValueChange={(v) => setTypeFilter(v as ActivityTypeFilter)}>
-        <TabsList>
-          <TabsTrigger value="ALL">전체</TabsTrigger>
-          <TabsTrigger value="OFFICIAL">공식 모임</TabsTrigger>
-          <TabsTrigger value="POP_UP">번개</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {/* 상태 필터 버튼 */}
-      <div className="flex flex-wrap gap-2">
-        {(["ALL", "SCHEDULED", "ACTIVE", "COMPLETED", "CANCELLED"] as StatusFilter[]).map((s) => (
-          <Button
-            key={s}
-            variant={statusFilter === s ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatusFilter(s)}
-          >
-            {s === "ALL"
-              ? "전체"
-              : s === "SCHEDULED"
-                ? "예정"
-                : s === "ACTIVE"
-                  ? "진행중"
-                  : s === "COMPLETED"
-                    ? "종료"
-                    : "취소됨"}
-          </Button>
-        ))}
-      </div>
-
-      {filtered.length === 0 ? (
+      {visibleActivities.length === 0 ? (
         <EmptyState
           icon={Calendar}
           title="활동이 없습니다"
-          description={
-            canCreate ? "첫 번째 크루 활동을 만들어보세요!" : "아직 생성된 활동이 없습니다."
-          }
+          description={canCreate ? "아직 잡힌 일정이 없습니다." : "예정된 활동이 아직 없습니다."}
           actionLabel={canCreate ? "활동 만들기" : undefined}
           onAction={canCreate ? () => setShowForm(true) : undefined}
         />
       ) : (
         <div className="grid gap-4">
-          {filtered.map((activity) => {
-            const scheduledDate = new Date(activity.activityDate);
+          {visibleActivities.map(({ activity, scheduledDate }) => {
+            const isToday = isSameLocalDay(scheduledDate, now);
+            const hasStarted = isToday && scheduledDate.getTime() <= now.getTime();
             const checkedInCount = activity.attendances.filter(
               (a) => a.status === "CHECKED_IN",
             ).length;
@@ -164,20 +149,22 @@ export default function CrewActivityList({
             return (
               <Card
                 key={activity.id}
-                className={
-                  canAttemptOpen
-                    ? "cursor-pointer transition-shadow hover:shadow-lg"
-                    : "transition-shadow"
-                }
+                className={[
+                  hasStarted ? "border-border/70 bg-muted/20" : "border-border/60",
+                  canAttemptOpen ? "cursor-pointer transition-shadow hover:shadow-md" : "",
+                ].join(" ")}
                 onClick={() => handleOpenActivity(activity.id)}
               >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0 flex-1">
-                      <CardTitle className="truncate">{activity.title}</CardTitle>
-                      <CardDescription className="mt-1">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5" />
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 gap-3">
+                      <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-muted-foreground">
+                        {getCrewActivityIcon(activity.activityType, activity.activityIcon).node}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="truncate text-base font-semibold">{activity.title}</h3>
+                        <div className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Calendar className="size-3.5" />
                           <span>
                             {scheduledDate.toLocaleDateString("ko-KR", {
                               year: "numeric",
@@ -187,39 +174,26 @@ export default function CrewActivityList({
                               minute: "2-digit",
                             })}
                           </span>
+                          {isToday ? <span className="text-xs font-medium">당일</span> : null}
                         </div>
-                      </CardDescription>
+                      </div>
                     </div>
-                    <div className="flex gap-1.5 shrink-0">
+                    <div className="flex shrink-0 gap-1.5">
                       <Badge
                         variant={activity.activityType === "OFFICIAL" ? "default" : "secondary"}
                       >
                         {activity.activityType === "OFFICIAL" ? "공식" : "번개"}
                       </Badge>
-                      <Badge
-                        variant={
-                          activity.status === "SCHEDULED"
-                            ? "outline"
-                            : activity.status === "ACTIVE"
-                              ? "default"
-                              : activity.status === "COMPLETED"
-                                ? "secondary"
-                                : "destructive"
-                        }
-                      >
-                        {activity.status === "SCHEDULED"
-                          ? "예정"
-                          : activity.status === "ACTIVE"
-                            ? "진행중"
-                            : activity.status === "COMPLETED"
-                              ? "종료"
-                              : "취소됨"}
-                      </Badge>
+                      {isToday ? (
+                        <Badge variant={hasStarted ? "secondary" : "outline"}>
+                          {hasStarted ? "진행됨" : "당일"}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">예정</Badge>
+                      )}
                     </div>
                   </div>
-                </CardHeader>
 
-                <CardContent className="space-y-2">
                   {activity.description && (
                     <p className="text-sm text-muted-foreground line-clamp-2">
                       {activity.description}
@@ -240,7 +214,7 @@ export default function CrewActivityList({
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t">
+                  <div className="border-t border-border/50 pt-2">
                     <TimeAgo date={activity.createdAt} />
                   </div>
                 </CardContent>

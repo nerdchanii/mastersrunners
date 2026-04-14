@@ -13,6 +13,7 @@ interface CreateActivityData {
   createdBy: string;
   qrCode?: string;
   activityType?: string;
+  activityIcon?: string | null;
   workoutTypeId?: string;
 }
 
@@ -23,6 +24,7 @@ interface UpdateActivityData {
   location?: string;
   latitude?: number;
   longitude?: number;
+  activityIcon?: string | null;
 }
 
 @Injectable()

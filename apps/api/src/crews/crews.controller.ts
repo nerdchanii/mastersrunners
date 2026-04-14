@@ -314,6 +314,7 @@ export class CrewsController {
       latitude: dto.latitude,
       longitude: dto.longitude,
       activityType: dto.activityType,
+      activityIcon: dto.activityIcon,
       workoutTypeId: dto.workoutTypeId,
     });
   }
@@ -358,6 +359,7 @@ export class CrewsController {
     if (dto.location !== undefined) data.location = dto.location;
     if (dto.latitude !== undefined) data.latitude = dto.latitude;
     if (dto.longitude !== undefined) data.longitude = dto.longitude;
+    if (dto.activityIcon !== undefined) data.activityIcon = dto.activityIcon;
     return this.crewsService.updateActivity(activityId, id, userId, data);
   }
 

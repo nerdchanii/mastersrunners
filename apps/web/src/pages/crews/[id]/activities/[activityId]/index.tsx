@@ -26,7 +26,6 @@ import { TimeAgo } from "@/components/common/TimeAgo";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +35,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useCrewActivityDetailViewModel } from "./use-crew-activity-detail-view-model";
+import { getCrewActivityIcon } from "@/components/crew/crew-activity-icons";
 
 import "leaflet/dist/leaflet.css";
 
@@ -151,9 +151,12 @@ export default function CrewActivityDetailPage() {
       </div>
 
       {/* 2. Activity info card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between gap-3">
+      <section className="space-y-4 border-t border-border/50 pt-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 gap-3">
+            <div className="mt-1 flex size-10 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-muted-foreground">
+              {getCrewActivityIcon(activity.activityType, activity.activityIcon).node}
+            </div>
             <div className="space-y-1.5">
               <h1 className="text-2xl font-bold">{activity.title}</h1>
               <div className="flex items-center gap-2 text-muted-foreground">
@@ -178,79 +181,73 @@ export default function CrewActivityDetailPage() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2">
-              <Badge variant={activity.activityType === "OFFICIAL" ? "default" : "secondary"}>
-                {activity.activityType === "OFFICIAL" ? "공식" : "번개"}
-              </Badge>
-              <Badge
-                variant={
-                  activity.status === "SCHEDULED"
-                    ? "outline"
-                    : activity.status === "ACTIVE"
-                      ? "default"
-                      : activity.status === "COMPLETED"
-                        ? "secondary"
-                        : "destructive"
-                }
-              >
-                {activity.status === "SCHEDULED"
-                  ? "예정"
-                  : activity.status === "ACTIVE"
-                    ? "진행중"
-                    : activity.status === "COMPLETED"
-                      ? "종료"
-                      : "취소됨"}
-              </Badge>
-            </div>
           </div>
-        </CardHeader>
+          <div className="flex gap-2">
+            <Badge variant={activity.activityType === "OFFICIAL" ? "default" : "secondary"}>
+              {activity.activityType === "OFFICIAL" ? "공식" : "번개"}
+            </Badge>
+            <Badge
+              variant={
+                activity.status === "SCHEDULED"
+                  ? "outline"
+                  : activity.status === "ACTIVE"
+                    ? "default"
+                    : activity.status === "COMPLETED"
+                      ? "secondary"
+                      : "destructive"
+              }
+            >
+              {activity.status === "SCHEDULED"
+                ? "예정"
+                : activity.status === "ACTIVE"
+                  ? "진행중"
+                  : activity.status === "COMPLETED"
+                    ? "종료"
+                    : "취소됨"}
+            </Badge>
+          </div>
+        </div>
 
         {activity.description && (
-          <CardContent>
+          <div>
             <p className="text-muted-foreground whitespace-pre-wrap">{activity.description}</p>
-          </CardContent>
+          </div>
         )}
-      </Card>
+      </section>
 
       {/* 3. Map card (lat/lng 있을 때만) */}
       {activity.latitude && activity.longitude && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <MapPin className="size-5" />
-              위치
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[200px] md:h-[250px] w-full overflow-hidden rounded-lg">
-              <MapContainer
-                center={[activity.latitude, activity.longitude]}
-                zoom={15}
-                scrollWheelZoom={false}
-                className="h-full w-full"
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <Marker position={[activity.latitude, activity.longitude]}>
-                  <Popup>{activity.location ?? "활동 위치"}</Popup>
-                </Marker>
-              </MapContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <section className="space-y-4 border-t border-border/50 pt-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <MapPin className="size-5" />
+            위치
+          </h2>
+          <div className="h-[200px] md:h-[250px] w-full overflow-hidden rounded-lg">
+            <MapContainer
+              center={[activity.latitude, activity.longitude]}
+              zoom={15}
+              scrollWheelZoom={false}
+              className="h-full w-full"
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <Marker position={[activity.latitude, activity.longitude]}>
+                <Popup>{activity.location ?? "활동 위치"}</Popup>
+              </Marker>
+            </MapContainer>
+          </div>
+        </section>
       )}
 
       {/* 4. Check-in / RSVP card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <UserPlus className="size-5" />
-            참석
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <section className="space-y-4 border-t border-border/50 pt-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <UserPlus className="size-5" />
+          참석
+        </h2>
+        <div className="space-y-4">
           {/* Admin QR code section */}
           {canManage && isActivityActive && (
             <div className="space-y-4 pb-4 border-b">
@@ -369,50 +366,44 @@ export default function CrewActivityDetailPage() {
               <span className="font-medium">불참</span>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {/* Chat link */}
       {(canManage || myStatus === "RSVP" || myStatus === "CHECKED_IN") && (
-        <Card>
-          <CardContent className="py-4">
-            <Button variant="outline" className="w-full" onClick={goToChat}>
-              <MessageCircle className="size-4 mr-2" />
-              활동 채팅방
-            </Button>
-          </CardContent>
-        </Card>
+        <section className="border-t border-border/50 py-4">
+          <Button variant="outline" className="w-full" onClick={goToChat}>
+            <MessageCircle className="size-4 mr-2" />
+            활동 채팅방
+          </Button>
+        </section>
       )}
 
       {/* 5. Admin activity management */}
       {canManage && isActivityActive && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <AlertTriangle className="size-5" />
-              활동 관리
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex gap-3">
+        <section className="space-y-4 border-t border-border/50 pt-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <AlertTriangle className="size-5" />
+            활동 관리
+          </h2>
+          <div className="flex gap-3">
             <Button variant="outline" onClick={() => setShowCompleteDialog(true)}>
               활동 종료
             </Button>
             <Button variant="destructive" size="sm" onClick={() => setShowCancelDialog(true)}>
               활동 취소
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       )}
 
       {/* 6. Attendees card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Users className="size-5" />
-            참석자 ({totalActive}명)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <section className="space-y-4 border-t border-border/50 pt-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <Users className="size-5" />
+          참석자 ({totalActive}명)
+        </h2>
+        <div>
           {/* 통계 바 */}
           {totalActive > 0 && (
             <div className="space-y-2 mb-4">
@@ -517,8 +508,8 @@ export default function CrewActivityDetailPage() {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {/* 7. Meta info (creator + creation time) */}
       <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground pb-4">
