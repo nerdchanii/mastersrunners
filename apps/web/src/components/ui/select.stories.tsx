@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectLabel,
   SelectSeparator,
@@ -31,12 +32,16 @@ function SelectPreview() {
           <SelectValue placeholder="훈련 유형 선택" />
         </SelectTrigger>
         <SelectContent>
-          <SelectLabel>러닝 타입</SelectLabel>
-          <SelectItem value="easy">이지런</SelectItem>
-          <SelectItem value="tempo">템포런</SelectItem>
-          <SelectItem value="long">롱런</SelectItem>
+          <SelectGroup>
+            <SelectLabel>러닝 타입</SelectLabel>
+            <SelectItem value="easy">이지런</SelectItem>
+            <SelectItem value="tempo">템포런</SelectItem>
+            <SelectItem value="long">롱런</SelectItem>
+          </SelectGroup>
           <SelectSeparator />
-          <SelectItem value="rest">휴식</SelectItem>
+          <SelectGroup>
+            <SelectItem value="rest">휴식</SelectItem>
+          </SelectGroup>
         </SelectContent>
       </Select>
     </div>
