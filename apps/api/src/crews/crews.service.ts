@@ -252,6 +252,7 @@ export class CrewsService {
       latitude?: number;
       longitude?: number;
       activityType?: string;
+      activityIcon?: string;
       workoutTypeId?: string;
     },
   ) {
