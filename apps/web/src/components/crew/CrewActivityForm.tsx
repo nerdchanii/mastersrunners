@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api-client";
+
 import { crewActivityIconOptions, isCrewActivityIcon } from "./crew-activity-icons";
 
 interface ActivityFormValues {
@@ -105,7 +106,7 @@ export default function CrewActivityForm({
   const submitLabel = mode === "edit" ? "수정하기" : "생성하기";
   const loadingLabel = mode === "edit" ? "수정 중..." : "생성 중...";
   const iconFieldClassName =
-    "h-11 w-20 rounded-md border border-input bg-transparent px-3 py-1 text-center text-base transition-colors outline-none focus-visible:border-black dark:focus-visible:border-white aria-invalid:border-destructive";
+    "h-11 w-11 rounded-xl border border-input bg-transparent px-0 py-1 text-center text-xl leading-none transition-colors outline-none focus-visible:border-black dark:focus-visible:border-white aria-invalid:border-destructive";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -154,8 +155,8 @@ export default function CrewActivityForm({
         </div>
       </div>
 
-      <div className="space-y-4 md:flex md:items-start md:gap-4 items-start">
-        <div className="space-y-2 md:w-20 md:shrink-0">
+      <div className="items-start space-y-4 md:flex md:gap-4">
+        <div className="space-y-2 md:shrink-0">
           {formData.activityType === "POP_UP" ? (
             <Input
               id="activityIcon"
@@ -170,7 +171,11 @@ export default function CrewActivityForm({
               value={formData.activityIcon}
               onValueChange={(value) => setFormData((prev) => ({ ...prev, activityIcon: value }))}
             >
-              <SelectTrigger id="activityIcon" size="lg" className="w-20 px-2">
+              <SelectTrigger
+                id="activityIcon"
+                size="lg"
+                className="h-11 w-11 justify-center rounded-xl px-0 text-xl [&_[data-slot=select-value]]:justify-center [&>svg]:hidden"
+              >
                 <SelectValue placeholder="선택" />
               </SelectTrigger>
               <SelectContent>

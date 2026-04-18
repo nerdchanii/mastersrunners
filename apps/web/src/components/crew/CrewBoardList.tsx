@@ -1,5 +1,5 @@
 import { ArrowLeft, ChevronRight, Heart, MessageSquare, Pin, Plus, Send } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AuthGateDialog } from "@/components/common/AuthGateDialog";
@@ -7,8 +7,9 @@ import { TimeAgo } from "@/components/common/TimeAgo";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import {
   type Board,
   type BoardPost,
@@ -28,6 +29,15 @@ interface Props {
   isMember: boolean;
   isAdmin: boolean;
   onRequireAuth: () => void;
+  defaultSelectedBoardId?: string;
+  defaultSelectedPostId?: string;
+  defaultSelectedBoardType?: string;
+  allowedBoardTypes?: string[];
+  composerNonce?: number;
+  hideBoardHeader?: boolean;
+  showInlineCreateAction?: boolean;
+  isActive?: boolean;
+  onComposerHandled?: () => void;
 }
 
 export default function CrewBoardList({
@@ -37,10 +47,46 @@ export default function CrewBoardList({
   isMember,
   isAdmin,
   onRequireAuth,
+  defaultSelectedBoardId,
+  defaultSelectedPostId,
+  defaultSelectedBoardType,
+  allowedBoardTypes,
+  composerNonce = 0,
+  hideBoardHeader = false,
+  showInlineCreateAction = true,
+  isActive = true,
+  onComposerHandled,
 }: Props) {
   const { data: boards, isLoading } = useBoards(crewId);
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
+  const visibleBoards = allowedBoardTypes?.length
+    ? boards?.filter((board) => allowedBoardTypes.includes(board.type))
+    : boards;
+
+  useEffect(() => {
+    if (!visibleBoards || selectedBoard) {
+      return;
+    }
+
+    const board =
+      visibleBoards.find((item) => item.id === defaultSelectedBoardId) ??
+      visibleBoards.find((item) => item.type === defaultSelectedBoardType);
+    if (!board) {
+      return;
+    }
+
+    setSelectedBoard(board);
+    if (defaultSelectedPostId) {
+      setSelectedPost(defaultSelectedPostId);
+    }
+  }, [
+    visibleBoards,
+    defaultSelectedBoardId,
+    defaultSelectedBoardType,
+    defaultSelectedPostId,
+    selectedBoard,
+  ]);
 
   if (isLoading) {
     return (
@@ -70,6 +116,12 @@ export default function CrewBoardList({
         board={selectedBoard}
         isMember={isMember}
         isAdmin={isAdmin}
+        isActive={isActive}
+        hideBoardNavigation={!!defaultSelectedBoardId || !!defaultSelectedBoardType}
+        hideBoardHeader={hideBoardHeader}
+        showInlineCreateAction={showInlineCreateAction}
+        composerNonce={composerNonce}
+        onComposerHandled={onComposerHandled}
         onBack={() => setSelectedBoard(null)}
         onSelectPost={setSelectedPost}
       />
@@ -78,54 +130,54 @@ export default function CrewBoardList({
 
   return (
     <div className="space-y-3">
-      {!boards || boards.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            아직 게시판이 없습니다.
-          </CardContent>
-        </Card>
+      {!visibleBoards || visibleBoards.length === 0 ? (
+        <div className="border-t border-border/50 py-8 text-center text-muted-foreground">
+          아직 게시판이 없습니다.
+        </div>
       ) : (
-        boards.map((board) => {
-          const canAttemptOpen = canOpenBoardPosts || !isAuthenticated;
+        <div className="divide-y divide-border/50 border-t border-border/50">
+          {visibleBoards.map((board) => {
+            const canAttemptOpen = canOpenBoardPosts || !isAuthenticated;
 
-          return (
-            <Card
-              key={board.id}
-              className={
-                canAttemptOpen
-                  ? "cursor-pointer transition-colors hover:bg-accent/50"
-                  : "transition-colors"
-              }
-              onClick={() => {
-                if (canOpenBoardPosts) {
-                  setSelectedBoard(board);
-                  return;
+            return (
+              <article
+                key={board.id}
+                className={
+                  canAttemptOpen
+                    ? "cursor-pointer py-4 transition-colors hover:bg-accent/20"
+                    : "py-4"
                 }
+                onClick={() => {
+                  if (canOpenBoardPosts) {
+                    setSelectedBoard(board);
+                    return;
+                  }
 
-                if (!isAuthenticated) {
-                  onRequireAuth();
-                }
-              }}
-            >
-              <CardContent className="py-4 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium">{board.name}</h3>
-                    <Badge variant="outline" className="text-xs">
-                      {board.type === "ANNOUNCEMENT"
-                        ? "공지"
-                        : board.type === "FREE"
-                          ? "자유"
-                          : "일반"}
-                    </Badge>
+                  if (!isAuthenticated) {
+                    onRequireAuth();
+                  }
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium">{board.name}</h3>
+                      <Badge variant="outline" className="text-xs">
+                        {board.type === "ANNOUNCEMENT"
+                          ? "공지"
+                          : board.type === "FREE"
+                            ? "자유"
+                            : "일반"}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{board._count.posts}개 글</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">{board._count.posts}개 글</p>
+                  <ChevronRight className="size-5 text-muted-foreground" />
                 </div>
-                <ChevronRight className="size-5 text-muted-foreground" />
-              </CardContent>
-            </Card>
-          );
-        })
+              </article>
+            );
+          })}
+        </div>
       )}
     </div>
   );
@@ -136,6 +188,12 @@ function BoardPosts({
   board,
   isMember,
   isAdmin,
+  isActive = true,
+  hideBoardNavigation = false,
+  hideBoardHeader = false,
+  showInlineCreateAction = true,
+  composerNonce = 0,
+  onComposerHandled,
   onBack,
   onSelectPost,
 }: {
@@ -143,6 +201,12 @@ function BoardPosts({
   board: Board;
   isMember: boolean;
   isAdmin: boolean;
+  isActive?: boolean;
+  hideBoardNavigation?: boolean;
+  hideBoardHeader?: boolean;
+  showInlineCreateAction?: boolean;
+  composerNonce?: number;
+  onComposerHandled?: () => void;
   onBack: () => void;
   onSelectPost: (postId: string) => void;
 }) {
@@ -153,6 +217,21 @@ function BoardPosts({
   const [content, setContent] = useState("");
 
   const canWrite = board.writePermission === "ALL_MEMBERS" ? isMember : isAdmin;
+
+  useEffect(() => {
+    if (!isActive || !composerNonce || !canWrite) {
+      return;
+    }
+    setShowForm(true);
+    onComposerHandled?.();
+  }, [composerNonce, canWrite, isActive, onComposerHandled]);
+
+  useEffect(() => {
+    if (isActive) {
+      return;
+    }
+    setShowForm(false);
+  }, [isActive]);
 
   const handleSubmit = () => {
     if (!title.trim() || !content.trim()) return;
@@ -172,46 +251,43 @@ function BoardPosts({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="size-4" />
-          </Button>
-          <h2 className="text-lg font-semibold">{board.name}</h2>
+      {(!hideBoardHeader || (canWrite && showInlineCreateAction)) && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {!hideBoardNavigation && (
+              <Button variant="ghost" size="sm" onClick={onBack}>
+                <ArrowLeft className="size-4" />
+              </Button>
+            )}
+            {!hideBoardHeader && <h2 className="text-lg font-semibold">{board.name}</h2>}
+          </div>
+          {canWrite && showInlineCreateAction && (
+            <Button size="sm" onClick={() => setShowForm(!showForm)}>
+              <Plus className="size-4 mr-1" />
+              글쓰기
+            </Button>
+          )}
         </div>
-        {canWrite && (
-          <Button size="sm" onClick={() => setShowForm(!showForm)}>
-            <Plus className="size-4 mr-1" />
-            글쓰기
-          </Button>
-        )}
-      </div>
+      )}
 
       {showForm && (
-        <Card>
-          <CardContent className="py-4 space-y-3">
-            <input
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-              placeholder="제목"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-            <textarea
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm min-h-[100px]"
-              placeholder="내용을 입력하세요..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowForm(false)}>
-                취소
-              </Button>
-              <Button size="sm" onClick={handleSubmit} disabled={createPost.isPending}>
-                작성
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <section className="space-y-3 border-t border-border/50 pt-4">
+          <Input placeholder="제목" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <Textarea
+            className="min-h-[120px]"
+            placeholder="크루 멤버가 바로 이해할 수 있게 짧게 적어주세요."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowForm(false)}>
+              취소
+            </Button>
+            <Button size="sm" onClick={handleSubmit} disabled={createPost.isPending}>
+              작성
+            </Button>
+          </div>
+        </section>
       )}
 
       {isLoading ? (
@@ -220,19 +296,17 @@ function BoardPosts({
           <Skeleton className="h-20 w-full" />
         </div>
       ) : !data?.items?.length ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            아직 글이 없습니다.
-          </CardContent>
-        </Card>
+        <div className="border-t border-border/50 py-8 text-center text-muted-foreground">
+          아직 글이 없습니다.
+        </div>
       ) : (
-        data.items.map((post: BoardPost) => (
-          <Card
-            key={post.id}
-            className="cursor-pointer hover:bg-accent/50 transition-colors"
-            onClick={() => onSelectPost(post.id)}
-          >
-            <CardContent className="py-4">
+        <div className="divide-y divide-border/50 border-t border-border/50">
+          {data.items.map((post: BoardPost) => (
+            <article
+              key={post.id}
+              className="cursor-pointer py-4 transition-colors hover:bg-accent/20"
+              onClick={() => onSelectPost(post.id)}
+            >
               <div className="flex items-start gap-3">
                 <UserAvatar user={post.author} size="sm" />
                 <div className="flex-1 min-w-0">
@@ -253,9 +327,9 @@ function BoardPosts({
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        ))
+            </article>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -329,18 +403,16 @@ function PostDetail({
         <h2 className="text-lg font-semibold">{board.name}</h2>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3 mb-3">
-            <UserAvatar user={post.author} size="sm" linkToProfile />
-            <div>
-              <p className="font-medium text-sm">{post.author.name}</p>
-              <TimeAgo date={post.createdAt} />
-            </div>
+      <article className="space-y-4 border-t border-border/50 pt-4">
+        <div className="flex items-center gap-3">
+          <UserAvatar user={post.author} size="sm" linkToProfile />
+          <div>
+            <p className="font-medium text-sm">{post.author.name}</p>
+            <TimeAgo date={post.createdAt} />
           </div>
-          <CardTitle>{post.title}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        </div>
+        <h3 className="text-xl font-semibold">{post.title}</h3>
+        <div className="space-y-4">
           <p className="whitespace-pre-wrap">{post.content}</p>
 
           {post.images && post.images.length > 0 && (
@@ -351,7 +423,7 @@ function PostDetail({
             </div>
           )}
 
-          <div className="flex items-center gap-4 pt-2 border-t">
+          <div className="flex items-center gap-4 border-t border-border/50 pt-2">
             <Button
               variant="ghost"
               size="sm"
@@ -366,18 +438,16 @@ function PostDetail({
               {post._count.comments}
             </span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </article>
 
       {/* Comments */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">댓글</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <section className="space-y-4 border-t border-border/50 pt-4">
+        <h3 className="text-base font-semibold">댓글</h3>
+        <div className="space-y-4">
           {post.comments && post.comments.length > 0 ? (
             post.comments.map((c) => (
-              <div key={c.id}>
+              <div key={c.id} className="border-b border-border/40 pb-4 last:border-0">
                 <div className="flex items-start gap-2">
                   <UserAvatar user={c.author} size="sm" />
                   <div className="flex-1">
@@ -411,10 +481,10 @@ function PostDetail({
           )}
 
           {isMember && (
-            <div className="flex items-center gap-2 pt-2 border-t">
-              <input
-                className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                placeholder="댓글을 입력하세요..."
+            <div className="flex items-center gap-2 border-t border-border/50 pt-2">
+              <Input
+                className="flex-1"
+                placeholder="댓글 남기기"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 onKeyDown={(e) => {
@@ -429,8 +499,8 @@ function PostDetail({
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       <AuthGateDialog
         open={showAuthDialog}

@@ -4,14 +4,13 @@ import { useState } from "react";
 
 import { AuthGateDialog } from "@/components/common/AuthGateDialog";
 import CrewIdentityHero from "@/components/crew/CrewIdentityHero";
-import { Button } from "@/components/ui/button";
-import { IconButton } from "@/components/ui/icon-button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { IconButton } from "@/components/ui/icon-button";
 import { storybookCrew, storybookMedia } from "@/storybook/storybook-fixtures";
 
 function GuestJoinActions() {
@@ -19,10 +18,7 @@ function GuestJoinActions() {
 
   return (
     <>
-      <IconButton
-        onClick={() => setOpen(true)}
-        aria-label="크루 가입"
-      >
+      <IconButton onClick={() => setOpen(true)} aria-label="크루 가입">
         <UserPlus className="size-4" />
       </IconButton>
       <AuthGateDialog
@@ -30,7 +26,7 @@ function GuestJoinActions() {
         onOpenChange={setOpen}
         nextPath="/crews/storybook-crew?invite=1"
         title="크루 참여"
-        description="로그인이나 회원가입 후 지금 보고 있는 크루로 바로 돌아올 수 있습니다."
+        description="가입 후, 크루와 함께해요."
       />
     </>
   );

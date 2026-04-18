@@ -584,8 +584,8 @@ export const storybookCrewBoards = [
 export const storybookCrewBoardPosts = {
   items: [
     {
-      id: "board-post-1",
-      boardId: "board-2",
+      id: "board-post-announcement-1",
+      boardId: "board-1",
       title: "이번 주말 롱런 페이스 제안",
       content: "초반 10km는 5:30, 후반은 컨디션 보고 정리해보죠.",
       isPinned: true,
@@ -605,8 +605,32 @@ export const storybookCrewBoardPosts = {
   nextCursor: null,
 } as const;
 
+export const storybookFreeBoardPosts = {
+  items: [
+    {
+      id: "board-post-1",
+      boardId: "board-2",
+      title: "토요일 잠실 집결 같이 가실 분",
+      content: "아침 7시에 잠실나루역에서 만나서 천천히 들어가요.",
+      isPinned: false,
+      authorId: storybookUser.id,
+      author: {
+        id: storybookUser.id,
+        name: storybookUser.name,
+        profileImage: storybookUser.profileImage,
+      },
+      createdAt: "2026-04-08T07:00:00.000Z",
+      updatedAt: "2026-04-08T07:00:00.000Z",
+      images: [],
+      _count: { comments: 3, likes: 8 },
+      liked: true,
+    },
+  ],
+  nextCursor: null,
+} as const;
+
 export const storybookCrewBoardPostDetail = {
-  ...storybookCrewBoardPosts.items[0],
+  ...storybookFreeBoardPosts.items[0],
   comments: [
     {
       id: "board-comment-1",

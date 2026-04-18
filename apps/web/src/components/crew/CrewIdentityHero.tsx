@@ -1,6 +1,6 @@
 import { Lock, MessageCircle, Users } from "lucide-react";
-import { useState } from "react";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import { TimeAgo } from "@/components/common/TimeAgo";
@@ -92,9 +92,7 @@ export default function CrewIdentityHero({
               <div className="absolute inset-0 bg-gradient-to-br from-muted/30 to-muted/5" />
             )}
 
-            <div className="absolute right-4 top-4 z-30 flex items-center gap-2">
-              {topActions}
-            </div>
+            <div className="absolute right-4 top-4 z-30 flex items-center gap-2">{topActions}</div>
           </div>
 
           <div className="relative z-20 -mt-10 flex items-end justify-between px-4 sm:-mt-16 sm:px-10">
@@ -119,7 +117,8 @@ export default function CrewIdentityHero({
               <IconButton
                 asChild
                 variant="secondary"
-                className="shadow-sm"
+                size="icon-lg"
+                className="rounded-full shadow-sm"
                 aria-label="크루 채팅 열기"
               >
                 <Link to={chatHref}>

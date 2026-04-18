@@ -1,6 +1,7 @@
 import { API_BASE } from "@/lib/api-client";
 
 import {
+  storybookAllCrewMembers,
   storybookChallengeLeaderboard,
   storybookChallengeTeams,
   storybookComments,
@@ -12,9 +13,9 @@ import {
   storybookCrewBoardPosts,
   storybookCrewBoards,
   storybookCrewChat,
-  storybookCrewMembers,
   storybookCrewPosts,
   storybookCrewTags,
+  storybookFreeBoardPosts,
   storybookNotifications,
   storybookPublicRuntimeConfig,
   storybookUser,
@@ -154,8 +155,12 @@ function resolveStorybookResponse(
     return jsonResponse({ ok: true });
   }
 
-  if (path.includes("/likes") || path.includes("/read") || path.includes("/attendance")) {
+  if (path.includes("/likes") || path.includes("/read")) {
     return jsonResponse({ ok: true });
+  }
+
+  if (path === "/conversations" && method === "POST") {
+    return jsonResponse({ id: storybookConversations[0]?.id ?? "conversation-1" });
   }
 
   if (path.match(/^\/crews\/[^/]+\/activities(\?.*)?$/)) {
@@ -173,9 +178,14 @@ function resolveStorybookResponse(
   }
 
   if (path.match(/^\/crews\/[^/]+\/boards\/[^/]+\/posts$/)) {
-    return jsonResponse(
-      scenario === "empty" ? { items: [], nextCursor: null } : storybookCrewBoardPosts,
-    );
+    const boardId = path.split("/")[4];
+    const boardPosts =
+      boardId === "board-1"
+        ? storybookCrewBoardPosts
+        : boardId === "board-2"
+          ? storybookFreeBoardPosts
+          : { items: [], nextCursor: null };
+    return jsonResponse(scenario === "empty" ? { items: [], nextCursor: null } : boardPosts);
   }
 
   if (path.match(/^\/crews\/[^/]+\/boards\/[^/]+\/posts\/[^/]+$/) && method === "GET") {
@@ -204,11 +214,15 @@ function resolveStorybookResponse(
   }
 
   if (path.includes("/members") && path.includes("/crews/")) {
-    return jsonResponse(scenario === "empty" ? [] : storybookCrewMembers);
+    return jsonResponse(scenario === "empty" ? [] : storybookAllCrewMembers);
   }
 
-  if (path.includes("/activities") && path.includes("/attendance")) {
+  if (path.match(/^\/crews\/[^/]+\/activities\/[^/]+\/attendance$/) && method === "GET") {
     return jsonResponse(scenario === "empty" ? [] : storybookCrewAttendance);
+  }
+
+  if (path.includes("/attendance") && method !== "GET") {
+    return jsonResponse({ ok: true });
   }
 
   if (path.includes("/teams") && path.includes("/challenges/")) {

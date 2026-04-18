@@ -1,6 +1,6 @@
-import { Lock, LogOut, MoreHorizontal, Settings, Share2, UserPlus } from "lucide-react";
+import { LogOut, MoreHorizontal, Settings, Share2, UserPlus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { AuthGateDialog } from "@/components/common/AuthGateDialog";
@@ -8,20 +8,20 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import CrewActivityList from "@/components/crew/CrewActivityList";
 import CrewAttendanceStats from "@/components/crew/CrewAttendanceStats";
 import CrewBoardList from "@/components/crew/CrewBoardList";
+import CrewHubQuickActions, { CrewHubInlineActions } from "@/components/crew/CrewHubQuickActions";
 import CrewIdentityHero from "@/components/crew/CrewIdentityHero";
 import CrewMemberList from "@/components/crew/CrewMemberList";
-import CrewPostList from "@/components/crew/CrewPostList";
 import CrewTagManager from "@/components/crew/CrewTagManager";
 import PendingMemberList from "@/components/crew/PendingMemberList";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { IconButton } from "@/components/ui/icon-button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { IconButton } from "@/components/ui/icon-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth-context";
@@ -66,7 +66,6 @@ interface CrewDetail {
 export default function CrewDetailClient() {
   const params = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const crewId = params.id as string;
 
@@ -101,10 +100,17 @@ export default function CrewDetailClient() {
   const canJoinCrew = !currentMember || currentMember.status === "LEFT";
   const currentUserRole = currentMember?.role ?? null;
   const isOwnerOrAdmin = currentUserRole === "OWNER" || currentUserRole === "ADMIN";
-  const isInviteEntry = searchParams.get("invite") === "1";
+  const defaultTab = isMember ? "announcement" : "activities";
+  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [boardComposerNonce, setBoardComposerNonce] = useState(0);
+  const [activityComposerNonce, setActivityComposerNonce] = useState(0);
+
+  useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
   const authReturnPath =
     typeof window === "undefined"
-      ? `/crews/${crewId}${isInviteEntry ? "?invite=1" : ""}`
+      ? `/crews/${crewId}`
       : `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
   const handleJoin = async () => {
@@ -161,6 +167,28 @@ export default function CrewDetailClient() {
     }
   };
 
+  const openBoardComposer = () => {
+    if (activeTab === "announcement" && isOwnerOrAdmin) {
+      setBoardComposerNonce((value) => value + 1);
+      return;
+    }
+    setActiveTab("board");
+    setBoardComposerNonce((value) => value + 1);
+  };
+
+  const openActivityComposer = () => {
+    setActiveTab("activities");
+    setActivityComposerNonce((value) => value + 1);
+  };
+
+  const handleBoardComposerHandled = () => {
+    setBoardComposerNonce(0);
+  };
+
+  const handleActivityComposerHandled = () => {
+    setActivityComposerNonce(0);
+  };
+
   if (!crewId || crewId === "_") {
     return (
       <div className="container max-w-2xl mx-auto text-center py-12">
@@ -209,36 +237,6 @@ export default function CrewDetailClient() {
 
   return (
     <div className="mx-auto max-w-6xl sm:space-y-5">
-      {isInviteEntry && !isMember && (
-        <section className="border-primary/20 bg-primary/5 px-5 py-4 sm:mx-6 sm:rounded-3xl sm:border">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-foreground">공유 링크로 들어왔어요.</p>
-              <p className="text-sm text-muted-foreground">
-                크루를 둘러본 뒤 가입할 수 있어요. 공개 크루는 바로 가입되고, 비공개 크루는 가입
-                요청이 대기 멤버로 전달됩니다.
-              </p>
-            </div>
-            {currentMember?.status === "PENDING" ? (
-              <Badge variant="secondary" className="w-fit">
-                가입 요청 대기 중
-              </Badge>
-            ) : (
-              canJoinCrew && (
-                <Button
-                  onClick={handleJoin}
-                  disabled={isJoining}
-                  className="h-10 rounded-full font-bold shadow-md"
-                >
-                  <UserPlus className="mr-2 size-4" />
-                  {isJoining ? "가입 중..." : "이 링크로 가입하기"}
-                </Button>
-              )
-            )}
-          </div>
-        </section>
-      )}
-
       <CrewIdentityHero
         crewId={crewId}
         name={crew.name}
@@ -313,136 +311,184 @@ export default function CrewDetailClient() {
         }
       />
 
-      <div className="grid gap-8 px-0 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-6">
-        <div className="space-y-10">
-          <section>
-            <Tabs defaultValue="activities" className="w-full">
-              <div className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-md">
-                <TabsList className="flex h-14 w-full justify-start gap-8 rounded-none bg-transparent p-0">
+      <div className="px-0 lg:px-6">
+        <section>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-md">
+              <div className="flex items-center justify-between gap-3">
+                <TabsList
+                  variant="line"
+                  className="h-12 min-w-0 flex-1 justify-start gap-0 rounded-none border-0 px-0"
+                >
+                  {isMember && (
+                    <TabsTrigger
+                      value="announcement"
+                      className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
+                    >
+                      공지
+                    </TabsTrigger>
+                  )}
                   <TabsTrigger
                     value="activities"
-                    className="h-full rounded-none border-b-2 border-transparent px-2 text-base font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"
+                    className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
                   >
                     활동
                   </TabsTrigger>
                   <TabsTrigger
                     value="board"
-                    className="h-full rounded-none border-b-2 border-transparent px-2 text-base font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"
+                    className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
                   >
                     게시판
                   </TabsTrigger>
+                  <TabsTrigger
+                    value="members"
+                    className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
+                  >
+                    멤버
+                  </TabsTrigger>
+                  {isOwnerOrAdmin && (
+                    <TabsTrigger
+                      value="manage"
+                      className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
+                    >
+                      관리
+                    </TabsTrigger>
+                  )}
                 </TabsList>
+                <CrewHubInlineActions
+                  canWritePost={isMember}
+                  canCreateActivity={isOwnerOrAdmin}
+                  onWritePost={openBoardComposer}
+                  onCreateActivity={openActivityComposer}
+                />
               </div>
+            </div>
 
-              <div className="py-6 sm:py-8">
-                <TabsContent value="activities" className="mt-0 focus-visible:outline-none">
-                  <div className="space-y-6 px-2 sm:px-4">
-                    <CrewActivityList
-                      canOpenActivityDetails={isMember}
-                      crewId={crewId}
-                      isAdmin={isOwnerOrAdmin}
-                      isMember={isMember}
-                      isAuthenticated={!!user}
-                      onRequireAuth={() => {
-                        setAuthDialogTitle("활동 자세히 보기");
-                        setShowAuthDialog(true);
-                      }}
-                    />
-                  </div>
+            <div className="pb-6 pt-0 sm:pb-8">
+              {isMember && (
+                <TabsContent
+                  value="announcement"
+                  className="mt-0 px-4 focus-visible:outline-none lg:px-0"
+                >
+                  <CrewBoardList
+                    canOpenBoardPosts={isMember}
+                    crewId={crewId}
+                    isAuthenticated={!!user}
+                    isMember={isMember}
+                    isAdmin={isOwnerOrAdmin}
+                    isActive={activeTab === "announcement"}
+                    defaultSelectedBoardType="ANNOUNCEMENT"
+                    allowedBoardTypes={["ANNOUNCEMENT"]}
+                    composerNonce={boardComposerNonce}
+                    onComposerHandled={handleBoardComposerHandled}
+                    hideBoardHeader
+                    showInlineCreateAction={false}
+                    onRequireAuth={() => {
+                      setAuthDialogTitle("공지 열기");
+                      setShowAuthDialog(true);
+                    }}
+                  />
                 </TabsContent>
+              )}
 
-                <TabsContent value="board" className="mt-0 focus-visible:outline-none">
-                  <div className="space-y-12">
+              <TabsContent
+                value="activities"
+                className="mt-0 px-4 focus-visible:outline-none lg:px-0"
+              >
+                <CrewActivityList
+                  canOpenActivityDetails={isMember}
+                  crewId={crewId}
+                  isAdmin={isOwnerOrAdmin}
+                  isMember={isMember}
+                  isAuthenticated={!!user}
+                  isActive={activeTab === "activities"}
+                  composerNonce={activityComposerNonce}
+                  onComposerHandled={handleActivityComposerHandled}
+                  showInlineCreateAction={false}
+                  onRequireAuth={() => {
+                    setAuthDialogTitle("활동 자세히 보기");
+                    setShowAuthDialog(true);
+                  }}
+                />
+              </TabsContent>
+
+              <TabsContent value="board" className="mt-0 px-4 focus-visible:outline-none lg:px-0">
+                <CrewBoardList
+                  canOpenBoardPosts={isMember}
+                  crewId={crewId}
+                  isAuthenticated={!!user}
+                  isMember={isMember}
+                  isAdmin={isOwnerOrAdmin}
+                  isActive={activeTab === "board"}
+                  defaultSelectedBoardType="FREE"
+                  allowedBoardTypes={["GENERAL", "FREE"]}
+                  composerNonce={boardComposerNonce}
+                  onComposerHandled={handleBoardComposerHandled}
+                  hideBoardHeader
+                  showInlineCreateAction={false}
+                  onRequireAuth={() => {
+                    setAuthDialogTitle("게시판 열기");
+                    setShowAuthDialog(true);
+                  }}
+                />
+              </TabsContent>
+
+              {isOwnerOrAdmin && (
+                <TabsContent
+                  value="manage"
+                  className="mt-0 px-4 focus-visible:outline-none lg:px-0"
+                >
+                  <div className="space-y-10">
                     <section className="space-y-6">
-                      <CrewBoardList
-                        canOpenBoardPosts={isMember}
+                      <div>
+                        <h2 className="text-xl font-bold tracking-tight text-foreground">
+                          운영 현황
+                        </h2>
+                      </div>
+                      <div className="rounded-3xl border bg-muted/10 p-6">
+                        <CrewAttendanceStats crewId={crewId} />
+                      </div>
+                    </section>
+
+                    <section className="space-y-4">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        태그 관리
+                      </h3>
+                      <CrewTagManager
                         crewId={crewId}
-                        isAuthenticated={!!user}
-                        isMember={isMember}
                         isAdmin={isOwnerOrAdmin}
-                        onRequireAuth={() => {
-                          setAuthDialogTitle("게시판 열기");
-                          setShowAuthDialog(true);
-                        }}
+                        members={activeMembers}
                       />
                     </section>
 
-                    {isMember ? (
-                      <section className="space-y-6 border-t border-border/60 pt-10">
-                        <div className="flex items-center justify-between">
-                          <h2 className="text-xl font-bold tracking-tight text-foreground">
-                            크루 소식
-                          </h2>
-                        </div>
-                        <CrewPostList crewId={crewId} isOwner={currentUserRole === "OWNER"} />
-                      </section>
-                    ) : null}
+                    <section className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          가입 대기
+                        </h3>
+                        <Badge variant="secondary" className="rounded-full px-2.5 font-bold">
+                          {crew.members.filter((m) => m.status === "PENDING").length}
+                        </Badge>
+                      </div>
+                      <PendingMemberList crewId={crewId} onUpdate={fetchCrew} />
+                    </section>
                   </div>
                 </TabsContent>
-              </div>
-            </Tabs>
-          </section>
-        </div>
-
-        <aside className="space-y-12">
-          <section className="space-y-6">
-            <div className="px-4 sm:px-0">
-              <h2 className="text-xl font-bold tracking-tight text-foreground">멤버</h2>
-            </div>
-            <div className="border-t border-border/40 pt-4">
-              <CrewMemberList
-                crewId={crewId}
-                members={activeMembers}
-                currentUserId={user?.id}
-                currentUserRole={currentUserRole}
-                onUpdate={fetchCrew}
-              />
-            </div>
-          </section>
-
-          {isOwnerOrAdmin && (
-            <section className="space-y-6">
-              <div className="px-4 sm:px-0">
-                <h2 className="text-xl font-bold tracking-tight text-foreground">운영 현황</h2>
-              </div>
-              <div className="rounded-3xl border bg-muted/10 p-6">
-                <CrewAttendanceStats crewId={crewId} />
-              </div>
-            </section>
-          )}
-
-          {isOwnerOrAdmin && (
-            <section className="space-y-8">
-              <div className="px-4 sm:px-0">
-                <h2 className="text-xl font-bold tracking-tight text-foreground">운영 도구</h2>
-              </div>
-              <div className="space-y-10">
-                <section className="space-y-4 px-4 sm:px-0">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    태그 관리
-                  </h3>
-                  <CrewTagManager
+              )}
+              <TabsContent value="members" className="mt-0 px-4 focus-visible:outline-none lg:px-0">
+                <div className="border-t border-border/40 pt-4">
+                  <CrewMemberList
                     crewId={crewId}
-                    isAdmin={isOwnerOrAdmin}
                     members={activeMembers}
+                    currentUserId={user?.id}
+                    currentUserRole={currentUserRole}
+                    onUpdate={fetchCrew}
                   />
-                </section>
-
-                <section className="space-y-4 px-4 sm:px-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      가입 대기
-                    </h3>
-                    <Badge variant="secondary" className="rounded-full px-2.5 font-bold">
-                      {crew.members.filter((m) => m.status === "PENDING").length}
-                    </Badge>
-                  </div>
-                  <PendingMemberList crewId={crewId} onUpdate={fetchCrew} />
-                </section>
-              </div>
-            </section>
-          )}
-        </aside>
+                </div>
+              </TabsContent>
+            </div>
+          </Tabs>
+        </section>
       </div>
 
       {/* Leave Confirmation Dialog */}
@@ -461,6 +507,14 @@ export default function CrewDetailClient() {
         onOpenChange={setShowAuthDialog}
         nextPath={authReturnPath}
         title={authDialogTitle}
+      />
+
+      <CrewHubQuickActions
+        dismissKey={activeTab}
+        canWritePost={isMember}
+        canCreateActivity={isOwnerOrAdmin}
+        onWritePost={openBoardComposer}
+        onCreateActivity={openActivityComposer}
       />
     </div>
   );

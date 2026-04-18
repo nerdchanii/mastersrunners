@@ -31,3 +31,13 @@ export const MemberView: Story = {
     onUpdate: () => undefined,
   },
 };
+
+export const Empty: Story = {
+  args: {
+    crewId: "crew-1",
+    members: [],
+    currentUserId: storybookUser.id,
+    currentUserRole: "OWNER",
+    onUpdate: () => undefined,
+  },
+};

@@ -1,5 +1,5 @@
 import { Calendar, MapPin, Plus, Users } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { EmptyState } from "@/components/common/EmptyState";
@@ -11,8 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { ActivitiesResponse } from "@/hooks/useCrewActivities";
 import { useCrewActivities } from "@/hooks/useCrewActivities";
 
-import CrewActivityForm from "./CrewActivityForm";
 import { getCrewActivityIcon } from "./crew-activity-icons";
+import CrewActivityForm from "./CrewActivityForm";
 
 interface CrewActivityListProps {
   canOpenActivityDetails: boolean;
@@ -22,6 +22,10 @@ interface CrewActivityListProps {
   isMember: boolean;
   onRequireAuth: () => void;
   defaultShowForm?: boolean;
+  composerNonce?: number;
+  showInlineCreateAction?: boolean;
+  isActive?: boolean;
+  onComposerHandled?: () => void;
 }
 
 function getLocalDateKey(date: Date) {
@@ -40,6 +44,10 @@ export default function CrewActivityList({
   isMember,
   onRequireAuth,
   defaultShowForm = false,
+  composerNonce = 0,
+  showInlineCreateAction = true,
+  isActive = true,
+  onComposerHandled,
 }: CrewActivityListProps) {
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(defaultShowForm);
@@ -80,6 +88,21 @@ export default function CrewActivityList({
   // POP_UP은 일반 멤버도 생성 가능
   const canCreate = isAdmin || isMember;
 
+  useEffect(() => {
+    if (!isActive || !composerNonce || !canCreate) {
+      return;
+    }
+    setShowForm(true);
+    onComposerHandled?.();
+  }, [composerNonce, canCreate, isActive, onComposerHandled]);
+
+  useEffect(() => {
+    if (isActive) {
+      return;
+    }
+    setShowForm(false);
+  }, [isActive]);
+
   const handleOpenActivity = (activityId: string) => {
     if (!isAuthenticated) {
       onRequireAuth();
@@ -117,7 +140,7 @@ export default function CrewActivityList({
 
   return (
     <div className="space-y-4">
-      {canCreate && (
+      {canCreate && showInlineCreateAction && (
         <div className="flex justify-end">
           <Button onClick={() => setShowForm(true)}>
             <Plus className="size-4 mr-2" />
@@ -131,8 +154,8 @@ export default function CrewActivityList({
           icon={Calendar}
           title="활동이 없습니다"
           description={canCreate ? "아직 잡힌 일정이 없습니다." : "예정된 활동이 아직 없습니다."}
-          actionLabel={canCreate ? "활동 만들기" : undefined}
-          onAction={canCreate ? () => setShowForm(true) : undefined}
+          actionLabel={canCreate && showInlineCreateAction ? "활동 만들기" : undefined}
+          onAction={canCreate && showInlineCreateAction ? () => setShowForm(true) : undefined}
         />
       ) : (
         <div className="grid gap-4">
