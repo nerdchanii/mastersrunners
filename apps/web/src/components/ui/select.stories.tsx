@@ -86,3 +86,48 @@ function CrewRegionPreview() {
 export const CrewRegionState: Story = {
   render: () => <CrewRegionPreview />,
 };
+
+function IconPickerPreview() {
+  const [icon, setIcon] = useState("🏃");
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="activity-icon">활동 아이콘</Label>
+      <Select value={icon} onValueChange={setIcon}>
+        <SelectTrigger
+          id="activity-icon"
+          size="lg"
+          className="h-11 w-11 justify-center rounded-xl px-0 text-xl [&_[data-slot=select-value]]:justify-center [&>svg]:hidden"
+        >
+          <SelectValue placeholder="선택" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="🏃">
+            <span className="text-base leading-none">🏃</span>
+          </SelectItem>
+          <SelectItem value="🚴">
+            <span className="text-base leading-none">🚴</span>
+          </SelectItem>
+          <SelectItem value="🏊">
+            <span className="text-base leading-none">🏊</span>
+          </SelectItem>
+          <SelectItem value="⛰️">
+            <span className="text-base leading-none">⛰️</span>
+          </SelectItem>
+        </SelectContent>
+      </Select>
+      <p className="text-xs text-muted-foreground">
+        아이콘 선택 필드는 별도 primitive 대신 Select 변형으로 사용합니다.
+      </p>
+    </div>
+  );
+}
+
+export const IconPicker: Story = {
+  parameters: {
+    viewport: {
+      defaultViewport: "mobile2",
+    },
+  },
+  render: () => <IconPickerPreview />,
+};
