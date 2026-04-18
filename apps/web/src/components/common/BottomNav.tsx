@@ -85,10 +85,14 @@ const mobileNavItems: NavItem[] = [
   },
 ];
 
-export function BottomNav() {
+interface BottomNavProps {
+  initialCreateSheetOpen?: boolean;
+}
+
+export function BottomNav({ initialCreateSheetOpen = false }: BottomNavProps) {
   const { pathname } = useLocation();
   const { isAuthenticated } = useAuth();
-  const [createSheetOpen, setCreateSheetOpen] = useState(false);
+  const [createSheetOpen, setCreateSheetOpen] = useState(initialCreateSheetOpen);
   const { data: runtimeConfig } = usePublicRuntimeConfig();
   const unread = useUnreadCounts();
   const config = runtimeConfig ?? defaultPublicRuntimeConfig;

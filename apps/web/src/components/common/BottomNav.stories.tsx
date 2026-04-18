@@ -32,6 +32,15 @@ export const SignedIn: Story = {
   },
 };
 
+export const ComposerOpen: Story = {
+  args: {
+    initialCreateSheetOpen: true,
+  },
+  globals: {
+    authMode: "signed-in",
+  },
+};
+
 export const Guest: Story = {
   globals: {
     authMode: "guest",
