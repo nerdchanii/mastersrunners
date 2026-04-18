@@ -446,11 +446,29 @@ export class CrewsController {
     return this.crewsService.getMemberAttendanceStats(id, userId);
   }
 
+  @Get(":id/members/:userId/attendance-history")
+  getMemberAttendanceHistory(
+    @Param("id") id: string,
+    @Param("userId") userId: string,
+    @Query() query: CrewAttendanceStatsQueryDto,
+  ) {
+    return this.crewsService.getMemberAttendanceHistory(id, userId, {
+      range: query.range,
+      type: query.type,
+    });
+  }
+
   @Get(":id/attendance-stats")
   getCrewAttendanceStats(@Param("id") id: string, @Query() query: CrewAttendanceStatsQueryDto) {
     return this.crewsService.getCrewAttendanceStats(id, {
-      month: query.month,
+      range: query.range,
       type: query.type,
+      sort: query.sort,
+      order: query.order,
+      q: query.q,
+      checkInLte: query.checkInLte,
+      noShowGte: query.noShowGte,
+      limit: query.limit,
     });
   }
 

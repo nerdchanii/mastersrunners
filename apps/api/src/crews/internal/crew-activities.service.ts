@@ -66,7 +66,7 @@ export class CrewActivitiesService {
       createdBy: userId,
       qrCode,
       activityType,
-      activityIcon: data.activityType === "POP_UP" ? null : data.activityIcon ?? null,
+      activityIcon: data.activityType === "POP_UP" ? null : (data.activityIcon ?? null),
       workoutTypeId: data.workoutTypeId,
     });
 
@@ -282,7 +282,28 @@ export class CrewActivitiesService {
     return this.crewActivityRepo.getMemberAttendanceStats(crewId, userId);
   }
 
-  async getCrewAttendanceStats(crewId: string, opts?: { month?: string; type?: string }) {
+  async getMemberAttendanceHistory(
+    crewId: string,
+    userId: string,
+    opts?: { range?: string; type?: string },
+  ) {
+    await this.getCrewOrThrow(crewId);
+    return this.crewActivityRepo.getMemberAttendanceHistory(crewId, userId, opts);
+  }
+
+  async getCrewAttendanceStats(
+    crewId: string,
+    opts?: {
+      range?: string;
+      type?: string;
+      sort?: string;
+      order?: string;
+      q?: string;
+      checkInLte?: number;
+      noShowGte?: number;
+      limit?: number;
+    },
+  ) {
     await this.getCrewOrThrow(crewId);
     return this.crewActivityRepo.getCrewAttendanceStats(crewId, opts);
   }

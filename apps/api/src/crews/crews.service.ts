@@ -332,7 +332,27 @@ export class CrewsService {
     return this.activitiesService.getMemberAttendanceStats(crewId, userId);
   }
 
-  async getCrewAttendanceStats(crewId: string, opts?: { month?: string; type?: string }) {
+  async getMemberAttendanceHistory(
+    crewId: string,
+    userId: string,
+    opts?: { range?: string; type?: string },
+  ) {
+    return this.activitiesService.getMemberAttendanceHistory(crewId, userId, opts);
+  }
+
+  async getCrewAttendanceStats(
+    crewId: string,
+    opts?: {
+      range?: string;
+      type?: string;
+      sort?: string;
+      order?: string;
+      q?: string;
+      checkInLte?: number;
+      noShowGte?: number;
+      limit?: number;
+    },
+  ) {
     return this.activitiesService.getCrewAttendanceStats(crewId, opts);
   }
 

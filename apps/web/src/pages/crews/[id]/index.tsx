@@ -445,9 +445,7 @@ export default function CrewDetailClient() {
                           운영 현황
                         </h2>
                       </div>
-                      <div className="rounded-3xl border bg-muted/10 p-6">
-                        <CrewAttendanceStats crewId={crewId} />
-                      </div>
+                      <CrewAttendanceStats crewId={crewId} crewName={crew.name} />
                     </section>
 
                     <section className="space-y-4">

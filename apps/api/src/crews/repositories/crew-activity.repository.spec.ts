@@ -21,6 +21,12 @@ describe("CrewActivityRepository", () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
     },
+    crewMember: {
+      findMany: jest.fn(),
+    },
+    user: {
+      findMany: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -364,6 +370,145 @@ describe("CrewActivityRepository", () => {
         include: {
           user: { select: { id: true, name: true, profileImage: true } },
         },
+      });
+    });
+  });
+
+  describe("getCrewAttendanceStats", () => {
+    it("should return dashboard stats with summary, activities, and members", async () => {
+      mockPrisma.crewActivity.findMany
+        .mockResolvedValueOnce([
+          {
+            id: "activity-1",
+            title: "월요일 아침 러닝",
+            activityDate: new Date("2026-02-10T09:00:00.000Z"),
+            activityType: "OFFICIAL",
+            activityIcon: "🏃",
+            attendances: [
+              { userId: "user-1", status: "CHECKED_IN" },
+              { userId: "user-2", status: "NO_SHOW" },
+            ],
+          },
+        ])
+        .mockResolvedValueOnce([
+          {
+            id: "activity-1",
+            title: "월요일 아침 러닝",
+            activityDate: new Date("2026-02-10T09:00:00.000Z"),
+            activityType: "OFFICIAL",
+            activityIcon: "🏃",
+            attendances: [
+              { userId: "user-1", status: "CHECKED_IN" },
+              { userId: "user-2", status: "NO_SHOW" },
+            ],
+          },
+        ]);
+
+      mockPrisma.crewMember.findMany.mockResolvedValue([
+        {
+          userId: "user-1",
+          user: {
+            id: "user-1",
+            name: "김러너",
+            profileImage: null,
+            crewAttendances: [
+              {
+                status: "CHECKED_IN",
+                checkedAt: new Date("2026-02-10T09:01:00.000Z"),
+                activity: { activityDate: new Date("2026-02-10T09:00:00.000Z") },
+              },
+            ],
+          },
+        },
+        {
+          userId: "user-2",
+          user: {
+            id: "user-2",
+            name: "박지구력",
+            profileImage: null,
+            crewAttendances: [
+              {
+                status: "NO_SHOW",
+                checkedAt: null,
+                activity: { activityDate: new Date("2026-02-10T09:00:00.000Z") },
+              },
+            ],
+          },
+        },
+      ]);
+
+      const result = await repository.getCrewAttendanceStats("crew-1", {
+        type: "OFFICIAL",
+        sort: "checkedIn",
+        order: "desc",
+      });
+
+      expect(result.summary).toEqual({
+        overallRate: 50,
+        activityCount: 1,
+        totalEligible: 2,
+        totalCheckedIn: 1,
+        totalNoShow: 1,
+      });
+      expect(result.activities).toHaveLength(1);
+      expect(result.members[0]).toMatchObject({
+        userId: "user-1",
+        checkedIn: 1,
+        noShow: 0,
+      });
+      expect(mockPrisma.crewMember.findMany).toHaveBeenCalled();
+    });
+  });
+
+  describe("getMemberAttendanceHistory", () => {
+    it("should return member attendance history items", async () => {
+      mockPrisma.crewAttendance.findMany.mockResolvedValue([
+        {
+          id: "attendance-1",
+          user: { id: "user-1", name: "김러너", profileImage: null },
+          status: "NO_SHOW",
+          checkedAt: null,
+          rsvpAt: new Date("2026-02-10T08:00:00.000Z"),
+          activity: {
+            id: "activity-1",
+            title: "월요일 아침 러닝",
+            activityDate: new Date("2026-02-10T09:00:00.000Z"),
+            activityType: "OFFICIAL",
+            activityIcon: "🏃",
+          },
+        },
+        {
+          id: "attendance-2",
+          user: { id: "user-1", name: "김러너", profileImage: null },
+          status: "CHECKED_IN",
+          checkedAt: new Date("2026-02-12T09:00:00.000Z"),
+          rsvpAt: new Date("2026-02-12T08:00:00.000Z"),
+          activity: {
+            id: "activity-2",
+            title: "번개 러닝",
+            activityDate: new Date("2026-02-12T09:00:00.000Z"),
+            activityType: "POP_UP",
+            activityIcon: "⚡",
+          },
+        },
+      ]);
+
+      const result = await repository.getMemberAttendanceHistory("crew-1", "user-1", {
+        range: "all",
+        type: "ALL",
+      });
+
+      expect(result.member).toMatchObject({
+        userId: "user-1",
+        checkedIn: 1,
+        noShow: 1,
+        totalEligible: 2,
+        rate: 50,
+      });
+      expect(result.history).toHaveLength(2);
+      expect(result.history[0]).toMatchObject({
+        activityId: "activity-1",
+        status: "NO_SHOW",
       });
     });
   });
