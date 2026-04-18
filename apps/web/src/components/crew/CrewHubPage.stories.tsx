@@ -37,7 +37,7 @@ type HubRole = "guest" | "member" | "owner";
 const crewAttendanceStats = {
   ...storybookCrewAttendanceStats,
   activities: [...storybookCrewAttendanceStats.activities],
-  memberStats: [...storybookCrewAttendanceStats.memberStats],
+  members: [...storybookCrewAttendanceStats.members],
 };
 
 const crewTags = storybookCrewTags.map((tag) => ({
@@ -322,12 +322,10 @@ function CrewHubPageStory({ role }: { role: HubRole }) {
                       <div>
                         <h2 className="text-xl font-bold tracking-tight">운영 현황</h2>
                       </div>
-                      <div className="rounded-3xl border bg-muted/10 p-6">
-                        <CrewAttendanceStats
-                          crewId={storybookCrew.id}
-                          initialData={crewAttendanceStats}
-                        />
-                      </div>
+                      <CrewAttendanceStats
+                        crewId={storybookCrew.id}
+                        initialData={crewAttendanceStats}
+                      />
                     </section>
 
                     <section className="space-y-4">

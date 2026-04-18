@@ -8,6 +8,7 @@ import {
   storybookConversations,
   storybookCrewActivities,
   storybookCrewAttendance,
+  storybookCrewAttendanceHistoryByUser,
   storybookCrewAttendanceStats,
   storybookCrewBoardPostDetail,
   storybookCrewBoardPosts,
@@ -92,6 +93,116 @@ function jsonResponse(body: unknown, init: ResponseInit = {}) {
   });
 }
 
+function getStorybookSearchParams(path: string) {
+  return new URL(path, "http://localhost").searchParams;
+}
+
+function filterAttendanceActivities(range: string | null, type: string | null) {
+  const now = new Date("2026-04-18T00:00:00.000Z").getTime();
+  const rangeDays =
+    range === "30d"
+      ? 30
+      : range === "10w"
+        ? 70
+        : range === "12w"
+          ? 84
+          : range === "monthly"
+            ? null
+            : range === "90d"
+              ? 90
+              : range === "180d"
+                ? 180
+                : null;
+
+  return storybookCrewAttendanceStats.activities.filter((activity) => {
+    const activityTime = new Date(activity.activityDate).getTime();
+    const monthlyStart = new Date("2026-04-01T00:00:00.000Z").getTime();
+    const matchesRange =
+      range === "monthly"
+        ? activityTime >= monthlyStart && activityTime <= now
+        : rangeDays == null
+          ? true
+          : now - activityTime <= rangeDays * 24 * 60 * 60 * 1000;
+    const matchesType = !type || type === "ALL" ? true : activity.activityType === type;
+    return matchesRange && matchesType;
+  });
+}
+
+function buildStorybookAttendanceStats(path: string) {
+  const params = getStorybookSearchParams(path);
+  const range = params.get("range");
+  const type = params.get("type");
+  const sort = params.get("sort");
+  const order = params.get("order") === "asc" ? "asc" : "desc";
+  const activities = filterAttendanceActivities(range, type);
+  const totalEligible = activities.reduce((sum, item) => sum + item.total, 0);
+  const totalCheckedIn = activities.reduce((sum, item) => sum + item.checkedIn, 0);
+  const totalNoShow = activities.reduce((sum, item) => sum + item.noShow, 0);
+  const overallRate = totalEligible === 0 ? 0 : Math.round((totalCheckedIn / totalEligible) * 100);
+  const members = [...storybookCrewAttendanceStats.members].sort((left, right) => {
+    const direction = order === "asc" ? 1 : -1;
+    if (sort === "noShow") return (left.noShow - right.noShow) * direction;
+    if (sort === "lastActivity") {
+      return (
+        (new Date(left.lastActivityAt ?? 0).getTime() -
+          new Date(right.lastActivityAt ?? 0).getTime()) *
+        direction
+      );
+    }
+    if (sort === "rate") return (left.rate - right.rate) * direction;
+    return (left.checkedIn - right.checkedIn) * direction;
+  });
+
+  return {
+    summary: {
+      overallRate,
+      activityCount: activities.length,
+      totalEligible,
+      totalCheckedIn,
+      totalNoShow,
+    },
+    activities,
+    members,
+  };
+}
+
+function buildStorybookAttendanceHistory(path: string) {
+  const params = getStorybookSearchParams(path);
+  const range = params.get("range");
+  const type = params.get("type");
+  const userId = path.split("/")[4];
+  const history =
+    storybookCrewAttendanceHistoryByUser[
+      userId as keyof typeof storybookCrewAttendanceHistoryByUser
+    ] ?? null;
+
+  if (!history) return null;
+
+  const filteredHistory = history.history.filter((item) => {
+    const matchesType = !type || type === "ALL" ? true : item.activityType === type;
+    if (!matchesType) return false;
+    if (!range || range === "all") return true;
+
+    const now = new Date("2026-04-18T00:00:00.000Z").getTime();
+    const days =
+      range === "30d"
+        ? 30
+        : range === "10w"
+          ? 70
+          : range === "12w"
+            ? 84
+            : range === "90d"
+              ? 90
+              : 180;
+    return now - new Date(item.activityDate).getTime() <= days * 24 * 60 * 60 * 1000;
+  });
+
+  return {
+    member: history.member,
+    history: filteredHistory,
+  };
+}
+
 function resolveStorybookResponse(
   path: string,
   method: string,
@@ -170,7 +281,11 @@ function resolveStorybookResponse(
   }
 
   if (path.match(/^\/crews\/[^/]+\/attendance-stats(\?.*)?$/)) {
-    return jsonResponse(scenario === "empty" ? null : storybookCrewAttendanceStats);
+    return jsonResponse(scenario === "empty" ? null : buildStorybookAttendanceStats(path));
+  }
+
+  if (path.match(/^\/crews\/[^/]+\/members\/[^/]+\/attendance-history(\?.*)?$/)) {
+    return jsonResponse(scenario === "empty" ? null : buildStorybookAttendanceHistory(path));
   }
 
   if (path.match(/^\/crews\/[^/]+\/boards$/)) {
