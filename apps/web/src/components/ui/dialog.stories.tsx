@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -20,20 +21,43 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Playground: Story = {
+export const DestructiveConfirm: Story = {
   render: () => (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>삭제 확인 열기</Button>
+        <Button>내보내기 확인 열기</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="rounded-2xl">
         <DialogHeader>
-          <DialogTitle>게시글을 삭제할까요?</DialogTitle>
-          <DialogDescription>삭제 후에는 복구할 수 없습니다.</DialogDescription>
+          <DialogTitle>멤버를 내보낼까요?</DialogTitle>
+          <DialogDescription>
+            이 작업 후에는 다시 초대하거나 재가입 요청을 받아야 합니다.
+          </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline">취소</Button>
-          <Button variant="destructive">삭제</Button>
+          <DialogClose asChild>
+            <Button variant="outline">취소</Button>
+          </DialogClose>
+          <Button variant="destructive">내보내기</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  ),
+};
+
+export const AuthGateTone: Story = {
+  render: () => (
+    <Dialog defaultOpen>
+      <DialogContent className="rounded-2xl">
+        <DialogHeader>
+          <DialogTitle>크루 가입</DialogTitle>
+          <DialogDescription>가입 후, 크루와 함께해요.</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline">나중에</Button>
+          </DialogClose>
+          <Button>로그인</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
