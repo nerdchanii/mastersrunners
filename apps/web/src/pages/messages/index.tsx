@@ -5,7 +5,13 @@ import { useNavigate } from "react-router-dom";
 import { EmptyState } from "@/components/common/EmptyState";
 import { PageHeader } from "@/components/common/PageHeader";
 import { TimeAgo } from "@/components/common/TimeAgo";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarGroup,
+  AvatarGroupCount,
+  AvatarImage,
+} from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -194,15 +200,17 @@ export default function MessagesPage() {
                         <h3 className="truncate text-sm font-semibold text-foreground">
                           {meta.title}
                         </h3>
-                        <span className="inline-flex shrink-0 items-center rounded-full border border-border/70 px-2 py-0.5 text-[11px] text-muted-foreground">
-                          {meta.kindLabel}
-                        </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {meta.subtitle}
-                        {conversation.type !== "DIRECT" &&
-                          ` · ${conversation.participants.length}명`}
-                      </p>
+                      {(meta.secondaryTitle || conversation.type !== "DIRECT") && (
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          {meta.secondaryTitle ? (
+                            <span className="truncate">{meta.secondaryTitle}</span>
+                          ) : null}
+                          {conversation.type !== "DIRECT" ? (
+                            <RoomParticipants conversation={conversation} />
+                          ) : null}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2">
@@ -271,59 +279,78 @@ function RoomAvatar({
     );
   }
 
+  if (conversation.type === "CREW") {
+    return (
+      <Avatar className="size-12 shrink-0">
+        {conversation.crew?.imageUrl && (
+          <AvatarImage src={conversation.crew.imageUrl} alt={conversation.crew.name} />
+        )}
+        <AvatarFallback>{conversation.crew?.name?.[0] ?? "크"}</AvatarFallback>
+      </Avatar>
+    );
+  }
+
   const Icon = conversation.type === "ACTIVITY" ? CalendarDays : Users;
-  const fallback = conversation.type === "ACTIVITY" ? "활" : "크";
 
   return (
     <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-border/70 bg-muted text-foreground">
-      <span className="sr-only">
-        {conversation.type === "ACTIVITY" ? "활동 채팅방" : "크루 채팅방"}
-      </span>
+      <span className="sr-only">{conversation.type === "ACTIVITY" ? "활동" : "대화"}</span>
       <Icon className="size-5" aria-hidden="true" />
-      <span className="sr-only">{fallback}</span>
+    </div>
+  );
+}
+
+function RoomParticipants({ conversation }: { conversation: Conversation }) {
+  const visibleParticipants = conversation.participants.slice(0, 2);
+
+  return (
+    <div className="flex items-center gap-2">
+      <AvatarGroup className="items-center">
+        {visibleParticipants.map((participant) => (
+          <Avatar key={participant.userId} size="sm">
+            {participant.user.profileImage && (
+              <AvatarImage src={participant.user.profileImage} alt={participant.user.name} />
+            )}
+            <AvatarFallback>{participant.user.name.charAt(0)}</AvatarFallback>
+          </Avatar>
+        ))}
+        {conversation.participants.length > visibleParticipants.length ? (
+          <AvatarGroupCount className="size-6 text-[10px]">
+            +{conversation.participants.length - visibleParticipants.length}
+          </AvatarGroupCount>
+        ) : null}
+      </AvatarGroup>
+      <span>{conversation.participants.length}명</span>
     </div>
   );
 }
 
 function getFallbackPreview(conversation: Conversation) {
   if (conversation.type === "ACTIVITY") {
-    return "첫 메시지를 기다리고 있습니다.";
+    return "아직 대화가 없습니다.";
   }
 
   if (conversation.type === "CREW") {
-    return "첫 메시지를 기다리고 있습니다.";
+    return "아직 대화가 없습니다.";
   }
 
-  return "대화를 시작해 보세요.";
+  return "아직 대화가 없습니다.";
 }
 
 function getEmptyState(filter: ConversationFilter, query: string) {
-  if (query.trim()) {
-    return {
-      title: "검색 결과가 없습니다",
-      description: "다른 이름이나 방 이름으로 다시 찾아보세요.",
-    };
-  }
-
-  if (filter === "DIRECT") {
-    return {
-      title: "1:1 메시지가 없습니다",
-    };
-  }
-
-  if (filter === "CREW") {
-    return {
-      title: "크루 채팅이 없습니다",
-    };
-  }
-
-  if (filter === "ACTIVITY") {
-    return {
-      title: "활동 채팅이 없습니다",
-    };
-  }
-
-  return {
+  const state: { title: string; description?: string } = {
     title: "대화가 없습니다",
   };
+
+  if (query.trim()) {
+    state.title = "검색 결과가 없습니다";
+    return state;
+  }
+
+  if (filter !== "ALL") {
+    state.title = "조건에 맞는 대화가 없습니다";
+    return state;
+  }
+
+  return state;
 }

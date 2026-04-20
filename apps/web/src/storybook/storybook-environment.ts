@@ -319,7 +319,13 @@ function resolveStorybookResponse(
   ) {
     return jsonResponse(
       scenario === "empty"
-        ? { conversation: null, messages: [], nextCursor: null }
+        ? {
+            conversation: null,
+            messages: [],
+            olderCursor: null,
+            newerCursor: null,
+            firstUnreadMessageId: null,
+          }
         : storybookCrewChat,
     );
   }

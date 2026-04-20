@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
-import { messageKeys } from "@/hooks/useMessages";
 import { notificationKeys } from "@/hooks/useNotifications";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { API_BASE } from "@/lib/api-client";
@@ -43,18 +42,6 @@ export default function Header() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    // DM SSE — 새 메시지 수신 시 unread 갱신
-    const dmEventSource = new EventSource(`${API_BASE}/conversations/sse`, {
-      withCredentials: true,
-    });
-    dmEventSource.addEventListener("new-message", () => {
-      queryClient.invalidateQueries({ queryKey: messageKeys.unreadCount() });
-      queryClient.invalidateQueries({ queryKey: messageKeys.conversations() });
-    });
-    dmEventSource.onerror = (error) => {
-      console.error("DM SSE error:", error);
-    };
-
     // Notification SSE — 새 알림 수신 시 TanStack Query 캐시 무효화
     let notifEventSource: EventSource | null = null;
     try {
@@ -72,7 +59,6 @@ export default function Header() {
     }
 
     return () => {
-      dmEventSource.close();
       notifEventSource?.close();
     };
   }, [isAuthenticated, queryClient]);

@@ -873,10 +873,17 @@ export const storybookCrewPosts = {
 export const storybookCrewChat = {
   conversation: {
     id: "conversation-crew-1",
-    type: "GROUP",
-    name: "서울 새벽 러너스",
+    type: "CREW",
+    name: null,
     crewId: storybookCrew.id,
     activityId: null,
+    crew: {
+      id: storybookCrew.id,
+      name: storybookCrew.name,
+      imageUrl: storybookCrew.imageUrl,
+    },
+    activity: null,
+    updatedAt: "2026-04-08T08:19:00.000Z",
     participants: [
       {
         userId: storybookUser.id,
@@ -903,6 +910,7 @@ export const storybookCrewChat = {
   messages: [
     {
       id: "group-message-1",
+      conversationId: "conversation-crew-1",
       content: "내일 6시 출발로 확정할게요.",
       senderId: "user-2",
       sender: {
@@ -915,6 +923,7 @@ export const storybookCrewChat = {
     },
     {
       id: "group-message-2",
+      conversationId: "conversation-crew-1",
       content: "좋아요. 집결지는 뚝섬 유원지 입구로요.",
       senderId: storybookUser.id,
       sender: {
@@ -926,7 +935,9 @@ export const storybookCrewChat = {
       deletedAt: null,
     },
   ],
-  nextCursor: null,
+  olderCursor: null,
+  newerCursor: null,
+  firstUnreadMessageId: null,
 } as const;
 
 export const storybookWorkoutTrack = [

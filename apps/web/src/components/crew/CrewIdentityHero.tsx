@@ -114,13 +114,7 @@ export default function CrewIdentityHero({
 
             <div className="flex flex-wrap items-center justify-end gap-2 pb-1 sm:gap-3 sm:pb-3">
               {actions}
-              <IconButton
-                asChild
-                variant="secondary"
-                size="icon-lg"
-                className="rounded-full shadow-sm"
-                aria-label="크루 채팅 열기"
-              >
+              <IconButton asChild variant="outline" aria-label="크루 채팅 열기">
                 <Link to={chatHref}>
                   <MessageCircle className="size-4" />
                 </Link>

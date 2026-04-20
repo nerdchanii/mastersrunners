@@ -7,12 +7,14 @@ export interface ConversationUser {
 export interface ConversationParticipant {
   userId: string;
   lastReadAt: string | null;
+  joinedAt?: string;
   user: ConversationUser;
 }
 
 interface ConversationCrewContext {
   id: string;
   name: string;
+  imageUrl: string | null;
 }
 
 interface ConversationActivityContext {
@@ -50,8 +52,7 @@ export type ConversationRoomKind = ConversationListItem["type"];
 
 interface ConversationRoomMeta {
   href: string;
-  kindLabel: string;
-  subtitle: string;
+  secondaryTitle: string | null;
   title: string;
 }
 
@@ -81,17 +82,15 @@ export function getConversationRoomMeta(
       (conversation.name?.trim() || null) ??
       "크루";
     const activityTitle =
-      conversation.activity?.title ?? (conversation.name?.trim() || null) ?? "활동 채팅";
-    const title = `${crewName} / ${activityTitle}`;
+      conversation.activity?.title ?? (conversation.name?.trim() || null) ?? "활동";
 
     return {
       href:
         conversation.activityId && (conversation.crewId ?? conversation.activity?.crewId)
           ? `/crews/${conversation.crewId ?? conversation.activity?.crewId}/activities/${conversation.activityId}/chat`
           : `/messages/${conversation.id}`,
-      kindLabel: "활동",
-      subtitle: "활동 채팅",
-      title,
+      secondaryTitle: crewName,
+      title: activityTitle,
     };
   }
 
@@ -101,11 +100,11 @@ export function getConversationRoomMeta(
       conversation.activity?.crew?.name ??
       conversation.name ??
       "크루 채팅";
+    const crewId = conversation.crewId ?? conversation.activity?.crewId ?? null;
 
     return {
-      href: conversation.crewId ? `/crews/${conversation.crewId}` : `/messages/${conversation.id}`,
-      kindLabel: "크루",
-      subtitle: "크루 단체톡",
+      href: crewId ? `/messages/crew/${crewId}` : `/messages/${conversation.id}`,
+      secondaryTitle: null,
       title,
     };
   }
@@ -114,8 +113,7 @@ export function getConversationRoomMeta(
 
   return {
     href: `/messages/${conversation.id}`,
-    kindLabel: "1:1",
-    subtitle: "1:1 메시지",
+    secondaryTitle: null,
     title: otherUser?.name ?? conversation.name ?? "대화",
   };
 }
@@ -133,8 +131,7 @@ export function matchesConversationQuery(
   const roomMeta = getConversationRoomMeta(conversation, currentUserId);
   const haystack = [
     roomMeta.title,
-    roomMeta.subtitle,
-    roomMeta.kindLabel,
+    roomMeta.secondaryTitle,
     conversation.name,
     conversation.crew?.name,
     conversation.activity?.title,

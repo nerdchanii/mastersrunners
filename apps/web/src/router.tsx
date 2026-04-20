@@ -44,6 +44,7 @@ const EventNewPage = lazy(() => import("@/pages/events/new"));
 const EventDetailPage = lazy(() => import("@/pages/events/[id]"));
 const MessagesPage = lazy(() => import("@/pages/messages"));
 const MessageDetailPage = lazy(() => import("@/pages/messages/[id]"));
+const CrewMessagePage = lazy(() => import("@/pages/messages/crew/[crewId]"));
 const EditProfilePage = lazy(() => import("@/pages/settings/profile"));
 const NotificationsPage = lazy(() => import("@/pages/notifications"));
 const SearchPage = lazy(() => import("@/pages/search"));
@@ -73,11 +74,20 @@ function RootLayout() {
 
 function MainLayout() {
   const location = useLocation();
+  const isMobileChatRoute =
+    location.pathname.startsWith("/messages/") ||
+    /\/crews\/[^/]+\/activities\/[^/]+\/chat$/.test(location.pathname);
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="mx-auto max-w-5xl px-4 py-4 pb-20 md:py-6 md:pb-6">
+      <main
+        className={
+          isMobileChatRoute
+            ? "h-svh md:mx-auto md:h-[calc(100svh-3.5rem)] md:max-w-5xl md:px-4 md:py-6 md:pb-6"
+            : "mx-auto max-w-5xl px-4 py-4 pb-20 md:py-6 md:pb-6"
+        }
+      >
         <Suspense fallback={<LoadingPage />}>
           <ErrorBoundary key={location.key}>
             <Outlet />
@@ -217,6 +227,7 @@ export const router = createBrowserRouter([
                 ),
               },
               { path: "/messages", element: <MessagesPage /> },
+              { path: "/messages/crew/:crewId", element: <CrewMessagePage /> },
               { path: "/messages/:id", element: <MessageDetailPage /> },
               { path: "/notifications", element: <NotificationsPage /> },
               { path: "/feedback", element: <FeedbackPage /> },

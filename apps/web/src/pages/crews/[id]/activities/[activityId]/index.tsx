@@ -24,6 +24,7 @@ import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { TimeAgo } from "@/components/common/TimeAgo";
 import { UserAvatar } from "@/components/common/UserAvatar";
+import { getCrewActivityIcon } from "@/components/crew/crew-activity-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,7 +36,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useCrewActivityDetailViewModel } from "./use-crew-activity-detail-view-model";
-import { getCrewActivityIcon } from "@/components/crew/crew-activity-icons";
 
 import "leaflet/dist/leaflet.css";
 
@@ -374,7 +374,7 @@ export default function CrewActivityDetailPage() {
         <section className="border-t border-border/50 py-4">
           <Button variant="outline" className="w-full" onClick={goToChat}>
             <MessageCircle className="size-4 mr-2" />
-            활동 채팅방
+            대화
           </Button>
         </section>
       )}

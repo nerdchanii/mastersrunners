@@ -1,7 +1,8 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarDays } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import GroupChat from "@/components/crew/GroupChat";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useCrewActivity } from "@/hooks/useCrewActivities";
 import { useCrew } from "@/hooks/useCrews";
@@ -13,10 +14,7 @@ export default function ActivityChatPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const { data: chatData, isLoading: chatLoading } = useActivityChat(
-    crewId ?? "",
-    activityId ?? "",
-  );
+  const chat = useActivityChat(crewId ?? "", activityId ?? "");
   const { data: activity } = useCrewActivity(crewId ?? "", activityId ?? "");
   const { data: crew } = useCrew(crewId ?? "");
   const currentMember = crew?.members?.find((member) => member.user.id === user?.id);
@@ -28,10 +26,11 @@ export default function ActivityChatPage() {
   )?.status;
   const canAccessChat = myStatus === "RSVP" || myStatus === "CHECKED_IN" || canManage;
   const activityTitle = activity?.title ?? "활동";
+  const crewName = crew?.name ?? chat.conversation?.activity?.crew?.name ?? "크루";
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur-sm">
         <Button
           variant="ghost"
           size="icon"
@@ -39,17 +38,31 @@ export default function ActivityChatPage() {
         >
           <ArrowLeft className="size-5" />
         </Button>
-        <h1 className="text-xl font-bold">{activityTitle} 활동 채팅</h1>
+        <Avatar className="size-11 border border-border/60">
+          <AvatarFallback>
+            <CalendarDays className="size-4" />
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0">
+          <h1 className="truncate text-base font-semibold text-foreground">{activityTitle}</h1>
+          <p className="truncate text-xs text-muted-foreground">{crewName}</p>
+        </div>
       </div>
 
       {activity && !canAccessChat ? (
         <div className="rounded-xl border bg-card p-6 text-center">
-          <p className="text-base font-medium">
-            이 활동 채팅은 참석 신청 또는 체크인 후 사용할 수 있습니다.
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            활동 상세에서 참석 상태를 먼저 변경한 뒤 다시 들어와 주세요.
-          </p>
+          <p className="text-base font-medium">참석 후 대화를 볼 수 있습니다.</p>
+          <Button
+            className="mt-4"
+            variant="outline"
+            onClick={() => navigate(`/crews/${crewId}/activities/${activityId}`)}
+          >
+            활동 상세로 돌아가기
+          </Button>
+        </div>
+      ) : chat.error ? (
+        <div className="m-4 rounded-xl border bg-card p-6 text-center">
+          <p className="text-base font-medium">{chat.error}</p>
           <Button
             className="mt-4"
             variant="outline"
@@ -60,15 +73,11 @@ export default function ActivityChatPage() {
         </div>
       ) : (
         <GroupChat
-          data={chatData}
-          isLoading={chatLoading}
-          crewId={crewId ?? ""}
-          activityId={activityId}
-          title={`${activityTitle} 활동 채팅`}
-          subtitle="참석자와 운영진을 위한 대화 공간"
-          emptyMessage={`${activityTitle} 활동에 첫 메시지를 남겨보세요.`}
-          missingConversationMessage="이 활동의 채팅방이 아직 준비되지 않았습니다."
-          composerPlaceholder={`${activityTitle} 활동에 메시지 보내기`}
+          className="flex-1 overflow-hidden"
+          chat={chat}
+          emptyMessage="아직 대화가 없습니다."
+          missingConversationMessage="대화를 준비 중입니다."
+          composerPlaceholder="메시지를 입력하세요"
         />
       )}
     </div>
