@@ -71,6 +71,16 @@ export async function setupAuth(page: Page) {
     });
   });
 
+  await page.route(`${API_BASE}/conversations/unread-count`, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 0,
+      }),
+    });
+  });
+
   await page.route(`${API_BASE}/notifications/unread-count`, (route) => {
     route.fulfill({
       status: 200,

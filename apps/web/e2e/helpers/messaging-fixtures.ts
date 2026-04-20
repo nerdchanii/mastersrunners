@@ -74,22 +74,34 @@ interface FixtureConversationSummary {
 interface FixtureDirectConversationDetail {
   conversation: Omit<FixtureConversationSummary, "messages" | "unreadCount">;
   messages: FixtureMessage[];
-  nextCursor: string | null;
+  olderCursor: string | null;
+  newerCursor: string | null;
+  firstUnreadMessageId: string | null;
 }
 
 interface FixtureChatConversation {
+  activity?: {
+    crew: { id: string; imageUrl: string | null; name: string } | null;
+    crewId: string;
+    id: string;
+    title: string;
+  } | null;
   activityId: string | null;
+  crew?: { id: string; imageUrl: string | null; name: string } | null;
   crewId: string | null;
   id: string;
   name: string | null;
   participants: FixtureConversationParticipant[];
   type: "ACTIVITY" | "CREW";
+  updatedAt: string;
 }
 
 interface FixtureChatResponse {
   conversation: FixtureChatConversation;
   messages: FixtureMessage[];
-  nextCursor: string | null;
+  olderCursor: string | null;
+  newerCursor: string | null;
+  firstUnreadMessageId: string | null;
 }
 
 interface FixtureCrewMember {
@@ -326,7 +338,13 @@ function buildCrewConversation(
   overrides: Partial<FixtureChatConversation> = {},
 ): FixtureChatConversation {
   return {
+    activity: null,
     activityId: null,
+    crew: {
+      id: messagingFixtureIds.crewId,
+      imageUrl: null,
+      name: "서울 러닝 크루",
+    },
     crewId: messagingFixtureIds.crewId,
     id: messagingFixtureIds.crewConversationId,
     name: null,
@@ -345,6 +363,7 @@ function buildCrewConversation(
       },
     ],
     type: "CREW",
+    updatedAt: "2026-02-19T10:05:00.000Z",
     ...overrides,
   };
 }
@@ -353,7 +372,22 @@ function buildActivityConversation(
   overrides: Partial<FixtureChatConversation> = {},
 ): FixtureChatConversation {
   return {
+    activity: {
+      crew: {
+        id: messagingFixtureIds.crewId,
+        imageUrl: null,
+        name: "서울 러닝 크루",
+      },
+      crewId: messagingFixtureIds.crewId,
+      id: messagingFixtureIds.activityId,
+      title: "월요일 아침 러닝",
+    },
     activityId: messagingFixtureIds.activityId,
+    crew: {
+      id: messagingFixtureIds.crewId,
+      imageUrl: null,
+      name: "서울 러닝 크루",
+    },
     crewId: messagingFixtureIds.crewId,
     id: messagingFixtureIds.activityConversationId,
     name: null,
@@ -366,6 +400,7 @@ function buildActivityConversation(
       },
     ],
     type: "ACTIVITY",
+    updatedAt: "2026-02-20T08:30:00.000Z",
     ...overrides,
   };
 }
@@ -477,7 +512,9 @@ export function buildDirectConversationScenario(
         ...overrides.detailConversation,
       },
       messages,
-      nextCursor: null,
+      olderCursor: null,
+      newerCursor: null,
+      firstUnreadMessageId: null,
     },
     conversationId: conversation.id,
     conversationsResponse: {
@@ -525,7 +562,9 @@ export function buildCrewChatScenario(
           senderId: messagingFixtureUsers.viewer.id,
         }),
       ],
-      nextCursor: null,
+      olderCursor: null,
+      newerCursor: null,
+      firstUnreadMessageId: null,
     },
     crew,
     crewId: crew.id,
@@ -557,7 +596,9 @@ export function buildActivityChatScenario(
     chatResponse: {
       conversation,
       messages: overrides.messages ?? [],
-      nextCursor: null,
+      olderCursor: null,
+      newerCursor: null,
+      firstUnreadMessageId: null,
     },
     crew,
     crewId: crew.id,

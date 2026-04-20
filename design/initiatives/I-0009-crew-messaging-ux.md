@@ -17,7 +17,7 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 
 ## Non-Goals
 
-- migrating crew or activity chat from polling to SSE
+- adding presence, typing, or delivery-receipt features on top of the transport change
 - redesigning unrelated feed, challenge, or workout surfaces
 - changing backend chat or notification contracts in this batch
 
@@ -56,6 +56,7 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 - `tasks/archive/I-0009-010-web-crew-messaging-ux-polish.md`
 - `tasks/archive/I-0009-020-web-messaging-e2e-mock-fixtures.md`
 - `tasks/archive/I-0009-030-api-sse-stream-stability.md`
+- `tasks/todo/I-0009-040-api-web-chat-websocket-transport.md`
 
 ## Success Criteria
 

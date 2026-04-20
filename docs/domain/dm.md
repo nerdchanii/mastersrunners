@@ -6,7 +6,9 @@ sources:
   - packages/database/prisma/schema.prisma
   - apps/api/src/conversations/conversations.controller.ts
   - apps/api/src/conversations/conversations.service.ts
+  - apps/api/src/conversations/conversations.gateway.ts
   - apps/api/src/conversations/repositories/conversations.repository.ts
+  - apps/web/src/lib/chat-realtime-context.tsx
 ---
 
 # 메시지와 대화 (Messaging)
@@ -17,11 +19,11 @@ sources:
 
 ## Conversation 타입
 
-| 값 | 의미 |
-| --- | --- |
-| `DIRECT` | 사용자 1:1 대화 |
-| `CREW` | 크루 대화 |
-| `ACTIVITY` | 크루 활동 대화 |
+| 값         | 의미            |
+| ---------- | --------------- |
+| `DIRECT`   | 사용자 1:1 대화 |
+| `CREW`     | 크루 대화       |
+| `ACTIVITY` | 크루 활동 대화  |
 
 ## 현재 핵심 모델
 
@@ -73,6 +75,6 @@ sources:
 
 ## 전달 방식
 
-- direct message는 SSE 기반 실시간 전달을 사용한다.
-- 일부 group conversation 흐름은 여전히 polling/조회 기반 UI와 함께 동작한다.
-- 따라서 “모든 대화 타입이 완전히 동일한 실시간 계약을 가진다”고 문서화하지 않는다.
+- direct, crew, activity conversation은 모두 WebSocket 기반 실시간 전달을 사용한다.
+- 브라우저는 전역 chat socket 하나를 열고, unread/list 갱신과 열린 대화 화면을 같은 연결에서 처리한다.
+- notification은 별도 SSE 채널을 유지한다.

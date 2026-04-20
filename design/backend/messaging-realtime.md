@@ -5,6 +5,7 @@ last_verified: 2026-04-01
 sources:
   - apps/api/src/conversations/conversations.controller.ts
   - apps/api/src/conversations/conversations.service.ts
+  - apps/api/src/conversations/conversations.gateway.ts
   - apps/api/src/conversations/conversations-sse.service.ts
   - apps/api/src/notifications/notifications.controller.ts
   - apps/api/src/notifications/notifications-sse.service.ts
@@ -20,7 +21,7 @@ sources:
 
 ## Summary
 
-Messaging is implemented as an authenticated conversations module with cursor pagination, soft-delete semantics, and SSE fan-out for new direct messages, while crew and activity chat rooms share the same conversation storage model.
+Messaging is implemented as an authenticated conversations module with cursor pagination, soft-delete semantics, and WebSocket fan-out for conversation messages, while notification delivery keeps a separate SSE channel.
 
 ## Public API Boundaries
 
@@ -36,13 +37,17 @@ Messaging is implemented as an authenticated conversations module with cursor pa
   - advance the caller's last-read marker
 - `DELETE /conversations/messages/:id`
   - soft-delete the caller's own message
+- WebSocket namespace `/conversations`
+  - cookie-authenticated chat realtime channel
 - `GET /conversations/sse`
-  - realtime message stream authenticated by `JwtSseGuard`
+  - legacy SSE endpoint retained while notification-style SSE infrastructure remains in the repo
 
 ## Module Responsibilities
 
 - `ConversationsController`
-  - transport, pagination bounds, and SSE entrypoint
+  - HTTP transport, pagination bounds, and legacy SSE entrypoint
+- `ConversationsGateway`
+  - cookie-authenticated WebSocket connection, room subscription, and message fan-out
 - `ConversationsService`
   - participant authorization, block checks, and write orchestration
 - `ConversationsRepository`
@@ -52,15 +57,14 @@ Messaging is implemented as an authenticated conversations module with cursor pa
 
 ## Realtime Boundary
 
-- Realtime delivery is SSE, not WebSocket.
-- SSE endpoints are public at the route layer but protected by cookie auth through `JwtSseGuard`.
-- Message creation persists first, then fan-out happens as a non-blocking side effect.
-- One caller may hold multiple concurrent SSE subscriptions for the same user, such as the shell unread listener plus the direct-message detail stream.
-- SSE registries now keep per-connection heartbeat traffic and explicit close cleanup so Cloudflare or Cloud Run idle/reconnect behavior does not leave stale in-memory listeners behind.
-- Shared exception handling must not try to write a JSON error body after an SSE response has already started streaming.
+- Chat delivery is WebSocket-based for `DIRECT`, `CREW`, and `ACTIVITY` conversations.
+- The gateway authenticates from the same cookie session used by HTTP requests.
+- Each socket joins a per-user room on connect and can also join per-conversation rooms through `chat:subscribe`.
+- Message creation persists first, then the gateway emits `chat:message` to the conversation room plus participant user rooms.
+- Notification delivery remains SSE-based and still uses the existing `JwtSseGuard` boundary.
 
 ## Current Constraints
 
 - The main `/conversations` API now returns mixed room types, but only direct-message routes use the dedicated `/messages/:id` detail screen today.
 - Presence, typing indicators, and reconnect replay are not first-class realtime features in the current implementation.
-- Realtime delivery is process-local; multi-instance fan-out would need extra infrastructure beyond the repo.
+- Chat WebSocket and notification SSE delivery are both process-local; multi-instance fan-out would need extra infrastructure beyond the repo.
