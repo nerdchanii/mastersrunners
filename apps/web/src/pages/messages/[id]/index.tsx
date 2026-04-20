@@ -1,11 +1,13 @@
 import { ArrowDown, CalendarDays, ChevronLeft, Users } from "lucide-react";
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { ChatComposer } from "@/components/chat/ChatComposer";
+import { ChatRoomHeader } from "@/components/chat/ChatRoomHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
+import { useChatBackToMessages } from "@/hooks/useChatBackToMessages";
 import { useAuth } from "@/lib/auth-context";
 import { getConversationOtherUser, getConversationRoomMeta } from "@/lib/message-room";
 import { cn } from "@/lib/utils";
@@ -17,9 +19,11 @@ export default function MessageDetailPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const chat = useMessageDetailPage(id);
+  const handleBack = useChatBackToMessages();
   const [content, setContent] = useState("");
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const prependSnapshotRef = useRef<{ height: number; top: number } | null>(null);
+  const initialPositionedRef = useRef(false);
 
   const formatTime = (dateString: string) =>
     new Date(dateString).toLocaleTimeString("ko-KR", {
@@ -91,9 +95,14 @@ export default function MessageDetailPage() {
   }, [chat]);
 
   useLayoutEffect(() => {
-    scrollToBottom(chat.loading ? "auto" : "smooth");
+    if (chat.loading || chat.anchorMessageId || initialPositionedRef.current) {
+      return;
+    }
+
+    scrollToBottom("auto");
     chat.setNearBottom(true);
-  }, [chat]);
+    initialPositionedRef.current = true;
+  }, [chat.anchorMessageId, chat.loading, chat.messages.length, chat]);
 
   const handleScroll = () => {
     const container = messagesContainerRef.current;
@@ -131,14 +140,42 @@ export default function MessageDetailPage() {
     if (!ok) {
       setContent(trimmedContent);
     }
+    requestAnimationFrame(() => {
+      const activeElement = document.activeElement;
+      if (activeElement instanceof HTMLElement && activeElement.tagName === "TEXTAREA") {
+        return;
+      }
+
+      const composer = messagesContainerRef.current?.parentElement;
+      const textarea = composer?.querySelector("textarea");
+      if (textarea instanceof HTMLTextAreaElement) {
+        textarea.focus();
+      }
+    });
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      void handleSend();
+  const conversation = chat.conversation;
+  const otherUser = conversation ? getConversationOtherUser(conversation, user?.id) : null;
+  const roomMeta = conversation ? getConversationRoomMeta(conversation, user?.id) : null;
+  const headerHref = useMemo(() => {
+    if (!conversation) {
+      return null;
     }
-  };
+
+    if (conversation.type === "DIRECT") {
+      return otherUser ? `/profile/${otherUser.id}` : null;
+    }
+
+    if (conversation.type === "CREW") {
+      const crewTargetId = conversation.crewId ?? conversation.crew?.id;
+      return crewTargetId ? `/crews/${crewTargetId}` : null;
+    }
+
+    const targetCrewId = conversation.crewId ?? conversation.activity?.crewId;
+    return conversation.activityId && targetCrewId
+      ? `/crews/${targetCrewId}/activities/${conversation.activityId}`
+      : null;
+  }, [conversation, otherUser]);
 
   if (chat.loading) {
     return (
@@ -176,10 +213,6 @@ export default function MessageDetailPage() {
     );
   }
 
-  const conversation = chat.conversation;
-  const otherUser = conversation ? getConversationOtherUser(conversation, user?.id) : null;
-  const roomMeta = conversation ? getConversationRoomMeta(conversation, user?.id) : null;
-
   if (!conversation || !roomMeta) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-4">
@@ -192,52 +225,54 @@ export default function MessageDetailPage() {
   }
 
   return (
-    <div className="relative mx-auto flex h-full max-w-3xl flex-col overflow-hidden">
-      <div className="sticky top-0 z-10 border-b border-border/60 bg-background/95 px-1 py-4 backdrop-blur-sm sm:px-2">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/messages")}
-            className="shrink-0"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          {conversation.type === "DIRECT" && otherUser ? (
-            <Avatar className="h-10 w-10">
-              {otherUser.profileImage && (
+    <div className="relative flex h-full flex-col overflow-hidden">
+      <ChatRoomHeader
+        backIcon={<ChevronLeft className="h-5 w-5" />}
+        onBack={handleBack}
+        onIdentityClick={headerHref ? () => navigate(headerHref) : null}
+        avatar={
+          conversation.type === "DIRECT" && otherUser ? (
+            <Avatar className="h-8 w-8">
+              {otherUser.profileImage ? (
                 <AvatarImage src={otherUser.profileImage} alt={otherUser.name} />
-              )}
+              ) : null}
               <AvatarFallback>{otherUser.name[0]}</AvatarFallback>
             </Avatar>
           ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-muted text-foreground">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-muted text-foreground">
               {conversation.type === "ACTIVITY" ? (
-                <CalendarDays className="h-4 w-4" />
+                <CalendarDays className="h-3.5 w-3.5" />
               ) : (
-                <Users className="h-4 w-4" />
+                <Users className="h-3.5 w-3.5" />
               )}
             </div>
-          )}
-          <div className="min-w-0">
-            <h2 className="truncate text-lg font-semibold">{roomMeta.title}</h2>
-            {roomMeta.secondaryTitle && (
-              <p className="text-xs text-muted-foreground">{roomMeta.secondaryTitle}</p>
-            )}
-          </div>
-        </div>
-      </div>
+          )
+        }
+        title={roomMeta.title}
+        meta={
+          conversation.type === "CREW" ? (
+            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              <Users className="size-3" />
+              <span>{conversation.participants.length}</span>
+            </span>
+          ) : conversation.type === "ACTIVITY" && roomMeta.secondaryTitle ? (
+            <span className="max-w-[9rem] truncate text-[11px] text-muted-foreground">
+              {roomMeta.secondaryTitle}
+            </span>
+          ) : null
+        }
+      />
 
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="min-h-0 flex-1 overflow-y-auto px-1 py-3 pb-3 sm:px-2"
+        className="min-h-0 flex-1 overflow-y-auto px-2 py-3 pb-2 sm:px-3"
       >
-        {chat.loadingOlder && (
+        {chat.loadingOlder ? (
           <div className="pb-3 text-center text-xs text-muted-foreground">
             이전 메시지 불러오는 중...
           </div>
-        )}
+        ) : null}
 
         <div className="space-y-4">
           {chat.messages.map((message, index) => {
@@ -246,7 +281,7 @@ export default function MessageDetailPage() {
 
             return (
               <div key={message.id} data-message-id={message.id}>
-                {chat.firstUnreadMessageId === message.id && (
+                {chat.firstUnreadMessageId === message.id ? (
                   <div className="my-4 flex items-center gap-3">
                     <div className="h-px flex-1 bg-border/70" />
                     <span className="shrink-0 text-[11px] text-muted-foreground">
@@ -254,36 +289,38 @@ export default function MessageDetailPage() {
                     </span>
                     <div className="h-px flex-1 bg-border/70" />
                   </div>
-                )}
+                ) : null}
 
-                {showDate && (
+                {showDate ? (
                   <div className="my-4 flex justify-center">
                     <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
                       {formatDate(message.createdAt)}
                     </span>
                   </div>
-                )}
+                ) : null}
 
-                <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`flex ${isOwn ? "justify-end pr-1 sm:pr-2" : "justify-start pl-1 sm:pl-0"}`}
+                >
                   <div
-                    className={`flex max-w-[70%] gap-2 ${isOwn ? "flex-row-reverse" : "flex-row"}`}
+                    className={`flex max-w-[72%] gap-2 ${isOwn ? "flex-row-reverse" : "flex-row"}`}
                   >
-                    {!isOwn && (
+                    {!isOwn ? (
                       <Avatar className="h-8 w-8 shrink-0">
-                        {message.sender.profileImage && (
+                        {message.sender.profileImage ? (
                           <AvatarImage
                             src={message.sender.profileImage}
                             alt={message.sender.name}
                           />
-                        )}
+                        ) : null}
                         <AvatarFallback>{message.sender.name[0]}</AvatarFallback>
                       </Avatar>
-                    )}
+                    ) : null}
 
                     <div className={`flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
                       <div
                         className={cn(
-                          "rounded-lg px-4 py-2",
+                          "rounded-[1rem] px-4 py-2",
                           message.deletedAt
                             ? "bg-muted text-muted-foreground italic"
                             : isOwn
@@ -311,8 +348,8 @@ export default function MessageDetailPage() {
         </div>
       </div>
 
-      {(chat.pendingNewMessages > 0 || chat.newerCursor) && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-[6rem] flex justify-center px-4">
+      {chat.pendingNewMessages > 0 || chat.newerCursor ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-[5.5rem] flex justify-center px-4">
           <Button
             type="button"
             size="sm"
@@ -326,31 +363,19 @@ export default function MessageDetailPage() {
               : "다음 메시지 보기"}
           </Button>
         </div>
-      )}
+      ) : null}
 
-      <div className="sticky bottom-0 shrink-0 border-t border-border/60 bg-background/95 px-1 py-3 backdrop-blur-sm sm:px-2">
-        <div className="flex gap-2">
-          <Textarea
-            value={content}
-            onChange={(e) => {
-              chat.clearSendError();
-              setContent(e.target.value);
-            }}
-            onKeyDown={handleKeyPress}
-            placeholder="메시지를 입력하세요"
-            className="min-h-[60px] max-h-[120px] resize-none text-sm"
-            disabled={chat.sending}
-          />
-          <Button
-            onClick={() => void handleSend()}
-            disabled={!content.trim() || chat.sending}
-            className="h-[60px] shrink-0 px-6"
-          >
-            {chat.sending ? "전송 중..." : "전송"}
-          </Button>
-        </div>
-        {chat.sendError && <p className="mt-2 text-xs text-destructive">{chat.sendError}</p>}
-      </div>
+      <ChatComposer
+        value={content}
+        onChange={(nextValue) => {
+          chat.clearSendError();
+          setContent(nextValue);
+        }}
+        onSend={() => void handleSend()}
+        disabled={chat.sending}
+        error={chat.sendError}
+        placeholder="메시지를 입력하세요"
+      />
     </div>
   );
 }

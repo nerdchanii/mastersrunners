@@ -45,6 +45,7 @@ const EventDetailPage = lazy(() => import("@/pages/events/[id]"));
 const MessagesPage = lazy(() => import("@/pages/messages"));
 const MessageDetailPage = lazy(() => import("@/pages/messages/[id]"));
 const CrewMessagePage = lazy(() => import("@/pages/messages/crew/[crewId]"));
+const MessagesShell = lazy(() => import("@/pages/messages/shell"));
 const EditProfilePage = lazy(() => import("@/pages/settings/profile"));
 const NotificationsPage = lazy(() => import("@/pages/notifications"));
 const SearchPage = lazy(() => import("@/pages/search"));
@@ -74,8 +75,8 @@ function RootLayout() {
 
 function MainLayout() {
   const location = useLocation();
-  const isMobileChatRoute =
-    location.pathname.startsWith("/messages/") ||
+  const isChatRoute =
+    location.pathname.startsWith("/messages") ||
     /\/crews\/[^/]+\/activities\/[^/]+\/chat$/.test(location.pathname);
 
   return (
@@ -83,8 +84,8 @@ function MainLayout() {
       <Header />
       <main
         className={
-          isMobileChatRoute
-            ? "h-svh md:mx-auto md:h-[calc(100svh-3.5rem)] md:max-w-5xl md:px-4 md:py-6 md:pb-6"
+          isChatRoute
+            ? "h-svh md:h-[calc(100svh-3.5rem)] md:px-0 md:py-0"
             : "mx-auto max-w-5xl px-4 py-4 pb-20 md:py-6 md:pb-6"
         }
       >
@@ -226,9 +227,15 @@ export const router = createBrowserRouter([
                   </FeatureRoute>
                 ),
               },
-              { path: "/messages", element: <MessagesPage /> },
-              { path: "/messages/crew/:crewId", element: <CrewMessagePage /> },
-              { path: "/messages/:id", element: <MessageDetailPage /> },
+              {
+                path: "/messages",
+                element: <MessagesShell />,
+                children: [
+                  { index: true, element: <MessagesPage /> },
+                  { path: "crew/:crewId", element: <CrewMessagePage /> },
+                  { path: ":id", element: <MessageDetailPage /> },
+                ],
+              },
               { path: "/notifications", element: <NotificationsPage /> },
               { path: "/feedback", element: <FeedbackPage /> },
               { path: "/onboarding", element: <OnboardingPage /> },

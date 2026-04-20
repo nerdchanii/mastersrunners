@@ -93,7 +93,9 @@ test.describe("채팅 windowing + realtime", () => {
     await page.getByRole("button", { name: "전송" }).click();
 
     await expect(textarea).toHaveValue("");
-    await expect(page.getByText("답장 테스트")).toHaveCount(1);
+    await expect(page.locator("[data-message-id]").filter({ hasText: "답장 테스트" })).toHaveCount(
+      1,
+    );
   });
 
   test("방 안에서 바닥 근처에 있을 때 새 메시지가 오면 바로 append된다", async ({ page }) => {
@@ -148,6 +150,7 @@ test.describe("채팅 windowing + realtime", () => {
         const viewport = node.querySelector("div.overflow-y-auto");
         if (viewport instanceof HTMLDivElement) {
           viewport.scrollTop = 0;
+          viewport.dispatchEvent(new Event("scroll"));
         }
       });
 
@@ -184,7 +187,9 @@ test.describe("채팅 windowing + realtime", () => {
 
     await page.goto("/messages");
     await realtime.waitForSocketConnection();
-    await expect(page.getByText("오늘도 달리시나요?")).toBeVisible();
+    await expect(
+      page.getByTestId("messages-panel-sidebar").getByText("오늘도 달리시나요?"),
+    ).toBeVisible();
 
     scenario.conversationsResponse.data[0] = {
       ...scenario.conversationsResponse.data[0],
@@ -214,6 +219,8 @@ test.describe("채팅 windowing + realtime", () => {
       deletedAt: null,
     });
 
-    await expect(page.getByText("허브에서도 바로 보여야 해요")).toBeVisible();
+    await expect(
+      page.getByTestId("messages-panel-sidebar").getByText("허브에서도 바로 보여야 해요"),
+    ).toBeVisible();
   });
 });

@@ -1,6 +1,7 @@
-import { ArrowDown, Send } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
+import { ChatComposer } from "@/components/chat/ChatComposer";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -73,18 +74,8 @@ export default function GroupChat({
   const { user } = useAuth();
   const [message, setMessage] = useState(initialMessage);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const prependSnapshotRef = useRef<{ height: number; top: number } | null>(null);
-
-  const resizeTextarea = () => {
-    const element = textareaRef.current;
-    if (!element) return;
-
-    element.style.height = "0px";
-    const nextHeight = Math.min(element.scrollHeight, 144);
-    element.style.height = `${nextHeight}px`;
-    element.style.overflowY = element.scrollHeight > 144 ? "auto" : "hidden";
-  };
+  const initialPositionedRef = useRef(false);
 
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
     const container = messagesContainerRef.current;
@@ -108,10 +99,6 @@ export default function GroupChat({
     chat.setNearBottom(remainingBottom < 96);
   }, [chat]);
 
-  useEffect(() => {
-    resizeTextarea();
-  }, [message]);
-
   useLayoutEffect(() => {
     if (!prependSnapshotRef.current || !messagesContainerRef.current) {
       return;
@@ -125,11 +112,7 @@ export default function GroupChat({
 
   useLayoutEffect(() => {
     const container = messagesContainerRef.current;
-    if (!container) {
-      return;
-    }
-
-    if (!chat.anchorMessageId) {
+    if (!container || !chat.anchorMessageId) {
       return;
     }
 
@@ -146,9 +129,14 @@ export default function GroupChat({
   }, [chat]);
 
   useLayoutEffect(() => {
-    scrollToBottom(chat.loading ? "auto" : "smooth");
+    if (chat.loading || chat.anchorMessageId || initialPositionedRef.current) {
+      return;
+    }
+
+    scrollToBottom("auto");
     chat.setNearBottom(true);
-  }, [chat]);
+    initialPositionedRef.current = true;
+  }, [chat.anchorMessageId, chat.loading, chat.messages.length, chat]);
 
   const handleScroll = () => {
     const container = messagesContainerRef.current;
@@ -186,18 +174,23 @@ export default function GroupChat({
     if (!ok) {
       setMessage(trimmed);
     }
-  };
+    requestAnimationFrame(() => {
+      const activeElement = document.activeElement;
+      if (activeElement instanceof HTMLElement && activeElement.tagName === "TEXTAREA") {
+        return;
+      }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      void handleSend();
-    }
+      const composer = messagesContainerRef.current?.parentElement;
+      const textarea = composer?.querySelector("textarea");
+      if (textarea instanceof HTMLTextAreaElement) {
+        textarea.focus();
+      }
+    });
   };
 
   if (chat.loading) {
     return (
-      <div className="space-y-4 p-4 lg:rounded-3xl lg:border lg:border-border/60 lg:bg-background/80">
+      <div className="space-y-4 p-4">
         <Skeleton className="h-12 w-full rounded-2xl" />
         <Skeleton className="h-64 w-full rounded-3xl" />
       </div>
@@ -206,7 +199,7 @@ export default function GroupChat({
 
   if (!chat.conversation) {
     return (
-      <section className="px-4 py-10 text-center text-sm text-muted-foreground lg:rounded-3xl lg:border lg:border-border/60 lg:bg-background/80">
+      <section className="px-4 py-10 text-center text-sm text-muted-foreground">
         {missingConversationMessage}
       </section>
     );
@@ -216,20 +209,19 @@ export default function GroupChat({
     <section
       className={cn(
         "relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background",
-        "lg:overflow-hidden lg:rounded-3xl lg:border lg:border-border/60 lg:bg-background/80",
         className,
       )}
     >
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-3 py-3 pb-3 sm:px-4"
+        className="flex-1 overflow-y-auto px-3 py-3 pb-2 sm:px-4"
       >
-        {chat.loadingOlder && (
+        {chat.loadingOlder ? (
           <div className="pb-3 text-center text-xs text-muted-foreground">
             이전 메시지 불러오는 중...
           </div>
-        )}
+        ) : null}
 
         {chat.messages.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">{emptyMessage}</p>
@@ -240,7 +232,7 @@ export default function GroupChat({
 
               return (
                 <div key={msg.id}>
-                  {chat.firstUnreadMessageId === msg.id && (
+                  {chat.firstUnreadMessageId === msg.id ? (
                     <div className="mb-3 flex items-center gap-3">
                       <div className="h-px flex-1 bg-border/70" />
                       <span className="shrink-0 text-[11px] text-muted-foreground">
@@ -248,7 +240,7 @@ export default function GroupChat({
                       </span>
                       <div className="h-px flex-1 bg-border/70" />
                     </div>
-                  )}
+                  ) : null}
 
                   <div data-message-id={msg.id}>
                     <MessageBubble
@@ -266,7 +258,7 @@ export default function GroupChat({
         )}
       </div>
 
-      {(chat.pendingNewMessages > 0 || chat.newerCursor) && (
+      {chat.pendingNewMessages > 0 || chat.newerCursor ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-[5.75rem] flex justify-center px-4">
           <Button
             type="button"
@@ -281,33 +273,19 @@ export default function GroupChat({
               : "다음 메시지 보기"}
           </Button>
         </div>
-      )}
+      ) : null}
 
-      <div className="sticky bottom-0 shrink-0 border-t border-border/60 bg-background/98 px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-4 backdrop-blur-sm">
-        <div className="flex items-end gap-2">
-          <textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => {
-              chat.clearSendError();
-              setMessage(e.target.value);
-            }}
-            onKeyDown={handleKeyDown}
-            placeholder={composerPlaceholder}
-            className="flex-1 resize-none rounded-2xl border border-input bg-background px-3 py-3 text-[13px] leading-5 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 sm:text-sm"
-            rows={1}
-          />
-          <Button
-            size="icon"
-            onClick={() => void handleSend()}
-            disabled={!message.trim() || chat.sending}
-            className="size-11 shrink-0 rounded-2xl"
-          >
-            <Send className="size-4" />
-          </Button>
-        </div>
-        {chat.sendError && <p className="mt-2 text-xs text-destructive">{chat.sendError}</p>}
-      </div>
+      <ChatComposer
+        value={message}
+        onChange={(nextValue) => {
+          chat.clearSendError();
+          setMessage(nextValue);
+        }}
+        onSend={() => void handleSend()}
+        disabled={chat.sending}
+        error={chat.sendError}
+        placeholder={composerPlaceholder}
+      />
     </section>
   );
 }
@@ -332,7 +310,7 @@ function MessageBubble({
   }
 
   return (
-    <div className={`flex gap-2 ${isOwn ? "flex-row-reverse" : ""}`}>
+    <div className={cn("flex gap-2", isOwn ? "flex-row-reverse pr-1 sm:pr-2" : "pl-1 sm:pl-0")}>
       {!isOwn &&
         (showAvatar ? (
           <UserAvatar
@@ -346,27 +324,27 @@ function MessageBubble({
         ) : (
           <div className="w-8 shrink-0" aria-hidden="true" />
         ))}
-      <div className={`max-w-[78%] sm:max-w-[70%] ${isOwn ? "text-right" : ""}`}>
-        {!isOwn && showSenderName && (
+      <div className={`max-w-[78%] sm:max-w-[72%] ${isOwn ? "text-right" : ""}`}>
+        {!isOwn && showSenderName ? (
           <p className="mb-0.5 text-[11px] text-muted-foreground sm:text-xs">
             {message.sender.name}
           </p>
-        )}
+        ) : null}
         <div
-          className={`inline-block rounded-3xl px-3 py-2 text-[13px] leading-5 sm:text-sm ${
+          className={`inline-block rounded-[1rem] px-3 py-2 text-[13px] leading-5 sm:text-sm ${
             isOwn ? "bg-primary text-primary-foreground" : "bg-muted"
           }`}
         >
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         </div>
-        {showTimestamp && (
+        {showTimestamp ? (
           <p className="mt-0.5 text-[11px] text-muted-foreground sm:text-xs">
             {new Date(message.createdAt).toLocaleTimeString("ko-KR", {
               hour: "2-digit",
               minute: "2-digit",
             })}
           </p>
-        )}
+        ) : null}
       </div>
     </div>
   );

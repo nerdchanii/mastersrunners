@@ -30,9 +30,10 @@ test.describe("메시지 UX", () => {
   test("메시지 화면에서는 헤더 unread 뱃지가 숨겨진다", async ({ page }) => {
     await page.goto("/messages");
 
-    await expect(page.getByRole("heading", { name: "메시지" })).toBeVisible();
+    await expect(page.getByTestId("messages-panel-sidebar")).toBeVisible();
+    await expect(page.getByTestId("messages-search-sidebar")).toBeVisible();
     await expect(page.locator('header a[href="/messages"]')).not.toContainText("3");
-    await expect(page.getByText("러닝메이트")).toBeVisible();
+    await expect(page.getByTestId("messages-panel-sidebar").getByText("러닝메이트")).toBeVisible();
   });
 
   test("메시지 허브가 DM, 크루, 활동 방 이름을 구분해서 보여준다", async ({ page }) => {
@@ -40,11 +41,13 @@ test.describe("메시지 UX", () => {
 
     await page.goto("/messages");
 
-    await expect(page.getByText("월요일 아침 러닝")).toBeVisible();
-    await expect(page.getByText("서울 러닝 크루")).toHaveCount(2);
-    await expect(page.getByText("러닝메이트")).toBeVisible();
-    await expect(page.getByText("집합 장소를 다시 확인해주세요.")).toBeVisible();
-    await expect(page.getByText("크루 공지를 확인해주세요.")).toBeVisible();
+    const sidebar = page.getByTestId("messages-panel-sidebar");
+
+    await expect(sidebar.getByText("월요일 아침 러닝")).toBeVisible();
+    await expect(sidebar.getByText("서울 러닝 크루")).toHaveCount(2);
+    await expect(sidebar.getByText("러닝메이트")).toBeVisible();
+    await expect(sidebar.getByText("집합 장소를 다시 확인해주세요.")).toBeVisible();
+    await expect(sidebar.getByText("크루 공지를 확인해주세요.")).toBeVisible();
   });
 
   test("메시지 허브 검색이 사용자와 그룹 방 이름을 모두 찾는다", async ({ page }) => {
@@ -52,15 +55,16 @@ test.describe("메시지 UX", () => {
 
     await page.goto("/messages");
 
-    const searchInput = page.getByPlaceholder("이름, 크루명, 활동명으로 찾기");
+    const sidebar = page.getByTestId("messages-panel-sidebar");
+    const searchInput = sidebar.getByTestId("messages-search-sidebar");
 
     await searchInput.fill("월요일");
-    await expect(page.getByText("월요일 아침 러닝")).toBeVisible();
-    await expect(page.getByText("러닝메이트")).toHaveCount(0);
+    await expect(sidebar.getByText("월요일 아침 러닝")).toBeVisible();
+    await expect(sidebar.getByText("러닝메이트")).toHaveCount(0);
 
     await searchInput.fill("러닝메이트");
-    await expect(page.getByText("러닝메이트")).toBeVisible();
-    await expect(page.getByText("월요일 아침 러닝")).toHaveCount(0);
+    await expect(sidebar.getByText("러닝메이트")).toBeVisible();
+    await expect(sidebar.getByText("월요일 아침 러닝")).toHaveCount(0);
   });
 
   test("메시지 허브의 그룹 방은 각 크루와 활동 화면으로 연결된다", async ({ page }) => {
@@ -71,16 +75,14 @@ test.describe("메시지 UX", () => {
     });
 
     await page.goto("/messages");
+    const sidebar = page.getByTestId("messages-panel-sidebar");
 
-    await page.getByRole("button", { name: /월요일 아침 러닝/ }).click();
+    await sidebar.getByTestId("conversation-row-conv-activity-1").click();
     await expect(page).toHaveURL(/\/crews\/crew-1\/activities\/activity-1\/chat$/);
 
     await page.goto("/messages");
 
-    await page
-      .locator("button")
-      .filter({ has: page.locator("h3", { hasText: /^서울 러닝 크루$/ }) })
-      .click();
+    await sidebar.getByTestId("conversation-row-conv-crew-1").click();
     await expect(page).toHaveURL(/\/messages\/crew\/crew-1$/);
   });
 
@@ -112,6 +114,6 @@ test.describe("메시지 UX 모바일", () => {
     await page.goto("/messages");
 
     await expect(page.locator('nav.fixed a[href="/messages"]')).not.toContainText("3");
-    await expect(page.getByText("러닝메이트")).toBeVisible();
+    await expect(page.getByTestId("messages-panel").getByText("러닝메이트")).toBeVisible();
   });
 });

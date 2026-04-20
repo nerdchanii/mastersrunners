@@ -40,8 +40,8 @@ test.describe("크루 그룹 채팅", () => {
     test("참여자 수가 표시된다", async ({ page }) => {
       await page.goto(`/messages/crew/${mockCrewId}`);
 
-      await expect(page.getByText("서울 러닝 크루")).toBeVisible();
-      await expect(page.getByText("2명")).toBeVisible();
+      await expect(page.getByText("서울 러닝 크루").first()).toBeVisible();
+      await expect(page.getByText(/^2$/).first()).toBeVisible();
     });
 
     test("메시지 입력 필드와 전송 버튼이 있다", async ({ page }) => {
@@ -59,9 +59,7 @@ test.describe("크루 그룹 채팅", () => {
 
       const textarea = page.getByPlaceholder("메시지를 입력하세요");
       await textarea.fill("테스트 메시지");
-      await textarea
-        .locator("xpath=ancestor::div[contains(@class,'flex items-end gap-2')]//button")
-        .click();
+      await page.getByRole("button", { name: "전송" }).click();
 
       await expect(textarea).toHaveValue("테스트 메시지");
       await expect(page.getByText("메시지를 보내지 못했습니다.").first()).toBeVisible();
