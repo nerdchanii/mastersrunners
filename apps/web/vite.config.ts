@@ -1,3 +1,5 @@
+/// <reference types="vitest/config" />
+
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -21,6 +23,17 @@ export default defineConfig(({ command, mode }) => {
     server: {
       port: Number.isNaN(resolvedPort) ? 3000 : resolvedPort,
       strictPort: true,
+    },
+    test: {
+      environment: "jsdom",
+      globals: true,
+      setupFiles: "./src/test/setup.ts",
+      include: ["src/**/*.{test,spec}.{ts,tsx}"],
+      exclude: ["e2e/**", "node_modules/**", "dist/**"],
+      css: true,
+      mockReset: true,
+      restoreMocks: true,
+      clearMocks: true,
     },
   };
 });

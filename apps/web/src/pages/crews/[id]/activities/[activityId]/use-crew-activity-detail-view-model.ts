@@ -62,6 +62,27 @@ export function useCrewActivityDetailViewModel() {
   const totalActive = activeAttendances.length;
   const visibleAttendances =
     activity?.attendances.filter((attendance) => attendance.status !== "CANCELLED") ?? [];
+  const checkedInAttendances = visibleAttendances.filter(
+    (attendance) => attendance.status === "CHECKED_IN",
+  );
+  const pendingAttendances = visibleAttendances.filter(
+    (attendance) => attendance.status === "RSVP",
+  );
+  const crewName = crew?.name ?? "크루";
+  const activityDateLabel = scheduledDate
+    ? new Intl.DateTimeFormat("ko-KR", {
+        month: "long",
+        day: "numeric",
+        weekday: "short",
+      }).format(scheduledDate)
+    : "";
+  const canViewPendingRoster = Boolean(
+    canManage || myStatus === "RSVP" || myStatus === "CHECKED_IN",
+  );
+  const activityShareUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/crews/${crewId}/activities/${activityId}`
+      : `/crews/${crewId}/activities/${activityId}`;
 
   const goBackToCrew = () => navigate(`/crews/${crewId}`);
   const goToEdit = () => navigate(`/crews/${crewId}/activities/${activityId}/edit`);
@@ -96,6 +117,20 @@ export function useCrewActivityDetailViewModel() {
       { crewId: crewId!, activityId: activityId! },
       {
         onSuccess: () => toast.success("참석 신청 완료!"),
+        onError: (error) =>
+          toast.error(error instanceof Error ? error.message : "참석 신청에 실패했습니다."),
+      },
+    );
+  };
+
+  const handleRsvpAndEnterChat = () => {
+    rsvp.mutate(
+      { crewId: crewId!, activityId: activityId! },
+      {
+        onSuccess: () => {
+          toast.success("참석 신청 완료!");
+          goToChat();
+        },
         onError: (error) =>
           toast.error(error instanceof Error ? error.message : "참석 신청에 실패했습니다."),
       },
@@ -176,9 +211,11 @@ export function useCrewActivityDetailViewModel() {
     cancelActivityMut,
     cancelRsvp,
     checkedInCount,
+    checkedInAttendances,
     checkIn,
     completeActivity,
     creator,
+    crewName,
     crewId,
     deleteActivity,
     error,
@@ -194,12 +231,16 @@ export function useCrewActivityDetailViewModel() {
     handleDelete,
     handleDownloadQR,
     handleRsvp,
+    handleRsvpAndEnterChat,
     isActivityActive,
     isActivityLoading,
     isAdmin,
+    activityDateLabel,
+    activityShareUrl,
     myAttendance,
     myStatus,
     noShowCount,
+    pendingAttendances,
     rsvp,
     rsvpCount,
     scheduledDate,
@@ -210,6 +251,7 @@ export function useCrewActivityDetailViewModel() {
     showCompleteDialog,
     showDeleteDialog,
     totalActive,
+    canViewPendingRoster,
     visibleAttendances,
   };
 }

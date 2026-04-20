@@ -6,6 +6,7 @@ import {
   storybookChallengeTeams,
   storybookComments,
   storybookConversations,
+  storybookCrew,
   storybookCrewActivities,
   storybookCrewAttendance,
   storybookCrewAttendanceHistoryByUser,
@@ -14,6 +15,7 @@ import {
   storybookCrewBoardPosts,
   storybookCrewBoards,
   storybookCrewChat,
+  storybookCrewMembers,
   storybookCrewPosts,
   storybookCrewTags,
   storybookFreeBoardPosts,
@@ -203,6 +205,44 @@ function buildStorybookAttendanceHistory(path: string) {
   };
 }
 
+function buildStorybookCrewDetail() {
+  return {
+    id: storybookCrew.id,
+    name: storybookCrew.name,
+    description: storybookCrew.description,
+    imageUrl: storybookCrew.imageUrl,
+    isPublic: true,
+    createdAt: "2026-03-01T08:00:00.000Z",
+    creator: {
+      id: storybookUser.id,
+      name: storybookUser.name,
+      profileImage: storybookUser.profileImage,
+    },
+    _count: { members: storybookCrew.memberCount },
+    members: storybookCrewMembers,
+  };
+}
+
+function buildStorybookActivityDetail(path: string) {
+  const activityId = path.split("/")[4];
+  const activity = storybookCrewActivities.items.find((item) => item.id === activityId);
+
+  if (!activity) {
+    return null;
+  }
+
+  return {
+    ...activity,
+    attendances: activity.attendances.map((attendance) => {
+      const member = storybookAllCrewMembers.find((item) => item.userId === attendance.userId);
+      return {
+        ...attendance,
+        user: member?.user ?? null,
+      };
+    }),
+  };
+}
+
 function resolveStorybookResponse(
   path: string,
   method: string,
@@ -274,10 +314,18 @@ function resolveStorybookResponse(
     return jsonResponse({ id: storybookConversations[0]?.id ?? "conversation-1" });
   }
 
+  if (path.match(/^\/crews\/[^/]+$/) && method === "GET") {
+    return jsonResponse(buildStorybookCrewDetail());
+  }
+
   if (path.match(/^\/crews\/[^/]+\/activities(\?.*)?$/)) {
     return jsonResponse(
       scenario === "empty" ? { items: [], nextCursor: null } : storybookCrewActivities,
     );
+  }
+
+  if (path.match(/^\/crews\/[^/]+\/activities\/[^/]+$/) && method === "GET") {
+    return jsonResponse(scenario === "empty" ? null : buildStorybookActivityDetail(path));
   }
 
   if (path.match(/^\/crews\/[^/]+\/attendance-stats(\?.*)?$/)) {
