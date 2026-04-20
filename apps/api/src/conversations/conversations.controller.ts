@@ -21,6 +21,7 @@ import { JwtSseGuard } from "../auth/guards/jwt-sse.guard.js";
 import { Public } from "../common/decorators/public.decorator.js";
 import { CursorLimitQueryDto } from "../common/dto/cursor-limit-query.dto.js";
 
+import { ChatWindowQueryDto } from "./dto/chat-window-query.dto.js";
 import { CreateConversationDto } from "./dto/create-conversation.dto.js";
 import { SendMessageDto } from "./dto/send-message.dto.js";
 import {
@@ -58,6 +59,11 @@ export class ConversationsController {
     );
   }
 
+  @Get("unread-count")
+  async getUnreadCount(@Req() req: { user: { userId: string } }) {
+    return this.conversationsService.getUnreadCount(req.user.userId);
+  }
+
   @Sse("sse")
   @Public()
   @UseGuards(JwtSseGuard)
@@ -72,14 +78,16 @@ export class ConversationsController {
   async getConversation(
     @Req() req: { user: { userId: string } },
     @Param("id") id: string,
-    @Query() query: CursorLimitQueryDto,
+    @Query() query: ChatWindowQueryDto,
   ): Promise<ConversationDetailResponse> {
-    return this.conversationsService.getConversation(
-      id,
-      req.user.userId,
-      query.cursor,
-      query.resolveLimit(50, 100),
-    );
+    return this.conversationsService.getConversation(id, req.user.userId, {
+      cursor: query.cursor,
+      direction: query.resolveDirection(),
+      entry: query.resolveEntry(),
+      historyLimit: query.resolveHistoryLimit(40, 100),
+      unreadLimit: query.resolveUnreadLimit(100, 200),
+      limit: query.resolveDirectionalLimit(40, 200),
+    });
   }
 
   @Post(":id/messages")

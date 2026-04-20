@@ -4,19 +4,20 @@ import { Test } from "@nestjs/testing";
 import { BlockRepository } from "../block/repositories/block.repository";
 
 import { ConversationsRepository } from "./repositories/conversations.repository";
+import { ConversationsGateway } from "./conversations.gateway";
 import { ConversationsService } from "./conversations.service";
-import { ConversationsSseService } from "./conversations-sse.service";
 
 const mockConversationsRepository = {
   findOrCreateDirect: jest.fn(),
   findByUserId: jest.fn(),
   findById: jest.fn(),
   isParticipant: jest.fn(),
-  getMessages: jest.fn(),
+  getConversationWindow: jest.fn(),
   createMessage: jest.fn(),
   updateLastRead: jest.fn(),
   deleteMessage: jest.fn(),
   getUnreadCount: jest.fn(),
+  getTotalUnreadCount: jest.fn(),
   getMessageById: jest.fn(),
 };
 
@@ -24,8 +25,8 @@ const mockBlockRepository = {
   isBlocked: jest.fn(),
 };
 
-const mockSseService = {
-  sendToUser: jest.fn(),
+const mockConversationsGateway = {
+  emitMessage: jest.fn(),
 };
 
 describe("ConversationsService", () => {
@@ -38,7 +39,7 @@ describe("ConversationsService", () => {
         ConversationsService,
         { provide: ConversationsRepository, useValue: mockConversationsRepository },
         { provide: BlockRepository, useValue: mockBlockRepository },
-        { provide: ConversationsSseService, useValue: mockSseService },
+        { provide: ConversationsGateway, useValue: mockConversationsGateway },
       ],
     }).compile();
     service = module.get(ConversationsService);
@@ -288,7 +289,13 @@ describe("ConversationsService", () => {
       mockConversationsRepository.findById.mockResolvedValue(conversation);
       mockConversationsRepository.isParticipant.mockResolvedValue(true);
       mockBlockRepository.isBlocked.mockResolvedValue(false);
-      mockConversationsRepository.getMessages.mockResolvedValue(messages);
+      mockConversationsRepository.getConversationWindow.mockResolvedValue({
+        messages,
+        olderCursor: null,
+        newerCursor: null,
+        firstUnreadMessageId: null,
+      });
+      mockConversationsRepository.updateLastRead.mockResolvedValue({});
 
       const result = await service.getConversation(conversationId, userId);
 
@@ -297,13 +304,16 @@ describe("ConversationsService", () => {
         conversationId,
         userId,
       );
-      expect(mockConversationsRepository.getMessages).toHaveBeenCalledWith(
+      expect(mockConversationsRepository.getConversationWindow).toHaveBeenCalledWith(
         conversationId,
-        undefined,
-        50,
+        userId,
+        {},
       );
       expect(result.conversation).toEqual(conversation);
       expect(result.messages).toEqual(messages);
+      expect(result.olderCursor).toBeNull();
+      expect(result.newerCursor).toBeNull();
+      expect(result.firstUnreadMessageId).toBeNull();
     });
 
     it("should throw NotFoundException if conversation not found", async () => {
@@ -366,6 +376,15 @@ describe("ConversationsService", () => {
       await expect(service.getConversation(conversationId, userId)).rejects.toThrow(
         "차단 관계로 인해 대화를 볼 수 없습니다.",
       );
+    });
+  });
+
+  describe("getUnreadCount", () => {
+    it("returns the lightweight unread total for the current user", async () => {
+      mockConversationsRepository.getTotalUnreadCount.mockResolvedValue(7);
+
+      await expect(service.getUnreadCount("user-1")).resolves.toEqual({ count: 7 });
+      expect(mockConversationsRepository.getTotalUnreadCount).toHaveBeenCalledWith("user-1");
     });
   });
 
@@ -445,7 +464,7 @@ describe("ConversationsService", () => {
       );
     });
 
-    it("should send SSE event to recipient when message is created", async () => {
+    it("should emit websocket event to all conversation participants when message is created", async () => {
       const conversationId = "conv-1";
       const userId = "user-1";
       const recipientId = "user-2";
@@ -471,7 +490,11 @@ describe("ConversationsService", () => {
 
       await service.sendMessage(conversationId, userId, content);
 
-      expect(mockSseService.sendToUser).toHaveBeenCalledWith(recipientId, createdMessage);
+      expect(mockConversationsGateway.emitMessage).toHaveBeenCalledWith(
+        conversationId,
+        [userId, recipientId],
+        createdMessage,
+      );
     });
   });
 

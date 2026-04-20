@@ -69,8 +69,17 @@ function extractCookie(request: Request, cookieName: string) {
   return cookies[cookieName];
 }
 
+export function extractCookieFromHeader(cookieHeader: string | undefined, cookieName: string) {
+  const cookies = parseCookieHeader(cookieHeader);
+  return cookies[cookieName];
+}
+
 export function extractAccessTokenFromRequest(request: Request) {
   return extractCookie(request, ACCESS_TOKEN_COOKIE);
+}
+
+export function extractAccessTokenFromCookieHeader(cookieHeader: string | undefined) {
+  return extractCookieFromHeader(cookieHeader, ACCESS_TOKEN_COOKIE);
 }
 
 export function extractRefreshTokenFromRequest(request: Request) {

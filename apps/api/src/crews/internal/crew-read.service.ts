@@ -36,25 +36,35 @@ export class CrewReadService {
   async getCrewChat(crewId: string, userId: string, cursor?: string) {
     const crew = await this.getCrewOrThrow(crewId);
     const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member) {
+    if (!member || member.status !== "ACTIVE") {
       throw new ForbiddenException("크루 멤버만 채팅에 참여할 수 있습니다.");
     }
 
     if (!crew.chatConversationId) {
-      return { conversation: null, messages: [], nextCursor: null };
+      return {
+        conversation: null,
+        messages: [],
+        olderCursor: null,
+        newerCursor: null,
+        firstUnreadMessageId: null,
+      };
     }
 
     const conversation = await this.conversationsRepo.findById(crew.chatConversationId);
-    const messages = await this.conversationsRepo.getMessages(crew.chatConversationId, cursor, 30);
-    const hasMore = messages.length > 30;
-    const items = hasMore ? messages.slice(0, 30) : messages;
+    const messageWindow = await this.conversationsRepo.getConversationWindow(
+      crew.chatConversationId,
+      userId,
+      cursor ? { direction: "older", cursor, limit: 40 } : undefined,
+    );
 
     await this.conversationsRepo.updateLastRead(crew.chatConversationId, userId).catch(() => {});
 
     return {
       conversation,
-      messages: items,
-      nextCursor: hasMore ? items[items.length - 1].id : null,
+      messages: messageWindow.messages,
+      olderCursor: messageWindow.olderCursor,
+      newerCursor: messageWindow.newerCursor,
+      firstUnreadMessageId: messageWindow.firstUnreadMessageId,
     };
   }
 

@@ -311,22 +311,39 @@ export class CrewActivitiesService {
   async getActivityChat(crewId: string, activityId: string, userId: string, cursor?: string) {
     const activity = await this.getActivityInCrewOrThrow(activityId, crewId);
     const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member) {
+    if (!member || member.status !== "ACTIVE") {
       throw new ForbiddenException("크루 멤버만 채팅에 참여할 수 있습니다.");
     }
 
+    const isAdmin = member.role === "OWNER" || member.role === "ADMIN";
+    const isHost = activity.createdBy === userId;
+    const canManage = isAdmin || (activity.activityType === "POP_UP" && isHost);
+    const myAttendance = activity.attendances.find(
+      (attendance: (typeof activity.attendances)[number]) => attendance.userId === userId,
+    );
+    const canAccessChat =
+      myAttendance?.status === "RSVP" || myAttendance?.status === "CHECKED_IN" || canManage;
+
+    if (!canAccessChat) {
+      throw new ForbiddenException("참석 후 대화를 확인할 수 있습니다.");
+    }
+
     if (!activity.chatConversationId) {
-      return { conversation: null, messages: [], nextCursor: null };
+      return {
+        conversation: null,
+        messages: [],
+        olderCursor: null,
+        newerCursor: null,
+        firstUnreadMessageId: null,
+      };
     }
 
     const conversation = await this.conversationsRepo.findById(activity.chatConversationId);
-    const messages = await this.conversationsRepo.getMessages(
+    const messageWindow = await this.conversationsRepo.getConversationWindow(
       activity.chatConversationId,
-      cursor,
-      30,
+      userId,
+      cursor ? { direction: "older", cursor, limit: 40 } : undefined,
     );
-    const hasMore = messages.length > 30;
-    const items = hasMore ? messages.slice(0, 30) : messages;
 
     await this.conversationsRepo
       .updateLastRead(activity.chatConversationId, userId)
@@ -334,8 +351,10 @@ export class CrewActivitiesService {
 
     return {
       conversation,
-      messages: items,
-      nextCursor: hasMore ? items[items.length - 1].id : null,
+      messages: messageWindow.messages,
+      olderCursor: messageWindow.olderCursor,
+      newerCursor: messageWindow.newerCursor,
+      firstUnreadMessageId: messageWindow.firstUnreadMessageId,
     };
   }
 

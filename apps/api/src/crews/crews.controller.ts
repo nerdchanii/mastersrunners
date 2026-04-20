@@ -15,6 +15,7 @@ import type { Request } from "express";
 
 import { Public } from "../common/decorators/public.decorator.js";
 import { CursorQueryDto } from "../common/dto/cursor-query.dto.js";
+import { ChatWindowQueryDto } from "../conversations/dto/chat-window-query.dto.js";
 
 import { ChangeCrewMemberRoleDto } from "./dto/change-crew-member-role.dto.js";
 import { CreateCrewDto } from "./dto/create-crew.dto.js";
@@ -287,9 +288,16 @@ export class CrewsController {
   }
 
   @Get(":id/chat")
-  getCrewChat(@Param("id") id: string, @Req() req: Request, @Query() query: CursorQueryDto) {
+  getCrewChat(@Param("id") id: string, @Req() req: Request, @Query() query: ChatWindowQueryDto) {
     const { userId } = req.user as { userId: string };
-    return this.crewsService.getCrewChat(id, userId, query.cursor);
+    return this.crewsService.getCrewChat(id, userId, {
+      cursor: query.cursor,
+      direction: query.resolveDirection(),
+      entry: query.resolveEntry(),
+      historyLimit: query.resolveHistoryLimit(40, 100),
+      unreadLimit: query.resolveUnreadLimit(100, 200),
+      limit: query.resolveDirectionalLimit(100, 200),
+    });
   }
 
   @Get(":id/activities/:activityId/chat")
@@ -297,10 +305,17 @@ export class CrewsController {
     @Param("id") id: string,
     @Param("activityId") activityId: string,
     @Req() req: Request,
-    @Query() query: CursorQueryDto,
+    @Query() query: ChatWindowQueryDto,
   ) {
     const { userId } = req.user as { userId: string };
-    return this.crewsService.getActivityChat(id, activityId, userId, query.cursor);
+    return this.crewsService.getActivityChat(id, activityId, userId, {
+      cursor: query.cursor,
+      direction: query.resolveDirection(),
+      entry: query.resolveEntry(),
+      historyLimit: query.resolveHistoryLimit(40, 100),
+      unreadLimit: query.resolveUnreadLimit(100, 200),
+      limit: query.resolveDirectionalLimit(100, 200),
+    });
   }
 
   @Post(":id/activities")

@@ -8,7 +8,7 @@ import {
 import { BlockRepository } from "../block/repositories/block.repository.js";
 
 import { ConversationsRepository } from "./repositories/conversations.repository.js";
-import { ConversationsSseService } from "./conversations-sse.service.js";
+import { ConversationsGateway } from "./conversations.gateway.js";
 
 type ConversationType = "DIRECT" | "CREW" | "ACTIVITY";
 
@@ -21,6 +21,7 @@ interface ConversationUser {
 interface ConversationCrewContext {
   id: string;
   name: string;
+  imageUrl: string | null;
 }
 
 interface ConversationActivityContext {
@@ -74,10 +75,16 @@ export interface ConversationListResponse {
   nextCursor: string | null;
 }
 
+export interface ConversationUnreadCountResponse {
+  count: number;
+}
+
 export interface ConversationDetailResponse {
   conversation: ConversationResponse;
   messages: ConversationMessage[];
-  nextCursor: string | null;
+  olderCursor: string | null;
+  newerCursor: string | null;
+  firstUnreadMessageId: string | null;
 }
 
 function mapConversationUser(user: {
@@ -93,7 +100,7 @@ function mapConversationUser(user: {
 }
 
 function mapConversationCrewContext(
-  crew: { id: string; name: string } | null,
+  crew: { id: string; name: string; imageUrl: string | null } | null,
 ): ConversationCrewContext | null {
   if (!crew) {
     return null;
@@ -102,6 +109,7 @@ function mapConversationCrewContext(
   return {
     id: crew.id,
     name: crew.name,
+    imageUrl: crew.imageUrl,
   };
 }
 
@@ -110,7 +118,7 @@ function mapConversationActivityContext(
     id: string;
     title: string;
     crewId: string;
-    crew: { id: string; name: string } | null;
+    crew: { id: string; name: string; imageUrl: string | null } | null;
   } | null,
 ): ConversationActivityContext | null {
   if (!activity) {
@@ -147,12 +155,12 @@ function mapConversationResponse(conversation: {
   name: string | null;
   crewId: string | null;
   activityId: string | null;
-  crew: { id: string; name: string } | null;
+  crew: { id: string; name: string; imageUrl: string | null } | null;
   activity: {
     id: string;
     title: string;
     crewId: string;
-    crew: { id: string; name: string } | null;
+    crew: { id: string; name: string; imageUrl: string | null } | null;
   } | null;
   updatedAt: Date;
   participants: Array<{
@@ -218,7 +226,7 @@ export class ConversationsService {
   constructor(
     private readonly conversationsRepo: ConversationsRepository,
     private readonly blockRepo: BlockRepository,
-    private readonly sseService: ConversationsSseService,
+    private readonly conversationsGateway: ConversationsGateway,
   ) {}
 
   async startConversation(userId: string, participantId: string) {
@@ -266,11 +274,23 @@ export class ConversationsService {
     };
   }
 
+  async getUnreadCount(userId: string): Promise<ConversationUnreadCountResponse> {
+    return {
+      count: await this.conversationsRepo.getTotalUnreadCount(userId),
+    };
+  }
+
   async getConversation(
     conversationId: string,
     userId: string,
-    cursor?: string,
-    limit: number = 50,
+    options: {
+      cursor?: string;
+      direction?: "older" | "newer";
+      entry?: "latest" | "unread";
+      historyLimit?: number;
+      unreadLimit?: number;
+      limit?: number;
+    } = {},
   ): Promise<ConversationDetailResponse> {
     const conversation = await this.conversationsRepo.findById(conversationId);
 
@@ -295,17 +315,20 @@ export class ConversationsService {
       }
     }
 
-    // Get messages
-    const messages = await this.conversationsRepo.getMessages(conversationId, cursor, limit);
+    const messageWindow = await this.conversationsRepo.getConversationWindow(
+      conversationId,
+      userId,
+      options,
+    );
 
-    // Check if there are more messages
-    const hasMore = messages.length > limit;
-    const messageItems = hasMore ? messages.slice(0, limit) : messages;
+    await this.conversationsRepo.updateLastRead(conversationId, userId).catch(() => {});
 
     return {
       conversation: mapConversationResponse(conversation),
-      messages: messageItems.map(mapConversationMessage),
-      nextCursor: hasMore ? messageItems[messageItems.length - 1].id : null,
+      messages: messageWindow.messages.map(mapConversationMessage),
+      olderCursor: messageWindow.olderCursor,
+      newerCursor: messageWindow.newerCursor,
+      firstUnreadMessageId: messageWindow.firstUnreadMessageId,
     };
   }
 
@@ -336,10 +359,13 @@ export class ConversationsService {
     // Create message + update conversation updatedAt
     const message = await this.conversationsRepo.createMessage(conversationId, userId, content);
 
-    // Send SSE event to recipient
-    if (otherParticipant) {
-      this.sseService.sendToUser(otherParticipant.userId, message);
-    }
+    this.conversationsGateway.emitMessage(
+      conversationId,
+      conversation.participants.map(
+        (participant: (typeof conversation.participants)[number]) => participant.userId,
+      ),
+      message,
+    );
 
     return message;
   }
