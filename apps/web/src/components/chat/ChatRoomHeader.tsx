@@ -10,6 +10,7 @@ interface ChatRoomHeaderProps {
   title: string;
   subtitle?: string | null;
   meta?: ReactNode;
+  actions?: ReactNode;
   onIdentityClick?: (() => void) | null;
   className?: string;
 }
@@ -21,6 +22,7 @@ export function ChatRoomHeader({
   title,
   subtitle,
   meta,
+  actions,
   onIdentityClick,
   className,
 }: ChatRoomHeaderProps) {
@@ -57,6 +59,7 @@ export function ChatRoomHeader({
           {meta ? <div className="shrink-0 text-right">{meta}</div> : null}
         </div>
       </button>
+      {actions ? <div className="shrink-0">{actions}</div> : null}
     </div>
   );
 }

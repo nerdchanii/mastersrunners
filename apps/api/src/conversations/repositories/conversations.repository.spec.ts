@@ -15,11 +15,14 @@ const mockDatabaseService = {
     },
     conversationParticipant: {
       findFirst: jest.fn(),
+      findUnique: jest.fn(),
       update: jest.fn(),
     },
     message: {
+      count: jest.fn(),
       create: jest.fn(),
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       update: jest.fn(),
     },
     $transaction: jest.fn((cb) => cb(mockDatabaseService.prisma)),

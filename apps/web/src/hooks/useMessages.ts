@@ -70,6 +70,23 @@ export function patchConversationSummary(
   };
 }
 
+export function removeConversationSummary(
+  data: InfiniteData<ConversationsResponse> | undefined,
+  conversationId: string,
+): InfiniteData<ConversationsResponse> | undefined {
+  if (!data) {
+    return data;
+  }
+
+  return {
+    ...data,
+    pages: data.pages.map((page) => ({
+      ...page,
+      data: page.data.filter((conversation) => conversation.id !== conversationId),
+    })),
+  };
+}
+
 export function useConversations() {
   return useInfiniteQuery({
     queryKey: messageKeys.conversations(),
@@ -130,6 +147,23 @@ export function useSendMessage(conversationId: string) {
 export function useMarkAsRead(conversationId: string) {
   return useMutation({
     mutationFn: () => api.fetch(`/conversations/${conversationId}/read`, { method: "PATCH" }),
+  });
+}
+
+export function useLeaveConversation(conversationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.fetch(`/conversations/${conversationId}/leave`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.setQueryData(messageKeys.conversations(), (current: unknown) =>
+        removeConversationSummary(
+          current as InfiniteData<ConversationsResponse> | undefined,
+          conversationId,
+        ),
+      );
+      queryClient.invalidateQueries({ queryKey: messageKeys.unreadCount() });
+      queryClient.removeQueries({ queryKey: messageKeys.conversation(conversationId) });
+    },
   });
 }
 

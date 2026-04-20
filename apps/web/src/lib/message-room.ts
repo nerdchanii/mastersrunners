@@ -7,6 +7,7 @@ export interface ConversationUser {
 export interface ConversationParticipant {
   userId: string;
   lastReadAt: string | null;
+  leftAt?: string | null;
   joinedAt?: string;
   user: ConversationUser;
 }
@@ -21,6 +22,7 @@ interface ConversationActivityContext {
   id: string;
   title: string;
   crewId: string;
+  status: string;
   crew: ConversationCrewContext | null;
 }
 

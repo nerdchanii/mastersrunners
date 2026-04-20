@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-04-01
+last_verified: 2026-04-21
 sources:
   - apps/api/src/conversations/conversations.controller.ts
   - apps/api/src/conversations/conversations.service.ts
@@ -35,6 +35,8 @@ Messaging is implemented as an authenticated conversations module with cursor pa
   - send a message as a participant
 - `PATCH /conversations/:id/read`
   - advance the caller's last-read marker
+- `DELETE /conversations/:id/leave`
+  - mark a direct-message cut-line for the caller without removing the participant
 - `DELETE /conversations/messages/:id`
   - soft-delete the caller's own message
 - WebSocket namespace `/conversations`
@@ -62,6 +64,19 @@ Messaging is implemented as an authenticated conversations module with cursor pa
 - Each socket joins a per-user room on connect and can also join per-conversation rooms through `chat:subscribe`.
 - Message creation persists first, then the gateway emits `chat:message` to the conversation room plus participant user rooms.
 - Notification delivery remains SSE-based and still uses the existing `JwtSseGuard` boundary.
+
+## Participant State
+
+- `ConversationParticipant` now carries `lastReadAt`, `leftAt`, and `joinedAt`.
+- `leftAt` is only meaningful for `DIRECT` conversations.
+- `DELETE /conversations/:id/leave` updates the caller's `leftAt` instead of deleting the participant row.
+
+## DM Leave Semantics
+
+- A left DM disappears from `/conversations` until a message newer than `leftAt` exists.
+- When a DM reappears, `/conversations/:id` only returns messages newer than `leftAt`.
+- Unread counts for DM are computed from `max(lastReadAt, leftAt)`.
+- Direct-entry to a DM with no message newer than `leftAt` is rejected so the web client can return to `/messages`.
 
 ## Current Constraints
 

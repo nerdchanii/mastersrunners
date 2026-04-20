@@ -1,22 +1,66 @@
-import { ArrowDown, CalendarDays, ChevronLeft, Users } from "lucide-react";
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { ArrowDown, CalendarDays, ChevronLeft, LogOut, Users } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 
 import { ChatComposer } from "@/components/chat/ChatComposer";
+import { ChatHeaderMenu } from "@/components/chat/ChatHeaderMenu";
 import { ChatRoomHeader } from "@/components/chat/ChatRoomHeader";
+import { ChatViewportSkeleton } from "@/components/chat/ChatViewportSkeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChatBackToMessages } from "@/hooks/useChatBackToMessages";
+import { useLeaveConversation } from "@/hooks/useMessages";
 import { useAuth } from "@/lib/auth-context";
 import { getConversationOtherUser, getConversationRoomMeta } from "@/lib/message-room";
 import { cn } from "@/lib/utils";
+import type { SelectedConversationSummary } from "@/pages/messages/shell";
 
 import { type Message, useMessageDetailPage } from "./useMessageDetailPage";
+
+function toMinuteKey(createdAt: string) {
+  const date = new Date(createdAt);
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}-${date.getMinutes()}`;
+}
+
+function shouldShowAvatar(messages: Message[], index: number, isOwn: boolean) {
+  if (isOwn) {
+    return false;
+  }
+
+  const previous = messages[index - 1];
+  if (!previous || previous.deletedAt) {
+    return true;
+  }
+
+  return previous.senderId !== messages[index].senderId;
+}
+
+function shouldShowSenderName(messages: Message[], index: number, isOwn: boolean) {
+  return shouldShowAvatar(messages, index, isOwn);
+}
+
+function shouldShowTimestamp(messages: Message[], index: number) {
+  const current = messages[index];
+  const next = messages[index + 1];
+
+  if (!next || next.deletedAt) {
+    return true;
+  }
+
+  if (next.senderId !== current.senderId) {
+    return true;
+  }
+
+  return toMinuteKey(next.createdAt) !== toMinuteKey(current.createdAt);
+}
 
 export default function MessageDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { selectedConversation } = useOutletContext<{
+    selectedConversation: SelectedConversationSummary | null;
+  }>();
   const { user } = useAuth();
   const chat = useMessageDetailPage(id);
   const handleBack = useChatBackToMessages();
@@ -24,6 +68,31 @@ export default function MessageDetailPage() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const prependSnapshotRef = useRef<{ height: number; top: number } | null>(null);
   const initialPositionedRef = useRef(false);
+  const selectedConversationId = selectedConversation?.conversation.id ?? null;
+
+  const conversation = chat.conversation ?? selectedConversation?.conversation ?? null;
+  const leaveConversation = useLeaveConversation(
+    chat.conversation?.id ?? selectedConversationId ?? "",
+  );
+  const selectedSummary = conversation?.id === selectedConversationId ? selectedConversation : null;
+  const otherUser = selectedSummary
+    ? selectedSummary.otherUser
+    : conversation
+      ? getConversationOtherUser(conversation, user?.id)
+      : null;
+  const roomMeta = selectedSummary
+    ? selectedSummary.meta
+    : conversation
+      ? getConversationRoomMeta(conversation, user?.id)
+      : null;
+
+  useEffect(() => {
+    if (chat.errorStatus !== 403 && chat.errorStatus !== 404) {
+      return;
+    }
+
+    navigate("/messages", { replace: true });
+  }, [chat.errorStatus, navigate]);
 
   const formatTime = (dateString: string) =>
     new Date(dateString).toLocaleTimeString("ko-KR", {
@@ -154,9 +223,6 @@ export default function MessageDetailPage() {
     });
   };
 
-  const conversation = chat.conversation;
-  const otherUser = conversation ? getConversationOtherUser(conversation, user?.id) : null;
-  const roomMeta = conversation ? getConversationRoomMeta(conversation, user?.id) : null;
   const headerHref = useMemo(() => {
     if (!conversation) {
       return null;
@@ -177,7 +243,41 @@ export default function MessageDetailPage() {
       : null;
   }, [conversation, otherUser]);
 
-  if (chat.loading) {
+  const handleLeaveConversation = useCallback(async () => {
+    if (!chat.conversation || chat.conversation.type !== "DIRECT" || leaveConversation.isPending) {
+      return;
+    }
+
+    const confirmed = window.confirm("이 1:1 대화에서 나가시겠습니까?");
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await leaveConversation.mutateAsync();
+      navigate("/messages", { replace: true });
+    } catch (leaveError) {
+      chat.clearSendError();
+      console.error("Failed to leave conversation:", leaveError);
+    }
+  }, [chat, leaveConversation, navigate]);
+
+  const headerActions =
+    conversation?.type === "DIRECT"
+      ? [
+          {
+            label: "나가기",
+            icon: <LogOut className="size-4" />,
+            onSelect: () => {
+              void handleLeaveConversation();
+            },
+            disabled: leaveConversation.isPending,
+            variant: "destructive" as const,
+          },
+        ]
+      : [];
+
+  if (chat.loading && !conversation) {
     return (
       <div className="mx-auto flex h-full max-w-3xl flex-col overflow-hidden">
         <div className="border-b border-border/60 bg-background/95 px-1 py-4 backdrop-blur-sm sm:px-2">
@@ -261,121 +361,142 @@ export default function MessageDetailPage() {
             </span>
           ) : null
         }
+        actions={<ChatHeaderMenu actions={headerActions} />}
       />
 
-      <div
-        ref={messagesContainerRef}
-        onScroll={handleScroll}
-        className="min-h-0 flex-1 overflow-y-auto px-2 py-3 pb-2 sm:px-3"
-      >
-        {chat.loadingOlder ? (
-          <div className="pb-3 text-center text-xs text-muted-foreground">
-            이전 메시지 불러오는 중...
-          </div>
-        ) : null}
+      {chat.loading ? (
+        <ChatViewportSkeleton />
+      ) : (
+        <>
+          <div
+            ref={messagesContainerRef}
+            onScroll={handleScroll}
+            className="min-h-0 flex-1 overflow-y-auto px-2 py-3 pb-2 sm:px-3"
+          >
+            {chat.loadingOlder ? (
+              <div className="pb-3 text-center text-xs text-muted-foreground">
+                이전 메시지 불러오는 중...
+              </div>
+            ) : null}
 
-        <div className="space-y-4">
-          {chat.messages.map((message, index) => {
-            const isOwn = message.senderId === user?.id;
-            const showDate = shouldShowDateDivider(message, index);
+            <div className="space-y-4">
+              {chat.messages.map((message, index) => {
+                const isOwn = message.senderId === user?.id;
+                const showDate = shouldShowDateDivider(message, index);
+                const showAvatar = shouldShowAvatar(chat.messages, index, isOwn);
+                const showSenderName = shouldShowSenderName(chat.messages, index, isOwn);
+                const showTimestamp = shouldShowTimestamp(chat.messages, index);
 
-            return (
-              <div key={message.id} data-message-id={message.id}>
-                {chat.firstUnreadMessageId === message.id ? (
-                  <div className="my-4 flex items-center gap-3">
-                    <div className="h-px flex-1 bg-border/70" />
-                    <span className="shrink-0 text-[11px] text-muted-foreground">
-                      안 읽은 메시지
-                    </span>
-                    <div className="h-px flex-1 bg-border/70" />
-                  </div>
-                ) : null}
-
-                {showDate ? (
-                  <div className="my-4 flex justify-center">
-                    <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-                      {formatDate(message.createdAt)}
-                    </span>
-                  </div>
-                ) : null}
-
-                <div
-                  className={`flex ${isOwn ? "justify-end pr-1 sm:pr-2" : "justify-start pl-1 sm:pl-0"}`}
-                >
-                  <div
-                    className={`flex max-w-[72%] gap-2 ${isOwn ? "flex-row-reverse" : "flex-row"}`}
-                  >
-                    {!isOwn ? (
-                      <Avatar className="h-8 w-8 shrink-0">
-                        {message.sender.profileImage ? (
-                          <AvatarImage
-                            src={message.sender.profileImage}
-                            alt={message.sender.name}
-                          />
-                        ) : null}
-                        <AvatarFallback>{message.sender.name[0]}</AvatarFallback>
-                      </Avatar>
+                return (
+                  <div key={message.id} data-message-id={message.id}>
+                    {chat.firstUnreadMessageId === message.id ? (
+                      <div className="my-4 flex items-center gap-3">
+                        <div className="h-px flex-1 bg-border/70" />
+                        <span className="shrink-0 text-[11px] text-muted-foreground">
+                          안 읽은 메시지
+                        </span>
+                        <div className="h-px flex-1 bg-border/70" />
+                      </div>
                     ) : null}
 
-                    <div className={`flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
-                      <div
-                        className={cn(
-                          "rounded-[1rem] px-4 py-2",
-                          message.deletedAt
-                            ? "bg-muted text-muted-foreground italic"
-                            : isOwn
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-foreground",
-                        )}
-                      >
-                        {message.deletedAt ? (
-                          <p className="text-sm">삭제된 메시지입니다</p>
-                        ) : (
-                          <p className="whitespace-pre-wrap break-words text-sm">
-                            {message.content}
-                          </p>
-                        )}
+                    {showDate ? (
+                      <div className="my-4 flex justify-center">
+                        <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+                          {formatDate(message.createdAt)}
+                        </span>
                       </div>
-                      <span className="mt-1 text-xs text-muted-foreground">
-                        {formatTime(message.createdAt)}
-                      </span>
+                    ) : null}
+
+                    <div
+                      className={`flex ${isOwn ? "justify-end pr-1 sm:pr-2" : "justify-start pl-1 sm:pl-0"}`}
+                    >
+                      <div
+                        className={`flex max-w-[72%] gap-2 ${isOwn ? "flex-row-reverse" : "flex-row"}`}
+                      >
+                        {!isOwn ? (
+                          showAvatar ? (
+                            <Avatar className="h-8 w-8 shrink-0">
+                              {message.sender.profileImage ? (
+                                <AvatarImage
+                                  src={message.sender.profileImage}
+                                  alt={message.sender.name}
+                                />
+                              ) : null}
+                              <AvatarFallback>{message.sender.name[0]}</AvatarFallback>
+                            </Avatar>
+                          ) : (
+                            <div className="h-8 w-8 shrink-0" aria-hidden />
+                          )
+                        ) : null}
+
+                        <div className={`flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
+                          {!isOwn && showSenderName ? (
+                            <span className="mb-1 text-xs text-muted-foreground">
+                              {message.sender.name}
+                            </span>
+                          ) : null}
+                          <div
+                            className={cn(
+                              "rounded-[1rem] px-4 py-2",
+                              message.deletedAt
+                                ? "bg-muted text-muted-foreground italic"
+                                : isOwn
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted text-foreground",
+                            )}
+                          >
+                            {message.deletedAt ? (
+                              <p className="text-sm">삭제된 메시지입니다</p>
+                            ) : (
+                              <p className="whitespace-pre-wrap break-words text-sm">
+                                {message.content}
+                              </p>
+                            )}
+                          </div>
+                          {showTimestamp ? (
+                            <span className="mt-1 text-xs text-muted-foreground">
+                              {formatTime(message.createdAt)}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+                );
+              })}
+            </div>
+          </div>
 
-      {chat.pendingNewMessages > 0 || chat.newerCursor ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-[5.5rem] flex justify-center px-4">
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="pointer-events-auto rounded-full shadow-sm"
-            onClick={() => void chat.loadNewer()}
-          >
-            <ArrowDown className="mr-1 size-3.5" />
-            {chat.pendingNewMessages > 0
-              ? `새 메시지 ${chat.pendingNewMessages}개`
-              : "다음 메시지 보기"}
-          </Button>
-        </div>
-      ) : null}
+          {chat.pendingNewMessages > 0 || chat.newerCursor ? (
+            <div className="pointer-events-none absolute inset-x-0 bottom-[5.5rem] flex justify-center px-4">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="pointer-events-auto rounded-full shadow-sm"
+                onClick={() => void chat.loadNewer()}
+              >
+                <ArrowDown className="mr-1 size-3.5" />
+                {chat.pendingNewMessages > 0
+                  ? `새 메시지 ${chat.pendingNewMessages}개`
+                  : "다음 메시지 보기"}
+              </Button>
+            </div>
+          ) : null}
 
-      <ChatComposer
-        value={content}
-        onChange={(nextValue) => {
-          chat.clearSendError();
-          setContent(nextValue);
-        }}
-        onSend={() => void handleSend()}
-        disabled={chat.sending}
-        error={chat.sendError}
-        placeholder="메시지를 입력하세요"
-      />
+          <ChatComposer
+            value={content}
+            onChange={(nextValue) => {
+              chat.clearSendError();
+              setContent(nextValue);
+            }}
+            onSend={() => void handleSend()}
+            disabled={chat.sending}
+            error={chat.sendError}
+            placeholder="메시지를 입력하세요"
+          />
+        </>
+      )}
     </div>
   );
 }

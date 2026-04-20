@@ -161,6 +161,16 @@ export function ChatRealtimeProvider({ children }: { children: ReactNode }) {
         })),
       );
 
+      const conversations = queryClient.getQueryData(messageKeys.conversations()) as
+        | { pages?: Array<{ data?: Array<{ id: string }> }> }
+        | undefined;
+      const hasConversation = conversations?.pages?.some((page) =>
+        page.data?.some((conversation) => conversation.id === message.conversationId),
+      );
+      if (!hasConversation) {
+        queryClient.invalidateQueries({ queryKey: messageKeys.conversations() });
+      }
+
       if (message.senderId !== userRef.current?.id) {
         queryClient.setQueryData(
           messageKeys.unreadCount(),

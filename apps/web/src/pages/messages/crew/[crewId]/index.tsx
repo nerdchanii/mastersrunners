@@ -1,7 +1,8 @@
 import { ArrowLeft, MessageCircle, Users } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 
 import { ChatRoomHeader } from "@/components/chat/ChatRoomHeader";
+import { ChatViewportSkeleton } from "@/components/chat/ChatViewportSkeleton";
 import { EmptyState } from "@/components/common/EmptyState";
 import GroupChat from "@/components/crew/GroupChat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,13 +10,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useChatBackToMessages } from "@/hooks/useChatBackToMessages";
 import { useCrewChat } from "@/hooks/useGroupChat";
 import { getConversationRoomMeta } from "@/lib/message-room";
+import type { SelectedConversationSummary } from "@/pages/messages/shell";
 
 export default function CrewMessagePage() {
   const params = useParams();
   const navigate = useNavigate();
+  const { selectedConversation } = useOutletContext<{
+    selectedConversation: SelectedConversationSummary | null;
+  }>();
   const crewId = params.crewId as string;
   const chat = useCrewChat(crewId, !!crewId);
   const handleBack = useChatBackToMessages();
+  const selectedConversationId = selectedConversation?.conversation.id ?? null;
 
   if (!crewId || crewId === "_") {
     return (
@@ -30,7 +36,17 @@ export default function CrewMessagePage() {
     );
   }
 
-  if (chat.loading) {
+  const conversation = chat.conversation ?? selectedConversation?.conversation ?? null;
+  const selectedSummary = conversation?.id === selectedConversationId ? selectedConversation : null;
+  const roomMeta = selectedSummary
+    ? selectedSummary.meta
+    : conversation
+      ? getConversationRoomMeta(conversation)
+      : null;
+  const crewTitle = roomMeta?.title ?? "대화";
+  const participantCount = conversation?.participants.length ?? 0;
+
+  if (chat.loading && !conversation) {
     return (
       <div className="mx-auto max-w-3xl space-y-4">
         <Skeleton className="h-16 w-full rounded-3xl" />
@@ -51,10 +67,6 @@ export default function CrewMessagePage() {
       </div>
     );
   }
-
-  const roomMeta = chat.conversation ? getConversationRoomMeta(chat.conversation) : null;
-  const crewTitle = roomMeta?.title ?? "대화";
-  const participantCount = chat.conversation?.participants.length ?? 0;
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -83,13 +95,17 @@ export default function CrewMessagePage() {
         }
       />
 
-      <GroupChat
-        className="flex-1 overflow-hidden"
-        chat={chat}
-        emptyMessage="아직 대화가 없습니다."
-        missingConversationMessage="대화를 준비 중입니다."
-        composerPlaceholder="메시지를 입력하세요"
-      />
+      {chat.loading ? (
+        <ChatViewportSkeleton />
+      ) : (
+        <GroupChat
+          className="flex-1 overflow-hidden"
+          chat={chat}
+          emptyMessage="아직 대화가 없습니다."
+          missingConversationMessage="대화를 준비 중입니다."
+          composerPlaceholder="메시지를 입력하세요"
+        />
+      )}
     </div>
   );
 }

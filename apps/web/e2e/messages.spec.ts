@@ -9,7 +9,7 @@ import {
   buildDirectConversationScenario,
   setupMessagingRoutes,
 } from "./helpers/messaging-fixtures";
-import { setupAuth } from "./helpers/mock-auth";
+import { mockUser, setupAuth } from "./helpers/mock-auth";
 
 const directMessagesScenario = buildDirectConversationScenario();
 const { conversationId } = directMessagesScenario;
@@ -20,6 +20,7 @@ const mixedHubScenario = buildDirectConversationScenario({
     ...directMessagesScenario.conversationsResponse.data,
   ],
 });
+const API_BASE = "http://localhost:4000/api/v1";
 
 test.describe("메시지 UX", () => {
   test.beforeEach(async ({ page }) => {
@@ -99,6 +100,85 @@ test.describe("메시지 UX", () => {
 
     await expect(textarea).toHaveValue("답장 테스트");
     await expect(page.getByText("메시지 전송에 실패했습니다.")).toBeVisible();
+  });
+
+  test("DM을 나간 뒤에도 프로필에서 다시 시작하면 빈 세션으로 열린다", async ({ page }) => {
+    const hiddenDirectScenario = buildDirectConversationScenario({
+      conversation: {
+        id: "conv-direct-restart",
+        messages: [],
+        unreadCount: 0,
+      },
+      detailConversation: {
+        id: "conv-direct-restart",
+      },
+      messages: [],
+      conversations: [],
+      unreadNotificationsCount: 0,
+    });
+
+    await setupMessagingRoutes(page, { directMessages: hiddenDirectScenario });
+    await page.route(`${API_BASE}/profile/user-3`, (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          accessLevel: "FULL",
+          user: {
+            id: "user-3",
+            email: "mate@example.com",
+            name: "러닝메이트",
+            profileImage: null,
+            backgroundImage: null,
+            bio: "같이 뛰어요",
+            isPrivate: false,
+          },
+          stats: {
+            postCount: 0,
+            totalWorkouts: 0,
+            totalDistance: 0,
+            totalDuration: 0,
+            averagePace: 0,
+          },
+          followersCount: 0,
+          followingCount: 0,
+          crewCount: 0,
+          isFollowing: false,
+          isPending: false,
+          isPrivate: false,
+        }),
+      });
+    });
+    await page.route(`${API_BASE}/posts?userId=user-3&limit=12`, (route) => {
+      route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
+    });
+    await page.route(`${API_BASE}/crews?userId=user-3`, (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: [] }),
+      });
+    });
+    await page.route(`${API_BASE}/follow/status/user-3`, (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          isFollowing: false,
+          isPending: false,
+          isPrivate: false,
+          followerPreview: [mockUser],
+        }),
+      });
+    });
+
+    await page.goto("/profile/user-3");
+    await page.getByRole("button", { name: /메시지/i }).click();
+
+    await expect(page).toHaveURL(/\/messages\/conv-direct-restart$/);
+    await expect(page.getByPlaceholder("메시지를 입력하세요")).toBeVisible();
+    await expect(page.getByText("오늘도 달리시나요?")).toHaveCount(0);
+    await expect(page.getByText("대화를 찾을 수 없습니다")).toHaveCount(0);
   });
 });
 

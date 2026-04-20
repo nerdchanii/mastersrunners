@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { messageKeys, patchConversationSummary } from "@/hooks/useMessages";
-import { api } from "@/lib/api-client";
+import { api, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { type ChatRealtimeMessage, useChatRealtime } from "@/lib/chat-realtime-context";
 import type { ConversationRoom, ConversationUser } from "@/lib/message-room";
@@ -28,6 +28,7 @@ export interface ChatWindowResponse {
 export interface ChatWindowController extends ChatWindowResponse {
   loading: boolean;
   error: string | null;
+  errorStatus: number | null;
   loadingOlder: boolean;
   loadingNewer: boolean;
   sending: boolean;
@@ -97,6 +98,7 @@ export function useChatWindow({
   const [loadingNewer, setLoadingNewer] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
   const [pendingMessages, setPendingMessages] = useState<ChatWindowMessage[]>([]);
   const [anchorMessageId, setAnchorMessageId] = useState<string | null>(null);
@@ -135,6 +137,7 @@ export function useChatWindow({
 
     setLoading(true);
     setError(null);
+    setErrorStatus(null);
 
     try {
       const data = await api.fetch<ChatWindowResponse>(
@@ -163,6 +166,7 @@ export function useChatWindow({
       await markAsRead(data.conversation?.id);
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : "대화를 불러오지 못했습니다.");
+      setErrorStatus(fetchError instanceof ApiError ? fetchError.status : null);
     } finally {
       setLoading(false);
     }
@@ -240,6 +244,7 @@ export function useChatWindow({
       setError(
         fetchError instanceof Error ? fetchError.message : "이전 메시지를 불러오지 못했습니다.",
       );
+      setErrorStatus(fetchError instanceof ApiError ? fetchError.status : null);
     } finally {
       setLoadingOlder(false);
     }
@@ -279,6 +284,7 @@ export function useChatWindow({
       setError(
         fetchError instanceof Error ? fetchError.message : "새 메시지를 불러오지 못했습니다.",
       );
+      setErrorStatus(fetchError instanceof ApiError ? fetchError.status : null);
     } finally {
       setLoadingNewer(false);
     }
@@ -350,6 +356,7 @@ export function useChatWindow({
     firstUnreadMessageId,
     loading,
     error,
+    errorStatus,
     loadingOlder,
     loadingNewer,
     sending,

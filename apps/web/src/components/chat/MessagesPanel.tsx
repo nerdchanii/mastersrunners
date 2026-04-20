@@ -78,6 +78,13 @@ export function MessagesPanel({
   const filteredRooms = useMemo(
     () =>
       roomItems.filter((item) => {
+        if (
+          item.conversation.type === "ACTIVITY" &&
+          item.conversation.activity?.status === "CANCELLED"
+        ) {
+          return false;
+        }
+
         if (filter !== "ALL" && item.conversation.type !== filter) {
           return false;
         }

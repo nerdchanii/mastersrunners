@@ -18,6 +18,7 @@ const mockConversationsRepo = {
   findById: jest.fn(),
   getConversationWindow: jest.fn(),
   updateLastRead: jest.fn(),
+  removeAllParticipants: jest.fn(),
 };
 
 describe("CrewActivitiesService", () => {
@@ -39,6 +40,7 @@ describe("CrewActivitiesService", () => {
       crewId: "crew-1",
       createdBy: "host-1",
       activityType: "OFFICIAL",
+      status: "SCHEDULED",
       chatConversationId: "conv-activity-1",
       attendances: [],
     };
@@ -75,6 +77,17 @@ describe("CrewActivitiesService", () => {
 
       await expect(service.getActivityChat("crew-1", "activity-1", "user-1")).rejects.toThrow(
         "참석 후 대화를 확인할 수 있습니다.",
+      );
+    });
+
+    it("rejects cancelled activities", async () => {
+      mockCrewActivityRepo.findById.mockResolvedValue({
+        ...baseActivity,
+        status: "CANCELLED",
+      });
+
+      await expect(service.getActivityChat("crew-1", "activity-1", "user-1")).rejects.toThrow(
+        "취소된 활동의 채팅은 확인할 수 없습니다.",
       );
     });
 

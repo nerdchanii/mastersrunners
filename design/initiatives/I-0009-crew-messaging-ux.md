@@ -19,7 +19,7 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 
 - adding presence, typing, or delivery-receipt features on top of the transport change
 - redesigning unrelated feed, challenge, or workout surfaces
-- changing backend chat or notification contracts in this batch
+- changing notification contracts in this batch
 
 ## Scope
 
@@ -57,6 +57,7 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 - `tasks/archive/I-0009-020-web-messaging-e2e-mock-fixtures.md`
 - `tasks/archive/I-0009-030-api-sse-stream-stability.md`
 - `tasks/todo/I-0009-040-api-web-chat-websocket-transport.md`
+- `tasks/todo/I-0009-050-api-web-dm-leave-cutline.md`
 
 ## Success Criteria
 

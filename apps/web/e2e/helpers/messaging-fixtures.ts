@@ -57,6 +57,7 @@ interface FixtureConversationSummary {
     crew: { id: string; name: string } | null;
     crewId: string;
     id: string;
+    status: string;
     title: string;
   } | null;
   activityId?: string | null;
@@ -84,6 +85,7 @@ interface FixtureChatConversation {
     crew: { id: string; imageUrl: string | null; name: string } | null;
     crewId: string;
     id: string;
+    status: string;
     title: string;
   } | null;
   activityId: string | null;
@@ -177,6 +179,7 @@ interface DirectMessagesScenario {
   conversationDetailResponse: FixtureDirectConversationDetail;
   conversationId: string;
   conversationsResponse: { data: FixtureConversationSummary[]; nextCursor: string | null };
+  startConversationResponse: { id: string };
   unreadNotificationsCount: number;
 }
 
@@ -297,6 +300,7 @@ export function buildActivityConversationSummary(
       },
       crewId: messagingFixtureIds.crewId,
       id: messagingFixtureIds.activityId,
+      status: "SCHEDULED",
       title: "월요일 아침 러닝",
     },
     activityId: messagingFixtureIds.activityId,
@@ -380,6 +384,7 @@ function buildActivityConversation(
       },
       crewId: messagingFixtureIds.crewId,
       id: messagingFixtureIds.activityId,
+      status: "SCHEDULED",
       title: "월요일 아침 러닝",
     },
     activityId: messagingFixtureIds.activityId,
@@ -521,6 +526,7 @@ export function buildDirectConversationScenario(
       data: overrides.conversations ?? [conversation],
       nextCursor: null,
     },
+    startConversationResponse: { id: conversation.id },
     unreadNotificationsCount: overrides.unreadNotificationsCount ?? 2,
   };
 }
@@ -630,6 +636,11 @@ export async function setupMessagingRoutes(page: Page, scenario: MessagingRoutes
       page.route(`${API_BASE}/conversations*`, (route) => {
         if (route.request().url().includes("/conversations/")) {
           return route.fallback();
+        }
+
+        if (route.request().method() === "POST") {
+          route.fulfill(json(direct.startConversationResponse));
+          return;
         }
 
         route.fulfill(json(direct.conversationsResponse));

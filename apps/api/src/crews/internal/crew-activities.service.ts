@@ -269,7 +269,11 @@ export class CrewActivitiesService {
       throw new ForbiddenException("활동을 취소할 권한이 없습니다.");
     }
 
-    return this.crewActivityRepo.cancelActivity(activityId);
+    const result = await this.crewActivityRepo.cancelActivity(activityId);
+    if (activity.chatConversationId) {
+      await this.conversationsRepo.removeAllParticipants(activity.chatConversationId);
+    }
+    return result;
   }
 
   async getAttendees(activityId: string, statusFilter?: string) {
@@ -310,6 +314,9 @@ export class CrewActivitiesService {
 
   async getActivityChat(crewId: string, activityId: string, userId: string, cursor?: string) {
     const activity = await this.getActivityInCrewOrThrow(activityId, crewId);
+    if (activity.status === "CANCELLED") {
+      throw new ForbiddenException("취소된 활동의 채팅은 확인할 수 없습니다.");
+    }
     const member = await this.crewMemberRepo.findMember(crewId, userId);
     if (!member || member.status !== "ACTIVE") {
       throw new ForbiddenException("크루 멤버만 채팅에 참여할 수 있습니다.");

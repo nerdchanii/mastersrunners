@@ -19,6 +19,8 @@ const mockConversationsRepository = {
   getUnreadCount: jest.fn(),
   getTotalUnreadCount: jest.fn(),
   getMessageById: jest.fn(),
+  removeParticipant: jest.fn(),
+  setParticipantLeftAt: jest.fn(),
 };
 
 const mockBlockRepository = {
@@ -182,6 +184,7 @@ describe("ConversationsService", () => {
             id: "activity-1",
             title: "월요일 아침 러닝",
             crewId: "crew-1",
+            status: "SCHEDULED",
             crew: { id: "crew-1", name: "서울 러닝 크루" },
           },
           updatedAt: new Date(),
@@ -263,12 +266,14 @@ describe("ConversationsService", () => {
           {
             userId: "user-1",
             lastReadAt: null,
+            leftAt: null,
             joinedAt: now,
             user: { id: "user-1", name: "User 1", profileImage: null },
           },
           {
             userId: "user-2",
             lastReadAt: null,
+            leftAt: null,
             joinedAt: now,
             user: { id: "user-2", name: "User 2", profileImage: null },
           },
@@ -376,6 +381,56 @@ describe("ConversationsService", () => {
       await expect(service.getConversation(conversationId, userId)).rejects.toThrow(
         "차단 관계로 인해 대화를 볼 수 없습니다.",
       );
+    });
+
+    it("returns an empty direct conversation detail when the user left and no newer message exists", async () => {
+      const conversationId = "conv-hidden";
+      const userId = "user-1";
+      const now = new Date("2026-04-21T09:00:00.000Z");
+
+      mockConversationsRepository.findById.mockResolvedValue({
+        id: conversationId,
+        type: "DIRECT",
+        name: null,
+        crewId: null,
+        activityId: null,
+        crew: null,
+        activity: null,
+        updatedAt: now,
+        participants: [
+          {
+            userId,
+            lastReadAt: now,
+            leftAt: now,
+            joinedAt: now,
+            user: { id: userId, name: "User 1", profileImage: null },
+          },
+          {
+            userId: "user-2",
+            lastReadAt: null,
+            leftAt: null,
+            joinedAt: now,
+            user: { id: "user-2", name: "User 2", profileImage: null },
+          },
+        ],
+      });
+      mockConversationsRepository.isParticipant.mockResolvedValue(true);
+      mockBlockRepository.isBlocked.mockResolvedValue(false);
+      mockConversationsRepository.getConversationWindow.mockResolvedValue({
+        messages: [],
+        olderCursor: null,
+        newerCursor: null,
+        firstUnreadMessageId: null,
+      });
+      mockConversationsRepository.updateLastRead.mockResolvedValue({});
+
+      await expect(service.getConversation(conversationId, userId)).resolves.toMatchObject({
+        conversation: expect.objectContaining({ id: conversationId, type: "DIRECT" }),
+        messages: [],
+        olderCursor: null,
+        newerCursor: null,
+        firstUnreadMessageId: null,
+      });
     });
   });
 
@@ -531,6 +586,42 @@ describe("ConversationsService", () => {
       await expect(service.markAsRead(conversationId, userId)).rejects.toThrow(ForbiddenException);
       await expect(service.markAsRead(conversationId, userId)).rejects.toThrow(
         "이 대화에 참여할 권한이 없습니다.",
+      );
+    });
+  });
+
+  describe("leaveConversation", () => {
+    it("allows leaving direct conversations", async () => {
+      mockConversationsRepository.findById.mockResolvedValue({
+        id: "conv-1",
+        type: "DIRECT",
+        participants: [{ userId: "user-1" }, { userId: "user-2" }],
+      });
+      mockConversationsRepository.setParticipantLeftAt.mockResolvedValue({
+        conversationId: "conv-1",
+        userId: "user-1",
+        leftAt: new Date(),
+      });
+
+      await expect(service.leaveConversation("conv-1", "user-1")).resolves.toEqual({
+        id: "conv-1",
+      });
+      expect(mockConversationsRepository.setParticipantLeftAt).toHaveBeenCalledWith(
+        "conv-1",
+        "user-1",
+        expect.any(Date),
+      );
+    });
+
+    it("rejects leaving crew chat", async () => {
+      mockConversationsRepository.findById.mockResolvedValue({
+        id: "conv-crew",
+        type: "CREW",
+        participants: [{ userId: "user-1" }],
+      });
+
+      await expect(service.leaveConversation("conv-crew", "user-1")).rejects.toThrow(
+        BadRequestException,
       );
     });
   });

@@ -104,6 +104,11 @@ export class ConversationsController {
     return this.conversationsService.markAsRead(id, req.user.userId);
   }
 
+  @Delete(":id/leave")
+  async leaveConversation(@Req() req: { user: { userId: string } }, @Param("id") id: string) {
+    return this.conversationsService.leaveConversation(id, req.user.userId);
+  }
+
   @Delete("messages/:id")
   async deleteMessage(@Req() req: { user: { userId: string } }, @Param("id") id: string) {
     return this.conversationsService.deleteMessage(id, req.user.userId);

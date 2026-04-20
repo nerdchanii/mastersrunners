@@ -28,12 +28,14 @@ interface ConversationActivityContext {
   id: string;
   title: string;
   crewId: string;
+  status: string;
   crew: ConversationCrewContext | null;
 }
 
 interface ConversationParticipant {
   userId: string;
   lastReadAt: Date | null;
+  leftAt: Date | null;
   joinedAt: Date;
   user: ConversationUser;
 }
@@ -118,6 +120,7 @@ function mapConversationActivityContext(
     id: string;
     title: string;
     crewId: string;
+    status: string;
     crew: { id: string; name: string; imageUrl: string | null } | null;
   } | null,
 ): ConversationActivityContext | null {
@@ -129,6 +132,7 @@ function mapConversationActivityContext(
     id: activity.id,
     title: activity.title,
     crewId: activity.crewId,
+    status: activity.status,
     crew: mapConversationCrewContext(activity.crew),
   };
 }
@@ -137,6 +141,7 @@ function mapConversationParticipants(
   participants: Array<{
     userId: string;
     lastReadAt?: Date | null;
+    leftAt?: Date | null;
     joinedAt: Date;
     user: { id: string; name: string; profileImage: string | null };
   }>,
@@ -144,6 +149,7 @@ function mapConversationParticipants(
   return participants.map((participant) => ({
     userId: participant.userId,
     lastReadAt: participant.lastReadAt ?? null,
+    leftAt: participant.leftAt ?? null,
     joinedAt: participant.joinedAt,
     user: mapConversationUser(participant.user),
   }));
@@ -160,12 +166,14 @@ function mapConversationResponse(conversation: {
     id: string;
     title: string;
     crewId: string;
+    status: string;
     crew: { id: string; name: string; imageUrl: string | null } | null;
   } | null;
   updatedAt: Date;
   participants: Array<{
     userId: string;
     lastReadAt?: Date | null;
+    leftAt?: Date | null;
     joinedAt: Date;
     user: { id: string; name: string; profileImage: string | null };
   }>;
@@ -378,6 +386,28 @@ export class ConversationsService {
     }
 
     return this.conversationsRepo.updateLastRead(conversationId, userId);
+  }
+
+  async leaveConversation(conversationId: string, userId: string) {
+    const conversation = await this.conversationsRepo.findById(conversationId);
+
+    if (!conversation) {
+      throw new NotFoundException("대화를 찾을 수 없습니다.");
+    }
+
+    const isParticipant = conversation.participants.some(
+      (participant: (typeof conversation.participants)[number]) => participant.userId === userId,
+    );
+    if (!isParticipant) {
+      throw new ForbiddenException("이 대화에 참여할 권한이 없습니다.");
+    }
+
+    if (conversation.type !== "DIRECT") {
+      throw new BadRequestException("1:1 대화만 나갈 수 있습니다.");
+    }
+
+    await this.conversationsRepo.setParticipantLeftAt(conversationId, userId, new Date());
+    return { id: conversationId };
   }
 
   async deleteMessage(messageId: string, userId: string) {

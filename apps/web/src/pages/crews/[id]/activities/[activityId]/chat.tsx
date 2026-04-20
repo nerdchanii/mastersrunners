@@ -1,6 +1,7 @@
-import { ArrowLeft, CalendarDays } from "lucide-react";
+import { ArrowLeft, CalendarDays, UserMinus } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { ChatHeaderMenu } from "@/components/chat/ChatHeaderMenu";
 import { ChatRoomHeader } from "@/components/chat/ChatRoomHeader";
 import { ChatSplitLayout } from "@/components/chat/ChatSplitLayout";
 import { MessagesSidebar } from "@/components/chat/MessagesSidebar";
@@ -8,7 +9,7 @@ import GroupChat from "@/components/crew/GroupChat";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useChatBackToMessages } from "@/hooks/useChatBackToMessages";
-import { useCrewActivity } from "@/hooks/useCrewActivities";
+import { useCancelRsvp, useCrewActivity } from "@/hooks/useCrewActivities";
 import { useCrew } from "@/hooks/useCrews";
 import { useActivityChat } from "@/hooks/useGroupChat";
 import { useAuth } from "@/lib/auth-context";
@@ -21,6 +22,7 @@ export default function ActivityChatPage() {
 
   const chat = useActivityChat(crewId ?? "", activityId ?? "");
   const { data: activity } = useCrewActivity(crewId ?? "", activityId ?? "");
+  const cancelRsvp = useCancelRsvp();
   const { data: crew } = useCrew(crewId ?? "");
   const currentMember = crew?.members?.find((member) => member.user.id === user?.id);
   const isAdmin = currentMember?.role === "OWNER" || currentMember?.role === "ADMIN";
@@ -32,6 +34,24 @@ export default function ActivityChatPage() {
   const canAccessChat = myStatus === "RSVP" || myStatus === "CHECKED_IN" || canManage;
   const activityTitle = activity?.title ?? "활동";
   const crewName = crew?.name ?? chat.conversation?.activity?.crew?.name ?? "크루";
+
+  const handleCancelAttendance = async () => {
+    if (!crewId || !activityId || cancelRsvp.isPending) {
+      return;
+    }
+
+    const confirmed = window.confirm("이 활동 참석을 취소하시겠습니까?");
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await cancelRsvp.mutateAsync({ crewId, activityId });
+      navigate(`/crews/${crewId}/activities/${activityId}`, { replace: true });
+    } catch (cancelError) {
+      console.error("Failed to cancel attendance:", cancelError);
+    }
+  };
 
   return (
     <ChatSplitLayout sidebar={<MessagesSidebar activeConversationId={chat.conversation?.id} />}>
@@ -53,9 +73,39 @@ export default function ActivityChatPage() {
               {crewName}
             </span>
           }
+          actions={
+            <ChatHeaderMenu
+              actions={
+                myStatus === "RSVP"
+                  ? [
+                      {
+                        label: "참석 취소",
+                        icon: <UserMinus className="size-4" />,
+                        onSelect: () => {
+                          void handleCancelAttendance();
+                        },
+                        disabled: cancelRsvp.isPending,
+                        variant: "destructive",
+                      },
+                    ]
+                  : []
+              }
+            />
+          }
         />
 
-        {activity && !canAccessChat ? (
+        {activity?.status === "CANCELLED" ? (
+          <div className="m-4 rounded-xl border bg-card p-6 text-center">
+            <p className="text-base font-medium">취소된 활동이라 채팅을 볼 수 없습니다.</p>
+            <Button
+              className="mt-4"
+              variant="outline"
+              onClick={() => navigate(`/crews/${crewId}/activities/${activityId}`)}
+            >
+              활동 상세로 돌아가기
+            </Button>
+          </div>
+        ) : activity && !canAccessChat ? (
           <div className="m-4 rounded-xl border bg-card p-6 text-center">
             <p className="text-base font-medium">참석 후 대화를 볼 수 있습니다.</p>
             <Button
