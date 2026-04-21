@@ -18,8 +18,6 @@ export const KOREA_SIDO = [
   "제주특별자치도",
 ] as const;
 
-export type Sido = (typeof KOREA_SIDO)[number];
-
 export const KOREA_SIGUNGU: Record<string, string[]> = {
   서울특별시: [
     "강남구",

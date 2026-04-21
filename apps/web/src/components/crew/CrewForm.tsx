@@ -1,7 +1,7 @@
 import CrewCreateForm from "./CrewCreateForm";
 import CrewEditForm from "./CrewEditForm";
 
-export interface CrewFormProps {
+interface CrewFormProps {
   initialValues?: {
     name?: string;
     description?: string | null;

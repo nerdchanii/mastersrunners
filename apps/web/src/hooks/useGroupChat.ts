@@ -1,12 +1,5 @@
-import {
-  type ChatWindowController,
-  type ChatWindowMessage,
-  type ChatWindowResponse,
-  useChatWindow,
-} from "@/hooks/useChatWindow";
+import { type ChatWindowController, useChatWindow } from "@/hooks/useChatWindow";
 
-export type ChatMessage = ChatWindowMessage;
-export type ChatResponse = ChatWindowResponse;
 export type GroupChatController = ChatWindowController;
 
 export function useCrewChat(crewId: string, enabled = true): GroupChatController {

@@ -14,7 +14,7 @@ import {
   FieldError,
 } from "./CrewFormFields";
 
-export interface CrewEditFormProps {
+interface CrewEditFormProps {
   initialValues: {
     name?: string;
     description?: string | null;

@@ -13,7 +13,7 @@ import {
   CrewThumbnailPreviewField,
 } from "./CrewFormFields";
 
-export interface CrewCreateFormProps {
+interface CrewCreateFormProps {
   onSubmit: (data: {
     name: string;
     description?: string;

@@ -4,7 +4,7 @@ import { ReactNode, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
-export interface UseFunnelOptions<Step extends string | number> {
+interface UseFunnelOptions<Step extends string | number> {
   initialStep: Step;
   steps: readonly Step[];
 }
@@ -42,7 +42,7 @@ export function useFunnel<Step extends string | number>({
   };
 }
 
-export interface FunnelProps {
+interface FunnelProps {
   children: ReactNode;
 }
 
@@ -54,7 +54,7 @@ export const Funnel = ({ children }: FunnelProps) => {
   );
 };
 
-export interface FunnelStepProps {
+interface FunnelStepProps {
   isActive: boolean;
   children: ReactNode;
 }
@@ -74,7 +74,7 @@ Funnel.Step = ({ isActive, children }: FunnelStepProps) => {
   );
 };
 
-export interface FunnelProgressBarProps {
+interface FunnelProgressBarProps {
   progress: number;
 }
 
@@ -91,7 +91,7 @@ Funnel.ProgressBar = ({ progress }: FunnelProgressBarProps) => {
   );
 };
 
-export interface FunnelActionBarProps {
+interface FunnelActionBarProps {
   onBack: () => void;
   onNext?: () => void;
   onSubmit?: () => void;
@@ -121,7 +121,7 @@ Funnel.ActionBar = ({
         variant="secondary"
         onClick={onBack}
         disabled={isSubmitting}
-        className="h-11 rounded-xl px-4 sm:px-6 font-medium text-muted-foreground hover:text-foreground transition-colors"
+        className="h-11 rounded-xl px-4 font-medium text-muted-foreground transition-colors hover:text-foreground sm:px-6"
       >
         {isFirstStep ? "취소" : "이전"}
       </Button>
@@ -131,7 +131,7 @@ Funnel.ActionBar = ({
           type="button"
           onClick={onNext}
           disabled={isNextDisabled}
-          className="h-11 rounded-xl px-6 sm:px-8 font-bold shadow-md transition-transform active:scale-95"
+          className="h-11 rounded-xl px-6 font-bold shadow-md transition-transform active:scale-95 sm:px-8"
         >
           다음 단계 <ChevronRight className="ml-1 size-4" />
         </Button>
@@ -139,7 +139,7 @@ Funnel.ActionBar = ({
         <Button
           type="button"
           onClick={onSubmit}
-          className="h-11 rounded-xl bg-primary px-8 sm:px-10 font-bold shadow-md transition-transform active:scale-95"
+          className="h-11 rounded-xl bg-primary px-8 font-bold shadow-md transition-transform active:scale-95 sm:px-10"
           disabled={isSubmitDisabled || isSubmitting}
         >
           {isSubmitting ? "처리 중..." : submitLabel}

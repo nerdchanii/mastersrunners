@@ -2,13 +2,6 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-export const rangeOptions = [
-  { label: "최근 30일", value: "30d" },
-  { label: "월별", value: "monthly" },
-  { label: "최근 10주", value: "10w" },
-  { label: "최근 12주", value: "12w" },
-] as const;
-
 export const memberSortOptions = [
   { label: "참석", value: "checkedIn", align: "right" as const },
   { label: "최근 활동", value: "lastActivity", align: "right" as const },

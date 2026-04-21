@@ -15,7 +15,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-export interface AttendanceRosterItem {
+interface AttendanceRosterItem {
   id: string;
   userId: string;
   status: string;

@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 
 import { mockUser } from "./mock-auth";
 
-export const API_BASE = "http://localhost:4000/api/v1";
+const API_BASE = "http://localhost:4000/api/v1";
 
 const messagingFixtureIds = {
   activityConversationId: "conv-activity-1",

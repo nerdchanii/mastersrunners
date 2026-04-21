@@ -89,7 +89,7 @@ test.describe("public entry auth recovery", () => {
   test("invite 진입의 로그인 모달은 원래 crew invite URL을 next로 보존한다", async ({ page }) => {
     await page.goto("/crews/crew-1?invite=1");
 
-    await page.getByRole("button", { name: "이 링크로 가입하기" }).click();
+    await page.getByRole("button", { name: "크루 가입" }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await expect(page.getByRole("link", { name: "로그인" })).toHaveAttribute(
       "href",

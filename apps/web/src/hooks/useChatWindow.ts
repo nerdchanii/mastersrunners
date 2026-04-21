@@ -17,7 +17,7 @@ export interface ChatWindowMessage {
   deletedAt: string | null;
 }
 
-export interface ChatWindowResponse {
+interface ChatWindowResponse {
   conversation: ConversationRoom | null;
   messages: ChatWindowMessage[];
   olderCursor: string | null;

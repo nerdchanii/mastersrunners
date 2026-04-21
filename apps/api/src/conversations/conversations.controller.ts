@@ -60,7 +60,7 @@ export class ConversationsController {
   }
 
   @Get("unread-count")
-  async getUnreadCount(@Req() req: { user: { userId: string } }) {
+  async getUnreadCount(@Req() req: { user: { userId: string } }): Promise<{ count: number }> {
     return this.conversationsService.getUnreadCount(req.user.userId);
   }
 

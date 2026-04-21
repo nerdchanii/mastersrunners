@@ -192,7 +192,7 @@ export async function setupGuestPublicEntry(page: Page) {
             crewId: "crew-1",
             title: "토요일 한강 10K",
             description: "비회원도 일정은 먼저 볼 수 있습니다.",
-            activityDate: "2026-04-05T07:00:00.000Z",
+            activityDate: "2099-04-05T07:00:00.000Z",
             location: "여의도 한강공원",
             latitude: null,
             longitude: null,

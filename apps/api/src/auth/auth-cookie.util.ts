@@ -69,7 +69,7 @@ function extractCookie(request: Request, cookieName: string) {
   return cookies[cookieName];
 }
 
-export function extractCookieFromHeader(cookieHeader: string | undefined, cookieName: string) {
+function extractCookieFromHeader(cookieHeader: string | undefined, cookieName: string) {
   const cookies = parseCookieHeader(cookieHeader);
   return cookies[cookieName];
 }

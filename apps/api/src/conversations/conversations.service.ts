@@ -77,7 +77,7 @@ export interface ConversationListResponse {
   nextCursor: string | null;
 }
 
-export interface ConversationUnreadCountResponse {
+interface ConversationUnreadCountResponse {
   count: number;
 }
 

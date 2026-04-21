@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 export const crewActivityIconOptions = ["🏃", "🏁", "☕", "🍻", "🎯", "🧭"] as const;
 
-export type CrewActivityIcon = (typeof crewActivityIconOptions)[number];
+type CrewActivityIcon = (typeof crewActivityIconOptions)[number];
 
 export function isCrewActivityIcon(value: string | null | undefined): value is CrewActivityIcon {
   return !!value && (crewActivityIconOptions as readonly string[]).includes(value);

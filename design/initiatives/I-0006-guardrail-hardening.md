@@ -67,6 +67,7 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - `tasks/archive/I-0006-230-meta-ops-host-swagger-and-zero-trust-boundary.md`
 - `tasks/archive/I-0006-210-api-conversation-type-leak-knip-cleanup.md`
 - `tasks/archive/I-0006-240-meta-fix-revert-history-flow.md`
+- `tasks/archive/I-0006-250-meta-knip-baseline-cleanup.md`
 
 ## Success Criteria
 
@@ -103,3 +104,4 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 - 2026-04-01 follow-up review then tightened that bucket rule further: `I-0006-200` removes `http://localhost:3000` from the deployed dev-bucket allowlist because the current dev lane does not intentionally support localhost browser sessions against the live bucket.
 - In-repo guardrail hardening is effectively complete; the remaining blockers are external platform settings and the exceptions recorded in `design/operating-rules/exceptions.md`.
 - 2026-04-03 repeated public-route recovery work exposed a workflow gap: the repo documented commit syntax and deploy rollback, but not how to preserve correction history for bad shared commits through explicit `fix` or `revert` follow-up tasks. `I-0006-240` now closes that gap.
+- 2026-04-22 post-closeout push for `I-0009-040` failed in `pre-push` because `pnpm knip` surfaced newly dead exports plus older baseline drift that was no longer masked by recent file motion, so `I-0006-250` now tracks the focused dead-code cleanup needed to restore a green push gate.
