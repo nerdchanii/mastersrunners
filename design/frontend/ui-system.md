@@ -56,6 +56,9 @@ sources:
 - profile header의 own/following/private/pending variant는 avatar, name, bio, record block, action area 높이 차이가 과도하지 않게 같은 baseline을 유지해야 한다.
 - profile header의 PB는 outline chip이 아니라 bio 아래 이어지는 record line으로 표시한다. 현재 schema/API는 초 단위 PB만 저장하므로 race name/date 같은 메타데이터 표시는 별도 후속 과업 없이는 넣지 않는다.
 - profile tabs의 posts/workouts는 profile 전용 preview card를 새로 만들기보다 `/feed` surface language를 재사용하고, crews tab도 crew info card가 아니라 crew post feed처럼 읽혀야 한다.
+- crew participation flow는 `guest(auth gate)`, `member(invite + secondary leave)`, `owner/admin`, `pending`, `empty/loading`, `open composer/dialog` 차이를 Storybook에서 바로 비교할 수 있어야 한다.
+- crew management surface가 fetch를 품고 있더라도, Storybook에서는 deterministic fixture나 초기 view state를 주입해 form/action/list/chat/attendance 리듬을 같은 언어로 검토한다.
+- `/crews/:id`는 실앱과 Playwright가 최종 truth지만, Storybook에서는 `CrewHubPage` 같은 composite story로 hero, 탭, 우측 패널의 조합 리듬을 한 화면에서 빠르게 점검할 수 있어야 한다.
 - stories는 `components/ui`, `components/common`, `components/layout`, `components/feed`, `components/profile`, `components/post`, `components/social`, `components/challenge`, `components/event`, `components/crew`, `components/workout` 아래에 co-locate한다.
 
 ## 컴포넌트 컨벤션
