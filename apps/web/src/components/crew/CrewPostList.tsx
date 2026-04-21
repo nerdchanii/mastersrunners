@@ -12,13 +12,35 @@ import { useCreateCrewPost, useCrewPosts } from "@/hooks/useCrewPosts";
 interface Props {
   crewId: string;
   isOwner: boolean;
+  initialData?: {
+    items: {
+      id: string;
+      userId: string;
+      crewId: string;
+      content: string;
+      visibility: string;
+      createdAt: string;
+      user: { id: string; name: string; profileImage: string | null };
+      images: { id: string; imageUrl: string; sortOrder: number }[];
+      _count: { likes: number; comments: number };
+    }[];
+    nextCursor: string | null;
+  } | null;
+  defaultShowComposer?: boolean;
 }
 
-export default function CrewPostList({ crewId, isOwner }: Props) {
-  const { data, isLoading } = useCrewPosts(crewId);
+export default function CrewPostList({
+  crewId,
+  isOwner,
+  initialData,
+  defaultShowComposer = false,
+}: Props) {
+  const { data, isLoading } = useCrewPosts(crewId, undefined, initialData === undefined);
   const createPost = useCreateCrewPost();
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(defaultShowComposer);
   const [content, setContent] = useState("");
+  const postsData = initialData ?? data;
+  const isPending = initialData !== undefined ? false : isLoading;
 
   const handleSubmit = () => {
     if (!content.trim()) return;
@@ -35,7 +57,7 @@ export default function CrewPostList({ crewId, isOwner }: Props) {
     );
   };
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-24 w-full" />
@@ -76,14 +98,14 @@ export default function CrewPostList({ crewId, isOwner }: Props) {
         </Card>
       )}
 
-      {!data?.items?.length ? (
+      {!postsData?.items?.length ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
             아직 크루 게시물이 없습니다.
           </CardContent>
         </Card>
       ) : (
-        data.items.map((post) => (
+        postsData.items.map((post) => (
           <Card key={post.id}>
             <CardHeader className="pb-2">
               <div className="flex items-center gap-3">

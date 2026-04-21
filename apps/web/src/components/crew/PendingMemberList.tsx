@@ -24,11 +24,22 @@ interface PendingMember {
 interface PendingMemberListProps {
   crewId: string;
   onUpdate: () => void;
+  initialPendingMembers?: PendingMember[];
+  initialLoading?: boolean;
 }
 
-export default function PendingMemberList({ crewId, onUpdate }: PendingMemberListProps) {
-  const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function PendingMemberList({
+  crewId,
+  onUpdate,
+  initialPendingMembers,
+  initialLoading = false,
+}: PendingMemberListProps) {
+  const [pendingMembers, setPendingMembers] = useState<PendingMember[]>(
+    () => initialPendingMembers ?? [],
+  );
+  const [isLoading, setIsLoading] = useState(
+    initialPendingMembers !== undefined ? initialLoading : true,
+  );
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const fetchPendingMembers = useCallback(async () => {
@@ -47,8 +58,18 @@ export default function PendingMemberList({ crewId, onUpdate }: PendingMemberLis
   }, [crewId]);
 
   useEffect(() => {
+    if (initialPendingMembers !== undefined) {
+      setPendingMembers(initialPendingMembers);
+      setIsLoading(initialLoading);
+    }
+  }, [initialLoading, initialPendingMembers]);
+
+  useEffect(() => {
+    if (initialPendingMembers !== undefined) {
+      return;
+    }
     void fetchPendingMembers();
-  }, [fetchPendingMembers]);
+  }, [fetchPendingMembers, initialPendingMembers]);
 
   const handleApprove = async (memberId: string, userId: string) => {
     setProcessingId(memberId);

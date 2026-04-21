@@ -44,6 +44,9 @@ interface CrewTagManagerProps {
   crewId: string;
   isAdmin: boolean;
   members: Member[];
+  initialTags?: TagWithMembers[];
+  defaultSelectedTag?: string | null;
+  initialLoading?: boolean;
 }
 
 const TAG_COLORS = [
@@ -58,15 +61,22 @@ const TAG_COLORS = [
   "#ec4899", // pink
 ];
 
-export default function CrewTagManager({ crewId, isAdmin, members }: CrewTagManagerProps) {
-  const [tags, setTags] = useState<TagWithMembers[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function CrewTagManager({
+  crewId,
+  isAdmin,
+  members,
+  initialTags,
+  defaultSelectedTag = null,
+  initialLoading = false,
+}: CrewTagManagerProps) {
+  const [tags, setTags] = useState<TagWithMembers[]>(() => initialTags ?? []);
+  const [isLoading, setIsLoading] = useState(initialTags !== undefined ? initialLoading : true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<CrewTag | null>(null);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(defaultSelectedTag);
 
   const fetchTags = useCallback(async () => {
     setIsLoading(true);
@@ -81,8 +91,22 @@ export default function CrewTagManager({ crewId, isAdmin, members }: CrewTagMana
   }, [crewId]);
 
   useEffect(() => {
+    if (initialTags !== undefined) {
+      setTags(initialTags);
+      setIsLoading(initialLoading);
+    }
+  }, [initialLoading, initialTags]);
+
+  useEffect(() => {
+    setSelectedTag(defaultSelectedTag);
+  }, [defaultSelectedTag]);
+
+  useEffect(() => {
+    if (initialTags !== undefined) {
+      return;
+    }
     void fetchTags();
-  }, [fetchTags]);
+  }, [fetchTags, initialTags]);
 
   const handleCreateTag = async (e: React.FormEvent) => {
     e.preventDefault();

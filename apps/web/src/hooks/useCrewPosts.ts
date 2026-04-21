@@ -14,6 +14,11 @@ interface CrewPost {
   _count: { likes: number; comments: number };
 }
 
+interface CrewPostsResponse {
+  items: CrewPost[];
+  nextCursor: string | null;
+}
+
 interface CrewProfile {
   crew: {
     id: string;
@@ -42,14 +47,12 @@ export const crewPostKeys = {
   profile: (crewId: string) => ["crews", crewId, "profile"] as const,
 };
 
-export function useCrewPosts(crewId: string, cursor?: string) {
+export function useCrewPosts(crewId: string, cursor?: string, enabled = true) {
   return useQuery({
     queryKey: [...crewPostKeys.posts(crewId), cursor],
     queryFn: () =>
-      api.fetch<{ items: CrewPost[]; nextCursor: string | null }>(
-        `/crews/${crewId}/posts${cursor ? `?cursor=${cursor}` : ""}`,
-      ),
-    enabled: !!crewId,
+      api.fetch<CrewPostsResponse>(`/crews/${crewId}/posts${cursor ? `?cursor=${cursor}` : ""}`),
+    enabled: !!crewId && enabled,
   });
 }
 

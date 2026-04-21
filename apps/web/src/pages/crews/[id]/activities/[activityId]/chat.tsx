@@ -24,10 +24,7 @@ export default function ActivityChatPage() {
   const { user } = useAuth();
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
 
-  const { data: chatData, isLoading: chatLoading } = useActivityChat(
-    crewId ?? "",
-    activityId ?? "",
-  );
+  const chat = useActivityChat(crewId ?? "", activityId ?? "");
   const { data: activity } = useCrewActivity(crewId ?? "", activityId ?? "");
   const { data: crew } = useCrew(crewId ?? "");
   const rsvpMutation = useRsvp();
@@ -65,24 +62,6 @@ export default function ActivityChatPage() {
       },
     );
   };
-
-  const messages = isCancelled
-    ? [
-        ...(chatData?.messages ?? []),
-        {
-          id: "activity-cancelled-system-message",
-          content: "--- 취소되었습니다 ---",
-          senderId: "system",
-          sender: {
-            id: "system",
-            name: "시스템",
-            profileImage: null,
-          },
-          createdAt: activity.createdAt,
-          deletedAt: null,
-        },
-      ]
-    : (chatData?.messages ?? []);
 
   return (
     <div className="space-y-4">
@@ -123,12 +102,7 @@ export default function ActivityChatPage() {
         </div>
       ) : (
         <GroupChat
-          data={chatData ? { ...chatData, messages } : chatData}
-          isLoading={chatLoading}
-          crewId={crewId ?? ""}
-          activityId={activityId}
-          title={`${activityTitle} 활동 채팅`}
-          subtitle="참여한 멤버와 운영진이 모이는 공간"
+          chat={chat}
           emptyMessage={`${activityTitle} 활동에 첫 메시지를 남겨보세요.`}
           missingConversationMessage="이 활동의 채팅방이 아직 준비되지 않았습니다."
           composerPlaceholder={`${activityTitle} 활동에 메시지 보내기`}

@@ -262,6 +262,7 @@ export default function CrewSettingsClient() {
         isPublic={crew.isPublic}
         profileImageUrl={heroProfileImage}
         coverImageUrl={heroCoverImage}
+        chatHref={`/messages/crew/${crewId}`}
         actions={
           <>
             <Button variant="outline" onClick={handleShareInvite} disabled={isSharingInvite}>
