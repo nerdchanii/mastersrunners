@@ -114,7 +114,7 @@ sources:
 ## 채팅과 실시간성
 
 - 크루 채팅과 활동 채팅은 group-chat 훅 위에 구축된다
-- DM은 SSE를 쓰지만, 크루/활동 채팅은 여전히 group-chat polling 모델에 의존한다
+- direct, crew, activity chat은 모두 shared chat WebSocket transport를 사용한다
 - 이제 크루 채팅과 활동 채팅은 generic room name 대신 라우트가 소유한 라벨과 카피를 사용한다
 - 메인 `/messages` 허브는 이제 크루/활동 채팅방을 명시적인 방 정체성과 함께 계속 보여준다
   - 크루 방은 `크루명`으로 렌더링하고 썸네일을 아바타로 사용한다
@@ -134,4 +134,4 @@ sources:
 - `/crews/:id`는 아직 전용 hook/query owner 대신 페이지 레벨 직접 fetch를 수행한다
 - 크루 허브의 범위는 여전히 넓지만, 페이지는 이제 세 개의 1차 탭 표면과 2차 운영 영역으로 나뉘어 있다
 - 가입 승인, 태그 관리, 활동 운영은 구현되어 있지만 상태가 하나의 공유 crew query 레이어로 아직 정규화되지는 않았다
-- group chat은 여전히 10초마다 polling하므로, 스크롤 동작은 새로고침 중에도 이전 메시지를 읽는 사용자를 보호해야 한다
+- chat realtime은 socket fan-out을 쓰지만 process-local delivery이므로, 멀티 인스턴스 환경에서는 별도 pub/sub 없이 cross-instance fan-out을 보장하지 않는다

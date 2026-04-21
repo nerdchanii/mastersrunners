@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded
 
 ## Date
 
@@ -39,7 +39,6 @@ Current behavior:
 
 ## Consequences
 
-- Agents should treat SSE as the current source-of-truth realtime transport in this repository.
-- Polling remains an allowed transitional fallback where SSE is not yet implemented.
-- Scaling or security changes around realtime transport should supersede this ADR rather than silently changing assumptions.
-- A future transport migration to WebSocket or Redis-backed fan-out should be expressed as a new ADR.
+- This ADR is historical only.
+- Chat delivery no longer uses SSE as the current source-of-truth transport.
+- Notification delivery still uses SSE, but chat transport authority moved to `ADR-0005`.

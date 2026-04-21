@@ -26,3 +26,8 @@ Replace direct-message leave from participant deletion to a per-user `leftAt` cu
 - Reopened DMs only show messages created after `leftAt`.
 - Unread counts ignore messages at or before `leftAt`.
 - Crew/activity leave rules remain unchanged.
+
+## Notes
+
+- Superseded by `I-0009-040` on 2026-04-22 after the repo adopted `ConversationParticipant.leftAt` plus the `20260421093000_add_conversation_participant_left_at` migration in the same WebSocket transport batch.
+- Do not reopen this as a separate task unless DM leave semantics diverge again from `I-0009-040`.

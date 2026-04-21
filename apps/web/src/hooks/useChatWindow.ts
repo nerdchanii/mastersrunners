@@ -208,7 +208,6 @@ export function useChatWindow({
 
       if (newerCursorRef.current || !nearBottomRef.current) {
         setPendingMessages((current) => mergeMessages(current, [message]));
-        await markAsRead(conversationId);
         return;
       }
 
@@ -260,6 +259,7 @@ export function useChatWindow({
         setMessages((current) => mergeMessages(current, pendingMessages));
         setPendingMessages([]);
         setBottomScrollVersion((value) => value + 1);
+        await markAsRead(conversation?.id);
       }
       return;
     }

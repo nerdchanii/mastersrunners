@@ -1,15 +1,15 @@
 ---
 doc_state: current
 owner: frontend
-last_verified: 2026-03-21
+last_verified: 2026-04-22
 sources:
   - apps/web/src/lib/api-client.ts
   - apps/web/src/lib/auth-context.tsx
+  - apps/web/src/lib/chat-realtime-context.tsx
   - apps/web/src/lib/theme-context.tsx
   - apps/web/src/hooks/useNotifications.ts
   - apps/web/src/hooks/useMessages.ts
   - apps/web/src/hooks/useUnreadCounts.ts
-  - apps/web/src/hooks/useGroupChat.ts
   - apps/web/src/hooks/useEvents.ts
   - apps/web/src/hooks/useChallenges.ts
   - apps/web/src/pages/events/[id]/index.tsx
@@ -27,7 +27,7 @@ sources:
 
 ## Summary
 
-The frontend is in a hybrid state: React Query is the preferred server-state layer, but auth, theme, SSE, and several detail pages still use local component or context state directly.
+The frontend is in a hybrid state: React Query is the preferred server-state layer, but auth, theme, realtime wiring, and several detail pages still use local component or context state directly.
 
 ## Current State Layers
 
@@ -71,14 +71,13 @@ Notable current exceptions still bypass the hook-first pattern with direct `api.
 
 Realtime state is also distributed:
 
-- `Header` owns DM and notification SSE subscriptions, but unread badge rendering now reads from shared React Query-backed hooks
-- direct-message detail owns its own SSE stream
-- desktop shell and direct-message detail can subscribe to the same DM SSE endpoint at the same time
-- group chat uses polling rather than SSE
+- `ChatRealtimeProvider` owns one shared chat WebSocket and patches conversation/unread React Query state from `chat:message`
+- direct, crew, and activity chat screens subscribe their current room over that shared socket
+- `Header` owns only the notification SSE subscription
 
 ## Current Constraints
 
 - The repo does not yet enforce a zero direct-fetch rule in route components.
 - The exception list above is illustrative, not exhaustive.
-- Desktop and mobile shells now consume one shared unread-count source, but SSE ownership is still split between shell and direct-message detail.
-- Group chat polling and direct-message SSE use different freshness models.
+- Desktop and mobile shells now consume one shared unread-count source, but realtime ownership is still split between app-level socket context and layout-level notification SSE.
+- Chat and notification delivery still use different transports and both remain process-local.

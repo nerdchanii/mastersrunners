@@ -99,6 +99,7 @@ describe("ConversationsGateway", () => {
     mockConversationsRepository.isParticipant.mockResolvedValue(true);
     mockConversationsRepository.findById.mockResolvedValue({
       id: "conv-1",
+      type: "DIRECT",
       participants: [{ userId: "user-1" }, { userId: "user-2" }],
     });
     mockBlockRepository.isBlocked.mockResolvedValue(false);
@@ -113,5 +114,32 @@ describe("ConversationsGateway", () => {
       "hello",
     );
     expect(gateway.server.to).toHaveBeenCalled();
+  });
+
+  it("does not apply direct-message block rules to crew chat sends", async () => {
+    const client = createClient("mr_access_token=token");
+    client.data.user = { userId: "user-1" };
+    const message = {
+      id: "msg-crew-1",
+      conversationId: "conv-crew",
+      senderId: "user-1",
+      content: "hello crew",
+      deletedAt: null,
+      createdAt: new Date(),
+      sender: { id: "user-1", name: "User 1", profileImage: null },
+    };
+
+    mockConversationsRepository.isParticipant.mockResolvedValue(true);
+    mockConversationsRepository.findById.mockResolvedValue({
+      id: "conv-crew",
+      type: "CREW",
+      participants: [{ userId: "user-1" }, { userId: "user-2" }, { userId: "user-3" }],
+    });
+    mockConversationsRepository.createMessage.mockResolvedValue(message);
+
+    await expect(
+      gateway.handleSend(client, { conversationId: "conv-crew", content: "hello crew" }),
+    ).resolves.toEqual(message);
+    expect(mockBlockRepository.isBlocked).not.toHaveBeenCalled();
   });
 });

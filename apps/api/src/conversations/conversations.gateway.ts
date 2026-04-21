@@ -127,9 +127,13 @@ export class ConversationsGateway implements OnGatewayConnection {
       throw new WsException("NotFound");
     }
 
-    const otherParticipant = conversation.participants.find(
-      (participant: (typeof conversation.participants)[number]) => participant.userId !== userId,
-    );
+    const otherParticipant =
+      conversation.type === "DIRECT"
+        ? conversation.participants.find(
+            (participant: (typeof conversation.participants)[number]) =>
+              participant.userId !== userId,
+          )
+        : undefined;
     if (otherParticipant) {
       const blocked = await this.blockRepo.isBlocked(userId, otherParticipant.userId);
       if (blocked) {

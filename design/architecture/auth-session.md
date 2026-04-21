@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: architecture
-last_verified: 2026-04-01
+last_verified: 2026-04-22
 sources:
   - apps/api/src/config/feature-flags.ts
   - apps/api/src/config/public-config.controller.ts
@@ -15,9 +15,11 @@ sources:
   - packages/types/src/next-auth.d.ts
   - apps/web/src/lib/api-client.ts
   - apps/web/src/lib/auth-context.tsx
+  - apps/web/src/lib/chat-realtime-context.tsx
   - apps/web/src/router.tsx
   - apps/web/src/pages/login/index.tsx
   - apps/web/src/pages/auth/callback/index.tsx
+  - apps/api/src/conversations/conversations.gateway.ts
 ---
 
 # Auth and Session Architecture
@@ -51,7 +53,7 @@ The current auth model is OAuth login at the API boundary plus JWT-backed browse
 - `JwtAuthGuard` is applied globally through `APP_GUARD` in `AppModule`.
 - Controllers or handlers opt out with `@Public()`.
 - `ProtectedRoute` in the SPA is the route-level UX gate, not the source of backend authorization truth.
-- Request auth and SSE auth both read the access JWT from the same access-token cookie and attach the same `{ userId, email }` shape to the request.
+- Request auth, WebSocket auth, and SSE auth all read the access JWT from the same access-token cookie and attach the same `{ userId, email }` shape to the request.
 - Browser-facing API auth no longer accepts `Authorization: Bearer` as an active session transport.
 
 ## Current Constraints
@@ -60,5 +62,5 @@ The current auth model is OAuth login at the API boundary plus JWT-backed browse
 - Refresh is still JWT-only rotation with no persisted refresh-token store or revocation list.
 - `dev-login` exists only for `development` and `test`.
 - OAuth and public feature availability are repo-tracked in code, while actual provider availability still depends on runtime credentials and callback URLs.
-- Realtime auth is now unified with normal request auth through the shared cookie transport, but delivery remains process-local SSE rather than a broader session abstraction.
+- Realtime auth is now unified with normal request auth through the shared cookie transport, while chat delivery uses process-local WebSocket fan-out and notifications keep a separate process-local SSE channel.
 - Prisma still contains `Session` and `VerificationToken` models, and `packages/types` still contains NextAuth type residue. Those are repository leftovers, not the active runtime session path.

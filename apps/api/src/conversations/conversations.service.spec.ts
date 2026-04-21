@@ -383,7 +383,60 @@ describe("ConversationsService", () => {
       );
     });
 
-    it("returns an empty direct conversation detail when the user left and no newer message exists", async () => {
+    it("does not apply direct-message block rules to crew conversations", async () => {
+      const conversationId = "conv-crew";
+      const userId = "user-1";
+      const conversation = {
+        id: conversationId,
+        type: "CREW",
+        name: "서울 러닝 크루",
+        crewId: "crew-1",
+        activityId: null,
+        crew: { id: "crew-1", name: "서울 러닝 크루", imageUrl: null },
+        activity: null,
+        updatedAt: new Date("2026-04-22T00:00:00.000Z"),
+        participants: [
+          {
+            userId,
+            lastReadAt: null,
+            leftAt: null,
+            joinedAt: new Date("2026-04-20T00:00:00.000Z"),
+            user: { id: userId, name: "User 1", profileImage: null },
+          },
+          {
+            userId: "user-2",
+            lastReadAt: null,
+            leftAt: null,
+            joinedAt: new Date("2026-04-20T00:00:00.000Z"),
+            user: { id: "user-2", name: "User 2", profileImage: null },
+          },
+          {
+            userId: "user-3",
+            lastReadAt: null,
+            leftAt: null,
+            joinedAt: new Date("2026-04-20T00:00:00.000Z"),
+            user: { id: "user-3", name: "User 3", profileImage: null },
+          },
+        ],
+      };
+
+      mockConversationsRepository.findById.mockResolvedValue(conversation);
+      mockConversationsRepository.isParticipant.mockResolvedValue(true);
+      mockConversationsRepository.getConversationWindow.mockResolvedValue({
+        messages: [],
+        olderCursor: null,
+        newerCursor: null,
+        firstUnreadMessageId: null,
+      });
+      mockConversationsRepository.updateLastRead.mockResolvedValue({});
+
+      await expect(service.getConversation(conversationId, userId)).resolves.toMatchObject({
+        conversation: expect.objectContaining({ id: conversationId, type: "CREW" }),
+      });
+      expect(mockBlockRepository.isBlocked).not.toHaveBeenCalled();
+    });
+
+    it("rejects direct conversation detail when the user left and no newer message exists", async () => {
       const conversationId = "conv-hidden";
       const userId = "user-1";
       const now = new Date("2026-04-21T09:00:00.000Z");
@@ -424,13 +477,10 @@ describe("ConversationsService", () => {
       });
       mockConversationsRepository.updateLastRead.mockResolvedValue({});
 
-      await expect(service.getConversation(conversationId, userId)).resolves.toMatchObject({
-        conversation: expect.objectContaining({ id: conversationId, type: "DIRECT" }),
-        messages: [],
-        olderCursor: null,
-        newerCursor: null,
-        firstUnreadMessageId: null,
-      });
+      await expect(service.getConversation(conversationId, userId)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockConversationsRepository.updateLastRead).not.toHaveBeenCalled();
     });
   });
 
@@ -451,6 +501,7 @@ describe("ConversationsService", () => {
       const otherUserId = "user-2";
       const conversation = {
         id: conversationId,
+        type: "DIRECT",
         participants: [{ userId: "user-1" }, { userId: otherUserId }],
       };
       const createdMessage = {
@@ -504,6 +555,7 @@ describe("ConversationsService", () => {
       const otherUserId = "user-2";
       const conversation = {
         id: conversationId,
+        type: "DIRECT",
         participants: [{ userId: "user-1" }, { userId: otherUserId }],
       };
 
@@ -519,6 +571,34 @@ describe("ConversationsService", () => {
       );
     });
 
+    it("does not apply direct-message block rules to crew chat sends", async () => {
+      const conversationId = "conv-crew";
+      const userId = "user-1";
+      const content = "Hello";
+      const conversation = {
+        id: conversationId,
+        type: "CREW",
+        participants: [{ userId: "user-1" }, { userId: "user-2" }, { userId: "user-3" }],
+      };
+      const createdMessage = {
+        id: "msg-1",
+        conversationId,
+        senderId: userId,
+        content,
+        createdAt: new Date(),
+        deletedAt: null,
+      };
+
+      mockConversationsRepository.isParticipant.mockResolvedValue(true);
+      mockConversationsRepository.findById.mockResolvedValue(conversation);
+      mockConversationsRepository.createMessage.mockResolvedValue(createdMessage);
+
+      await expect(service.sendMessage(conversationId, userId, content)).resolves.toEqual(
+        createdMessage,
+      );
+      expect(mockBlockRepository.isBlocked).not.toHaveBeenCalled();
+    });
+
     it("should emit websocket event to all conversation participants when message is created", async () => {
       const conversationId = "conv-1";
       const userId = "user-1";
@@ -526,6 +606,7 @@ describe("ConversationsService", () => {
       const content = "Hello";
       const conversation = {
         id: conversationId,
+        type: "DIRECT",
         participants: [{ userId: "user-1" }, { userId: recipientId }],
       };
       const createdMessage = {

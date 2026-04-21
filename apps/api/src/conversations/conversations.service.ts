@@ -312,10 +312,13 @@ export class ConversationsService {
       throw new ForbiddenException("이 대화에 참여할 권한이 없습니다.");
     }
 
-    // Check block relationship
-    const otherParticipant = conversation.participants.find(
-      (p: (typeof conversation.participants)[number]) => p.userId !== userId,
-    );
+    // Only direct conversations inherit user block boundaries.
+    const otherParticipant =
+      conversation.type === "DIRECT"
+        ? conversation.participants.find(
+            (p: (typeof conversation.participants)[number]) => p.userId !== userId,
+          )
+        : undefined;
     if (otherParticipant) {
       const blocked = await this.blockRepo.isBlocked(userId, otherParticipant.userId);
       if (blocked) {
@@ -328,6 +331,17 @@ export class ConversationsService {
       userId,
       options,
     );
+
+    const selfParticipant = conversation.participants.find(
+      (participant: (typeof conversation.participants)[number]) => participant.userId === userId,
+    );
+    if (
+      conversation.type === "DIRECT" &&
+      selfParticipant?.leftAt &&
+      messageWindow.messages.length === 0
+    ) {
+      throw new NotFoundException("대화를 찾을 수 없습니다.");
+    }
 
     await this.conversationsRepo.updateLastRead(conversationId, userId).catch(() => {});
 
@@ -353,10 +367,13 @@ export class ConversationsService {
       throw new NotFoundException("대화를 찾을 수 없습니다.");
     }
 
-    // Check block (find the other participant)
-    const otherParticipant = conversation.participants.find(
-      (p: (typeof conversation.participants)[number]) => p.userId !== userId,
-    );
+    // Only direct conversations inherit user block boundaries.
+    const otherParticipant =
+      conversation.type === "DIRECT"
+        ? conversation.participants.find(
+            (p: (typeof conversation.participants)[number]) => p.userId !== userId,
+          )
+        : undefined;
     if (otherParticipant) {
       const blocked = await this.blockRepo.isBlocked(userId, otherParticipant.userId);
       if (blocked) {

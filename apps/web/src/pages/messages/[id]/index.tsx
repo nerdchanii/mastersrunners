@@ -87,6 +87,12 @@ export default function MessageDetailPage() {
       : null;
 
   useEffect(() => {
+    setContent("");
+    initialPositionedRef.current = false;
+    prependSnapshotRef.current = null;
+  }, [id]);
+
+  useEffect(() => {
     if (chat.errorStatus !== 403 && chat.errorStatus !== 404) {
       return;
     }

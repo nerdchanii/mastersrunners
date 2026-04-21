@@ -46,8 +46,8 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 
 ## Review Plan
 
-- `frontend-reviewer` checks route composition, shared state ownership, and UI behavior
-- `backend-reviewer` checks DM SSE delivery reliability stays inside the existing transport contract
+- `frontend-reviewer` checks route composition, shared socket ownership, and UI behavior
+- `backend-reviewer` checks gateway auth, room fan-out, and DM leave cut-line persistence stay coherent with the current transport contract
 - `ui-ux-reviewer` checks chat identity, copy, empty states, and interaction smoothness
 - `po-reviewer` checks the resulting messaging flow feels natural for community use
 
@@ -56,8 +56,8 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 - `tasks/archive/I-0009-010-web-crew-messaging-ux-polish.md`
 - `tasks/archive/I-0009-020-web-messaging-e2e-mock-fixtures.md`
 - `tasks/archive/I-0009-030-api-sse-stream-stability.md`
-- `tasks/todo/I-0009-040-api-web-chat-websocket-transport.md`
-- `tasks/todo/I-0009-050-api-web-dm-leave-cutline.md`
+- `tasks/archive/I-0009-040-api-web-chat-websocket-transport.md`
+- `tasks/archive/I-0009-050-api-web-dm-leave-cutline.md` (superseded by `I-0009-040`)
 
 ## Success Criteria
 
