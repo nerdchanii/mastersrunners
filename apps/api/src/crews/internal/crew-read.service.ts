@@ -33,7 +33,18 @@ export class CrewReadService {
     return this.crewRepo.getSubRegions(region);
   }
 
-  async getCrewChat(crewId: string, userId: string, cursor?: string) {
+  async getCrewChat(
+    crewId: string,
+    userId: string,
+    options?: {
+      cursor?: string;
+      direction?: "older" | "newer";
+      entry?: "latest" | "unread";
+      historyLimit?: number;
+      unreadLimit?: number;
+      limit?: number;
+    },
+  ) {
     const crew = await this.getCrewOrThrow(crewId);
     const member = await this.crewMemberRepo.findMember(crewId, userId);
     if (!member || member.status !== "ACTIVE") {
@@ -54,7 +65,7 @@ export class CrewReadService {
     const messageWindow = await this.conversationsRepo.getConversationWindow(
       crew.chatConversationId,
       userId,
-      cursor ? { direction: "older", cursor, limit: 40 } : undefined,
+      options ?? {},
     );
 
     await this.conversationsRepo.updateLastRead(crew.chatConversationId, userId).catch(() => {});

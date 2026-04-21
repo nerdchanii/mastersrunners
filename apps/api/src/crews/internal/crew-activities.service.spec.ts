@@ -92,6 +92,11 @@ describe("CrewActivitiesService", () => {
     });
 
     it("allows RSVP members", async () => {
+      const options = {
+        entry: "unread" as const,
+        historyLimit: 40,
+        unreadLimit: 100,
+      };
       mockCrewActivityRepo.findById.mockResolvedValue({
         ...baseActivity,
         attendances: [{ userId: "user-1", status: "RSVP" }],
@@ -111,7 +116,7 @@ describe("CrewActivitiesService", () => {
       mockConversationsRepo.updateLastRead.mockResolvedValue({});
 
       await expect(
-        service.getActivityChat("crew-1", "activity-1", "user-1"),
+        service.getActivityChat("crew-1", "activity-1", "user-1", options),
       ).resolves.toMatchObject({
         conversation: { id: "conv-activity-1" },
         messages: [{ id: "msg-1" }],
@@ -119,6 +124,11 @@ describe("CrewActivitiesService", () => {
         newerCursor: null,
         firstUnreadMessageId: null,
       });
+      expect(mockConversationsRepo.getConversationWindow).toHaveBeenCalledWith(
+        "conv-activity-1",
+        "user-1",
+        options,
+      );
     });
 
     it("allows admins without attendance", async () => {

@@ -68,6 +68,11 @@ describe("CrewReadService", () => {
     it("loads chat data for active members", async () => {
       const conversation = { id: "conv-1" };
       const messages = [{ id: "msg-1" }];
+      const options = {
+        entry: "unread" as const,
+        historyLimit: 40,
+        unreadLimit: 100,
+      };
 
       mockCrewRepo.findById.mockResolvedValue({ id: "crew-1", chatConversationId: "conv-1" });
       mockCrewMemberRepo.findMember.mockResolvedValue({
@@ -84,13 +89,18 @@ describe("CrewReadService", () => {
       });
       mockConversationsRepo.updateLastRead.mockResolvedValue({});
 
-      await expect(service.getCrewChat("crew-1", "user-1")).resolves.toMatchObject({
+      await expect(service.getCrewChat("crew-1", "user-1", options)).resolves.toMatchObject({
         conversation,
         messages,
         olderCursor: null,
         newerCursor: null,
         firstUnreadMessageId: null,
       });
+      expect(mockConversationsRepo.getConversationWindow).toHaveBeenCalledWith(
+        "conv-1",
+        "user-1",
+        options,
+      );
       expect(mockConversationsRepo.updateLastRead).toHaveBeenCalledWith("conv-1", "user-1");
     });
 

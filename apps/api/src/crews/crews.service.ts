@@ -392,45 +392,7 @@ export class CrewsService {
       limit?: number;
     },
   ) {
-    if (options?.direction === "newer") {
-      const crew = await this.crewRepo.findById(crewId);
-      if (!crew) {
-        throw new NotFoundException("크루를 찾을 수 없습니다.");
-      }
-      if (!crew.chatConversationId) {
-        return {
-          conversation: null,
-          messages: [],
-          olderCursor: null,
-          newerCursor: null,
-          firstUnreadMessageId: null,
-        };
-      }
-
-      const member = await this.crewMemberRepo.findMember(crewId, userId);
-      if (!member || member.status !== "ACTIVE") {
-        throw new ForbiddenException("크루 멤버만 채팅에 참여할 수 있습니다.");
-      }
-
-      const conversation = await this.conversationsRepo.findById(crew.chatConversationId);
-      const messageWindow = await this.conversationsRepo.getConversationWindow(
-        crew.chatConversationId,
-        userId,
-        options,
-      );
-
-      await this.conversationsRepo.updateLastRead(crew.chatConversationId, userId).catch(() => {});
-
-      return {
-        conversation,
-        messages: messageWindow.messages,
-        olderCursor: messageWindow.olderCursor,
-        newerCursor: messageWindow.newerCursor,
-        firstUnreadMessageId: messageWindow.firstUnreadMessageId,
-      };
-    }
-
-    return this.readService.getCrewChat(crewId, userId, options?.cursor);
+    return this.readService.getCrewChat(crewId, userId, options);
   }
 
   async createCrewPost(
@@ -462,60 +424,6 @@ export class CrewsService {
       limit?: number;
     },
   ) {
-    if (options?.direction === "newer") {
-      const activity = await this.crewActivityRepo.findById(activityId);
-      if (!activity || activity.crewId !== crewId) {
-        throw new NotFoundException("활동을 찾을 수 없습니다.");
-      }
-
-      const member = await this.crewMemberRepo.findMember(crewId, userId);
-      if (!member || member.status !== "ACTIVE") {
-        throw new ForbiddenException("크루 멤버만 채팅에 참여할 수 있습니다.");
-      }
-
-      const isAdmin = member.role === "OWNER" || member.role === "ADMIN";
-      const isHost = activity.createdBy === userId;
-      const canManage = isAdmin || (activity.activityType === "POP_UP" && isHost);
-      const myAttendance = activity.attendances.find(
-        (attendance: (typeof activity.attendances)[number]) => attendance.userId === userId,
-      );
-      const canAccessChat =
-        myAttendance?.status === "RSVP" || myAttendance?.status === "CHECKED_IN" || canManage;
-
-      if (!canAccessChat) {
-        throw new ForbiddenException("참석 후 대화를 확인할 수 있습니다.");
-      }
-
-      if (!activity.chatConversationId) {
-        return {
-          conversation: null,
-          messages: [],
-          olderCursor: null,
-          newerCursor: null,
-          firstUnreadMessageId: null,
-        };
-      }
-
-      const conversation = await this.conversationsRepo.findById(activity.chatConversationId);
-      const messageWindow = await this.conversationsRepo.getConversationWindow(
-        activity.chatConversationId,
-        userId,
-        options,
-      );
-
-      await this.conversationsRepo
-        .updateLastRead(activity.chatConversationId, userId)
-        .catch(() => {});
-
-      return {
-        conversation,
-        messages: messageWindow.messages,
-        olderCursor: messageWindow.olderCursor,
-        newerCursor: messageWindow.newerCursor,
-        firstUnreadMessageId: messageWindow.firstUnreadMessageId,
-      };
-    }
-
-    return this.activitiesService.getActivityChat(crewId, activityId, userId, options?.cursor);
+    return this.activitiesService.getActivityChat(crewId, activityId, userId, options);
   }
 }

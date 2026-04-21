@@ -5,8 +5,13 @@ import { describe, expect, it, vi } from "vitest";
 
 import ActivityChatPage from "./chat";
 
+const groupChatSpy = vi.fn();
+
 vi.mock("@/components/crew/GroupChat", () => ({
-  default: () => <div>activity-chat-room</div>,
+  default: (props: unknown) => {
+    groupChatSpy(props);
+    return <div>activity-chat-room</div>;
+  },
 }));
 
 vi.mock("@/lib/auth-context", () => ({
@@ -33,7 +38,33 @@ const { useCrew } = await import("@/hooks/useCrews");
 const { useActivityChat } = await import("@/hooks/useGroupChat");
 
 describe("ActivityChatPage", () => {
+  const baseChatController = {
+    conversation: { id: "conv-1", participants: [] },
+    messages: [],
+    olderCursor: null,
+    newerCursor: null,
+    firstUnreadMessageId: null,
+    loading: false,
+    error: null,
+    errorStatus: null,
+    loadingOlder: false,
+    loadingNewer: false,
+    sending: false,
+    sendError: null,
+    pendingNewMessages: 0,
+    anchorMessageId: null,
+    anchorVersion: 0,
+    bottomScrollVersion: 0,
+    clearSendError: vi.fn(),
+    loadOlder: vi.fn(),
+    loadNewer: vi.fn(),
+    retry: vi.fn(),
+    sendMessage: vi.fn(),
+    setNearBottom: vi.fn(),
+  };
+
   it("shows a locked entry CTA before RSVP", async () => {
+    groupChatSpy.mockReset();
     vi.mocked(useCrewActivity).mockReturnValue({
       data: {
         id: "activity-1",
@@ -49,8 +80,8 @@ describe("ActivityChatPage", () => {
       },
     } as never);
     vi.mocked(useActivityChat).mockReturnValue({
-      data: { conversation: null, messages: [], nextCursor: null },
-      isLoading: false,
+      ...baseChatController,
+      conversation: null,
     } as never);
     vi.mocked(useRsvp).mockReturnValue({
       mutate: vi.fn(),
@@ -73,6 +104,7 @@ describe("ActivityChatPage", () => {
   });
 
   it("renders the chat room for RSVP members", () => {
+    groupChatSpy.mockReset();
     vi.mocked(useCrewActivity).mockReturnValue({
       data: {
         id: "activity-1",
@@ -88,8 +120,7 @@ describe("ActivityChatPage", () => {
       },
     } as never);
     vi.mocked(useActivityChat).mockReturnValue({
-      data: { conversation: { id: "conv-1", participants: [] }, messages: [], nextCursor: null },
-      isLoading: false,
+      ...baseChatController,
     } as never);
     vi.mocked(useRsvp).mockReturnValue({
       mutate: vi.fn(),
@@ -105,5 +136,16 @@ describe("ActivityChatPage", () => {
     );
 
     expect(screen.getByText("activity-chat-room")).toBeInTheDocument();
+    expect(groupChatSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chat: expect.objectContaining({
+          conversation: expect.objectContaining({ id: "conv-1" }),
+          messages: [],
+          olderCursor: null,
+          newerCursor: null,
+          firstUnreadMessageId: null,
+        }),
+      }),
+    );
   });
 });

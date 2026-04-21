@@ -312,7 +312,19 @@ export class CrewActivitiesService {
     return this.crewActivityRepo.getCrewAttendanceStats(crewId, opts);
   }
 
-  async getActivityChat(crewId: string, activityId: string, userId: string, cursor?: string) {
+  async getActivityChat(
+    crewId: string,
+    activityId: string,
+    userId: string,
+    options?: {
+      cursor?: string;
+      direction?: "older" | "newer";
+      entry?: "latest" | "unread";
+      historyLimit?: number;
+      unreadLimit?: number;
+      limit?: number;
+    },
+  ) {
     const activity = await this.getActivityInCrewOrThrow(activityId, crewId);
     if (activity.status === "CANCELLED") {
       throw new ForbiddenException("취소된 활동의 채팅은 확인할 수 없습니다.");
@@ -349,7 +361,7 @@ export class CrewActivitiesService {
     const messageWindow = await this.conversationsRepo.getConversationWindow(
       activity.chatConversationId,
       userId,
-      cursor ? { direction: "older", cursor, limit: 40 } : undefined,
+      options ?? {},
     );
 
     await this.conversationsRepo
