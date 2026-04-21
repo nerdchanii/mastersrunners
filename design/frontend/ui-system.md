@@ -32,7 +32,7 @@ sources:
 - `globals.css`는 Tailwind, `tw-animate-css`, shadcn 테마 헬퍼, Leaflet CSS를 import한다.
 - color, radius, chart, sidebar 토큰은 CSS 변수로 정의된다.
 - Tailwind 테마 별칭은 `@theme inline`을 통해 해당 변수에 매핑된다.
-- `apps/web`의 UI primitive는 Next.js 전용 `"use client"` 경계 없이도 동작하는 일반 React 컴포넌트로 유지한다.
+- UI primitive는 특정 프레임워크 전용 경계나 라우터 전제에 묶지 않고, 현재 `apps/web` 런타임에서 바로 재사용 가능한 일반 React 컴포넌트로 유지한다.
 
 ## 테마 모델
 
@@ -51,15 +51,12 @@ sources:
 - 각 component story의 최소 계약은 `Playground` 또는 직접 조작 가능한 대표 story 1개와, 필요 시 `States`/`Variants`/`Interaction`로 상태 차이를 드러내는 것이다.
 - `pnpm --filter @masters/web storybook:coverage`는 모든 `components/**/*.tsx`에 대응하는 `*.stories.tsx`가 있는지 확인하는 coverage gate다.
 - `/feed`, `/posts/:id`, `/profile/:id`, `/crews/:id`, `/workouts/:id` 같은 실제 라우트 계약의 truth는 여전히 실앱과 Playwright다.
-- feed/post action row와 guest gate는 signed-in/guest 비교 story를 기본으로 두고, 행동이 막히는 순간의 copy와 affordance를 같은 언어로 검토한다.
-- profile identity flow는 `ProfileHeader`, `ProfileStats`, `ProfileTabs`를 따로 떼어 보되, 실제 프로필 화면에서는 stats가 header 안의 같은 identity block으로 읽혀야 한다. Storybook에서는 `header(embedded stats) → tabs → preview feed`의 리듬이 `/feed`와 어긋나지 않는지 확인한다.
-- profile header의 own/following/private/pending variant는 avatar, name, bio, record block, action area 높이 차이가 과도하지 않게 같은 baseline을 유지해야 한다.
-- profile header의 PB는 outline chip이 아니라 bio 아래 이어지는 record line으로 표시한다. 현재 schema/API는 초 단위 PB만 저장하므로 race name/date 같은 메타데이터 표시는 별도 후속 과업 없이는 넣지 않는다.
-- profile tabs의 posts/workouts는 profile 전용 preview card를 새로 만들기보다 `/feed` surface language를 재사용하고, crews tab도 crew info card가 아니라 crew post feed처럼 읽혀야 한다.
-- crew participation flow는 `guest(auth gate)`, `member(invite + secondary leave)`, `owner/admin`, `pending`, `empty/loading`, `open composer/dialog` 차이를 Storybook에서 바로 비교할 수 있어야 한다.
-- crew management surface가 fetch를 품고 있더라도, Storybook에서는 deterministic fixture나 초기 view state를 주입해 form/action/list/chat/attendance 리듬을 같은 언어로 검토한다.
-- `/crews/:id`는 실앱과 Playwright가 최종 truth지만, Storybook에서는 `CrewHubPage` 같은 composite story로 hero, 탭, 우측 패널의 조합 리듬을 한 화면에서 빠르게 점검할 수 있어야 한다.
 - stories는 `components/ui`, `components/common`, `components/layout`, `components/feed`, `components/profile`, `components/post`, `components/social`, `components/challenge`, `components/event`, `components/crew`, `components/workout` 아래에 co-locate한다.
+- Storybook은 개별 컴포넌트 예제 모음이 아니라, 사용자 역할과 데이터 상태가 바뀔 때 surface language가 유지되는지 검토하는 workbench로 사용한다.
+- 상태가 UX를 바꾸는 surface는 happy path 하나로 끝내지 않고, 최소한 권한 차이, 데이터 유무, 로딩/빈 상태, 주요 overlay open 상태를 비교 가능한 story로 남긴다.
+- fetch나 브라우저 API를 품은 화면도 Storybook에서 검토 가능해야 한다. 이를 위해 story는 deterministic fixture, 초기 view state, mock browser capability를 주입할 수 있어야 한다.
+- 라우트 수준 검토가 필요한 경우에는 단일 atom을 추가로 쪼개기보다 composite story를 사용해 section 간 위계, action rhythm, copy tone, panel composition을 한 화면에서 점검한다.
+- Storybook에서 발견한 기준은 특정 화면에만 고정하지 않고, 유사한 surface 전반에서 재사용 가능한 규칙으로 환원한다.
 
 ## 컴포넌트 컨벤션
 
@@ -69,6 +66,8 @@ sources:
 - 셸 레벨 공용 UX 컴포넌트는 `components/common`, `components/layout` 아래에 둔다
 - `components/ui`는 기본 프리미티브 레이어이며, 모든 제품 섹션을 카드 크롬으로 감싸도 된다는 뜻이 아니다.
 - 소비자용 소셜 화면은 기본적으로 섹션/구분선/미디어 중심 구성을 따르고, 카드가 필요한 경우는 경계 자체가 중요한 상황으로 제한한다.
+- 새 surface를 만들 때는 "어떤 컴포넌트를 더 추가할까"보다 "이 화면이 기존 surface language를 얼마나 재사용하고, 어디서만 새 예외를 허용할까"를 먼저 판단한다.
+- 특정 피드백에서 나온 수정 요청은 그대로 규칙으로 승격하지 않는다. 반복되는 문제를 추상화해 spacing, hierarchy, action prominence, copy tone, state visibility 같은 판단 기준으로 문서화한다.
 
 ## UX 규칙 참고 문서
 
