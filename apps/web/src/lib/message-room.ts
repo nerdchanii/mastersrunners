@@ -89,7 +89,7 @@ export function getConversationRoomMeta(
     return {
       href:
         conversation.activityId && (conversation.crewId ?? conversation.activity?.crewId)
-          ? `/crews/${conversation.crewId ?? conversation.activity?.crewId}/activities/${conversation.activityId}/chat`
+          ? `/messages/crew/${conversation.crewId ?? conversation.activity?.crewId}/activity/${conversation.activityId}`
           : `/messages/${conversation.id}`,
       secondaryTitle: crewName,
       title: activityTitle,

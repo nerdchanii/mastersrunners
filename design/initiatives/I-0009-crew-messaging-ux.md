@@ -25,7 +25,7 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 
 - `apps/web/src/components/crew/GroupChat.tsx`
 - `apps/web/src/pages/crews/[id]/index.tsx`
-- `apps/web/src/pages/crews/[id]/activities/[activityId]/chat.tsx`
+- `apps/web/src/pages/messages/crew/[crewId]/activity/[activityId]/index.tsx`
 - `apps/web/src/pages/messages/[id]/index.tsx`
 - `apps/web/src/pages/messages/[id]/useMessageDetailPage.ts`
 - `apps/web/src/components/layout/Header.tsx`

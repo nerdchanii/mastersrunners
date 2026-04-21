@@ -75,7 +75,7 @@ test.describe("크루 그룹 채팅", () => {
     test("RSVP 참석자에게 활동 채팅방 링크가 표시된다", async ({ page }) => {
       await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}`);
 
-      await expect(page.getByRole("button", { name: /^대화$/ })).toBeVisible();
+      await expect(page.getByRole("button", { name: "활동 채팅" })).toBeVisible();
     });
   });
 
@@ -86,16 +86,16 @@ test.describe("크루 그룹 채팅", () => {
     });
 
     test("활동 채팅 페이지가 표시된다", async ({ page }) => {
-      await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}/chat`);
+      await page.goto(`/messages/crew/${mockCrewId}/activity/${mockActivityId}`);
 
       await expect(page.getByRole("heading", { name: "월요일 아침 러닝" })).toBeVisible();
       await expect(page.getByText("서울 러닝 크루")).toBeVisible();
     });
 
     test("빈 채팅방에 안내 메시지가 표시된다", async ({ page }) => {
-      await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}/chat`);
+      await page.goto(`/messages/crew/${mockCrewId}/activity/${mockActivityId}`);
 
-      await expect(page.getByText("아직 대화가 없습니다.")).toBeVisible();
+      await expect(page.getByText("월요일 아침 러닝에 첫 메시지를 남겨보세요.")).toBeVisible();
     });
 
     test("참석하지 않은 사용자는 설명 카드만 본다", async ({ page }) => {
@@ -105,9 +105,9 @@ test.describe("크루 그룹 채팅", () => {
         }),
       });
 
-      await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}/chat`);
+      await page.goto(`/messages/crew/${mockCrewId}/activity/${mockActivityId}`);
 
-      await expect(page.getByText("참석 후 대화를 볼 수 있습니다.")).toBeVisible();
+      await expect(page.getByText("활동 채팅은 참석 신청 후 입장할 수 있습니다.")).toBeVisible();
       await expect(page.getByPlaceholder("메시지를 입력하세요")).toHaveCount(0);
     });
   });

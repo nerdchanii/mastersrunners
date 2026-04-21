@@ -8,7 +8,7 @@ sources:
   - apps/web/src/pages/crews/[id]/index.tsx
   - apps/web/src/pages/crews/[id]/settings/index.tsx
   - apps/web/src/pages/crews/[id]/activities/[activityId]/index.tsx
-  - apps/web/src/pages/crews/[id]/activities/[activityId]/chat.tsx
+  - apps/web/src/pages/messages/crew/[crewId]/activity/[activityId]/index.tsx
   - apps/web/src/pages/crews/[id]/activities/[activityId]/qr-check-in.tsx
   - apps/web/src/pages/messages/index.tsx
   - apps/web/src/components/crew/CrewActivityList.tsx
@@ -36,7 +36,7 @@ sources:
 - `/crews/:id/settings` configures the crew
 - `/crews/:id/activities/:activityId` shows an activity detail page
 - `/crews/:id/activities/:activityId/edit` edits an activity
-- `/crews/:id/activities/:activityId/chat` opens activity chat
+- `/messages/crew/:crewId/activity/:activityId` opens activity chat
 - `/crews/:id/activities/:activityId/qr-check-in` handles QR attendance
 
 비로그인 진입은 공개 탐색 우선을 유지한다.
@@ -120,6 +120,7 @@ sources:
   - 크루 방은 `크루명`으로 렌더링하고 썸네일을 아바타로 사용한다
   - 활동 방은 `활동명`을 먼저 보여주고, 어느 크루의 활동인지 보조 정보로 보여준다
 - 메시지 허브에서 크루 또는 활동 방을 선택하면, 모든 방을 DM thread처럼 취급하지 않고 해당 크루/활동 채팅 화면으로 다시 라우팅한다
+- activity detail의 `대화` CTA도 같은 `/messages/crew/:crewId/activity/:activityId` 경로를 사용한다
 - raw `crewId`, `activityId`, 또는 fallback conversation id는 크루용 채팅 헤더나 empty state에 노출하지 않는다
 - 활동 채팅 라우트 접근 권한은 의도적으로 활동 상세 CTA와 정렬한다
   - `RSVP`

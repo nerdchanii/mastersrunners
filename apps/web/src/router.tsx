@@ -35,7 +35,6 @@ const CrewSettingsPage = lazy(() => import("@/pages/crews/[id]/settings"));
 const CrewActivityDetailPage = lazy(() => import("@/pages/crews/[id]/activities/[activityId]"));
 const CrewActivityEditPage = lazy(() => import("@/pages/crews/[id]/activities/[activityId]/edit"));
 const QrCheckInPage = lazy(() => import("@/pages/crews/[id]/activities/[activityId]/qr-check-in"));
-const ActivityChatPage = lazy(() => import("@/pages/crews/[id]/activities/[activityId]/chat"));
 const ChallengesPage = lazy(() => import("@/pages/challenges"));
 const ChallengeNewPage = lazy(() => import("@/pages/challenges/new"));
 const ChallengeDetailPage = lazy(() => import("@/pages/challenges/[id]"));
@@ -45,6 +44,9 @@ const EventDetailPage = lazy(() => import("@/pages/events/[id]"));
 const MessagesPage = lazy(() => import("@/pages/messages"));
 const MessageDetailPage = lazy(() => import("@/pages/messages/[id]"));
 const CrewMessagePage = lazy(() => import("@/pages/messages/crew/[crewId]"));
+const ActivityMessagePage = lazy(
+  () => import("@/pages/messages/crew/[crewId]/activity/[activityId]"),
+);
 const MessagesShell = lazy(() => import("@/pages/messages/shell"));
 const EditProfilePage = lazy(() => import("@/pages/settings/profile"));
 const NotificationsPage = lazy(() => import("@/pages/notifications"));
@@ -75,9 +77,7 @@ function RootLayout() {
 
 function MainLayout() {
   const location = useLocation();
-  const isChatRoute =
-    location.pathname.startsWith("/messages") ||
-    /\/crews\/[^/]+\/activities\/[^/]+\/chat$/.test(location.pathname);
+  const isChatRoute = location.pathname.startsWith("/messages");
 
   return (
     <div className="min-h-screen bg-background">
@@ -207,7 +207,6 @@ export const router = createBrowserRouter([
               { path: "/settings/profile", element: <EditProfilePage /> },
               { path: "/crews/new", element: <CrewNewPage /> },
               { path: "/crews/:id/settings", element: <CrewSettingsPage /> },
-              { path: "/crews/:id/activities/:activityId/chat", element: <ActivityChatPage /> },
               { path: "/crews/:id/activities/:activityId/qr-check-in", element: <QrCheckInPage /> },
               { path: "/crews/:id/activities/:activityId/edit", element: <CrewActivityEditPage /> },
               { path: "/crews/:id/activities/:activityId", element: <CrewActivityDetailPage /> },
@@ -233,6 +232,10 @@ export const router = createBrowserRouter([
                 children: [
                   { index: true, element: <MessagesPage /> },
                   { path: "crew/:crewId", element: <CrewMessagePage /> },
+                  {
+                    path: "crew/:crewId/activity/:activityId",
+                    element: <ActivityMessagePage />,
+                  },
                   { path: ":id", element: <MessageDetailPage /> },
                 ],
               },

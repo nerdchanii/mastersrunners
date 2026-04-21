@@ -1,9 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Outlet, Route, Routes } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
-import ActivityChatPage from "./chat";
+import ActivityMessagePage from "./index";
 
 const groupChatSpy = vi.fn();
 
@@ -33,11 +33,27 @@ vi.mock("@/hooks/useGroupChat", () => ({
   useActivityChat: vi.fn(),
 }));
 
+vi.mock("@/hooks/useChatBackToMessages", () => ({
+  useChatBackToMessages: () => vi.fn(),
+}));
+
 const { useCrewActivity, useRsvp } = await import("@/hooks/useCrewActivities");
 const { useCrew } = await import("@/hooks/useCrews");
 const { useActivityChat } = await import("@/hooks/useGroupChat");
 
-describe("ActivityChatPage", () => {
+function renderPage(entry = "/messages/crew/crew-1/activity/activity-1") {
+  return render(
+    <MemoryRouter initialEntries={[entry]}>
+      <Routes>
+        <Route path="/messages" element={<Outlet context={{ selectedConversation: null }} />}>
+          <Route path="crew/:crewId/activity/:activityId" element={<ActivityMessagePage />} />
+        </Route>
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
+describe("ActivityMessagePage", () => {
   const baseChatController = {
     conversation: { id: "conv-1", participants: [] },
     messages: [],
@@ -88,13 +104,7 @@ describe("ActivityChatPage", () => {
       isPending: false,
     } as never);
 
-    render(
-      <MemoryRouter initialEntries={["/crews/crew-1/activities/activity-1/chat"]}>
-        <Routes>
-          <Route path="/crews/:id/activities/:activityId/chat" element={<ActivityChatPage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
+    renderPage();
 
     expect(screen.getByText("활동 채팅은 참석 신청 후 입장할 수 있습니다.")).toBeInTheDocument();
 
@@ -127,13 +137,7 @@ describe("ActivityChatPage", () => {
       isPending: false,
     } as never);
 
-    render(
-      <MemoryRouter initialEntries={["/crews/crew-1/activities/activity-1/chat"]}>
-        <Routes>
-          <Route path="/crews/:id/activities/:activityId/chat" element={<ActivityChatPage />} />
-        </Routes>
-      </MemoryRouter>,
-    );
+    renderPage();
 
     expect(screen.getByText("activity-chat-room")).toBeInTheDocument();
     expect(groupChatSpy).toHaveBeenCalledWith(

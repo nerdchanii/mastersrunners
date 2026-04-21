@@ -100,8 +100,7 @@ export function BottomNav({ initialCreateSheetOpen = false }: BottomNavProps) {
   const visibleItems = mobileNavItems.filter(
     (item) => (!item.auth || isAuthenticated) && (!item.feature || config.features[item.feature]),
   );
-  const hideOnMobileChatRoute =
-    pathname.startsWith("/messages/") || /\/crews\/[^/]+\/activities\/[^/]+\/chat$/.test(pathname);
+  const hideOnMobileChatRoute = pathname.startsWith("/messages");
 
   if (hideOnMobileChatRoute) {
     return null;

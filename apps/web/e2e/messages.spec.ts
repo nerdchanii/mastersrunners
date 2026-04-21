@@ -68,7 +68,7 @@ test.describe("메시지 UX", () => {
     await expect(sidebar.getByText("월요일 아침 러닝")).toHaveCount(0);
   });
 
-  test("메시지 허브의 그룹 방은 각 크루와 활동 화면으로 연결된다", async ({ page }) => {
+  test("메시지 허브의 그룹 방은 각 크루와 활동 채팅 화면으로 연결된다", async ({ page }) => {
     await setupMessagingRoutes(page, {
       activityChat: buildActivityChatScenario(),
       crewChat: buildCrewChatScenario(),
@@ -79,7 +79,7 @@ test.describe("메시지 UX", () => {
     const sidebar = page.getByTestId("messages-panel-sidebar");
 
     await sidebar.getByTestId("conversation-row-conv-activity-1").click();
-    await expect(page).toHaveURL(/\/crews\/crew-1\/activities\/activity-1\/chat$/);
+    await expect(page).toHaveURL(/\/messages\/crew\/crew-1\/activity\/activity-1$/);
 
     await page.goto("/messages");
 

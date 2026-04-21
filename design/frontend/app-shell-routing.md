@@ -89,7 +89,9 @@ sources:
 - 메시지는 보호된 앱 허브다.
   - `/messages`와 `/messages/:id`는 같은 목록-대화 흐름으로 읽혀야 한다
   - `/messages/crew/:crewId`는 crew 채팅의 전용 진입점이다
+  - `/messages/crew/:crewId/activity/:activityId`는 activity 채팅의 전용 진입점이다
   - `/messages`의 crew row는 crew 썸네일과 crew 이름을 써서 `/messages/crew/:crewId`로 이동해야 한다
+  - `/messages`의 activity row는 활동명과 보조 크루명을 써서 `/messages/crew/:crewId/activity/:activityId`로 이동해야 한다
   - 메시지 허브는 방 정체성, 필터, 검색을 먼저 보여주고 과한 소개 문구에 기대지 않는다
   - 대화 상세는 room meta, 메시지 흐름, 입력 레일을 조용한 product shell 안에서 유지한다
 - 첫 진입 라우트는 공개 피드 우선이다.

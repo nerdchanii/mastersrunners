@@ -86,7 +86,7 @@ export function useCrewActivityDetailViewModel() {
 
   const goBackToCrew = () => navigate(`/crews/${crewId}`);
   const goToEdit = () => navigate(`/crews/${crewId}/activities/${activityId}/edit`);
-  const goToChat = () => navigate(`/crews/${crewId}/activities/${activityId}/chat`);
+  const goToChat = () => navigate(`/messages/crew/${crewId}/activity/${activityId}`);
   const goToQrCheckIn = () => navigate(`/crews/${crewId}/activities/${activityId}/qr-check-in`);
 
   const handleDelete = () => {
