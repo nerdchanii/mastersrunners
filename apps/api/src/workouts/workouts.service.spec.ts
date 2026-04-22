@@ -56,14 +56,21 @@ describe("WorkoutsService", () => {
   });
 
   describe("findAll", () => {
-    it("should delegate to workoutRepo.findAllByUser", async () => {
-      const mockData = [{ id: "w1" }];
+    it("should delegate to workoutRepo.findAllByUser and omit internal detail blob fields", async () => {
+      const mockData = [
+        {
+          id: "w1",
+          detailPath: "workout-details/user-1/run.detail.v1.json",
+          detailFormatVersion: 1,
+          encodedPolyline: "abc123",
+        },
+      ];
       mockWorkoutRepo.findAllByUser.mockResolvedValue(mockData);
 
       const result = await service.findAll("user-1");
 
       expect(mockWorkoutRepo.findAllByUser).toHaveBeenCalledWith("user-1");
-      expect(result).toEqual(mockData);
+      expect(result).toEqual([{ id: "w1", encodedPolyline: "abc123" }]);
     });
   });
 
@@ -219,6 +226,9 @@ describe("WorkoutsService", () => {
     it("should return workout with workoutFiles, workoutRoutes, and workoutLaps", async () => {
       const mockData = {
         id: "w1",
+        detailPath: "workout-details/user-1/run.detail.v1.json",
+        detailFormatVersion: 1,
+        encodedPolyline: "summary-polyline",
         user: { id: "u1", name: "Test", profileImage: null },
         workoutType: { id: "wt1", category: "EASY", name: "Easy Run" },
         _count: { workoutLikes: 3, workoutComments: 2 },
@@ -258,6 +268,8 @@ describe("WorkoutsService", () => {
       expect(result!.workoutFiles[0]).not.toHaveProperty("fileUrl");
       expect(result!.workoutRoutes).toHaveLength(1);
       expect(result!.workoutRoutes[0].id).toBe("r1");
+      expect(result).not.toHaveProperty("detailPath");
+      expect(result).not.toHaveProperty("detailFormatVersion");
       expect(result!.workoutLaps).toHaveLength(2);
       expect(result!.workoutLaps[0].lapNumber).toBe(1);
       expect(result!.workoutLaps[1].lapNumber).toBe(2);

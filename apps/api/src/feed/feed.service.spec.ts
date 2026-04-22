@@ -198,6 +198,30 @@ describe("FeedService", () => {
       expect(result.items[0]._count).toEqual({ likes: 1, comments: 2 });
     });
 
+    it("should omit internal detail blob fields from workout feed items", async () => {
+      mockFeedRepo.getFollowingIds.mockResolvedValue([]);
+      mockFeedRepo.getWorkoutFeed.mockResolvedValue([
+        {
+          id: "w1",
+          detailPath: "workout-details/user-1/run.detail.v1.json",
+          detailFormatVersion: 1,
+          encodedPolyline: "summary-polyline",
+          _count: { workoutLikes: 2, workoutComments: 1 },
+          workoutLikes: [],
+        },
+      ]);
+
+      const result = await service.getWorkoutFeed("me", undefined, 10);
+
+      expect(result.items[0]).toMatchObject({
+        id: "w1",
+        encodedPolyline: "summary-polyline",
+        _count: { likes: 2, comments: 1 },
+      });
+      expect(result.items[0]).not.toHaveProperty("detailPath");
+      expect(result.items[0]).not.toHaveProperty("detailFormatVersion");
+    });
+
     it("should return empty result when no workouts", async () => {
       mockFeedRepo.getFollowingIds.mockResolvedValue([]);
       mockFeedRepo.getWorkoutFeed.mockResolvedValue([]);

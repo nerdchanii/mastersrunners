@@ -54,7 +54,7 @@
 
 - `tasks/archive/I-0018-010-api-workout-source-privacy-boundary.md`
 - `tasks/archive/I-0018-015-web-workout-source-presign-cutover.md`
-- `tasks/todo/I-0018-020-api-workout-detail-blob-foundation.md`
+- `tasks/archive/I-0018-020-api-workout-detail-blob-foundation.md`
 - `tasks/todo/I-0018-030-api-workout-detail-read-cutover.md`
 - `tasks/todo/I-0018-040-repo-cloudflare-workout-private-storage-backfill.md`
 - `tasks/todo/I-0018-050-db-workout-legacy-detail-cleanup.md`
@@ -70,3 +70,4 @@
 ## 진행 메모
 
 - 2026-04-22: initiative를 생성하고 task별 worktree/TDD/reviewer flow를 기준으로 execution을 시작한다.
+- 2026-04-22: `I-0018-020`에서 `Workout.detailPath`, `detailFormatVersion`, `encodedPolyline`, `WorkoutFile.sourcePath`와 private detail blob write foundation을 추가하고, current read surfaces가 새 private path를 노출하지 않도록 최소 sanitization을 넣었다.

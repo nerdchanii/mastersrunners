@@ -1,10 +1,11 @@
 ---
 doc_state: current
 owner: product
-last_verified: 2026-03-30
+last_verified: 2026-04-22
 sources:
   - packages/database/prisma/schema.prisma
-  - apps/api/src
+  - apps/api/src/uploads/uploads.service.ts
+  - apps/api/src/workouts/workouts.service.ts
 ---
 
 # 워크아웃 (Workout)
@@ -46,16 +47,22 @@ sources:
   - `memo`
   - `visibility`
   - `shoeId`
+  - `encodedPolyline`
+  - `detailPath`
+  - `detailFormatVersion`
   - `deletedAt`
 
 ### 연관 모델
 
 - `WorkoutFile`
   - 원본 FIT/GPX/TCX 업로드 파일과 처리 상태를 저장한다.
+  - canonical raw source 위치는 `sourcePath`로 보관하고, `fileUrl`은 이행용 redacted field로만 유지한다.
 - `WorkoutRoute`
   - 인코딩된 폴리라인과 상세 route JSON을 저장한다.
+  - 현재는 read compatibility를 위해 유지되며, canonical detail 정본은 `Workout.detailPath`가 가리키는 private blob으로 이동 중이다.
 - `WorkoutLap`
   - 랩 번호, trigger, 거리, 시간, 페이스, 심박/케이던스, 고도 정보를 저장한다.
+  - 현재는 read compatibility를 위해 유지되며, canonical detail 정본과의 dual-write 상태다.
 - `WorkoutPhoto`
   - 워크아웃 사진과 정렬 순서를 저장한다.
 
@@ -89,6 +96,7 @@ sources:
 ## 현재 제약
 
 - 워크아웃 상세와 생성 UX는 풍부하지만 route 파일이 여전히 크다.
+- canonical summary는 `Workout`으로 이동 중이지만, detail read path는 아직 `WorkoutRoute` / `WorkoutLap` compatibility를 사용한다.
 - 외부 동기화 모델은 스키마에 있지만, 모든 플랫폼이 동일 성숙도로 구현된 것은 아니다.
 
 ## 삭제 규칙

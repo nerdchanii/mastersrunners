@@ -7,6 +7,7 @@ sources:
   - apps/api/src/uploads/uploads.service.ts
   - apps/api/src/uploads/uploads.controller.ts
   - apps/api/src/workouts/workouts.controller.ts
+  - apps/api/src/workouts/workouts.service.ts
   - apps/api/src/uploads/disk-upload.controller.ts
   - apps/api/src/uploads/disk-files.controller.ts
   - apps/api/src/uploads/parsers/fit-parser.service.ts
@@ -40,7 +41,7 @@ Uploads are handled inside the API through a storage-adapter abstraction, with d
 2. The API validates folder intent and content type based on the selected boundary.
 3. Public-asset uploads receive an upload URL, storage key, and public URL; workout source uploads receive only an upload URL and storage key.
 4. The client uploads bytes directly to the storage target.
-5. Public assets persist the returned public URL. Workout source files are currently treated as transient ingest inputs until private-source retention lands.
+5. Public assets persist the returned public URL. Workout source files retain their private `sourcePath`, while ingest also writes a private detail blob and stores its `Workout.detailPath`.
 
 In disk mode the app also exposes public `PUT /uploads/disk/*` and `GET /disk-files/*` handlers for local development and production-like verification flows.
 
@@ -58,9 +59,11 @@ In disk mode the app also exposes public `PUT /uploads/disk/*` and `GET /disk-fi
 1. validate supported file type (`FIT` or `GPX`)
 2. download the raw file through the selected adapter
 3. parse workout metrics and GPS data
-4. discard the raw uploaded source after parse succeeds or fails
-5. write `Workout` and redacted `WorkoutFile` metadata
-6. derive route bounds, encoded polyline, and lap records
+4. on parse failure, discard the raw uploaded source
+5. on parse success, keep the raw source as `WorkoutFile.sourcePath`
+6. write a private detail blob and persist `Workout.detailPath` plus `detailFormatVersion`
+7. write `Workout` summary columns and redacted `WorkoutFile` metadata
+8. keep legacy `WorkoutRoute` / `WorkoutLap` dual-write until the read-path cutover closes
 
 GPS routes are downsampled before persistence to control payload size.
 
@@ -76,6 +79,7 @@ Parser normalization details:
 - The R2 bucket CORS policy must stay aligned with `FRONTEND_URL`; extra browser origins such as localhost should not be allowed by default, and presigned upload preflights will fail when the origin is outside the bucket allowlist.
 - Delete operations validate that the acting user owns the storage key path.
 - Public URL generation stays behind the adapter boundary for public assets only; workout source ingestion must not rely on a persistent public URL.
+- Private canonical storage now uses path identifiers (`WorkoutFile.sourcePath`, `Workout.detailPath`) rather than persisted download URLs or public URLs.
 - File-type restrictions exist to keep the shared upload boundary from becoming a generic arbitrary-file ingress path.
 
 ## Current Constraints

@@ -19,6 +19,17 @@ export class WorkoutsService {
     private readonly monitoring: MonitoringService,
   ) {}
 
+  private sanitizeWorkoutSummary<T extends Record<string, unknown>>(
+    workout: T,
+  ): Omit<T, "detailPath" | "detailFormatVersion"> {
+    const {
+      detailPath: _detailPath,
+      detailFormatVersion: _detailFormatVersion,
+      ...safeWorkout
+    } = workout;
+    return safeWorkout;
+  }
+
   async findAll(
     requesterUserId: string,
     options?: { cursor?: string; limit?: number },
@@ -27,9 +38,16 @@ export class WorkoutsService {
     const userId = targetUserId ?? requesterUserId;
 
     if (options?.cursor !== undefined || options?.limit !== undefined) {
-      return this.workoutRepo.findByUserWithCursor(userId, options ?? {});
+      const result = await this.workoutRepo.findByUserWithCursor(userId, options ?? {});
+      return {
+        ...result,
+        data: result.data.map((workout: Record<string, unknown>) =>
+          this.sanitizeWorkoutSummary(workout),
+        ),
+      };
     }
-    return this.workoutRepo.findAllByUser(userId);
+    const workouts = await this.workoutRepo.findAllByUser(userId);
+    return workouts.map((workout: Record<string, unknown>) => this.sanitizeWorkoutSummary(workout));
   }
 
   async create(userId: string, dto: CreateWorkoutDto) {
@@ -94,7 +112,16 @@ export class WorkoutsService {
   async findOne(id: string, requesterUserId?: string) {
     const workout = await this.workoutRepo.findByIdWithUser(id, requesterUserId);
     if (!workout) return null;
-    const { file, route, laps, _count, workoutLikes, ...rest } = workout;
+    const {
+      file,
+      route,
+      laps,
+      _count,
+      workoutLikes,
+      detailPath: _detailPath,
+      detailFormatVersion: _detailFormatVersion,
+      ...rest
+    } = workout;
     const safeFile = file
       ? (({ fileUrl: _fileUrl, sourcePath: _sourcePath, ...safe }) => safe)(file)
       : null;

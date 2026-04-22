@@ -1,0 +1,23 @@
+{
+  "task_id": "I-0018-020",
+  "reviewer": "backend-reviewer",
+  "decision": "approved",
+  "tool": "codex-manual-protocol-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/backend-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/backend-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/backend-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/backend-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-04-22T07:11:01Z",
+  "findings": [],
+  "residual_risks": [
+    "The write path still retains the raw uploaded source when detail-blob persistence itself fails before the transaction starts, so cleanup/backfill behavior for partial failures remains operational rather than transactional.",
+    "Read cutover is still deferred by design, so workout detail/feed correctness continues to depend on the legacy WorkoutRoute/WorkoutLap compatibility path until I-0018-030 lands."
+  ]
+}

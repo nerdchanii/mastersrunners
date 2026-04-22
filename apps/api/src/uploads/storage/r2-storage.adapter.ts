@@ -76,6 +76,20 @@ export class R2StorageAdapter implements StorageAdapter {
     };
   }
 
+  async saveFile(
+    key: string,
+    buffer: Buffer,
+    contentType = "application/octet-stream",
+  ): Promise<void> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    });
+    await this.s3.send(command);
+  }
+
   async deleteFile(key: string): Promise<void> {
     const command = new DeleteObjectCommand({
       Bucket: this.bucket,

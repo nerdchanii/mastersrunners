@@ -12,6 +12,17 @@ export class FeedService {
     private readonly blockRepo: BlockRepository,
   ) {}
 
+  private sanitizeWorkoutFeedItem<T extends Record<string, unknown>>(
+    workout: T,
+  ): Omit<T, "detailPath" | "detailFormatVersion"> {
+    const {
+      detailPath: _detailPath,
+      detailFormatVersion: _detailFormatVersion,
+      ...safeWorkout
+    } = workout;
+    return safeWorkout;
+  }
+
   private async getFilteredFollowingIds(userId: string | undefined): Promise<string[]> {
     if (!userId) {
       return [];
@@ -74,8 +85,9 @@ export class FeedService {
     const items = rawItems.map((workout: (typeof rawItems)[number]) => {
       const { workoutLikes, ...rest } = workout;
       const likeRows = workoutLikes ?? [];
+      const safeWorkout = this.sanitizeWorkoutFeedItem(rest);
       return {
-        ...rest,
+        ...safeWorkout,
         _count: {
           likes: workout._count.workoutLikes,
           comments: workout._count.workoutComments,

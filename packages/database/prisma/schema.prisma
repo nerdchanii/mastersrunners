@@ -203,6 +203,9 @@ model Workout {
   visibility String  @default("FOLLOWERS") // PRIVATE, FOLLOWERS, PUBLIC
   shoeId     String?
   shoe       Shoe?   @relation(fields: [shoeId], references: [id], onDelete: SetNull)
+  encodedPolyline    String?
+  detailPath         String?
+  detailFormatVersion Int?
 
   deletedAt DateTime?
   createdAt DateTime  @default(now())
@@ -231,6 +234,7 @@ model WorkoutFile {
 
   fileType           String // FIT, GPX, TCX
   fileUrl            String // 파일 저장 경로 (S3/local)
+  sourcePath         String?
   originalFileName   String
   fileSize           Int // bytes
   checksum           String? // SHA-256
