@@ -10,6 +10,14 @@ type PostWithImages = {
   images?: RawPostImage[] | null;
 };
 
+type RawPostWorkout = {
+  workout?: (Record<string, unknown> & { encodedPolyline?: string | null }) | null;
+};
+
+type PostWithWorkouts = {
+  workouts?: RawPostWorkout[] | null;
+};
+
 type PostReadImage = {
   id: string;
   url: string;
@@ -24,11 +32,33 @@ function mapPostImageForRead(image: RawPostImage, fallbackOrder: number): PostRe
   };
 }
 
+function mapPostWorkoutForRead(workoutEntry: RawPostWorkout): RawPostWorkout {
+  const workout = workoutEntry.workout;
+  if (!workout) {
+    return workoutEntry;
+  }
+
+  const { encodedPolyline, route: _route, ...restWorkout } = workout;
+  return {
+    ...workoutEntry,
+    workout: {
+      ...restWorkout,
+      route:
+        typeof encodedPolyline === "string" && encodedPolyline.length > 0
+          ? { encodedPolyline }
+          : null,
+    },
+  };
+}
+
 export function mapPostForRead<T extends PostWithImages>(
   post: T,
 ): Omit<T, "images"> & { images: PostReadImage[] } {
+  const workouts = (post as T & PostWithWorkouts).workouts;
+
   return {
     ...post,
+    ...(workouts ? { workouts: workouts.map(mapPostWorkoutForRead) } : {}),
     images: (post.images ?? []).map((image, index) => mapPostImageForRead(image, index)),
   };
 }

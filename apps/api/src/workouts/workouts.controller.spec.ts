@@ -1,8 +1,7 @@
-import { BadRequestException, ForbiddenException } from "@nestjs/common";
+import { BadRequestException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
 import { IS_PUBLIC_KEY } from "../common/decorators/public.decorator.js";
-import { FollowRepository } from "../follow/repositories/follow.repository.js";
 import { UploadsService } from "../uploads/uploads.service.js";
 
 import { WorkoutsController } from "./workouts.controller.js";
@@ -14,10 +13,6 @@ const mockWorkoutsService = {
   findOne: jest.fn(),
   update: jest.fn(),
   remove: jest.fn(),
-};
-
-const mockFollowRepo = {
-  findFollow: jest.fn(),
 };
 
 const mockUploadsService = {
@@ -34,7 +29,6 @@ describe("WorkoutsController", () => {
       controllers: [WorkoutsController],
       providers: [
         { provide: WorkoutsService, useValue: mockWorkoutsService },
-        { provide: FollowRepository, useValue: mockFollowRepo },
         { provide: UploadsService, useValue: mockUploadsService },
       ],
     }).compile();
@@ -51,31 +45,16 @@ describe("WorkoutsController", () => {
   });
 
   describe("findOne", () => {
-    it("keeps follower visibility checks for authenticated viewers", async () => {
+    it("delegates detail authorization to WorkoutsService", async () => {
       const workout = { id: "workout-1", userId: "owner-1", visibility: "FOLLOWERS" };
       mockWorkoutsService.findOne.mockResolvedValue(workout);
-      mockFollowRepo.findFollow.mockResolvedValue({ status: "ACCEPTED" });
 
       const result = await controller.findOne("workout-1", {
         user: { userId: "viewer-1" },
       } as never);
 
       expect(mockWorkoutsService.findOne).toHaveBeenCalledWith("workout-1", "viewer-1");
-      expect(mockFollowRepo.findFollow).toHaveBeenCalledWith("viewer-1", "owner-1");
       expect(result).toBe(workout);
-    });
-
-    it("forbids follower-only detail when follow is not accepted", async () => {
-      mockWorkoutsService.findOne.mockResolvedValue({
-        id: "workout-1",
-        userId: "owner-1",
-        visibility: "FOLLOWERS",
-      });
-      mockFollowRepo.findFollow.mockResolvedValue(null);
-
-      await expect(
-        controller.findOne("workout-1", { user: { userId: "viewer-1" } } as never),
-      ).rejects.toThrow(ForbiddenException);
     });
   });
 

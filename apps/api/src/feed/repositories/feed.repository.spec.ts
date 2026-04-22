@@ -135,7 +135,7 @@ describe("FeedRepository", () => {
               include: {
                 workout: {
                   select: expect.objectContaining({
-                    route: expect.any(Object),
+                    encodedPolyline: true,
                     elevationGain: true,
                     avgHeartRate: true,
                     avgCadence: true,
@@ -148,6 +148,10 @@ describe("FeedRepository", () => {
           }),
         }),
       );
+
+      const select =
+        mockDb.prisma.post.findMany.mock.calls[0][0].include.workouts.include.workout.select;
+      expect(select).not.toHaveProperty("route");
     });
 
     it("should handle cursor pagination", async () => {
@@ -291,6 +295,9 @@ describe("FeedRepository", () => {
           }),
         }),
       );
+
+      const include = mockDb.prisma.workout.findMany.mock.calls[0][0].include;
+      expect(include).not.toHaveProperty("route");
     });
 
     it("should handle cursor pagination", async () => {

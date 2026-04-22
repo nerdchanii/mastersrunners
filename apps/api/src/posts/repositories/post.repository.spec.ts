@@ -92,12 +92,12 @@ describe("PostRepository", () => {
                   duration: true,
                   pace: true,
                   date: true,
+                  encodedPolyline: true,
                   elevationGain: true,
                   avgHeartRate: true,
                   avgCadence: true,
                   calories: true,
                   workoutType: expect.any(Object),
-                  route: expect.any(Object),
                 }),
               },
             },
@@ -125,6 +125,18 @@ describe("PostRepository", () => {
       });
       expect(result).toBeNull();
     });
+
+    it("selects workout encodedPolyline from Workout instead of the route relation", async () => {
+      mockDatabaseService.prisma.post.findFirst.mockResolvedValue(null);
+
+      await repository.findById("post-123");
+
+      const workoutSelect =
+        mockDatabaseService.prisma.post.findFirst.mock.calls[0][0].include.workouts.include.workout
+          .select;
+      expect(workoutSelect).toHaveProperty("encodedPolyline", true);
+      expect(workoutSelect).not.toHaveProperty("route");
+    });
   });
 
   describe("findByUser", () => {
@@ -149,7 +161,7 @@ describe("PostRepository", () => {
             include: {
               workout: {
                 select: expect.objectContaining({
-                  route: expect.any(Object),
+                  encodedPolyline: true,
                   elevationGain: true,
                   avgHeartRate: true,
                   avgCadence: true,
@@ -184,7 +196,7 @@ describe("PostRepository", () => {
             include: {
               workout: {
                 select: expect.objectContaining({
-                  route: expect.any(Object),
+                  encodedPolyline: true,
                   elevationGain: true,
                   avgHeartRate: true,
                   avgCadence: true,
@@ -271,7 +283,7 @@ describe("PostRepository", () => {
             include: {
               workout: {
                 select: expect.objectContaining({
-                  route: expect.any(Object),
+                  encodedPolyline: true,
                   elevationGain: true,
                   avgHeartRate: true,
                   avgCadence: true,

@@ -15,7 +15,6 @@ import {
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
-import { FollowRepository } from "../follow/repositories/follow.repository.js";
 import { PresignUploadDto } from "../uploads/dto/presign-upload.dto.js";
 import { UploadsService } from "../uploads/uploads.service.js";
 import {
@@ -33,7 +32,6 @@ import { WorkoutsService } from "./workouts.service.js";
 export class WorkoutsController {
   constructor(
     private readonly workoutsService: WorkoutsService,
-    private readonly followRepo: FollowRepository,
     private readonly uploadsService: UploadsService,
   ) {}
 
@@ -68,21 +66,6 @@ export class WorkoutsController {
     const requesterId = user?.userId;
     const workout = await this.workoutsService.findOne(id, requesterId);
     if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
-
-    if (workout.visibility === "PRIVATE" && workout.userId !== requesterId) {
-      throw new ForbiddenException("접근 권한이 없습니다.");
-    }
-
-    if (workout.visibility === "FOLLOWERS" && workout.userId !== requesterId) {
-      if (!requesterId) {
-        throw new ForbiddenException("접근 권한이 없습니다.");
-      }
-      const follow = await this.followRepo.findFollow(requesterId, workout.userId);
-      if (!follow || follow.status !== "ACCEPTED") {
-        throw new ForbiddenException("접근 권한이 없습니다.");
-      }
-    }
-
     return workout;
   }
 

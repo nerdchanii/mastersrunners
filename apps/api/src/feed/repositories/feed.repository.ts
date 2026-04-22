@@ -74,6 +74,7 @@ export class FeedRepository {
                 duration: true,
                 pace: true,
                 date: true,
+                encodedPolyline: true,
                 elevationGain: true,
                 avgHeartRate: true,
                 avgCadence: true,
@@ -83,11 +84,6 @@ export class FeedRepository {
                     id: true,
                     name: true,
                     category: true,
-                  },
-                },
-                route: {
-                  select: {
-                    encodedPolyline: true,
                   },
                 },
               },
@@ -152,11 +148,6 @@ export class FeedRepository {
             id: true,
             name: true,
             category: true,
-          },
-        },
-        route: {
-          select: {
-            encodedPolyline: true,
           },
         },
         _count: {

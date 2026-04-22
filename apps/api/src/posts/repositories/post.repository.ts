@@ -34,6 +34,7 @@ const postWorkoutSelect = {
   duration: true,
   pace: true,
   date: true,
+  encodedPolyline: true,
   elevationGain: true,
   avgHeartRate: true,
   avgCadence: true,
@@ -43,11 +44,6 @@ const postWorkoutSelect = {
       id: true,
       name: true,
       category: true,
-    },
-  },
-  route: {
-    select: {
-      encodedPolyline: true,
     },
   },
 } as const;
