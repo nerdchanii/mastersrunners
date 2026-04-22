@@ -5,10 +5,6 @@ import type { Request } from "express";
 import { ParseUploadDto } from "./dto/parse-upload.dto.js";
 import { PresignUploadDto } from "./dto/presign-upload.dto.js";
 import { UploadsService } from "./uploads.service.js";
-import {
-  isSupportedWorkoutSourceContentType,
-  isSupportedWorkoutSourceFilename,
-} from "./workout-source-upload.js";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_PUBLIC_ASSET_FOLDERS = new Set(["images", "posts", "profiles"]);
@@ -22,20 +18,6 @@ export class UploadsController {
   async getPresignedUrl(@Req() req: Request, @Body() dto: PresignUploadDto) {
     const { userId } = req.user as { userId: string };
     const folder = dto.folder ?? "images";
-
-    if (folder === "workouts") {
-      if (!isSupportedWorkoutSourceFilename(dto.filename)) {
-        throw new BadRequestException("FIT 또는 GPX 파일만 업로드 가능합니다.");
-      }
-      if (!isSupportedWorkoutSourceContentType(dto.contentType)) {
-        throw new BadRequestException("Unsupported workout source type");
-      }
-      return this.uploadsService.createWorkoutSourceUploadTarget(
-        userId,
-        dto.filename,
-        dto.contentType,
-      );
-    }
 
     if (!ALLOWED_PUBLIC_ASSET_FOLDERS.has(folder)) {
       throw new BadRequestException("Unsupported upload folder");

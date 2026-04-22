@@ -1,10 +1,11 @@
 ---
 doc_state: current
 owner: product
-last_verified: 2026-03-30
+last_verified: 2026-04-22
 sources:
   - packages/database/prisma/schema.prisma
   - apps/api/src/uploads/uploads.controller.ts
+  - apps/api/src/workouts/workouts.controller.ts
   - apps/api/src/uploads/uploads.service.ts
   - apps/api/src/uploads/uploads.module.ts
   - apps/api/src/uploads/storage/disk-storage.adapter.ts
@@ -48,7 +49,7 @@ sources:
 
 현재 구현된 자동 파이프라인은 FIT/GPX 업로드다.
 
-1. `POST /workouts/source/presign` 또는 임시 compatibility인 `/uploads/presign`(`folder: "workouts"`)으로 presign 발급
+1. `POST /workouts/source/presign`으로 presign 발급
 2. 파일 업로드
 3. `POST /uploads/parse`
 4. API가 파일을 다운로드하고 FIT/GPX를 파싱

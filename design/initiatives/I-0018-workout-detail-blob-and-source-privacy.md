@@ -53,7 +53,7 @@
 ## 태스크 분해
 
 - `tasks/archive/I-0018-010-api-workout-source-privacy-boundary.md`
-- `tasks/todo/I-0018-015-web-workout-source-presign-cutover.md`
+- `tasks/archive/I-0018-015-web-workout-source-presign-cutover.md`
 - `tasks/todo/I-0018-020-api-workout-detail-blob-foundation.md`
 - `tasks/todo/I-0018-030-api-workout-detail-read-cutover.md`
 - `tasks/todo/I-0018-040-repo-cloudflare-workout-private-storage-backfill.md`

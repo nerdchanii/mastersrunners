@@ -89,14 +89,16 @@ export function useWorkoutEntry() {
     setIsUploading(true);
 
     try {
-      const presignData = await api.fetch<{ uploadUrl: string; key: string }>("/uploads/presign", {
-        method: "POST",
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: "application/octet-stream",
-          folder: "workouts",
-        }),
-      });
+      const presignData = await api.fetch<{ uploadUrl: string; key: string }>(
+        "/workouts/source/presign",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: "application/octet-stream",
+          }),
+        },
+      );
 
       const uploadResponse = await fetch(presignData.uploadUrl, {
         method: "PUT",

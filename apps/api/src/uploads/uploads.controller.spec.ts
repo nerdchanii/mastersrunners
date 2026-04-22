@@ -4,7 +4,6 @@ import { UploadsController } from "./uploads.controller.js";
 
 const mockUploadsService = {
   createPublicAssetUploadTarget: jest.fn(),
-  createWorkoutSourceUploadTarget: jest.fn(),
   parseAndCreateWorkout: jest.fn(),
   deleteFile: jest.fn(),
 };
@@ -44,30 +43,6 @@ describe("UploadsController", () => {
       });
     });
 
-    it("keeps temporary workout upload compatibility without returning publicUrl", async () => {
-      mockUploadsService.createWorkoutSourceUploadTarget.mockResolvedValue({
-        uploadUrl: "https://upload.example.com/workout-file",
-        key: "workouts/user-1/1710000000000-run.fit",
-      });
-
-      const result = await controller.getPresignedUrl({ user: { userId: "user-1" } } as never, {
-        filename: "run.fit",
-        contentType: "application/octet-stream",
-        folder: "workouts",
-      });
-
-      expect(mockUploadsService.createWorkoutSourceUploadTarget).toHaveBeenCalledWith(
-        "user-1",
-        "run.fit",
-        "application/octet-stream",
-      );
-      expect(result).toEqual({
-        uploadUrl: "https://upload.example.com/workout-file",
-        key: "workouts/user-1/1710000000000-run.fit",
-      });
-      expect(result).not.toHaveProperty("publicUrl");
-    });
-
     it("rejects unsupported file types for public assets", async () => {
       await expect(
         controller.getPresignedUrl({ user: { userId: "user-1" } } as never, {
@@ -79,7 +54,18 @@ describe("UploadsController", () => {
       expect(mockUploadsService.createPublicAssetUploadTarget).not.toHaveBeenCalled();
     });
 
-    it("rejects unsupported upload folders outside public assets and workout compatibility", async () => {
+    it("rejects workout uploads on the public asset presign boundary", async () => {
+      await expect(
+        controller.getPresignedUrl({ user: { userId: "user-1" } } as never, {
+          filename: "run.fit",
+          contentType: "application/octet-stream",
+          folder: "workouts",
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockUploadsService.createPublicAssetUploadTarget).not.toHaveBeenCalled();
+    });
+
+    it("rejects unsupported upload folders outside public assets", async () => {
       await expect(
         controller.getPresignedUrl({ user: { userId: "user-1" } } as never, {
           filename: "notes.txt",
@@ -88,7 +74,6 @@ describe("UploadsController", () => {
         }),
       ).rejects.toThrow(BadRequestException);
       expect(mockUploadsService.createPublicAssetUploadTarget).not.toHaveBeenCalled();
-      expect(mockUploadsService.createWorkoutSourceUploadTarget).not.toHaveBeenCalled();
     });
   });
 });

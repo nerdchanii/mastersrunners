@@ -1,11 +1,12 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-04-03
+last_verified: 2026-04-22
 sources:
   - apps/api/src/uploads/uploads.module.ts
   - apps/api/src/uploads/uploads.service.ts
   - apps/api/src/uploads/uploads.controller.ts
+  - apps/api/src/workouts/workouts.controller.ts
   - apps/api/src/uploads/disk-upload.controller.ts
   - apps/api/src/uploads/disk-files.controller.ts
   - apps/api/src/uploads/parsers/fit-parser.service.ts
@@ -32,7 +33,6 @@ Uploads are handled inside the API through a storage-adapter abstraction, with d
 - Browser direct uploads to R2 also depend on a bucket-side CORS allowlist that includes the active frontend origin; localhost or other extra origins should only be added by explicit decision.
 - `/uploads/presign` is the shared public-asset upload boundary used beyond workouts, including profile and post-image flows.
 - canonical workout source presign now lives at `POST /workouts/source/presign`.
-- `/uploads/presign` still accepts `folder: "workouts"` as a temporary compatibility path for the current web workout upload flow, but that transitional branch does not return `publicUrl`.
 
 ## Upload Request Flow
 
