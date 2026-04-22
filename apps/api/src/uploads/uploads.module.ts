@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 
+import { StructuredLoggerService } from "../common/logging/structured-logger.service.js";
 import { DatabaseModule } from "../database/database.module.js";
 
 import { FitParserService } from "./parsers/fit-parser.service.js";
@@ -39,6 +40,7 @@ const controllers = isDisk()
     GpxParserService,
     WorkoutFileRepository,
     ImageOptimizationService,
+    StructuredLoggerService,
   ],
   exports: [
     UploadsService,
@@ -46,6 +48,7 @@ const controllers = isDisk()
     GpxParserService,
     WorkoutFileRepository,
     ImageOptimizationService,
+    StructuredLoggerService,
   ],
 })
 export class UploadsModule {}

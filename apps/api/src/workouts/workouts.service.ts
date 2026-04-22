@@ -95,6 +95,9 @@ export class WorkoutsService {
     const workout = await this.workoutRepo.findByIdWithUser(id, requesterUserId);
     if (!workout) return null;
     const { file, route, laps, _count, workoutLikes, ...rest } = workout;
+    const safeFile = file
+      ? (({ fileUrl: _fileUrl, sourcePath: _sourcePath, ...safe }) => safe)(file)
+      : null;
 
     // Extract firstPoint/lastPoint from gpsTrack if available
     let firstPoint: { lat: number; lon: number; elevation?: number } | null = null;
@@ -135,7 +138,7 @@ export class WorkoutsService {
       liked: Array.isArray(workoutLikes) ? workoutLikes.length > 0 : false,
       likeCount: _count?.workoutLikes ?? 0,
       commentCount: _count?.workoutComments ?? 0,
-      workoutFiles: file ? [file] : [],
+      workoutFiles: safeFile ? [safeFile] : [],
       workoutRoutes: route ? [route] : [],
       workoutLaps: laps,
       firstPoint,

@@ -56,42 +56,44 @@ export function getDbService(): DatabaseService {
  */
 export async function cleanDatabase(): Promise<void> {
   const prisma = dbService.prisma;
-
-  // Delete in reverse dependency order
-  await prisma.crewAttendance.deleteMany();
-  await prisma.crewActivity.deleteMany();
-  await prisma.crewMemberTag.deleteMany();
-  await prisma.crewTag.deleteMany();
-  await prisma.crewBan.deleteMany();
-  await prisma.crewMember.deleteMany();
-  await prisma.notification.deleteMany();
-  await prisma.syncLog.deleteMany();
-  await prisma.connectedPlatform.deleteMany();
-  await prisma.eventParticipant.deleteMany();
-  await prisma.event.deleteMany();
-  await prisma.challengeParticipant.deleteMany();
-  await prisma.challengeTeam.deleteMany();
-  await prisma.challenge.deleteMany();
-  await prisma.crew.deleteMany();
-  await prisma.workoutComment.deleteMany();
-  await prisma.workoutLike.deleteMany();
-  await prisma.postComment.deleteMany();
-  await prisma.postLike.deleteMany();
-  await prisma.postWorkout.deleteMany();
-  await prisma.postImage.deleteMany();
-  await prisma.post.deleteMany();
-  await prisma.workoutPhoto.deleteMany();
-  await prisma.workoutLap.deleteMany();
-  await prisma.workoutRoute.deleteMany();
-  await prisma.workoutFile.deleteMany();
-  await prisma.workout.deleteMany();
-  await prisma.shoe.deleteMany();
-  await prisma.block.deleteMany();
-  await prisma.follow.deleteMany();
-  await prisma.session.deleteMany();
-  await prisma.verificationToken.deleteMany();
-  await prisma.account.deleteMany();
-  await prisma.user.deleteMany();
+  await prisma.$executeRawUnsafe(`
+    TRUNCATE TABLE
+      "CrewAttendance",
+      "CrewActivity",
+      "CrewMemberTag",
+      "CrewTag",
+      "CrewBan",
+      "CrewMember",
+      "Notification",
+      "SyncLog",
+      "ConnectedPlatform",
+      "EventParticipant",
+      "Event",
+      "ChallengeParticipant",
+      "ChallengeTeam",
+      "Challenge",
+      "Crew",
+      "WorkoutComment",
+      "WorkoutLike",
+      "PostComment",
+      "PostLike",
+      "PostWorkout",
+      "PostImage",
+      "Post",
+      "WorkoutPhoto",
+      "WorkoutLap",
+      "WorkoutRoute",
+      "WorkoutFile",
+      "Workout",
+      "Shoe",
+      "Block",
+      "Follow",
+      "Session",
+      "VerificationToken",
+      "Account",
+      "User"
+    RESTART IDENTITY CASCADE
+  `);
 }
 
 /**

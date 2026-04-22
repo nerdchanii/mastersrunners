@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -14,8 +15,13 @@ import {
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
-import { Public } from "../common/decorators/public.decorator.js";
 import { FollowRepository } from "../follow/repositories/follow.repository.js";
+import { PresignUploadDto } from "../uploads/dto/presign-upload.dto.js";
+import { UploadsService } from "../uploads/uploads.service.js";
+import {
+  isSupportedWorkoutSourceContentType,
+  isSupportedWorkoutSourceFilename,
+} from "../uploads/workout-source-upload.js";
 
 import { CreateWorkoutDto } from "./dto/create-workout.dto.js";
 import { ListWorkoutsQueryDto } from "./dto/list-workouts-query.dto.js";
@@ -28,6 +34,7 @@ export class WorkoutsController {
   constructor(
     private readonly workoutsService: WorkoutsService,
     private readonly followRepo: FollowRepository,
+    private readonly uploadsService: UploadsService,
   ) {}
 
   @ApiOperation({ summary: "내 워크아웃 목록 조회 (cursor 페이지네이션)" })
@@ -55,7 +62,6 @@ export class WorkoutsController {
 
   @ApiOperation({ summary: "워크아웃 상세 조회" })
   @ApiResponse({ status: 200, description: "성공" })
-  @Public()
   @Get(":id")
   async findOne(@Param("id") id: string, @Req() req: Request) {
     const user = req.user as { userId: string } | undefined;
@@ -78,6 +84,27 @@ export class WorkoutsController {
     }
 
     return workout;
+  }
+
+  @ApiOperation({ summary: "워크아웃 원본 파일 업로드 presign" })
+  @ApiResponse({ status: 200, description: "성공" })
+  @Post("source/presign")
+  async presignSource(@Req() req: Request, @Body() dto: PresignUploadDto) {
+    const { userId } = req.user as { userId: string };
+
+    if (!isSupportedWorkoutSourceFilename(dto.filename)) {
+      throw new BadRequestException("FIT 또는 GPX 파일만 업로드 가능합니다.");
+    }
+
+    if (!isSupportedWorkoutSourceContentType(dto.contentType)) {
+      throw new BadRequestException("Unsupported workout source type");
+    }
+
+    return this.uploadsService.createWorkoutSourceUploadTarget(
+      userId,
+      dto.filename,
+      dto.contentType,
+    );
   }
 
   @Patch(":id")

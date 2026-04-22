@@ -255,11 +255,47 @@ describe("WorkoutsService", () => {
       expect(result!.commentCount).toBe(2);
       expect(result!.workoutFiles).toHaveLength(1);
       expect(result!.workoutFiles[0].id).toBe("f1");
+      expect(result!.workoutFiles[0]).not.toHaveProperty("fileUrl");
       expect(result!.workoutRoutes).toHaveLength(1);
       expect(result!.workoutRoutes[0].id).toBe("r1");
       expect(result!.workoutLaps).toHaveLength(2);
       expect(result!.workoutLaps[0].lapNumber).toBe(1);
       expect(result!.workoutLaps[1].lapNumber).toBe(2);
+    });
+
+    it("should omit raw source urls and storage paths from workoutFiles", async () => {
+      mockWorkoutRepo.findByIdWithUser.mockResolvedValue({
+        id: "w1",
+        user: { id: "u1", name: "Test", profileImage: null },
+        _count: { workoutLikes: 0, workoutComments: 0 },
+        workoutLikes: [],
+        file: {
+          id: "f1",
+          fileType: "FIT",
+          fileUrl: "https://cdn.example.com/workouts/user-1/run.fit",
+          sourcePath: "private/workouts/user-1/run.fit",
+          originalFileName: "run.fit",
+          fileSize: 50000,
+          processStatus: "COMPLETED",
+        },
+        route: null,
+        laps: [],
+      });
+
+      const result = await service.findOne("w1");
+
+      expect(result).toBeDefined();
+      expect(result!.workoutFiles).toEqual([
+        {
+          id: "f1",
+          fileType: "FIT",
+          originalFileName: "run.fit",
+          fileSize: 50000,
+          processStatus: "COMPLETED",
+        },
+      ]);
+      expect(result!.workoutFiles[0]).not.toHaveProperty("fileUrl");
+      expect(result!.workoutFiles[0]).not.toHaveProperty("sourcePath");
     });
   });
 

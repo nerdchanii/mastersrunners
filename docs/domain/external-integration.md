@@ -25,9 +25,11 @@ sources:
 
 ### Presigned upload
 
-- 클라이언트는 `POST /uploads/presign`으로 업로드 타겟을 요청한다.
-- API는 파일 타입과 folder intent를 검증한다.
-- 저장소 adapter가 업로드 URL, storage key, public URL을 만든다.
+- public asset는 `POST /uploads/presign`으로 업로드 타겟을 요청한다.
+- workout source(FIT/GPX)는 `POST /workouts/source/presign`으로 업로드 타겟을 요청한다.
+- API는 boundary별 파일 타입과 folder intent를 검증한다.
+- public asset는 업로드 URL, storage key, public URL을 받는다.
+- workout source는 업로드 URL과 storage key만 받고 `publicUrl`은 받지 않는다.
 - 클라이언트는 그 URL로 직접 업로드한다.
 - R2 direct upload를 쓰는 lane에서는 버킷 CORS allowlist가 현재 프런트엔드 origin을 허용해야 하며, localhost 같은 추가 origin은 명시적으로 지원하기로 결정한 경우에만 연다.
 
@@ -40,17 +42,17 @@ sources:
 ### 현재 파일 타입
 
 - 이미지: `image/jpeg`, `image/png`, `image/webp`, `image/gif`
-- 워크아웃 파일: `application/octet-stream` 기반 FIT/GPX 흐름
+- 워크아웃 파일: FIT/GPX용 `application/octet-stream`, `application/gpx+xml`, `application/xml`, `text/xml`, `application/fit`, `application/vnd.ant.fit` 기반 흐름
 
 ## 현재 워크아웃 파일 ingestion
 
 현재 구현된 자동 파이프라인은 FIT/GPX 업로드다.
 
-1. presign 발급
+1. `POST /workouts/source/presign` 또는 임시 compatibility인 `/uploads/presign`(`folder: "workouts"`)으로 presign 발급
 2. 파일 업로드
 3. `POST /uploads/parse`
 4. API가 파일을 다운로드하고 FIT/GPX를 파싱
-5. `Workout`과 `WorkoutFile`을 즉시 생성
+5. 현재 privacy hardening 단계에서는 raw source를 즉시 폐기하고 `Workout`과 redacted `WorkoutFile` 메타데이터를 생성
 
 즉, 현재 구현은 “업로드 후 사용자가 한번 더 확인/수정한 뒤 저장”보다 “parse 시점에 workout 생성”에 가깝다.
 

@@ -1,6 +1,7 @@
 import type { TransactionClient } from "@masters/database";
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 
+import { StructuredLoggerService } from "../common/logging/structured-logger.service.js";
 import { DatabaseService } from "../database/database.service.js";
 
 import { FitParserService } from "./parsers/fit-parser.service.js";
@@ -11,6 +12,7 @@ import { encodePolyline } from "./utils/encoded-polyline.js";
 
 const DOWNSAMPLE_THRESHOLD = 1000;
 const DOWNSAMPLE_TARGET = 500;
+const PRIVATE_WORKOUT_SOURCE_PLACEHOLDER_URL = "private://workout-source-redacted";
 
 type GpsPoint = {
   lat: number;
@@ -84,6 +86,11 @@ export interface ParseAndCreateResult {
   error?: string;
 }
 
+export interface WorkoutSourceUploadTarget {
+  uploadUrl: string;
+  key: string;
+}
+
 @Injectable()
 export class UploadsService {
   constructor(
@@ -91,6 +98,7 @@ export class UploadsService {
     private readonly fitParser: FitParserService,
     private readonly gpxParser: GpxParserService,
     private readonly db: DatabaseService,
+    private readonly logger: StructuredLoggerService,
   ) {}
 
   async getUploadUrl(key: string, contentType: string, expiresIn = 3600) {
@@ -111,8 +119,42 @@ export class UploadsService {
     return `${folder}/${userId}/${timestamp}-${sanitized}`;
   }
 
+  async createPublicAssetUploadTarget(
+    userId: string,
+    folder: string,
+    filename: string,
+    contentType: string,
+  ) {
+    const key = this.generateKey(userId, folder, filename);
+    return this.getUploadUrl(key, contentType);
+  }
+
+  async createWorkoutSourceUploadTarget(
+    userId: string,
+    filename: string,
+    contentType: string,
+  ): Promise<WorkoutSourceUploadTarget> {
+    const key = this.generateKey(userId, "workouts", filename);
+    const { uploadUrl } = await this.getUploadUrl(key, contentType);
+    return { uploadUrl, key };
+  }
+
   async downloadFile(key: string): Promise<{ buffer: Buffer; size: number }> {
     return this.storage.downloadFile(key);
+  }
+
+  private async discardTransientWorkoutSource(key: string): Promise<void> {
+    try {
+      await this.storage.deleteFile(key);
+    } catch (error) {
+      this.logger.logEvent("warn", "Failed to discard transient workout source", "UploadsService", {
+        fileKey: key,
+        error:
+          error instanceof Error
+            ? { name: error.name, message: error.message, stack: error.stack }
+            : error,
+      });
+    }
   }
 
   async parseAndCreateWorkout(
@@ -137,12 +179,15 @@ export class UploadsService {
         parsedData = await this.gpxParser.parse(buffer.toString("utf-8"));
       }
     } catch (parseError) {
+      await this.discardTransientWorkoutSource(input.fileKey);
       const errorMessage = parseError instanceof Error ? parseError.message : "Unknown parse error";
       return { workout: null, workoutFile: null, error: errorMessage };
     }
 
+    // Treat raw workout sources as transient ingest inputs until private source retention lands.
+    await this.discardTransientWorkoutSource(input.fileKey);
+
     // 3. Create Workout + WorkoutFile + WorkoutRoute in a transaction
-    const publicUrl = this.storage.getPublicUrl(input.fileKey);
     return this.db.prisma.$transaction(async (tx: TransactionClient) => {
       const workout = await tx.workout.create({
         data: {
@@ -172,7 +217,7 @@ export class UploadsService {
         data: {
           workoutId: workout.id,
           fileType: input.fileType,
-          fileUrl: publicUrl,
+          fileUrl: PRIVATE_WORKOUT_SOURCE_PLACEHOLDER_URL,
           originalFileName: input.originalFileName,
           fileSize: size,
           processStatus: "COMPLETED",

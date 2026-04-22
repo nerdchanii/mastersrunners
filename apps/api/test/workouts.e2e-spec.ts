@@ -132,21 +132,19 @@ describe("Workouts (E2E)", () => {
       expect(res.body.liked).toBe(true);
       expect(res.body.likeCount).toBe(1);
       expect(res.body.commentCount).toBe(1);
+      expect(Array.isArray(res.body.workoutFiles)).toBe(true);
+      for (const file of res.body.workoutFiles) {
+        expect(file).not.toHaveProperty("fileUrl");
+        expect(file).not.toHaveProperty("sourcePath");
+      }
     });
 
-    it("unauthenticated user can see public workout (public route)", async () => {
-      const res = await request(app.getHttpServer())
-        .get(`/api/v1/workouts/${publicWorkoutId}`)
-        .expect(200);
-
-      expect(res.body.title).toBe("Public workout");
-      expect(res.body.liked).toBe(false);
-      expect(res.body.likeCount).toBe(1);
-      expect(res.body.commentCount).toBe(1);
+    it("unauthenticated user is denied access to public workout detail", async () => {
+      await request(app.getHttpServer()).get(`/api/v1/workouts/${publicWorkoutId}`).expect(401);
     });
 
     it("unauthenticated user is denied access to private workout", async () => {
-      await request(app.getHttpServer()).get(`/api/v1/workouts/${privateWorkoutId}`).expect(403);
+      await request(app.getHttpServer()).get(`/api/v1/workouts/${privateWorkoutId}`).expect(401);
     });
   });
 
@@ -197,6 +195,46 @@ describe("Workouts (E2E)", () => {
         .post("/api/v1/workouts")
         .send({ ...validWorkout, duration: 100000 })
         .expect(400);
+    });
+  });
+
+  describe("Workout source upload boundary", () => {
+    it("should issue a source upload target without exposing a publicUrl", async () => {
+      const res = await authRequest(app, userA)
+        .post("/api/v1/workouts/source/presign")
+        .send({
+          filename: "tempo-run.fit",
+          contentType: "application/octet-stream",
+        })
+        .expect(201);
+
+      expect(res.body).toEqual(
+        expect.objectContaining({
+          uploadUrl: expect.any(String),
+          key: expect.stringMatching(/^workouts\//),
+        }),
+      );
+      expect(res.body).not.toHaveProperty("publicUrl");
+    });
+
+    it("should reject unsupported workout source file extensions", async () => {
+      await authRequest(app, userA)
+        .post("/api/v1/workouts/source/presign")
+        .send({
+          filename: "tempo-run.tcx",
+          contentType: "application/octet-stream",
+        })
+        .expect(400);
+    });
+
+    it("should reject unauthenticated workout source presign requests", async () => {
+      await request(app.getHttpServer())
+        .post("/api/v1/workouts/source/presign")
+        .send({
+          filename: "tempo-run.fit",
+          contentType: "application/octet-stream",
+        })
+        .expect(401);
     });
   });
 });
