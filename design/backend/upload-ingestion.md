@@ -60,12 +60,16 @@ In disk mode the app also exposes public `PUT /uploads/disk/*` and `GET /disk-fi
 2. download the raw file through the selected adapter
 3. parse workout metrics and GPS data
 4. on parse failure, discard the raw uploaded source
-5. on parse success, keep the raw source as `WorkoutFile.sourcePath`
+5. on parse success, keep the raw source as required `WorkoutFile.sourcePath`
 6. write a private detail blob and persist `Workout.detailPath` plus `detailFormatVersion`
-7. write `Workout` summary columns and redacted `WorkoutFile` metadata
-8. keep legacy `WorkoutRoute` / `WorkoutLap` dual-write until the read-path cutover closes
+7. write `Workout` summary columns and `WorkoutFile` metadata
+8. do not persist separate route/lap tables; detail track and lap data live only in the private detail blob
 
-GPS routes are downsampled before persistence to control payload size.
+Cleanup posture:
+
+- legacy `WorkoutRoute`, `WorkoutLap`, and `WorkoutFile.fileUrl` removal is guarded by migration preconditions so cleanup cannot land before `detailPath` and `sourcePath` backfill is complete.
+
+GPS routes are downsampled only for summary polyline generation; canonical detail storage keeps the normalized full-resolution track inside the private detail blob.
 
 Parser normalization details:
 

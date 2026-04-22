@@ -54,11 +54,11 @@ sources:
 - 게시글 작성기는 `useWorkouts`를 통해 기존 워크아웃을 재사용한다
 - 게시글 상세는 게시글이 가진 이미지 미디어를 첨부 워크아웃 위에 계속 보여줘, 피드에서 상세로 들어왔을 때 본문 콘텐츠가 사라지지 않게 한다
 - 게시글 상세의 첨부 워크아웃은 이제 `/workouts/:id`로 깊게 이동하기 전에, 경로 썸네일과 분석 중심 요약 칩을 포함한 더 풍부한 미리보기로 렌더링된다
-- feed/post/list preview에서 경로 썸네일 summary는 `WorkoutRoute` relation이 아니라 `Workout.encodedPolyline` scalar를 정본으로 사용한다. post payload는 기존 UI 호환을 위해 `route.encodedPolyline` read shape를 계속 합성한다
+- feed/post/list preview에서 경로 썸네일 summary는 별도 route 테이블이 아니라 `Workout.encodedPolyline` scalar를 정본으로 사용한다. post payload는 기존 UI 호환을 위해 `route.encodedPolyline` read shape를 계속 합성한다
 - 비로그인 사용자는 공개 게시글 상세에서 이 첨부 워크아웃 미리보기를 볼 수 있지만, 미리보기를 눌렀을 때는 현재 게시글 페이지를 `/login`으로 날려버리지 말고 제자리 인증 다이얼로그를 열어야 한다
 - 이벤트 결과 연결은 워크아웃 상세가 아니라 이벤트 상세 페이지에서 처리한다
 - 현재 `/workouts/:id` 라우트는 저장된 경로, 랩, 포인트 단위 센서 데이터를 사용해, 해당 시계열이 있을 경우 지도 우선 보고서와 연결된 고도/심박/케이던스 차트를 렌더링한다
-- 현재 `/workouts/:id` API 응답은 기존 `workoutRoutes[0].routeData` / `workoutLaps` wire shape를 유지하지만, 서버는 `Workout.detailPath` private blob이 있으면 그것을 정본으로 hydrate하고 blob이 없을 때만 legacy `WorkoutRoute` / `WorkoutLap` relation으로 fallback한다
+- 현재 `/workouts/:id` API 응답은 기존 `workoutRoutes[0].routeData` / `workoutLaps` wire shape를 유지하지만, 서버는 `Workout.detailPath` private blob만을 정본으로 hydrate한다
 - `/workouts/:id` 상세 payload는 지도/랩 데이터 외에도 현재 사용자 기준 `liked`와 집계용 `likeCount`, `commentCount`를 안정적으로 포함해야 하며, 웹 상세는 이 social summary를 route body 안에서 바로 사용한다
 - 차트 스크럽과 랩 선택은 하나의 공통 route-selection 모델을 공유해, 상세 화면이 나중에 더 깊은 분석 기능으로 확장될 수 있게 한다
 - 이 분석 우선 방향은 러너 상세 화면의 현재 UX 계약 일부이며, 명시적인 후속 태스크 없이 일반적인 소셜 요약 카드 수준으로 낮춰서는 안 된다

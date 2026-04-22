@@ -13,7 +13,6 @@ import { encodePolyline } from "./utils/encoded-polyline.js";
 const DOWNSAMPLE_THRESHOLD = 1000;
 const DOWNSAMPLE_TARGET = 500;
 const DETAIL_FORMAT_VERSION = 1;
-const PRIVATE_WORKOUT_SOURCE_PLACEHOLDER_URL = "private://workout-source-redacted";
 
 type GpsPoint = {
   lat: number;
@@ -316,28 +315,11 @@ export class UploadsService {
     );
 
     let encodedPolylineStr: string | null = null;
-    let routeTrackToSave: GpsPoint[] | null = null;
-    let routeBounds: {
-      boundNorth: number;
-      boundSouth: number;
-      boundEast: number;
-      boundWest: number;
-    } | null = null;
-
     if (parsedData.gpsTrack && parsedData.gpsTrack.length > 0) {
-      routeTrackToSave =
+      const routeTrackToSave =
         parsedData.gpsTrack.length > DOWNSAMPLE_THRESHOLD
           ? downsampleTrack(parsedData.gpsTrack, DOWNSAMPLE_TARGET)
           : parsedData.gpsTrack;
-
-      const lats = routeTrackToSave.map((p) => p.lat);
-      const lons = routeTrackToSave.map((p) => p.lon);
-      routeBounds = {
-        boundNorth: Math.max(...lats),
-        boundSouth: Math.min(...lats),
-        boundEast: Math.max(...lons),
-        boundWest: Math.min(...lons),
-      };
 
       const polylinePoints = douglasPeuckerUtil(
         routeTrackToSave.map((p) => ({ lat: p.lat, lon: p.lon })),
@@ -346,7 +328,7 @@ export class UploadsService {
       encodedPolylineStr = encodePolyline(polylinePoints);
     }
 
-    // 3. Create Workout + WorkoutFile + WorkoutRoute in a transaction
+    // 3. Create Workout + WorkoutFile in a transaction
     try {
       return await this.db.prisma.$transaction(async (tx: TransactionClient) => {
         const workout = await tx.workout.create({
@@ -380,7 +362,6 @@ export class UploadsService {
           data: {
             workoutId: workout.id,
             fileType: input.fileType,
-            fileUrl: PRIVATE_WORKOUT_SOURCE_PLACEHOLDER_URL,
             sourcePath: input.fileKey,
             originalFileName: input.originalFileName,
             fileSize: size,
@@ -388,42 +369,6 @@ export class UploadsService {
             processedAt: new Date(),
           },
         });
-
-        if (routeTrackToSave && routeBounds && encodedPolylineStr) {
-          await tx.workoutRoute.create({
-            data: {
-              workoutId: workout.id,
-              encodedPolyline: encodedPolylineStr,
-              routeData: JSON.stringify(routeTrackToSave),
-              boundNorth: routeBounds.boundNorth,
-              boundSouth: routeBounds.boundSouth,
-              boundEast: routeBounds.boundEast,
-              boundWest: routeBounds.boundWest,
-              totalPoints: routeTrackToSave.length,
-            },
-          });
-        }
-
-        if (parsedData.laps && parsedData.laps.length > 0) {
-          await Promise.all(
-            parsedData.laps.map((lap) =>
-              tx.workoutLap.create({
-                data: {
-                  workoutId: workout.id,
-                  lapNumber: lap.lapNumber,
-                  distance: lap.distance,
-                  duration: lap.duration,
-                  pace: lap.avgPace,
-                  avgHeartRate: lap.avgHeartRate,
-                  maxHeartRate: lap.maxHeartRate,
-                  avgCadence: lap.avgCadence,
-                  calories: lap.calories,
-                  startedAt: lap.startTime,
-                },
-              }),
-            ),
-          );
-        }
 
         return { workout, workoutFile };
       });

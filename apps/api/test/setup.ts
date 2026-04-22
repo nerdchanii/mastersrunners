@@ -81,8 +81,6 @@ export async function cleanDatabase(): Promise<void> {
       "PostImage",
       "Post",
       "WorkoutPhoto",
-      "WorkoutLap",
-      "WorkoutRoute",
       "WorkoutFile",
       "Workout",
       "Shoe",

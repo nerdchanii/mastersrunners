@@ -1,16 +1,23 @@
 import type { INestApplication } from "@nestjs/common";
 import request from "supertest";
 
+import {
+  STORAGE_ADAPTER,
+  type StorageAdapter,
+} from "../src/uploads/storage/storage-adapter.interface.js";
+
 import { authRequest, createTestUser } from "./helpers/auth.helper";
 import { cleanDatabase, closeTestApp, createTestApp, getDbService } from "./setup";
 
 describe("Workouts (E2E)", () => {
   let app: INestApplication;
+  let storage: StorageAdapter;
   let userA: { accessToken: string; userId: string };
   let userB: { accessToken: string; userId: string };
 
   beforeAll(async () => {
     app = await createTestApp();
+    storage = app.get<StorageAdapter>(STORAGE_ADAPTER);
     await cleanDatabase();
     userA = await createTestUser(app, { email: "workout-a@test.local", name: "User A" });
     userB = await createTestUser(app, { email: "workout-b@test.local", name: "User B" });
@@ -235,6 +242,220 @@ describe("Workouts (E2E)", () => {
           contentType: "application/octet-stream",
         })
         .expect(401);
+    });
+  });
+
+  describe("Blob-backed detail hydration", () => {
+    beforeAll(async () => {
+      await cleanDatabase();
+      userA = await createTestUser(app, { email: "workout-blob-a@test.local", name: "Blob A" });
+      userB = await createTestUser(app, { email: "workout-blob-b@test.local", name: "Blob B" });
+
+      const detailPath = `workout-details/${userA.userId}/hydrated.detail.v1.json`;
+      const detailBlob = {
+        version: 1,
+        track: [
+          {
+            lat: 37.5,
+            lon: 127.0,
+            timestamp: "2026-04-23T06:00:00.000Z",
+            elevation: 11,
+            heartRate: 145,
+            cadence: 171,
+          },
+          {
+            lat: 37.52,
+            lon: 127.03,
+            timestamp: "2026-04-23T06:09:40.000Z",
+            elevation: 16,
+            heartRate: 156,
+            cadence: 176,
+          },
+        ],
+        laps: [
+          {
+            lapNumber: 1,
+            startTime: "2026-04-23T06:00:00.000Z",
+            distance: 1000,
+            duration: 300,
+            avgPace: 300,
+            avgHeartRate: 148,
+            maxHeartRate: 153,
+            avgCadence: 172,
+            calories: 70,
+          },
+          {
+            lapNumber: 2,
+            startTime: "2026-04-23T06:05:00.000Z",
+            distance: 1000,
+            duration: 280,
+            avgPace: 280,
+            avgHeartRate: 152,
+            maxHeartRate: 156,
+            avgCadence: 176,
+            calories: 72,
+          },
+        ],
+        metrics: {
+          firstPoint: {
+            lat: 37.5,
+            lon: 127.0,
+            timestamp: "2026-04-23T06:00:00.000Z",
+            elevation: 11,
+          },
+          lastPoint: {
+            lat: 37.52,
+            lon: 127.03,
+            timestamp: "2026-04-23T06:09:40.000Z",
+            elevation: 16,
+          },
+        },
+      };
+
+      await storage.saveFile(
+        detailPath,
+        Buffer.from(JSON.stringify(detailBlob), "utf-8"),
+        "application/json",
+      );
+
+      const db = getDbService();
+      const workout = await db.prisma.workout.create({
+        data: {
+          userId: userA.userId,
+          distance: 2000,
+          duration: 580,
+          pace: 290,
+          date: new Date("2026-04-23T06:00:00.000Z"),
+          startedAt: new Date("2026-04-23T06:00:00.000Z"),
+          finishedAt: new Date("2026-04-23T06:09:40.000Z"),
+          visibility: "PUBLIC",
+          title: "Blob hydration run",
+          hasGps: true,
+          encodedPolyline: "summary-polyline",
+          detailPath,
+          detailFormatVersion: 1,
+        },
+      });
+
+      await db.prisma.workoutFile.create({
+        data: {
+          workoutId: workout.id,
+          fileType: "FIT",
+          sourcePath: `workouts/${userA.userId}/hydrated.fit`,
+          originalFileName: "hydrated.fit",
+          fileSize: 4096,
+          processStatus: "COMPLETED",
+        },
+      });
+    });
+
+    it("hydrates legacy route/lap wire shape from Workout.detailPath without leaking private paths", async () => {
+      const db = getDbService();
+      const workout = await db.prisma.workout.findFirstOrThrow({
+        where: { userId: userA.userId, title: "Blob hydration run" },
+      });
+
+      const res = await authRequest(app, userB).get(`/api/v1/workouts/${workout.id}`).expect(200);
+
+      expect(res.body.workoutRoutes).toHaveLength(1);
+      expect(res.body.workoutRoutes[0]).toEqual(
+        expect.objectContaining({
+          id: `${workout.id}:route`,
+          encodedPolyline: "summary-polyline",
+          totalPoints: 2,
+        }),
+      );
+      expect(JSON.parse(res.body.workoutRoutes[0].routeData)).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ lat: 37.5, lon: 127.0 }),
+          expect.objectContaining({ lat: 37.52, lon: 127.03 }),
+        ]),
+      );
+      expect(res.body.workoutLaps).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ lapNumber: 1, pace: 300 }),
+          expect.objectContaining({ lapNumber: 2, pace: 280 }),
+        ]),
+      );
+      expect(res.body.workoutFiles).toEqual([
+        expect.objectContaining({
+          fileType: "FIT",
+          originalFileName: "hydrated.fit",
+          fileSize: 4096,
+        }),
+      ]);
+      expect(res.body.workoutFiles[0]).not.toHaveProperty("sourcePath");
+      expect(res.body).not.toHaveProperty("detailPath");
+      expect(res.body).not.toHaveProperty("detailFormatVersion");
+    });
+  });
+
+  describe("Imported workout with missing detail blob", () => {
+    beforeAll(async () => {
+      await cleanDatabase();
+      userA = await createTestUser(app, {
+        email: "workout-missing-detail-a@test.local",
+        name: "Missing Detail A",
+      });
+      userB = await createTestUser(app, {
+        email: "workout-missing-detail-b@test.local",
+        name: "Missing Detail B",
+      });
+
+      const db = getDbService();
+      const workout = await db.prisma.workout.create({
+        data: {
+          userId: userA.userId,
+          distance: 5000,
+          duration: 1500,
+          pace: 300,
+          date: new Date("2026-04-23T07:00:00.000Z"),
+          startedAt: new Date("2026-04-23T07:00:00.000Z"),
+          finishedAt: new Date("2026-04-23T07:25:00.000Z"),
+          visibility: "PUBLIC",
+          title: "Missing detail run",
+          hasGps: true,
+          encodedPolyline: "degraded-summary-polyline",
+          detailPath: `workout-details/${userA.userId}/missing.detail.v1.json`,
+          detailFormatVersion: 1,
+        },
+      });
+
+      await db.prisma.workoutFile.create({
+        data: {
+          workoutId: workout.id,
+          fileType: "FIT",
+          sourcePath: `workouts/${userA.userId}/missing.fit`,
+          originalFileName: "missing.fit",
+          fileSize: 2048,
+          processStatus: "COMPLETED",
+        },
+      });
+    });
+
+    it("returns summary detail safely without leaking private paths when the blob is unreadable", async () => {
+      const db = getDbService();
+      const workout = await db.prisma.workout.findFirstOrThrow({
+        where: { userId: userA.userId, title: "Missing detail run" },
+      });
+
+      const res = await authRequest(app, userB).get(`/api/v1/workouts/${workout.id}`).expect(200);
+
+      expect(res.body.title).toBe("Missing detail run");
+      expect(res.body.distance).toBe(5000);
+      expect(res.body.duration).toBe(1500);
+      expect(res.body.workoutRoutes).toEqual([]);
+      expect(res.body.workoutLaps).toEqual([]);
+      expect(res.body.workoutFiles).toEqual([
+        expect.objectContaining({
+          fileType: "FIT",
+          originalFileName: "missing.fit",
+          fileSize: 2048,
+        }),
+      ]);
+      expect(res.body.workoutFiles[0]).not.toHaveProperty("sourcePath");
+      expect(res.body).not.toHaveProperty("detailPath");
+      expect(res.body).not.toHaveProperty("detailFormatVersion");
     });
   });
 });

@@ -9,7 +9,7 @@ export class WorkoutFileRepository {
   async create(data: {
     workoutId: string;
     fileType: string;
-    fileUrl: string;
+    sourcePath: string;
     originalFileName: string;
     fileSize: number;
     checksum?: string;

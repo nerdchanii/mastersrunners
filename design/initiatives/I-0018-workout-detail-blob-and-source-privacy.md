@@ -57,7 +57,7 @@
 - `tasks/archive/I-0018-020-api-workout-detail-blob-foundation.md`
 - `tasks/archive/I-0018-030-api-workout-detail-read-cutover.md`
 - `tasks/todo/I-0018-040-repo-cloudflare-workout-private-storage-backfill.md`
-- `tasks/todo/I-0018-050-db-workout-legacy-detail-cleanup.md`
+- `tasks/archive/I-0018-050-db-workout-legacy-detail-cleanup.md`
 
 ## 성공 기준
 
@@ -71,4 +71,5 @@
 
 - 2026-04-22: initiative를 생성하고 task별 worktree/TDD/reviewer flow를 기준으로 execution을 시작한다.
 - 2026-04-22: `I-0018-020`에서 `Workout.detailPath`, `detailFormatVersion`, `encodedPolyline`, `WorkoutFile.sourcePath`와 private detail blob write foundation을 추가하고, current read surfaces가 새 private path를 노출하지 않도록 최소 sanitization을 넣었다.
-- 2026-04-22: `I-0018-030`에서 `GET /workouts/:id` read path를 private detail blob 우선으로 전환하고, blob이 없을 때만 legacy `WorkoutRoute`/`WorkoutLap` fallback을 유지했다. feed/post preview query는 `Workout.encodedPolyline` summary 정본으로 cutover했다.
+- 2026-04-22: `I-0018-030`에서 `GET /workouts/:id` read path를 private detail blob 우선으로 전환하고, feed/post preview query를 `Workout.encodedPolyline` summary 정본으로 cutover했다.
+- 2026-04-23: `I-0018-050`에서 `WorkoutRoute`, `WorkoutLap`, legacy `WorkoutFile.fileUrl`을 제거하고 canonical model을 `Workout.detailPath` + `WorkoutFile.sourcePath`로 정리한다.

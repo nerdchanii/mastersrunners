@@ -213,8 +213,6 @@ model Workout {
 
   // Relations
   file             WorkoutFile?
-  route            WorkoutRoute?
-  laps             WorkoutLap[]
   photos           WorkoutPhoto[]
   workoutLikes     WorkoutLike[]
   workoutComments  WorkoutComment[]
@@ -233,8 +231,7 @@ model WorkoutFile {
   workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 
   fileType           String // FIT, GPX, TCX
-  fileUrl            String // 파일 저장 경로 (S3/local)
-  sourcePath         String?
+  sourcePath         String
   originalFileName   String
   fileSize           Int // bytes
   checksum           String? // SHA-256
@@ -245,43 +242,6 @@ model WorkoutFile {
   processError  String?
   processedAt   DateTime?
   createdAt     DateTime  @default(now())
-}
-
-model WorkoutRoute {
-  id        String  @id @default(cuid())
-  workoutId String  @unique
-  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
-
-  encodedPolyline String // Google Encoded Polyline (지도 표시용)
-  routeData       String // JSON: [{lat, lng, ele, time, hr, cad, pace}, ...]
-  boundNorth      Float
-  boundSouth      Float
-  boundEast       Float
-  boundWest       Float
-  totalPoints     Int
-
-  createdAt DateTime @default(now())
-}
-
-model WorkoutLap {
-  id        String  @id @default(cuid())
-  workoutId String
-  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
-
-  lapNumber     Int
-  trigger       String    @default("AUTO_KM") // AUTO_KM, AUTO_MILE, MANUAL, CUSTOM_DISTANCE
-  distance      Float // 구간 거리 (m)
-  duration      Int // 구간 시간 (초)
-  pace          Float // 구간 페이스 (초/km)
-  avgHeartRate  Int?
-  maxHeartRate  Int?
-  avgCadence    Int?
-  elevationGain Float?
-  elevationLoss Float?
-  calories      Int?
-  startedAt     DateTime?
-
-  @@unique([workoutId, lapNumber])
 }
 
 model WorkoutPhoto {

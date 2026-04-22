@@ -42,6 +42,16 @@ type WorkoutDetailBlobV1 = {
   };
 };
 
+type WorkoutDetailBlobLoadResult =
+  | {
+      blob: WorkoutDetailBlobV1;
+      status: "loaded";
+    }
+  | {
+      blob: null;
+      status: "missing_path" | "download_failed" | "invalid_blob";
+    };
+
 type WorkoutPointSummary = {
   lat: number;
   lon: number;
@@ -82,17 +92,33 @@ export class WorkoutsService {
 
   private async readWorkoutDetailBlob(
     detailPath: string | null | undefined,
-  ): Promise<WorkoutDetailBlobV1 | null> {
+  ): Promise<WorkoutDetailBlobLoadResult> {
     if (!detailPath) {
-      return null;
+      return {
+        blob: null,
+        status: "missing_path",
+      };
     }
 
     try {
       const { buffer } = await this.uploadsService.downloadFile(detailPath);
       const parsed = JSON.parse(buffer.toString("utf-8")) as unknown;
-      return isWorkoutDetailBlobV1(parsed) ? parsed : null;
+      if (isWorkoutDetailBlobV1(parsed)) {
+        return {
+          blob: parsed,
+          status: "loaded",
+        };
+      }
+
+      return {
+        blob: null,
+        status: "invalid_blob",
+      };
     } catch {
-      return null;
+      return {
+        blob: null,
+        status: "download_failed",
+      };
     }
   }
 
@@ -114,7 +140,6 @@ export class WorkoutsService {
     workoutId: string,
     encodedPolyline: string | null | undefined,
     detailBlob: WorkoutDetailBlobV1,
-    legacyRoute: Record<string, unknown> | null,
   ) {
     if (detailBlob.track.length === 0) {
       return [];
@@ -125,11 +150,7 @@ export class WorkoutsService {
 
     return [
       {
-        ...(legacyRoute ?? {}),
-        id:
-          typeof legacyRoute?.id === "string" && legacyRoute.id.length > 0
-            ? legacyRoute.id
-            : `${workoutId}:route`,
+        id: `${workoutId}:route`,
         workoutId,
         encodedPolyline: encodedPolyline ?? null,
         routeData: JSON.stringify(detailBlob.track),
@@ -291,18 +312,36 @@ export class WorkoutsService {
     await this.assertCanReadWorkout(workout, requesterUserId);
     const {
       file,
-      route,
-      laps,
       _count,
       workoutLikes,
       detailPath: _detailPath,
       detailFormatVersion: _detailFormatVersion,
       ...rest
     } = workout;
-    const safeFile = file
-      ? (({ fileUrl: _fileUrl, sourcePath: _sourcePath, ...safe }) => safe)(file)
-      : null;
-    const detailBlob = await this.readWorkoutDetailBlob(workout.detailPath);
+    const safeFile = file ? (({ sourcePath: _sourcePath, ...safe }) => safe)(file) : null;
+    const detailBlobResult = await this.readWorkoutDetailBlob(workout.detailPath);
+    const detailBlob = detailBlobResult.blob;
+
+    if (!detailBlob) {
+      if (detailBlobResult.status !== "missing_path") {
+        this.logger.logEvent("warn", "workout_detail_blob_unavailable", "WorkoutsService", {
+          workoutId: rest.id,
+          detailStatus: detailBlobResult.status,
+          hasSourcePath: Boolean(file?.sourcePath),
+        });
+      } else if (file?.sourcePath) {
+        this.logger.logEvent(
+          "warn",
+          "workout_detail_blob_missing_for_imported_workout",
+          "WorkoutsService",
+          {
+            workoutId: rest.id,
+            hasSourcePath: true,
+          },
+        );
+      }
+    }
+
     const firstDetailTrackPoint = detailBlob?.track[0];
     const lastDetailTrackPoint =
       detailBlob && detailBlob.track.length > 0
@@ -317,31 +356,7 @@ export class WorkoutsService {
     // Extract firstPoint/lastPoint from gpsTrack if available
     let firstPoint: { lat: number; lon: number; elevation?: number } | null = firstPointFromDetail;
     let lastPoint: { lat: number; lon: number; elevation?: number } | null = lastPointFromDetail;
-    if (!detailBlob && route?.routeData) {
-      try {
-        const gpsTrack = JSON.parse(route.routeData) as Array<{
-          lat: number;
-          lon: number;
-          elevation?: number;
-        }>;
-        if (gpsTrack.length > 0) {
-          const first = gpsTrack[0];
-          const last = gpsTrack[gpsTrack.length - 1];
-          firstPoint = {
-            lat: first.lat,
-            lon: first.lon,
-            ...(first.elevation !== undefined && { elevation: first.elevation }),
-          };
-          lastPoint = {
-            lat: last.lat,
-            lon: last.lon,
-            ...(last.elevation !== undefined && { elevation: last.elevation }),
-          };
-        }
-      } catch {
-        // routeData may not be valid JSON, skip
-      }
-    } else if (!detailBlob && rest.startLat != null && rest.startLng != null) {
+    if (!detailBlob && rest.startLat != null && rest.startLng != null) {
       firstPoint = { lat: rest.startLat!, lon: rest.startLng! };
       if (rest.endLat != null && rest.endLng != null) {
         lastPoint = { lat: rest.endLat!, lon: rest.endLng! };
@@ -349,11 +364,9 @@ export class WorkoutsService {
     }
 
     const workoutRoutes = detailBlob
-      ? this.synthesizeRouteFromDetail(rest.id, rest.encodedPolyline, detailBlob, route)
-      : route
-        ? [route]
-        : [];
-    const workoutLaps = detailBlob ? this.synthesizeLapsFromDetail(rest.id, detailBlob) : laps;
+      ? this.synthesizeRouteFromDetail(rest.id, rest.encodedPolyline, detailBlob)
+      : [];
+    const workoutLaps = detailBlob ? this.synthesizeLapsFromDetail(rest.id, detailBlob) : [];
 
     return {
       ...rest,

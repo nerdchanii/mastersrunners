@@ -32,6 +32,7 @@ const mockShoeRepo = {
 
 const mockLogger = {
   errorWithFields: jest.fn(),
+  logEvent: jest.fn(),
 };
 
 const mockMonitoring = {
@@ -211,8 +212,6 @@ describe("WorkoutsService", () => {
         visibility: "PUBLIC",
         user: { id: "u1" },
         file: null,
-        route: null,
-        laps: [],
         _count: { workoutLikes: 0, workoutComments: 0 },
         workoutLikes: [],
       };
@@ -244,8 +243,6 @@ describe("WorkoutsService", () => {
         detailPath: "workout-details/user-1/run.detail.v1.json",
         user: { id: "u1" },
         file: null,
-        route: null,
-        laps: [],
         _count: { workoutLikes: 0, workoutComments: 0 },
         workoutLikes: [],
       });
@@ -345,21 +342,10 @@ describe("WorkoutsService", () => {
         file: {
           id: "f1",
           fileType: "FIT",
-          fileUrl: "https://example.com/run.fit",
+          sourcePath: "private/workouts/user-1/run.fit",
           originalFileName: "run.fit",
           fileSize: 50000,
         },
-        route: {
-          id: "r1",
-          encodedPolyline: "stale-polyline",
-          routeData: '[{"lat":0,"lon":0}]',
-          boundNorth: 0,
-          boundSouth: 0,
-          boundEast: 0,
-          boundWest: 0,
-          totalPoints: 1,
-        },
-        laps: [{ id: "l1", lapNumber: 1, distance: 1600, duration: 480, pace: 300 }],
       };
       mockWorkoutRepo.findByIdWithUser.mockResolvedValue(mockData);
       mockUploadsService.downloadFile.mockResolvedValue({
@@ -378,11 +364,11 @@ describe("WorkoutsService", () => {
       expect(result!.commentCount).toBe(2);
       expect(result!.workoutFiles).toHaveLength(1);
       expect(result!.workoutFiles[0].id).toBe("f1");
-      expect(result!.workoutFiles[0]).not.toHaveProperty("fileUrl");
+      expect(result!.workoutFiles[0]).not.toHaveProperty("sourcePath");
       expect(result!.workoutRoutes).toHaveLength(1);
       expect(result!.workoutRoutes[0]).toEqual(
         expect.objectContaining({
-          id: "r1",
+          id: "w1:route",
           encodedPolyline: "summary-polyline",
           boundNorth: 37.52,
           boundSouth: 37.5,
@@ -402,7 +388,7 @@ describe("WorkoutsService", () => {
       expect(result!.lastPoint).toEqual({ lat: 37.52, lon: 127.03, elevation: 14 });
     });
 
-    it("should fall back to legacy route and laps when detailPath is absent", async () => {
+    it("should return empty workoutRoutes and workoutLaps when detailPath is absent", async () => {
       mockWorkoutRepo.findByIdWithUser.mockResolvedValue({
         id: "w1",
         userId: "u1",
@@ -412,37 +398,85 @@ describe("WorkoutsService", () => {
         _count: { workoutLikes: 0, workoutComments: 0 },
         workoutLikes: [],
         file: null,
-        route: {
-          id: "r1",
-          encodedPolyline: "legacy-polyline",
-          routeData: '[{"lat":37.5,"lon":127.0}]',
-          boundNorth: 37.5,
-          boundSouth: 37.5,
-          boundEast: 127,
-          boundWest: 127,
-          totalPoints: 1,
-        },
-        laps: [{ id: "l1", lapNumber: 1, distance: 1000, duration: 300, pace: 300 }],
       });
 
       const result = await service.findOne("w1");
 
       expect(mockUploadsService.downloadFile).not.toHaveBeenCalled();
-      expect(result!.workoutRoutes).toEqual([
-        {
-          id: "r1",
-          encodedPolyline: "legacy-polyline",
-          routeData: '[{"lat":37.5,"lon":127.0}]',
-          boundNorth: 37.5,
-          boundSouth: 37.5,
-          boundEast: 127,
-          boundWest: 127,
-          totalPoints: 1,
+      expect(result!.workoutRoutes).toEqual([]);
+      expect(result!.workoutLaps).toEqual([]);
+      expect(mockLogger.logEvent).not.toHaveBeenCalled();
+    });
+
+    it("should warn when an imported workout is missing detailPath after legacy cleanup", async () => {
+      mockWorkoutRepo.findByIdWithUser.mockResolvedValue({
+        id: "w1",
+        userId: "u1",
+        visibility: "PUBLIC",
+        user: { id: "u1", name: "Test", profileImage: null },
+        _count: { workoutLikes: 0, workoutComments: 0 },
+        workoutLikes: [],
+        file: {
+          id: "f1",
+          fileType: "FIT",
+          sourcePath: "private/workouts/user-1/run.fit",
+          originalFileName: "run.fit",
+          fileSize: 50000,
         },
-      ]);
-      expect(result!.workoutLaps).toEqual([
-        { id: "l1", lapNumber: 1, distance: 1000, duration: 300, pace: 300 },
-      ]);
+      });
+
+      const result = await service.findOne("w1");
+
+      expect(result!.workoutRoutes).toEqual([]);
+      expect(result!.workoutLaps).toEqual([]);
+      expect(mockUploadsService.downloadFile).not.toHaveBeenCalled();
+      expect(mockLogger.logEvent).toHaveBeenCalledWith(
+        "warn",
+        "workout_detail_blob_missing_for_imported_workout",
+        "WorkoutsService",
+        expect.objectContaining({
+          workoutId: "w1",
+          hasSourcePath: true,
+        }),
+      );
+    });
+
+    it("should warn when detailPath exists but the detail blob cannot be read", async () => {
+      mockWorkoutRepo.findByIdWithUser.mockResolvedValue({
+        id: "w1",
+        userId: "u1",
+        visibility: "PUBLIC",
+        detailPath: "workout-details/user-1/run.detail.v1.json",
+        user: { id: "u1", name: "Test", profileImage: null },
+        _count: { workoutLikes: 0, workoutComments: 0 },
+        workoutLikes: [],
+        file: {
+          id: "f1",
+          fileType: "FIT",
+          sourcePath: "private/workouts/user-1/run.fit",
+          originalFileName: "run.fit",
+          fileSize: 50000,
+        },
+      });
+      mockUploadsService.downloadFile.mockRejectedValue(new Error("missing blob"));
+
+      const result = await service.findOne("w1");
+
+      expect(result!.workoutRoutes).toEqual([]);
+      expect(result!.workoutLaps).toEqual([]);
+      expect(mockUploadsService.downloadFile).toHaveBeenCalledWith(
+        "workout-details/user-1/run.detail.v1.json",
+      );
+      expect(mockLogger.logEvent).toHaveBeenCalledWith(
+        "warn",
+        "workout_detail_blob_unavailable",
+        "WorkoutsService",
+        expect.objectContaining({
+          workoutId: "w1",
+          detailStatus: "download_failed",
+          hasSourcePath: true,
+        }),
+      );
     });
 
     it("should omit raw source urls and storage paths from workoutFiles", async () => {
@@ -456,14 +490,11 @@ describe("WorkoutsService", () => {
         file: {
           id: "f1",
           fileType: "FIT",
-          fileUrl: "https://cdn.example.com/workouts/user-1/run.fit",
           sourcePath: "private/workouts/user-1/run.fit",
           originalFileName: "run.fit",
           fileSize: 50000,
           processStatus: "COMPLETED",
         },
-        route: null,
-        laps: [],
       });
 
       const result = await service.findOne("w1");
@@ -478,7 +509,6 @@ describe("WorkoutsService", () => {
           processStatus: "COMPLETED",
         },
       ]);
-      expect(result!.workoutFiles[0]).not.toHaveProperty("fileUrl");
       expect(result!.workoutFiles[0]).not.toHaveProperty("sourcePath");
     });
 
@@ -492,8 +522,6 @@ describe("WorkoutsService", () => {
         _count: { workoutLikes: 0, workoutComments: 0 },
         workoutLikes: [],
         file: null,
-        route: null,
-        laps: [],
       });
       mockFollowRepo.findFollow.mockResolvedValue(null);
 

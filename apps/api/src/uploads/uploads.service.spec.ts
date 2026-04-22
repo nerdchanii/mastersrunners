@@ -200,7 +200,7 @@ describe("UploadsService", () => {
       ],
     };
 
-    it("stores canonical detail fields and detail blob while keeping legacy route and lap writes", async () => {
+    it("stores canonical detail fields and detail blob without legacy route or lap writes", async () => {
       const mockBuffer = Buffer.from("fake-fit-data");
       mockStorageAdapter.downloadFile.mockResolvedValue({
         buffer: mockBuffer,
@@ -214,15 +214,10 @@ describe("UploadsService", () => {
       const mockWorkoutFile = { id: "file-1", workoutId: "workout-1" };
       const workoutCreate = jest.fn().mockResolvedValue(mockWorkout);
       const workoutFileCreate = jest.fn().mockResolvedValue(mockWorkoutFile);
-      const workoutRouteCreate = jest.fn().mockResolvedValue({ id: "route-1" });
-      const workoutLapCreate = jest.fn().mockResolvedValue({ id: "lap-1" });
-
       mockDatabaseService.prisma.$transaction.mockImplementation(async (cb: any) => {
         const tx = {
           workout: { create: workoutCreate },
           workoutFile: { create: workoutFileCreate },
-          workoutRoute: { create: workoutRouteCreate },
-          workoutLap: { create: workoutLapCreate },
         };
         return cb(tx);
       });
@@ -260,12 +255,9 @@ describe("UploadsService", () => {
       });
       expect(workoutFileCreate).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          fileUrl: "private://workout-source-redacted",
           sourcePath: baseInput.fileKey,
         }),
       });
-      expect(workoutRouteCreate).toHaveBeenCalledTimes(1);
-      expect(workoutLapCreate).toHaveBeenCalledTimes(1);
       expect(result.workout).toBeDefined();
       expect(result.workoutFile).toBeDefined();
     });
@@ -291,8 +283,6 @@ describe("UploadsService", () => {
         const tx = {
           workout: { create: jest.fn().mockResolvedValue(mockWorkout) },
           workoutFile: { create: jest.fn().mockResolvedValue({ id: "file-2" }) },
-          workoutRoute: { create: jest.fn().mockResolvedValue({ id: "route-2" }) },
-          workoutLap: { create: jest.fn().mockResolvedValue({ id: "lap-2" }) },
         };
         return cb(tx);
       });
@@ -316,13 +306,10 @@ describe("UploadsService", () => {
       const mockWorkout = { id: "workout-3" };
       const workoutCreate = jest.fn().mockResolvedValue(mockWorkout);
       const workoutFileCreate = jest.fn().mockResolvedValue({ id: "file-3" });
-      const workoutRouteCreate = jest.fn();
       mockDatabaseService.prisma.$transaction.mockImplementation(async (cb: any) => {
         const tx = {
           workout: { create: workoutCreate },
           workoutFile: { create: workoutFileCreate },
-          workoutRoute: { create: workoutRouteCreate },
-          workoutLap: { create: jest.fn().mockResolvedValue({ id: "lap-3" }) },
         };
         return cb(tx);
       });
@@ -344,7 +331,6 @@ describe("UploadsService", () => {
           sourcePath: baseInput.fileKey,
         }),
       });
-      expect(workoutRouteCreate).not.toHaveBeenCalled();
       expect(mockDatabaseService.prisma.$transaction).toHaveBeenCalled();
     });
 
@@ -400,8 +386,6 @@ describe("UploadsService", () => {
         const tx = {
           workout: { create: jest.fn().mockResolvedValue(mockWorkout) },
           workoutFile: { create: workoutFileCreate },
-          workoutRoute: { create: jest.fn().mockResolvedValue({ id: "route-4" }) },
-          workoutLap: { create: jest.fn().mockResolvedValue({ id: "lap-4" }) },
         };
         return cb(tx);
       });
@@ -434,8 +418,6 @@ describe("UploadsService", () => {
         const tx = {
           workout: { create: jest.fn().mockRejectedValue(new Error("db failed")) },
           workoutFile: { create: jest.fn() },
-          workoutRoute: { create: jest.fn() },
-          workoutLap: { create: jest.fn() },
         };
         return cb(tx);
       });
