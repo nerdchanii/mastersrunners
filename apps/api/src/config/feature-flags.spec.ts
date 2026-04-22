@@ -17,6 +17,7 @@ describe("feature flags", () => {
     const env = {
       KAKAO_CALLBACK_URL: "https://dev.mastersrunners.com/api/v1/auth/kakao/callback",
       KAKAO_CLIENT_ID: "kakao-client-id",
+      KAKAO_CLIENT_SECRET: "kakao-secret",
     } as NodeJS.ProcessEnv;
 
     expect(isOAuthProviderEnabledInRepoConfig("kakao")).toBe(true);
@@ -57,6 +58,7 @@ describe("feature flags", () => {
     const env = {
       KAKAO_CALLBACK_URL: "https://dev.mastersrunners.com/api/v1/auth/kakao/callback",
       KAKAO_CLIENT_ID: "kakao-client-id",
+      KAKAO_CLIENT_SECRET: "kakao-secret",
     } as NodeJS.ProcessEnv;
 
     expect(resolvePublicAuthProviders(env)).toEqual({
@@ -70,5 +72,15 @@ describe("feature flags", () => {
       },
       features: repoTrackedRuntimeConfig.features,
     });
+  });
+
+  it("keeps kakao unavailable when the secret is missing", () => {
+    const env = {
+      KAKAO_CALLBACK_URL: "https://dev.mastersrunners.com/api/v1/auth/kakao/callback",
+      KAKAO_CLIENT_ID: "kakao-client-id",
+    } as NodeJS.ProcessEnv;
+
+    expect(isOAuthProviderConfigured("kakao", env)).toBe(false);
+    expect(isOAuthProviderEnabled("kakao", env)).toBe(false);
   });
 });

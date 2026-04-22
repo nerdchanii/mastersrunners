@@ -23,8 +23,10 @@ jobs:
       CF_ACCESS_TEAM_DOMAIN: ${{ vars.CF_ACCESS_TEAM_DOMAIN }}
       CF_ACCESS_POLICY_AUD: ${{ vars.CF_ACCESS_POLICY_AUD }}
       API_PUBLIC_URL: ${{ vars.API_PUBLIC_URL }}
+      JWT_ACCESS_TTL: ${{ vars.JWT_ACCESS_TTL }}
+      JWT_REFRESH_TTL: ${{ vars.JWT_REFRESH_TTL }}
+      R2_PUBLIC_URL: ${{ vars.R2_PUBLIC_URL }}
       KAKAO_CALLBACK_URL: ${{ vars.KAKAO_CALLBACK_URL }}
-      GOOGLE_CALLBACK_URL: ${{ vars.GOOGLE_CALLBACK_URL }}
 
     permissions:
       contents: read
@@ -71,7 +73,23 @@ jobs:
             echo "::error::GitHub environment variable FRONTEND_URL must be set for ${DEPLOY_LANE} Cloud Run deploys."
             exit 1
           fi
+          if [ -z "${KAKAO_CALLBACK_URL}" ]; then
+            echo "::error::GitHub environment variable KAKAO_CALLBACK_URL must be set while Kakao remains enabled in the repo runtime config."
+            exit 1
+          fi
           if [ "${DEPLOY_LANE}" = "dev" ]; then
+            if [ -z "${JWT_ACCESS_TTL}" ]; then
+              echo "::error::GitHub environment variable JWT_ACCESS_TTL must be set for the dev Cloud Run deploy."
+              exit 1
+            fi
+            if [ -z "${JWT_REFRESH_TTL}" ]; then
+              echo "::error::GitHub environment variable JWT_REFRESH_TTL must be set for the dev Cloud Run deploy."
+              exit 1
+            fi
+            if [ -z "${R2_PUBLIC_URL}" ]; then
+              echo "::error::GitHub environment variable R2_PUBLIC_URL must be set for the dev Cloud Run deploy."
+              exit 1
+            fi
             if [ -z "${OPS_FRONTEND_URL}" ]; then
               echo "::error::GitHub environment variable OPS_FRONTEND_URL must be set for the dev deploy lane once the ops host is enabled."
               exit 1
@@ -116,29 +134,39 @@ jobs:
       - name: Deploy to Cloud Run
         run: |
           IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/masters-runners/${{ env.SERVICE_NAME }}:${{ github.sha }}"
-          env_vars=("NODE_ENV=production" "FRONTEND_URL=${FRONTEND_URL}")
+          env_vars=(
+            "NODE_ENV=production"
+            "FRONTEND_URL=${FRONTEND_URL}"
+          )
           secret_mappings=(
             "DATABASE_URL=DATABASE_URL:latest"
             "JWT_SECRET=JWT_SECRET:latest"
-            "JWT_ACCESS_TTL=JWT_ACCESS_TTL:latest"
-            "JWT_REFRESH_TTL=JWT_REFRESH_TTL:latest"
             "R2_ACCOUNT_ID=R2_ACCOUNT_ID:latest"
             "R2_ACCESS_KEY_ID=R2_ACCESS_KEY_ID:latest"
             "R2_SECRET_ACCESS_KEY=R2_SECRET_ACCESS_KEY:latest"
             "R2_BUCKET_NAME=R2_BUCKET_NAME:latest"
-            "R2_PUBLIC_URL=R2_PUBLIC_URL:latest"
+            "KAKAO_CLIENT_ID=KAKAO_CLIENT_ID:latest"
+            "KAKAO_CLIENT_SECRET=KAKAO_CLIENT_SECRET:latest"
           )
 
-          append_secret_if_present() {
-            local secret_name="$1"
-
-            if gcloud secrets versions access latest \
-              --secret "$secret_name" \
-              --project "${PROJECT_ID}" \
-              >/dev/null 2>&1; then
-              secret_mappings+=("${secret_name}=${secret_name}:latest")
-            fi
-          }
+          if [ -n "${JWT_ACCESS_TTL}" ]; then
+            env_vars+=("JWT_ACCESS_TTL=${JWT_ACCESS_TTL}")
+          else
+            secret_mappings+=("JWT_ACCESS_TTL=JWT_ACCESS_TTL:latest")
+          fi
+          if [ -n "${JWT_REFRESH_TTL}" ]; then
+            env_vars+=("JWT_REFRESH_TTL=${JWT_REFRESH_TTL}")
+          else
+            secret_mappings+=("JWT_REFRESH_TTL=JWT_REFRESH_TTL:latest")
+          fi
+          if [ -n "${R2_PUBLIC_URL}" ]; then
+            env_vars+=("R2_PUBLIC_URL=${R2_PUBLIC_URL}")
+          else
+            secret_mappings+=("R2_PUBLIC_URL=R2_PUBLIC_URL:latest")
+          fi
+          if [ -n "${KAKAO_CALLBACK_URL}" ]; then
+            env_vars+=("KAKAO_CALLBACK_URL=${KAKAO_CALLBACK_URL}")
+          fi
 
           if [ -n "${API_PUBLIC_URL}" ]; then
             env_vars+=("API_PUBLIC_URL=${API_PUBLIC_URL}")
@@ -152,16 +180,6 @@ jobs:
           if [ -n "${CF_ACCESS_POLICY_AUD}" ]; then
             env_vars+=("CF_ACCESS_POLICY_AUD=${CF_ACCESS_POLICY_AUD}")
           fi
-          if [ -n "${KAKAO_CALLBACK_URL}" ]; then
-            env_vars+=("KAKAO_CALLBACK_URL=${KAKAO_CALLBACK_URL}")
-          fi
-          if [ -n "${GOOGLE_CALLBACK_URL}" ]; then
-            env_vars+=("GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}")
-          fi
-          append_secret_if_present "KAKAO_CLIENT_ID"
-          append_secret_if_present "KAKAO_CLIENT_SECRET"
-          append_secret_if_present "GOOGLE_CLIENT_ID"
-          append_secret_if_present "GOOGLE_CLIENT_SECRET"
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --image "$IMAGE" \
             --region ${{ env.REGION }} \

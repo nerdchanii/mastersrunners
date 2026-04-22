@@ -69,39 +69,48 @@ This runbook explains how deployment works in this repository, what to verify be
   - `main` branch -> `production` GitHub environment
 - Each GitHub environment should provide the lane-scoped deployment contract:
   - secrets: `GCP_PROJECT_ID`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT`
-  - variables: `CLOUD_RUN_SERVICE_NAME`, `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT`, `FRONTEND_URL`, `OPS_FRONTEND_URL`
-  - optional variables: `API_PUBLIC_URL`, `KAKAO_CALLBACK_URL`, `GOOGLE_CALLBACK_URL`
+  - variables: `CLOUD_RUN_SERVICE_NAME`, `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT`, `FRONTEND_URL`, `KAKAO_CALLBACK_URL`
+  - dev-lane variables: `OPS_FRONTEND_URL`, `JWT_ACCESS_TTL`, `JWT_REFRESH_TTL`, `R2_PUBLIC_URL`
+  - optional variables: `API_PUBLIC_URL`
 - Expected GitHub environment variable values for the current rollout:
   - `dev` environment:
     - `CLOUD_RUN_SERVICE_NAME=masters-runners-api-dev`
     - `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT=cloud-run-runtime@mastersrunners-dev-20260331.iam.gserviceaccount.com`
     - `FRONTEND_URL=https://dev.mastersrunners.com`
     - `OPS_FRONTEND_URL=https://ops.dev.mastersrunners.com`
+    - `R2_PUBLIC_URL=https://assets.dev.mastersrunners.com`
   - `production` environment:
     - `CLOUD_RUN_SERVICE_NAME=masters-runners-api`
     - `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT=cloud-run-runtime@mastersrunners-prod-20260331.iam.gserviceaccount.com`
     - `FRONTEND_URL=https://mastersrunners.com`
+    - `KAKAO_CALLBACK_URL=https://mastersrunners.com/api/v1/auth/kakao/callback`
 - Deployment workflow injects:
-  - `NODE_ENV=production`
-  - `FRONTEND_URL`
-  - `OPS_FRONTEND_URL`
-  - `DATABASE_URL`
-  - `JWT_SECRET`
-  - `JWT_ACCESS_TTL`
-  - `JWT_REFRESH_TTL`
-  - R2 credentials and bucket/public URL values
+  - GitHub environment variables:
+    - `NODE_ENV=production`
+    - `FRONTEND_URL`
+    - `OPS_FRONTEND_URL`
+    - `JWT_ACCESS_TTL` when the lane has migrated off Secret Manager for JWT policy values
+    - `JWT_REFRESH_TTL` when the lane has migrated off Secret Manager for JWT policy values
+    - `R2_PUBLIC_URL` when the lane has migrated off Secret Manager for the public asset host
+    - `KAKAO_CALLBACK_URL` when the lane exposes Kakao login through GitHub env metadata
+  - Secret Manager runtime secrets:
+    - `DATABASE_URL`
+    - `JWT_SECRET`
+    - `R2_ACCOUNT_ID`
+    - `R2_ACCESS_KEY_ID`
+    - `R2_SECRET_ACCESS_KEY`
+    - `R2_BUCKET_NAME`
+    - `KAKAO_CLIENT_ID`
+    - `KAKAO_CLIENT_SECRET`
+  - Legacy fallback secrets on lanes not yet migrated:
+    - `JWT_ACCESS_TTL`
+    - `JWT_REFRESH_TTL`
+    - `R2_PUBLIC_URL`
 - Additional ops-auth runtime values:
   - `CF_ACCESS_TEAM_DOMAIN`
   - `CF_ACCESS_POLICY_AUD`
 - Optional runtime values:
   - `API_PUBLIC_URL`
-  - `KAKAO_CALLBACK_URL`
-  - `GOOGLE_CALLBACK_URL`
-- If matching Secret Manager entries exist, the deploy workflow also forwards optional OAuth provider credentials:
-  - `KAKAO_CLIENT_ID`
-  - `KAKAO_CLIENT_SECRET`
-  - `GOOGLE_CLIENT_ID`
-  - `GOOGLE_CLIENT_SECRET`
 - `DATABASE_URL` should be the Supabase transaction-pooler runtime URL for Cloud Run.
 - `JWT_ACCESS_TTL` and `JWT_REFRESH_TTL` may be either numeric seconds or jsonwebtoken-style timespan strings such as `15m` and `30d`.
 - `DIRECT_URL` is intentionally not injected into Cloud Run because the API runtime should not need the migration/operator URL.
@@ -113,17 +122,20 @@ This runbook explains how deployment works in this repository, what to verify be
 - `FRONTEND_URL` is required for branch deploy boot because the API uses it for CORS and OAuth redirect targets.
 - `OPS_FRONTEND_URL` is also required once the ops backoffice is enabled because the API allows that origin for ops-host API traffic.
 - Browser auth now also depends on `FRONTEND_URL` because the API derives cookie redirect and `Secure` behavior from it.
+- The current dev lane now takes `R2_PUBLIC_URL` from GitHub environment variables because it is a public asset host, not a Secret Manager value.
+- The deploy workflow still falls back to legacy Secret Manager values for `JWT_*` and `R2_PUBLIC_URL` on lanes that have not been migrated yet.
 - Public feature exposure is controlled by the repo-tracked runtime config module at `apps/api/src/config/feature-flags.ts`.
 - Provider credentials still live in Secret Manager and callback URLs still live in GitHub environment variables.
-- If Kakao is enabled in the repo-tracked runtime config, `KAKAO_CALLBACK_URL` must be present in GitHub vars and the runtime must also receive `KAKAO_CLIENT_ID`.
-- If Google is enabled in the repo-tracked runtime config, `GOOGLE_CALLBACK_URL` must be present in GitHub vars and the runtime must also receive `GOOGLE_CLIENT_ID` plus `GOOGLE_CLIENT_SECRET`.
+- The current repo-tracked auth contract is Kakao enabled and Google disabled.
+- While Kakao remains enabled in the repo runtime config, `KAKAO_CALLBACK_URL` must be present in GitHub vars and the runtime must also receive `KAKAO_CLIENT_ID` plus `KAKAO_CLIENT_SECRET`.
+- Google and Naver runtime wiring are intentionally outside the current deploy contract; re-enable them only in a dedicated follow-up task that changes the repo-tracked runtime config and operator docs together.
 - The API exposes `GET /config/public` as the public runtime contract used by the web for feature and auth-provider availability.
 - Current repo defaults are:
   - Kakao auth enabled
   - Google auth disabled
   - challenges disabled
   - events disabled
-- If Kakao or Google is missing from `/config/public`, first confirm the repo-tracked runtime config enables it, then confirm the matching callback URL variable exists in GitHub and the matching credentials exist in Secret Manager.
+- If Kakao is missing from `/config/public`, first confirm the repo-tracked runtime config still enables it, then confirm `KAKAO_CALLBACK_URL` exists in GitHub and both Kakao credentials exist in Secret Manager.
 - Browser auth transport contract for current deploys:
   - OAuth callback redirects never include app tokens in the URL
   - browser auth tokens live only in `HttpOnly` cookies scoped to `/api/v1`
@@ -156,25 +168,25 @@ bash scripts/bootstrap-gcp-secrets.sh --dry-run mastersrunners-dev-20260331 .env
   - `DATABASE_URL`
   - `DIRECT_URL`
   - `JWT_SECRET`
-  - `JWT_ACCESS_TTL`
-  - `JWT_REFRESH_TTL`
   - `R2_ACCOUNT_ID`
   - `R2_ACCESS_KEY_ID`
   - `R2_SECRET_ACCESS_KEY`
   - `R2_BUCKET_NAME`
+  - `KAKAO_CLIENT_ID`
+  - `KAKAO_CLIENT_SECRET`
+- These values no longer belong in Secret Manager for the migrated dev lane:
+  - `JWT_ACCESS_TTL`
+  - `JWT_REFRESH_TTL`
   - `R2_PUBLIC_URL`
+- Keep those non-secret values in GitHub environment variables instead once a lane is migrated.
+- Lanes that have not been migrated yet may still carry legacy Secret Manager copies of `JWT_*` and `R2_PUBLIC_URL` until the follow-up rollout finishes.
 - The API derives the standard Cloudflare R2 S3 endpoint from `R2_ACCOUNT_ID`, so `R2_ENDPOINT` does not need to be stored as a separate secret for the normal Cloudflare R2 path.
 - Only set `R2_ENDPOINT` explicitly when you need to override the standard Cloudflare R2 host shape for a non-default environment.
 - Bucket-side CORS is a separate external setting from the runtime secrets above. The current browser direct-upload contract expects the target bucket to allow:
   - origins: the lane frontend host
   - methods: at least `PUT`
   - headers: `Content-Type`, `x-amz-checksum-crc32`, and `x-amz-sdk-checksum-algorithm`
-- Optional social-login secrets can also be stored if they are present in the env file:
-  - `KAKAO_CLIENT_ID`
-  - `KAKAO_CLIENT_SECRET`
-  - `GOOGLE_CLIENT_ID`
-  - `GOOGLE_CLIENT_SECRET`
-- Keep callback URLs in GitHub environment variables, not in Secret Manager.
+- Keep callback URLs and other public runtime host values in GitHub environment variables, not in Secret Manager.
 
 ### Local Docker Compose
 
@@ -329,7 +341,7 @@ docker compose --env-file .env.production -f docker-compose.prod.yml down
 4. GitHub Actions builds and pushes the API image.
 5. GitHub Actions loads `DIRECT_URL` from Secret Manager.
 6. GitHub Actions runs `pnpm db:migrate:deploy` and `pnpm db:seed`.
-7. GitHub Actions deploys that image to the branch-mapped Cloud Run service.
+7. GitHub Actions deploys that image to the branch-mapped Cloud Run service with the reduced runtime secret inventory and GitHub-managed non-secret env vars.
 8. GitHub Actions runs `scripts/verify-deployment.sh` against the deployed service URL.
 9. If operator-facing proof of the Pages header contract is needed, rerun the script manually with `WEB_VERIFY_URL=https://dev.mastersrunners.com` after the API deploy succeeds.
 

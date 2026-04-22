@@ -37,7 +37,7 @@ export const oauthProviderContracts: Record<SupportedOAuthProvider, AuthProvider
     callbackEnv: "GOOGLE_CALLBACK_URL",
   },
   kakao: {
-    requiredEnvKeys: ["KAKAO_CLIENT_ID"],
+    requiredEnvKeys: ["KAKAO_CLIENT_ID", "KAKAO_CLIENT_SECRET"],
     callbackEnv: "KAKAO_CALLBACK_URL",
   },
 };

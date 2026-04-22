@@ -68,6 +68,9 @@ This document defines the intended deployment shape for the repository. Runbooks
 - Web runtime config for Cloudflare Pages is injected through Pages environment variables such as `VITE_API_URL`
 - Ops-web runtime config can also use `VITE_API_URL`, but the deployed default should remain same-host `/api/v1`
 - API runtime should use the pooled Supabase `DATABASE_URL`, while Prisma CLI/operator flows should use `DIRECT_URL` when available
+- Branch deploys keep strict-protection runtime credentials in Secret Manager: `DATABASE_URL`, `JWT_SECRET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `KAKAO_CLIENT_ID`, and `KAKAO_CLIENT_SECRET`
+- The migrated dev lane keeps non-secret runtime policy and public host values in GitHub environment variables, including `JWT_ACCESS_TTL`, `JWT_REFRESH_TTL`, `R2_PUBLIC_URL`, lane hosts, and OAuth callback URLs
+- Lanes that have not been migrated yet may still fall back to legacy Secret Manager copies of `JWT_*` and `R2_PUBLIC_URL` until their follow-up rollout lands
 - Non-development web builds intentionally fail when `VITE_API_URL` is missing instead of silently falling back to localhost
 - Production deploys should be immutable by commit SHA
 - Redis appears in environment and compose-level deployment assumptions, but the current repo implementation does not use a shared Redis runtime for app logic or realtime fan-out
@@ -104,8 +107,9 @@ This document defines the intended deployment shape for the repository. Runbooks
 5. Deploy workflow builds and pushes the API image
 6. Deploy workflow loads `DIRECT_URL` from Secret Manager
 7. Deploy workflow applies additive-only automated migrations and seed data
-8. Cloud Run receives the new revision
-9. Verification script checks service health plus the repo-tracked header contract on the direct API surface; web-host proof remains an operator-run follow-up when the external Pages host is reachable
+8. Deploy workflow injects the reduced runtime secret inventory plus GitHub-managed non-secret env vars into Cloud Run
+9. Cloud Run receives the new revision
+10. Verification script checks service health plus the repo-tracked header contract on the direct API surface; web-host proof remains an operator-run follow-up when the external Pages host is reachable
 
 ## Rollback Model
 

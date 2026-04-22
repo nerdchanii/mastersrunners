@@ -90,6 +90,38 @@ describe("validateProductionRuntimeEnv", () => {
     ).toThrow("Missing required production environment variable: GOOGLE_CALLBACK_URL");
   });
 
+  it("requires kakao credentials and callback URLs for the default production runtime", () => {
+    process.env.NODE_ENV = "production";
+
+    expect(() =>
+      validateProductionRuntimeEnv(
+        createConfig({
+          FRONTEND_URL: "https://dev.mastersrunners.com",
+        }),
+      ),
+    ).toThrow("Missing required production environment variable: KAKAO_CLIENT_ID");
+
+    process.env.KAKAO_CLIENT_ID = "enabled-kakao-provider";
+
+    expect(() =>
+      validateProductionRuntimeEnv(
+        createConfig({
+          FRONTEND_URL: "https://dev.mastersrunners.com",
+        }),
+      ),
+    ).toThrow("Missing required production environment variable: KAKAO_CLIENT_SECRET");
+
+    process.env.KAKAO_CLIENT_SECRET = "kakao-secret";
+
+    expect(() =>
+      validateProductionRuntimeEnv(
+        createConfig({
+          FRONTEND_URL: "https://dev.mastersrunners.com",
+        }),
+      ),
+    ).toThrow("Missing required production environment variable: KAKAO_CALLBACK_URL");
+  });
+
   it("ignores disabled OAuth providers even when credentials are absent", () => {
     process.env.NODE_ENV = "production";
     const runtimeConfig = {
@@ -113,24 +145,14 @@ describe("validateProductionRuntimeEnv", () => {
   it("accepts valid production URLs", () => {
     process.env.NODE_ENV = "production";
     process.env.KAKAO_CLIENT_ID = "enabled-kakao-provider";
-    process.env.GOOGLE_CLIENT_ID = "enabled-google-provider";
-    process.env.GOOGLE_CLIENT_SECRET = "google-secret";
-    const runtimeConfig = {
-      ...repoTrackedRuntimeConfig,
-      authProviders: {
-        ...repoTrackedRuntimeConfig.authProviders,
-        google: true,
-      },
-    };
+    process.env.KAKAO_CLIENT_SECRET = "kakao-secret";
 
     expect(() =>
       validateProductionRuntimeEnv(
         createConfig({
           FRONTEND_URL: "https://dev.mastersrunners.com",
           KAKAO_CALLBACK_URL: "https://dev.mastersrunners.com/api/v1/auth/kakao/callback",
-          GOOGLE_CALLBACK_URL: "https://dev.mastersrunners.com/api/v1/auth/google/callback",
         }),
-        runtimeConfig,
       ),
     ).not.toThrow();
   });

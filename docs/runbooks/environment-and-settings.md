@@ -21,7 +21,10 @@ This document is intentionally an index. It does not duplicate every environment
 - Branch deploy lanes also depend on GitHub environment metadata documented in `docs/runbooks/deployment.md`, including `CLOUD_RUN_SERVICE_NAME`, `CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT`, `FRONTEND_URL`, and `OPS_FRONTEND_URL`.
 - Ops backoffice runtime on the API also depends on `CF_ACCESS_TEAM_DOMAIN` and `CF_ACCESS_POLICY_AUD`.
 - Repo-tracked public feature exposure lives in `apps/api/src/config/feature-flags.ts`.
-- If a branch lane should expose social login, keep callback URLs in GitHub environment variables and keep provider credentials in Secret Manager so Cloud Run can receive them at deploy time.
+- The migrated dev deploy lane keeps non-secret policy and host values such as `JWT_ACCESS_TTL`, `JWT_REFRESH_TTL`, `R2_PUBLIC_URL`, and callback URLs in GitHub environment variables.
+- Branch deploy lanes keep strict-protection runtime credentials such as database URLs, R2 account/bucket credentials, and active OAuth provider credentials in Secret Manager so Cloud Run can receive them at deploy time.
+- The deploy workflow still falls back to legacy Secret Manager values for `JWT_*` and `R2_PUBLIC_URL` on lanes that have not been migrated yet.
+- The current repo-tracked social-login truth is Kakao enabled and Google disabled; treat Google/Naver provider credentials as out of the current branch deploy contract unless a follow-up task re-enables them in repo config.
 
 ### Web Runtime and Build Settings
 
@@ -43,6 +46,7 @@ This document is intentionally an index. It does not duplicate every environment
 - Current rollout posture keeps the live dev lane on Supabase Free; operational limits such as project pausing should be treated as an explicit launch constraint, not an implicit uptime guarantee.
 - Prisma CLI in this repo auto-loads repo-root `.env`; if you keep operator URLs only in `.env.production`, export `DIRECT_URL` into the shell before running host-side Prisma commands.
 - JWT and OAuth settings are documented in `docs/runbooks/deployment.md` and exemplified in `.env.production.example`. Public feature defaults live in the repo-tracked runtime config module.
+- Current deploy truth keeps `DIRECT_URL` in Secret Manager for automated migrate/seed steps but does not inject it into Cloud Run runtime.
 
 ### Storage
 
