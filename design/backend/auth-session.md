@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-04-01
+last_verified: 2026-04-28
 sources:
   - apps/api/src/auth/auth.module.ts
   - apps/api/src/auth/auth.controller.ts
@@ -10,10 +10,10 @@ sources:
   - apps/api/src/config/feature-flags.ts
   - apps/api/src/config/public-config.controller.ts
   - apps/api/src/auth/strategies/jwt.strategy.ts
-  - apps/api/src/auth/guards/jwt-sse.guard.ts
   - apps/api/src/common/decorators/public.decorator.ts
   - apps/api/src/notifications/notifications.controller.ts
   - apps/api/src/conversations/conversations.controller.ts
+  - apps/api/src/realtime/realtime.gateway.ts
   - apps/web/src/lib/api-client.ts
   - apps/web/src/pages/auth/callback/index.tsx
 ---
@@ -46,9 +46,9 @@ The API owns OAuth provider handoff, user/account linking, JWT issuance, refresh
 
 - `@Public()` marks handlers that skip the global JWT guard.
 - Normal browser-facing API requests authenticate through the access-token cookie.
-- SSE endpoints authenticate through `JwtSseGuard` using the same access-token cookie.
+- Realtime WebSocket connections authenticate through the same access-token cookie used by normal browser API requests.
 - Deleted users are rejected during cookie-token JWT validation.
-- SSE auth currently verifies the token but does not re-check `deletedAt`.
+- Realtime auth currently verifies the JWT from the cookie in `RealtimeGateway`, but it does not re-check `deletedAt` the way `JwtStrategy` does for normal HTTP requests.
 
 ## Current Constraints
 

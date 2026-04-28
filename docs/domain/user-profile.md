@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: product
-last_verified: 2026-04-03
+last_verified: 2026-04-28
 sources:
   - packages/database/prisma/schema.prisma
   - apps/api/src/profile/profile.controller.ts
@@ -82,7 +82,7 @@ Onboarding에서는 `name`을 필수로 받고, `bio`, `region`, `subRegion`, PB
 
 ## 알림
 
-현재 알림 시스템은 Notification 엔티티와 SSE 전달을 사용한다.
+현재 알림 시스템은 Notification 엔티티와 `/realtime` socket.io 전달을 사용한다.
 
 ### 현재 저장 필드
 
@@ -101,7 +101,7 @@ Onboarding에서는 `name`을 필수로 받고, `bio`, `region`, `subRegion`, PB
 - unread count 조회
 - 개별 읽음 처리
 - 전체 읽음 처리
-- SSE 기반 실시간 인앱 전달
+- `/realtime` 기반 실시간 인앱 전달
 
 현재 구현 기준으로는 “유형별 알림 설정”, “푸시/인앱 채널 분리 설정” 같은 사용자 제어 surface를 current truth로 볼 수 없다.
 

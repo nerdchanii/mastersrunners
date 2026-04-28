@@ -140,7 +140,7 @@ This runbook explains how deployment works in this repository, what to verify be
   - OAuth callback redirects never include app tokens in the URL
   - browser auth tokens live only in `HttpOnly` cookies scoped to `/api/v1`
   - the SPA must call the API with credentials included and cannot rely on `localStorage` token persistence
-  - SSE connections also depend on browser cookies, so same-domain `/api/*` routing or localhost CORS+credentials must stay aligned with `FRONTEND_URL`
+  - the `/realtime` socket.io connection also depends on browser cookies, so same-domain `/api/*` routing or localhost CORS+credentials must stay aligned with `FRONTEND_URL`
 
 ### Secret Manager Bootstrap
 
@@ -317,6 +317,7 @@ WEB_VERIFY_URL=https://dev.mastersrunners.com pnpm deploy:verify -- https://SERV
   - `GET /api/v1/health` reachability and required headers
   - `/api-docs` headers on the direct API origin
   - web-root headers on `WEB_VERIFY_URL` when that host is provided or when the base URL is already the public app host
+- Realtime live verification should use a browser or socket.io client against `/realtime`; SSE endpoints are no longer deployment proof surfaces.
 - Do not use `pnpm deploy:verify -- https://dev.mastersrunners.com` as the canonical proof once Swagger is treated as an ops-only surface; prefer a direct API origin base URL plus optional `WEB_VERIFY_URL`.
 
 ### 4. Check logs

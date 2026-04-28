@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { messageKeys, patchConversationSummary } from "@/hooks/useMessages";
 import { api, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
-import { type ChatRealtimeMessage, useChatRealtime } from "@/lib/chat-realtime-context";
 import type { ConversationRoom, ConversationUser } from "@/lib/message-room";
+import { type RealtimeChatMessage, useRealtime } from "@/lib/realtime-context";
 
 export interface ChatWindowMessage {
   id: string;
@@ -86,7 +86,7 @@ export function useChatWindow({
   enabled = true,
 }: UseChatWindowOptions): ChatWindowController {
   const queryClient = useQueryClient();
-  const { sendMessage: sendRealtimeMessage, subscribe } = useChatRealtime();
+  const { markConversationRead, sendMessage: sendRealtimeMessage, subscribe } = useRealtime();
   const { user } = useAuth();
   const [conversation, setConversation] = useState<ConversationRoom | null>(null);
   const [messages, setMessages] = useState<ChatWindowMessage[]>([]);
@@ -115,8 +115,18 @@ export function useChatWindow({
       }
 
       try {
-        await api.fetch(`/conversations/${conversationId}/read`, { method: "PATCH" });
-        queryClient.invalidateQueries({ queryKey: messageKeys.unreadCount() });
+        try {
+          const update = await markConversationRead(conversationId);
+          if (typeof update.totalUnreadCount === "number") {
+            queryClient.setQueryData(messageKeys.unreadCount(), update.totalUnreadCount);
+          } else {
+            queryClient.invalidateQueries({ queryKey: messageKeys.unreadCount() });
+          }
+        } catch {
+          await api.fetch(`/conversations/${conversationId}/read`, { method: "PATCH" });
+          queryClient.invalidateQueries({ queryKey: messageKeys.unreadCount() });
+        }
+
         queryClient.setQueryData(messageKeys.conversations(), (current: unknown) =>
           patchConversationSummary(current as any, conversationId, (conversation) => ({
             ...conversation,
@@ -127,7 +137,7 @@ export function useChatWindow({
         console.error("Failed to mark chat as read:", markReadError);
       }
     },
-    [queryClient],
+    [markConversationRead, queryClient],
   );
 
   const fetchInitialWindow = useCallback(async () => {
@@ -195,7 +205,7 @@ export function useChatWindow({
       return;
     }
 
-    return subscribe(conversationId, async (message: ChatRealtimeMessage) => {
+    return subscribe(conversationId, async (message: RealtimeChatMessage) => {
       if (hasMessage(messagesRef.current, message.id)) {
         return;
       }

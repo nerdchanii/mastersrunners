@@ -34,6 +34,7 @@ import { NotificationsModule } from "./notifications/notifications.module.js";
 import { PostSocialModule } from "./post-social/post-social.module.js";
 import { PostsModule } from "./posts/posts.module.js";
 import { ProfileModule } from "./profile/profile.module.js";
+import { RealtimeModule } from "./realtime/realtime.module.js";
 import { ShoesModule } from "./shoes/shoes.module.js";
 import { UploadsModule } from "./uploads/uploads.module.js";
 import { WorkoutSocialModule } from "./workout-social/workout-social.module.js";
@@ -65,6 +66,7 @@ import { WorkoutsModule } from "./workouts/workouts.module.js";
     UploadsModule,
     ProfileModule,
     HealthModule,
+    RealtimeModule,
     ConversationsModule,
     NotificationsModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),

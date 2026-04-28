@@ -3,22 +3,15 @@ import {
   Controller,
   Delete,
   Get,
-  MessageEvent,
   Param,
   Patch,
   Post,
   Query,
   Req,
-  Sse,
   UseGuards,
 } from "@nestjs/common";
-import { SkipThrottle } from "@nestjs/throttler";
-import type { Request } from "express";
-import { Observable } from "rxjs";
 
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard.js";
-import { JwtSseGuard } from "../auth/guards/jwt-sse.guard.js";
-import { Public } from "../common/decorators/public.decorator.js";
 import { CursorLimitQueryDto } from "../common/dto/cursor-limit-query.dto.js";
 
 import { ChatWindowQueryDto } from "./dto/chat-window-query.dto.js";
@@ -29,15 +22,11 @@ import {
   ConversationListResponse,
   ConversationsService,
 } from "./conversations.service.js";
-import { ConversationsSseService } from "./conversations-sse.service.js";
 
 @Controller("conversations")
 @UseGuards(JwtAuthGuard)
 export class ConversationsController {
-  constructor(
-    private readonly conversationsService: ConversationsService,
-    private readonly sseService: ConversationsSseService,
-  ) {}
+  constructor(private readonly conversationsService: ConversationsService) {}
 
   @Post()
   async startConversation(
@@ -62,16 +51,6 @@ export class ConversationsController {
   @Get("unread-count")
   async getUnreadCount(@Req() req: { user: { userId: string } }): Promise<{ count: number }> {
     return this.conversationsService.getUnreadCount(req.user.userId);
-  }
-
-  @Sse("sse")
-  @Public()
-  @UseGuards(JwtSseGuard)
-  @SkipThrottle()
-  sse(@Req() req: Request & { user: { userId: string } }): Observable<MessageEvent> {
-    const connection = this.sseService.addConnection(req.user.userId);
-    req.once("close", connection.close);
-    return connection.stream;
   }
 
   @Get(":id")

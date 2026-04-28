@@ -34,12 +34,12 @@ export async function setupMockChatRealtime(page: Page) {
         return;
       }
 
-      if (text.startsWith("40/conversations")) {
-        ws.send('40/conversations,{"sid":"playwright-namespace"}');
+      if (text.startsWith("40/realtime")) {
+        ws.send('40/realtime,{"sid":"playwright-namespace"}');
         return;
       }
 
-      const eventMatch = text.match(/^42\/conversations,(\d*)(\[.*\])$/);
+      const eventMatch = text.match(/^42\/realtime,(\d*)(\[.*\])$/);
       if (eventMatch) {
         const [, ackId, payloadText] = eventMatch;
         const payload = JSON.parse(payloadText) as [string, { conversationId?: string }];
@@ -56,9 +56,7 @@ export async function setupMockChatRealtime(page: Page) {
             conversationId?: string;
           };
           if (sendBehavior.kind === "error") {
-            ws.send(
-              `43/conversations,${ackId}${JSON.stringify([{ error: sendBehavior.message }])}`,
-            );
+            ws.send(`43/realtime,${ackId}${JSON.stringify([{ error: sendBehavior.message }])}`);
             return;
           }
 
@@ -76,8 +74,20 @@ export async function setupMockChatRealtime(page: Page) {
             createdAt: now,
             deletedAt: null,
           };
-          ws.send(`43/conversations,${ackId}${JSON.stringify([message])}`);
-          ws.send(`42/conversations,${JSON.stringify(["chat:message", message])}`);
+          ws.send(`43/realtime,${ackId}${JSON.stringify([message])}`);
+          ws.send(`42/realtime,${JSON.stringify(["chat:message", message])}`);
+        }
+        if (event === "chat:read") {
+          ws.send(
+            `43/realtime,${ackId}${JSON.stringify([
+              {
+                ok: true,
+                conversationId: data?.conversationId ?? "",
+                unreadCount: 0,
+                totalUnreadCount: 0,
+              },
+            ])}`,
+          );
         }
       }
     });
@@ -109,7 +119,7 @@ export async function setupMockChatRealtime(page: Page) {
       throw new Error(`Timed out waiting for subscription: ${conversationId}`);
     },
     async emitChatMessage(message: MockRealtimeMessage) {
-      const payload = `42/conversations,${JSON.stringify(["chat:message", message])}`;
+      const payload = `42/realtime,${JSON.stringify(["chat:message", message])}`;
       await Promise.all([...sockets].map((socket) => socket.send(payload)));
     },
     setSendError(message: string) {

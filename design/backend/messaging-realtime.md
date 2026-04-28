@@ -1,19 +1,17 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-04-21
+last_verified: 2026-04-28
 sources:
   - apps/api/src/conversations/conversations.controller.ts
   - apps/api/src/conversations/conversations.service.ts
-  - apps/api/src/conversations/conversations.gateway.ts
-  - apps/api/src/conversations/conversations-sse.service.ts
+  - apps/api/src/realtime/realtime.gateway.ts
+  - apps/api/src/realtime/realtime-events.service.ts
   - apps/api/src/notifications/notifications.controller.ts
-  - apps/api/src/notifications/notifications-sse.service.ts
   - apps/api/src/common/filters/http-exception.filter.ts
   - apps/api/src/conversations/repositories/conversations.repository.ts
   - apps/api/src/crews/internal/crew-read.service.ts
   - apps/api/src/crews/internal/crew-activities.service.ts
-  - apps/api/src/auth/guards/jwt-sse.guard.ts
   - apps/api/src/block/repositories/block.repository.ts
 ---
 
@@ -21,7 +19,7 @@ sources:
 
 ## Summary
 
-Messaging is implemented as an authenticated conversations module with cursor pagination, soft-delete semantics, and WebSocket fan-out for conversation messages, while notification delivery keeps a separate SSE channel.
+Messaging is implemented as an authenticated conversations module with cursor pagination, soft-delete semantics, and one `/realtime` WebSocket fan-out path for conversation messages plus unread/read updates.
 
 ## Public API Boundaries
 
@@ -39,31 +37,30 @@ Messaging is implemented as an authenticated conversations module with cursor pa
   - mark a direct-message cut-line for the caller without removing the participant
 - `DELETE /conversations/messages/:id`
   - soft-delete the caller's own message
-- WebSocket namespace `/conversations`
-  - cookie-authenticated chat realtime channel
-- `GET /conversations/sse`
-  - legacy SSE endpoint retained while notification-style SSE infrastructure remains in the repo
+- WebSocket namespace `/realtime`
+  - cookie-authenticated realtime channel for chat, notification, and unread/read events
 
 ## Module Responsibilities
 
 - `ConversationsController`
-  - HTTP transport, pagination bounds, and legacy SSE entrypoint
-- `ConversationsGateway`
-  - cookie-authenticated WebSocket connection, room subscription, and message fan-out
+  - HTTP transport and pagination bounds
+- `RealtimeGateway`
+  - cookie-authenticated WebSocket connection, room subscription, chat send/read commands, notification read commands, and realtime fan-out
 - `ConversationsService`
   - participant authorization, block checks, and write orchestration
 - `ConversationsRepository`
   - durable conversation, participant, and message persistence, plus room-identity context hydration for crew/activity rooms
-- `ConversationsSseService`
-  - in-process connection registry and message fan-out
+- `RealtimeEventsService`
+  - shared process-local event emitter used by API services and the gateway
 
 ## Realtime Boundary
 
 - Chat delivery is WebSocket-based for `DIRECT`, `CREW`, and `ACTIVITY` conversations.
 - The gateway authenticates from the same cookie session used by HTTP requests.
 - Each socket joins a per-user room on connect and can also join per-conversation rooms through `chat:subscribe`.
-- Message creation persists first, then the gateway emits `chat:message` to the conversation room plus participant user rooms.
-- Notification delivery remains SSE-based and still uses the existing `JwtSseGuard` boundary.
+- Message creation persists first, then realtime emits `chat:message` to the conversation room plus participant user rooms.
+- Chat read updates emit `chat:unread:update` to the caller's user room after `lastReadAt` advances.
+- Notification creation emits `notification:new`; notification read changes emit `notification:unread:update`.
 
 ## Participant State
 
@@ -82,4 +79,4 @@ Messaging is implemented as an authenticated conversations module with cursor pa
 
 - The main `/conversations` API now returns mixed room types, but only direct-message routes use the dedicated `/messages/:id` detail screen today.
 - Presence, typing indicators, and reconnect replay are not first-class realtime features in the current implementation.
-- Chat WebSocket and notification SSE delivery are both process-local; multi-instance fan-out would need extra infrastructure beyond the repo.
+- Realtime socket delivery is process-local; multi-instance fan-out would need extra infrastructure beyond the repo.

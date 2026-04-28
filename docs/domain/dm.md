@@ -1,14 +1,14 @@
 ---
 doc_state: current
 owner: product
-last_verified: 2026-04-21
+last_verified: 2026-04-28
 sources:
   - packages/database/prisma/schema.prisma
   - apps/api/src/conversations/conversations.controller.ts
   - apps/api/src/conversations/conversations.service.ts
-  - apps/api/src/conversations/conversations.gateway.ts
+  - apps/api/src/realtime/realtime.gateway.ts
   - apps/api/src/conversations/repositories/conversations.repository.ts
-  - apps/web/src/lib/chat-realtime-context.tsx
+  - apps/web/src/lib/realtime-context.tsx
 ---
 
 # 메시지와 대화 (Messaging)
@@ -88,6 +88,6 @@ sources:
 
 ## 전달 방식
 
-- direct, crew, activity conversation은 모두 WebSocket 기반 실시간 전달을 사용한다.
-- 브라우저는 전역 chat socket 하나를 열고, unread/list 갱신과 열린 대화 화면을 같은 연결에서 처리한다.
-- notification은 별도 SSE 채널을 유지한다.
+- direct, crew, activity conversation은 모두 `/realtime` socket.io 기반 실시간 전달을 사용한다.
+- 브라우저는 전역 realtime socket 하나를 열고, unread/list 갱신과 열린 대화 화면을 같은 연결에서 처리한다.
+- conversation unread/read 상태와 notification unread/read 상태는 같은 `/realtime` 연결에서 갱신한다.

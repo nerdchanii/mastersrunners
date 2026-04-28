@@ -5,11 +5,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useChatWindow } from "./useChatWindow";
 
-const { fetchMock, subscribeMock, sendRealtimeMessageMock } = vi.hoisted(() => ({
-  fetchMock: vi.fn(),
-  subscribeMock: vi.fn(),
-  sendRealtimeMessageMock: vi.fn(),
-}));
+const { fetchMock, subscribeMock, sendRealtimeMessageMock, markConversationReadMock } = vi.hoisted(
+  () => ({
+    fetchMock: vi.fn(),
+    subscribeMock: vi.fn(),
+    sendRealtimeMessageMock: vi.fn(),
+    markConversationReadMock: vi.fn(),
+  }),
+);
 
 vi.mock("@/lib/api-client", () => ({
   api: {
@@ -31,10 +34,11 @@ vi.mock("@/lib/auth-context", () => ({
   }),
 }));
 
-vi.mock("@/lib/chat-realtime-context", () => ({
-  useChatRealtime: () => ({
+vi.mock("@/lib/realtime-context", () => ({
+  useRealtime: () => ({
     subscribe: subscribeMock,
     sendMessage: sendRealtimeMessageMock,
+    markConversationRead: markConversationReadMock,
   }),
 }));
 
@@ -43,6 +47,7 @@ describe("useChatWindow", () => {
     fetchMock.mockReset();
     subscribeMock.mockReset();
     sendRealtimeMessageMock.mockReset();
+    markConversationReadMock.mockReset();
   });
 
   it("keeps buffered incoming messages unread until they are loaded into view", async () => {
@@ -100,11 +105,13 @@ describe("useChatWindow", () => {
         });
       }
 
-      if (path === "/conversations/conv-1/read" && init?.method === "PATCH") {
-        return Promise.resolve({});
-      }
-
       throw new Error(`Unexpected request: ${path}`);
+    });
+    markConversationReadMock.mockResolvedValue({
+      ok: true,
+      conversationId: "conv-1",
+      unreadCount: 0,
+      totalUnreadCount: 0,
     });
 
     const queryClient = new QueryClient({
@@ -122,7 +129,7 @@ describe("useChatWindow", () => {
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(fetchMock).toHaveBeenCalledWith("/conversations/conv-1/read", { method: "PATCH" });
+    expect(markConversationReadMock).toHaveBeenCalledWith("conv-1");
 
     act(() => {
       result.current.setNearBottom(false);
@@ -142,7 +149,7 @@ describe("useChatWindow", () => {
 
     expect(result.current.pendingNewMessages).toBe(1);
     expect(result.current.messages).toHaveLength(1);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       await result.current.loadNewer();
@@ -150,7 +157,50 @@ describe("useChatWindow", () => {
 
     expect(result.current.pendingNewMessages).toBe(0);
     expect(result.current.messages).toHaveLength(2);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(fetchMock).toHaveBeenLastCalledWith("/conversations/conv-1/read", { method: "PATCH" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(markConversationReadMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("falls back to the REST read endpoint when realtime read ack is unavailable", async () => {
+    fetchMock.mockImplementation((path: string, init?: RequestInit) => {
+      if (
+        path === "/conversations/conv-1?entry=unread&historyLimit=40&unreadLimit=100" &&
+        init === undefined
+      ) {
+        return Promise.resolve({
+          conversation: { id: "conv-1", participants: [] },
+          messages: [],
+          olderCursor: null,
+          newerCursor: null,
+          firstUnreadMessageId: null,
+        });
+      }
+
+      if (path === "/conversations/conv-1/read" && init?.method === "PATCH") {
+        return Promise.resolve({ success: true });
+      }
+
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    markConversationReadMock.mockRejectedValue(new Error("socket unavailable"));
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+      },
+    });
+
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+
+    const { result } = renderHook(() => useChatWindow({ path: "/conversations/conv-1" }), {
+      wrapper,
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(markConversationReadMock).toHaveBeenCalledWith("conv-1");
+    expect(fetchMock).toHaveBeenCalledWith("/conversations/conv-1/read", { method: "PATCH" });
   });
 });

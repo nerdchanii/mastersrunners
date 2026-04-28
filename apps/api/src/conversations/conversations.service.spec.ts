@@ -2,9 +2,9 @@ import { BadRequestException, ForbiddenException, NotFoundException } from "@nes
 import { Test } from "@nestjs/testing";
 
 import { BlockRepository } from "../block/repositories/block.repository";
+import { RealtimeEventsService } from "../realtime/realtime-events.service";
 
 import { ConversationsRepository } from "./repositories/conversations.repository";
-import { ConversationsGateway } from "./conversations.gateway";
 import { ConversationsService } from "./conversations.service";
 
 const mockConversationsRepository = {
@@ -27,8 +27,9 @@ const mockBlockRepository = {
   isBlocked: jest.fn(),
 };
 
-const mockConversationsGateway = {
-  emitMessage: jest.fn(),
+const mockRealtimeEvents = {
+  emitChatMessage: jest.fn(),
+  emitChatUnreadUpdate: jest.fn(),
 };
 
 describe("ConversationsService", () => {
@@ -41,7 +42,7 @@ describe("ConversationsService", () => {
         ConversationsService,
         { provide: ConversationsRepository, useValue: mockConversationsRepository },
         { provide: BlockRepository, useValue: mockBlockRepository },
-        { provide: ConversationsGateway, useValue: mockConversationsGateway },
+        { provide: RealtimeEventsService, useValue: mockRealtimeEvents },
       ],
     }).compile();
     service = module.get(ConversationsService);
@@ -626,7 +627,7 @@ describe("ConversationsService", () => {
 
       await service.sendMessage(conversationId, userId, content);
 
-      expect(mockConversationsGateway.emitMessage).toHaveBeenCalledWith(
+      expect(mockRealtimeEvents.emitChatMessage).toHaveBeenCalledWith(
         conversationId,
         [userId, recipientId],
         createdMessage,
@@ -645,6 +646,7 @@ describe("ConversationsService", () => {
         userId,
         lastReadAt: new Date(),
       });
+      mockConversationsRepository.getTotalUnreadCount.mockResolvedValue(3);
 
       await service.markAsRead(conversationId, userId);
 
@@ -656,6 +658,35 @@ describe("ConversationsService", () => {
         conversationId,
         userId,
       );
+      expect(mockRealtimeEvents.emitChatUnreadUpdate).toHaveBeenCalledWith(userId, {
+        conversationId,
+        unreadCount: 0,
+        totalUnreadCount: 3,
+      });
+    });
+
+    it("should keep read successful when unread total refresh fails", async () => {
+      const conversationId = "conv-1";
+      const userId = "user-1";
+
+      mockConversationsRepository.isParticipant.mockResolvedValue(true);
+      mockConversationsRepository.updateLastRead.mockResolvedValue({
+        conversationId,
+        userId,
+        lastReadAt: new Date(),
+      });
+      mockConversationsRepository.getTotalUnreadCount.mockRejectedValue(new Error("count failed"));
+
+      await expect(service.markAsRead(conversationId, userId)).resolves.toMatchObject({
+        conversationId,
+        userId,
+      });
+
+      expect(mockRealtimeEvents.emitChatUnreadUpdate).toHaveBeenCalledWith(userId, {
+        conversationId,
+        unreadCount: 0,
+        totalUnreadCount: null,
+      });
     });
 
     it("should throw if not participant", async () => {

@@ -1,11 +1,11 @@
 ---
 doc_state: current
 owner: frontend
-last_verified: 2026-04-22
+last_verified: 2026-04-28
 sources:
   - apps/web/src/lib/api-client.ts
   - apps/web/src/lib/auth-context.tsx
-  - apps/web/src/lib/chat-realtime-context.tsx
+  - apps/web/src/lib/realtime-context.tsx
   - apps/web/src/lib/theme-context.tsx
   - apps/web/src/hooks/useNotifications.ts
   - apps/web/src/hooks/useMessages.ts
@@ -69,15 +69,16 @@ Notable current exceptions still bypass the hook-first pattern with direct `api.
 - `pages/settings/profile/index.tsx`
 - `components/social/CommentList.tsx`
 
-Realtime state is also distributed:
+Realtime state is centralized:
 
-- `ChatRealtimeProvider` owns one shared chat WebSocket and patches conversation/unread React Query state from `chat:message`
+- `RealtimeProvider` owns one shared WebSocket and patches conversation, notification, and unread React Query state from `/realtime` events
+- the same provider revalidates unread snapshots on socket reconnect so shell badges recover after temporary disconnects without reintroducing polling
 - direct, crew, and activity chat screens subscribe their current room over that shared socket
-- `Header` owns only the notification SSE subscription
+- `Header` consumes shared unread state and does not open its own realtime connection
 
 ## Current Constraints
 
 - The repo does not yet enforce a zero direct-fetch rule in route components.
 - The exception list above is illustrative, not exhaustive.
-- Desktop and mobile shells now consume one shared unread-count source, but realtime ownership is still split between app-level socket context and layout-level notification SSE.
-- Chat and notification delivery still use different transports and both remain process-local.
+- Desktop and mobile shells consume one shared unread-count source backed by the app-level realtime socket.
+- Chat and notification delivery share one transport and remain process-local.

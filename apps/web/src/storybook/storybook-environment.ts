@@ -34,25 +34,6 @@ type StorybookAuthMode = "guest" | "signed-in";
 
 let mocksInstalled = false;
 
-class StorybookEventSource {
-  url: string;
-  withCredentials: boolean;
-  onerror: ((event: Event) => void) | null = null;
-  onopen: ((event: Event) => void) | null = null;
-  onmessage: ((event: MessageEvent) => void) | null = null;
-
-  constructor(url: string, init?: EventSourceInit) {
-    this.url = url;
-    this.withCredentials = init?.withCredentials ?? false;
-  }
-
-  addEventListener() {}
-
-  removeEventListener() {}
-
-  close() {}
-}
-
 class StorybookIntersectionObserver implements IntersectionObserver {
   readonly root = null;
   readonly rootMargin = "0px";
@@ -447,12 +428,6 @@ function installBrowserMocks() {
       }),
     });
   }
-
-  Object.defineProperty(window, "EventSource", {
-    configurable: true,
-    writable: true,
-    value: StorybookEventSource,
-  });
 
   Object.defineProperty(window, "IntersectionObserver", {
     configurable: true,

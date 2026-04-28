@@ -41,4 +41,4 @@ Current behavior:
 
 - This ADR is historical only.
 - Chat delivery no longer uses SSE as the current source-of-truth transport.
-- Notification delivery still uses SSE, but chat transport authority moved to `ADR-0005`.
+- Notification delivery moved from SSE to the shared `/realtime` socket in `ADR-0006`.

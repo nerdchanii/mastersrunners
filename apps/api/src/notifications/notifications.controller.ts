@@ -1,31 +1,11 @@
-import {
-  Controller,
-  Get,
-  MessageEvent,
-  Param,
-  Patch,
-  Query,
-  Req,
-  Sse,
-  UseGuards,
-} from "@nestjs/common";
-import { SkipThrottle } from "@nestjs/throttler";
-import type { Request } from "express";
-import { Observable } from "rxjs";
-
-import { JwtSseGuard } from "../auth/guards/jwt-sse.guard.js";
-import { Public } from "../common/decorators/public.decorator.js";
+import { Controller, Get, Param, Patch, Query, Req } from "@nestjs/common";
 
 import { ListNotificationsQueryDto } from "./dto/list-notifications-query.dto.js";
 import { NotificationsService } from "./notifications.service.js";
-import { NotificationsSseService } from "./notifications-sse.service.js";
 
 @Controller("notifications")
 export class NotificationsController {
-  constructor(
-    private readonly notificationsService: NotificationsService,
-    private readonly sseService: NotificationsSseService,
-  ) {}
+  constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
   getNotifications(
@@ -52,15 +32,5 @@ export class NotificationsController {
   @Patch("read-all")
   markAllAsRead(@Req() req: { user: { userId: string } }) {
     return this.notificationsService.markAllAsRead(req.user.userId);
-  }
-
-  @Sse("sse")
-  @Public()
-  @UseGuards(JwtSseGuard)
-  @SkipThrottle()
-  sse(@Req() req: Request & { user: { userId: string } }): Observable<MessageEvent> {
-    const connection = this.sseService.addConnection(req.user.userId);
-    req.once("close", connection.close);
-    return connection.stream;
   }
 }

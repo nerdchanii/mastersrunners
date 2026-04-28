@@ -1,12 +1,8 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { Bell, Bug, MessageCircle, Monitor, Moon, Search, Sun } from "lucide-react";
-import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
-import { notificationKeys } from "@/hooks/useNotifications";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
-import { API_BASE } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import {
   defaultPublicRuntimeConfig,
@@ -29,7 +25,6 @@ export default function Header() {
   const { theme, setTheme } = useTheme();
   const { pathname } = useLocation();
   const { data: runtimeConfig } = usePublicRuntimeConfig();
-  const queryClient = useQueryClient();
   const { messages: unreadMessageCount, notifications: unreadNotifCount } = useUnreadCounts();
   const config = runtimeConfig ?? defaultPublicRuntimeConfig;
 
@@ -38,30 +33,6 @@ export default function Header() {
     (link) =>
       (!link.feature || config.features[link.feature]) && (!link.authRequired || isAuthenticated),
   );
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    // Notification SSE — 새 알림 수신 시 TanStack Query 캐시 무효화
-    let notifEventSource: EventSource | null = null;
-    try {
-      notifEventSource = new EventSource(`${API_BASE}/notifications/sse`, {
-        withCredentials: true,
-      });
-      notifEventSource.addEventListener("notification", () => {
-        queryClient.invalidateQueries({ queryKey: notificationKeys.all });
-      });
-      notifEventSource.onerror = (error) => {
-        console.error("Notification SSE error:", error);
-      };
-    } catch {
-      // notifications SSE not available yet — skip
-    }
-
-    return () => {
-      notifEventSource?.close();
-    };
-  }, [isAuthenticated, queryClient]);
 
   return (
     <header className="sticky top-0 z-50 hidden w-full border-b bg-background/95 backdrop-blur-lg md:block">

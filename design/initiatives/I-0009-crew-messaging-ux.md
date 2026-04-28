@@ -32,7 +32,9 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 - `apps/web/src/components/common/BottomNav.tsx`
 - `apps/web/src/hooks/useMessages.ts`
 - `apps/web/src/hooks/useUnreadCounts.ts`
-- `apps/api/src/conversations/conversations-sse.service.ts`
+- `apps/api/src/realtime/realtime.gateway.ts`
+- `apps/api/src/realtime/realtime-events.service.ts`
+- `apps/web/src/lib/realtime-context.tsx`
 - `apps/web/e2e/crew-group-chat.spec.ts`
 - `apps/web/e2e/messages.spec.ts`
 - `design/frontend/crew-experience.md`
@@ -58,6 +60,7 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 - `tasks/archive/I-0009-030-api-sse-stream-stability.md`
 - `tasks/archive/I-0009-040-api-web-chat-websocket-transport.md`
 - `tasks/archive/I-0009-050-api-web-dm-leave-cutline.md` (superseded by `I-0009-040`)
+- `tasks/archive/I-0009-060-api-web-realtime-unread-read-state.md`
 
 ## Success Criteria
 

@@ -3,7 +3,7 @@ import { type ReactNode, useState } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, type User } from "@/lib/auth-context";
-import { ChatRealtimeProvider } from "@/lib/chat-realtime-context";
+import { RealtimeProvider } from "@/lib/realtime-context";
 import { type Theme, ThemeProvider } from "@/lib/theme-context";
 
 import { createAppQueryClient } from "./query-client";
@@ -33,10 +33,10 @@ export function AppProviders({
     <QueryClientProvider client={client}>
       <ThemeProvider defaultTheme={initialTheme} persist={persistTheme}>
         <AuthProvider initialUser={initialUser} disableSessionSync={disableAuthSessionSync}>
-          <ChatRealtimeProvider>
+          <RealtimeProvider>
             {children}
             {withToaster ? <Toaster position="top-center" /> : null}
-          </ChatRealtimeProvider>
+          </RealtimeProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

@@ -6,9 +6,9 @@ import {
 } from "@nestjs/common";
 
 import { BlockRepository } from "../block/repositories/block.repository.js";
+import { RealtimeEventsService } from "../realtime/realtime-events.service.js";
 
 import { ConversationsRepository } from "./repositories/conversations.repository.js";
-import { ConversationsGateway } from "./conversations.gateway.js";
 
 type ConversationType = "DIRECT" | "CREW" | "ACTIVITY";
 
@@ -234,7 +234,7 @@ export class ConversationsService {
   constructor(
     private readonly conversationsRepo: ConversationsRepository,
     private readonly blockRepo: BlockRepository,
-    private readonly conversationsGateway: ConversationsGateway,
+    private readonly realtimeEvents: RealtimeEventsService,
   ) {}
 
   async startConversation(userId: string, participantId: string) {
@@ -384,7 +384,7 @@ export class ConversationsService {
     // Create message + update conversation updatedAt
     const message = await this.conversationsRepo.createMessage(conversationId, userId, content);
 
-    this.conversationsGateway.emitMessage(
+    this.realtimeEvents.emitChatMessage(
       conversationId,
       conversation.participants.map(
         (participant: (typeof conversation.participants)[number]) => participant.userId,
@@ -402,7 +402,22 @@ export class ConversationsService {
       throw new ForbiddenException("이 대화에 참여할 권한이 없습니다.");
     }
 
-    return this.conversationsRepo.updateLastRead(conversationId, userId);
+    const result = await this.conversationsRepo.updateLastRead(conversationId, userId);
+    try {
+      const totalUnreadCount = await this.conversationsRepo.getTotalUnreadCount(userId);
+      this.realtimeEvents.emitChatUnreadUpdate(userId, {
+        conversationId,
+        unreadCount: 0,
+        totalUnreadCount,
+      });
+    } catch {
+      this.realtimeEvents.emitChatUnreadUpdate(userId, {
+        conversationId,
+        unreadCount: 0,
+        totalUnreadCount: null,
+      });
+    }
+    return result;
   }
 
   async leaveConversation(conversationId: string, userId: string) {

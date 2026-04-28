@@ -46,7 +46,7 @@ sources:
 
 - Storybook은 `pnpm --filter @masters/web storybook`과 `pnpm --filter @masters/web build-storybook`으로 실행한다.
 - preview decorator는 global CSS, Query Client, ThemeProvider, AuthProvider, MemoryRouter를 공통으로 감싼다.
-- Storybook preview는 `apps/web/src/storybook/storybook-environment.ts`의 browser/api mock을 함께 설치해 `api.fetch`, `navigator.share`, `IntersectionObserver`, `EventSource`, `matchMedia`, `URL.createObjectURL` 같은 의존성을 deterministic하게 재현한다.
+- Storybook preview는 `apps/web/src/storybook/storybook-environment.ts`의 browser/api mock을 함께 설치해 `api.fetch`, `navigator.share`, `IntersectionObserver`, `matchMedia`, `URL.createObjectURL` 같은 의존성을 deterministic하게 재현한다.
 - Storybook workbench는 `apps/web/src/components/**`의 co-located stories를 기준으로 유지한다.
 - 각 component story의 최소 계약은 `Playground` 또는 직접 조작 가능한 대표 story 1개와, 필요 시 `States`/`Variants`/`Interaction`로 상태 차이를 드러내는 것이다.
 - `pnpm --filter @masters/web storybook:coverage`는 모든 `components/**/*.tsx`에 대응하는 `*.stories.tsx`가 있는지 확인하는 coverage gate다.
