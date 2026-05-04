@@ -24,6 +24,7 @@ interface CrewActivityListProps {
   defaultShowForm?: boolean;
   composerNonce?: number;
   showInlineCreateAction?: boolean;
+  showEmptyCreateAction?: boolean;
   isActive?: boolean;
   onComposerHandled?: () => void;
 }
@@ -46,6 +47,7 @@ export default function CrewActivityList({
   defaultShowForm = false,
   composerNonce = 0,
   showInlineCreateAction = true,
+  showEmptyCreateAction = showInlineCreateAction,
   isActive = true,
   onComposerHandled,
 }: CrewActivityListProps) {
@@ -125,6 +127,10 @@ export default function CrewActivityList({
     );
   }
 
+  const closeCreateForm = () => {
+    setShowForm(false);
+  };
+
   if (showForm) {
     return (
       <section className="space-y-4 border-t border-border/50 pt-4">
@@ -132,7 +138,7 @@ export default function CrewActivityList({
         <CrewActivityForm
           crewId={crewId}
           onSuccess={handleActivityCreated}
-          onCancel={() => setShowForm(false)}
+          onCancel={closeCreateForm}
         />
       </section>
     );
@@ -154,8 +160,8 @@ export default function CrewActivityList({
           icon={Calendar}
           title="활동이 없습니다"
           description={canCreate ? "아직 잡힌 일정이 없습니다." : "예정된 활동이 아직 없습니다."}
-          actionLabel={canCreate && showInlineCreateAction ? "활동 만들기" : undefined}
-          onAction={canCreate && showInlineCreateAction ? () => setShowForm(true) : undefined}
+          actionLabel={canCreate && showEmptyCreateAction ? "활동 만들기" : undefined}
+          onAction={canCreate && showEmptyCreateAction ? () => setShowForm(true) : undefined}
         />
       ) : (
         <div className="grid gap-4">

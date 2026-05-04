@@ -1,16 +1,24 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "@storybook/test";
 import { LogOut, MoreHorizontal, Settings, Share2, UserPlus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { AuthGateDialog } from "@/components/common/AuthGateDialog";
+import {
+  crewActivityCreatePath,
+  crewBoardCreatePath,
+  crewBoardPostPath,
+  crewHubPath,
+  type CrewHubTab,
+  resolveCrewHubRoute,
+} from "@/components/crew/crew-hub-routes";
 import CrewActivityList from "@/components/crew/CrewActivityList";
 import CrewAttendanceStats from "@/components/crew/CrewAttendanceStats";
-import CrewBoardList from "@/components/crew/CrewBoardList";
+import CrewBoardList, { BoardPostComposer } from "@/components/crew/CrewBoardList";
 import CrewHubQuickActions, { CrewHubInlineActions } from "@/components/crew/CrewHubQuickActions";
 import CrewIdentityHero from "@/components/crew/CrewIdentityHero";
 import CrewMemberList from "@/components/crew/CrewMemberList";
-import CrewTagManager from "@/components/crew/CrewTagManager";
 import PendingMemberList from "@/components/crew/PendingMemberList";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,8 +33,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   storybookCrew,
   storybookCrewAttendanceStats,
+  storybookCrewBoards,
   storybookCrewMembers,
-  storybookCrewTags,
   storybookMedia,
   storybookPendingCrewMembers,
   storybookUser,
@@ -39,11 +47,6 @@ const crewAttendanceStats = {
   activities: [...storybookCrewAttendanceStats.activities],
   members: [...storybookCrewAttendanceStats.members],
 };
-
-const crewTags = storybookCrewTags.map((tag) => ({
-  ...tag,
-  members: [...tag.members],
-}));
 
 const pendingMembers = [...storybookPendingCrewMembers];
 const crewMembers = [...storybookCrewMembers];
@@ -95,6 +98,8 @@ function SecondaryMemberMenu() {
 }
 
 function CrewHubPageStory({ role }: { role: HubRole }) {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authDialogTitle, setAuthDialogTitle] = useState("크루 참여");
 
@@ -106,14 +111,8 @@ function CrewHubPageStory({ role }: { role: HubRole }) {
   const currentUserId = isGuest ? undefined : storybookUser.id;
   const members = role === "member" ? memberHubMembers : crewMembers;
   const nextPath = `/crews/${storybookCrew.id}`;
-  const defaultTab = isGuest ? "activities" : "announcement";
-  const [activeTab, setActiveTab] = useState(defaultTab);
-  const [boardComposerNonce, setBoardComposerNonce] = useState(0);
-  const [activityComposerNonce, setActivityComposerNonce] = useState(0);
-
-  useEffect(() => {
-    setActiveTab(defaultTab);
-  }, [defaultTab]);
+  const routeState = resolveCrewHubRoute(location.pathname, storybookCrew.id, isOwnerOrAdmin);
+  const activeTab = routeState.activeTab;
 
   const openAuthGate = (title: string) => {
     setAuthDialogTitle(title);
@@ -121,25 +120,11 @@ function CrewHubPageStory({ role }: { role: HubRole }) {
   };
 
   const openBoardComposer = () => {
-    if (activeTab === "announcement" && isOwnerOrAdmin) {
-      setBoardComposerNonce((value) => value + 1);
-      return;
-    }
-    setActiveTab("board");
-    setBoardComposerNonce((value) => value + 1);
+    navigate(crewBoardCreatePath(storybookCrew.id));
   };
 
   const openActivityComposer = () => {
-    setActiveTab("activities");
-    setActivityComposerNonce((value) => value + 1);
-  };
-
-  const handleBoardComposerHandled = () => {
-    setBoardComposerNonce(0);
-  };
-
-  const handleActivityComposerHandled = () => {
-    setActivityComposerNonce(0);
+    navigate(crewActivityCreatePath(storybookCrew.id));
   };
 
   return (
@@ -201,21 +186,17 @@ function CrewHubPageStory({ role }: { role: HubRole }) {
 
       <div className="px-0 lg:px-6">
         <section>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs
+            value={activeTab}
+            onValueChange={(tab) => navigate(crewHubPath(storybookCrew.id, tab as CrewHubTab))}
+            className="w-full"
+          >
             <div className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-md">
               <div className="flex items-center justify-between gap-3">
                 <TabsList
                   variant="line"
                   className="h-12 min-w-0 flex-1 justify-start gap-0 rounded-none border-0 px-0"
                 >
-                  {!isGuest && (
-                    <TabsTrigger
-                      value="announcement"
-                      className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
-                    >
-                      공지
-                    </TabsTrigger>
-                  )}
                   <TabsTrigger
                     value="activities"
                     className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
@@ -235,12 +216,20 @@ function CrewHubPageStory({ role }: { role: HubRole }) {
                     멤버
                   </TabsTrigger>
                   {isOwnerOrAdmin && (
-                    <TabsTrigger
-                      value="manage"
-                      className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
-                    >
-                      관리
-                    </TabsTrigger>
+                    <>
+                      <TabsTrigger
+                        value="manage"
+                        className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
+                      >
+                        관리
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="pending"
+                        className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
+                      >
+                        가입대기
+                      </TabsTrigger>
+                    </>
                   )}
                 </TabsList>
                 <CrewHubInlineActions
@@ -253,29 +242,6 @@ function CrewHubPageStory({ role }: { role: HubRole }) {
             </div>
 
             <div className="pb-8 pt-0 sm:pb-10">
-              {!isGuest && (
-                <TabsContent
-                  value="announcement"
-                  className="mt-0 px-4 focus-visible:outline-none lg:px-0"
-                >
-                  <CrewBoardList
-                    crewId={storybookCrew.id}
-                    canOpenBoardPosts={isMember}
-                    isAuthenticated={!isGuest}
-                    isMember={isMember}
-                    isAdmin={isOwnerOrAdmin}
-                    isActive={activeTab === "announcement"}
-                    defaultSelectedBoardType="ANNOUNCEMENT"
-                    allowedBoardTypes={["ANNOUNCEMENT"]}
-                    composerNonce={boardComposerNonce}
-                    onComposerHandled={handleBoardComposerHandled}
-                    hideBoardHeader
-                    showInlineCreateAction={false}
-                    onRequireAuth={() => openAuthGate("공지 열기")}
-                  />
-                </TabsContent>
-              )}
-
               <TabsContent
                 value="activities"
                 className="mt-0 px-4 focus-visible:outline-none lg:px-0"
@@ -287,29 +253,46 @@ function CrewHubPageStory({ role }: { role: HubRole }) {
                   isMember={isMember}
                   isActive={activeTab === "activities"}
                   canOpenActivityDetails={isMember}
-                  composerNonce={activityComposerNonce}
-                  onComposerHandled={handleActivityComposerHandled}
+                  defaultShowForm={routeState.isActivityCreateRoute}
                   showInlineCreateAction={false}
+                  showEmptyCreateAction
                   onRequireAuth={() => openAuthGate("활동 자세히 보기")}
                 />
               </TabsContent>
 
               <TabsContent value="board" className="mt-0 px-4 focus-visible:outline-none lg:px-0">
-                <CrewBoardList
-                  crewId={storybookCrew.id}
-                  canOpenBoardPosts={isMember}
-                  isAuthenticated={!isGuest}
-                  isMember={isMember}
-                  isAdmin={isOwnerOrAdmin}
-                  isActive={activeTab === "board"}
-                  defaultSelectedBoardType="FREE"
-                  allowedBoardTypes={["GENERAL", "FREE"]}
-                  composerNonce={boardComposerNonce}
-                  onComposerHandled={handleBoardComposerHandled}
-                  hideBoardHeader
-                  showInlineCreateAction={false}
-                  onRequireAuth={() => openAuthGate("게시판 열기")}
-                />
+                {routeState.isBoardCreateRoute ? (
+                  <BoardPostComposer
+                    crewId={storybookCrew.id}
+                    board={storybookCrewBoards.find((board) => board.type === "FREE")!}
+                    announcementBoard={
+                      storybookCrewBoards.find((board) => board.type === "ANNOUNCEMENT") ?? null
+                    }
+                    isAdmin={isOwnerOrAdmin}
+                    onCancel={() => navigate(crewHubPath(storybookCrew.id, "board"))}
+                    onCreated={() => navigate(crewHubPath(storybookCrew.id, "board"))}
+                  />
+                ) : (
+                  <CrewBoardList
+                    crewId={storybookCrew.id}
+                    canOpenBoardPosts={isMember}
+                    isAuthenticated={!isGuest}
+                    isMember={isMember}
+                    isAdmin={isOwnerOrAdmin}
+                    isActive={activeTab === "board"}
+                    routedBoardId={routeState.routedBoardId}
+                    routedPostId={routeState.routedPostId}
+                    composerDefaultBoardType="FREE"
+                    allowedBoardTypes={["ANNOUNCEMENT", "GENERAL", "FREE"]}
+                    onCloseRoutedPost={() => navigate(crewHubPath(storybookCrew.id, "board"))}
+                    onSelectRoutedPost={(board, postId) =>
+                      navigate(crewBoardPostPath(storybookCrew.id, board.id, postId))
+                    }
+                    hideBoardHeader
+                    showInlineCreateAction={false}
+                    onRequireAuth={() => openAuthGate("게시판 열기")}
+                  />
+                )}
               </TabsContent>
 
               {isOwnerOrAdmin && (
@@ -318,7 +301,7 @@ function CrewHubPageStory({ role }: { role: HubRole }) {
                   className="mt-0 px-4 focus-visible:outline-none lg:px-0"
                 >
                   <div className="space-y-10">
-                    <section className="space-y-6">
+                    <section className="space-y-6 pt-4 sm:pt-5">
                       <div>
                         <h2 className="text-xl font-bold tracking-tight">운영 현황</h2>
                       </div>
@@ -327,35 +310,27 @@ function CrewHubPageStory({ role }: { role: HubRole }) {
                         initialData={crewAttendanceStats}
                       />
                     </section>
-
-                    <section className="space-y-4">
-                      <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                        태그 관리
-                      </h3>
-                      <CrewTagManager
-                        crewId={storybookCrew.id}
-                        isAdmin={isOwnerOrAdmin}
-                        members={members}
-                        initialTags={crewTags}
-                      />
-                    </section>
-
-                    <section className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                          가입 대기
-                        </h3>
-                        <Badge variant="secondary" className="rounded-full px-2.5 font-bold">
-                          {storybookPendingCrewMembers.length}
-                        </Badge>
-                      </div>
-                      <PendingMemberList
-                        crewId={storybookCrew.id}
-                        onUpdate={() => undefined}
-                        initialPendingMembers={pendingMembers}
-                      />
-                    </section>
                   </div>
+                </TabsContent>
+              )}
+              {isOwnerOrAdmin && (
+                <TabsContent
+                  value="pending"
+                  className="mt-0 px-4 focus-visible:outline-none lg:px-0"
+                >
+                  <section className="space-y-4 border-t border-border/40 pt-4">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-xl font-bold tracking-tight">가입대기</h2>
+                      <Badge variant="secondary" className="rounded-full px-2.5 font-bold">
+                        {storybookPendingCrewMembers.length}
+                      </Badge>
+                    </div>
+                    <PendingMemberList
+                      crewId={storybookCrew.id}
+                      onUpdate={() => undefined}
+                      initialPendingMembers={pendingMembers}
+                    />
+                  </section>
                 </TabsContent>
               )}
               <TabsContent value="members" className="mt-0 px-4 focus-visible:outline-none lg:px-0">
@@ -424,6 +399,7 @@ export const MemberHub: Story = {
 
     await userEvent.click(canvas.getByRole("button", { name: "글쓰기" }));
     await expect(canvas.getByPlaceholderText("제목")).toBeInTheDocument();
+    await expect(canvas.queryByRole("checkbox", { name: "공지" })).not.toBeInTheDocument();
 
     await userEvent.click(canvas.getByRole("tab", { name: "멤버" }));
     await waitFor(() => expect(canvas.queryByPlaceholderText("제목")).not.toBeInTheDocument());
@@ -442,12 +418,17 @@ export const OwnerHub: Story = {
 
     await expect(canvas.getByRole("button", { name: "글쓰기" })).toBeVisible();
     await expect(canvas.getByRole("button", { name: "활동 만들기" })).toBeVisible();
-    await expect(canvas.getByText("이번 주말 롱런 페이스 제안")).toBeVisible();
+    await expect(canvas.queryByRole("tab", { name: "공지" })).not.toBeInTheDocument();
 
     await userEvent.click(canvas.getByRole("tab", { name: "게시판" }));
-    await waitFor(() =>
-      expect(canvas.queryByText("이번 주말 롱런 페이스 제안")).not.toBeInTheDocument(),
-    );
+    await expect(canvas.getAllByText("공지")[0]).toBeVisible();
+    await expect(canvas.getByText("이번 주말 롱런 페이스 제안")).toBeVisible();
     await expect(canvas.getByText("토요일 잠실 집결 같이 가실 분")).toBeVisible();
+
+    await userEvent.click(canvas.getByRole("button", { name: "글쓰기" }));
+    await expect(canvas.getByRole("checkbox", { name: "공지" })).toBeVisible();
+
+    await userEvent.click(canvas.getByRole("tab", { name: "관리" }));
+    await expect(canvas.queryByText("태그 관리")).not.toBeInTheDocument();
   },
 };

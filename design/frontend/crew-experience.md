@@ -8,7 +8,7 @@ sources:
   - apps/web/src/pages/crews/[id]/index.tsx
   - apps/web/src/pages/crews/[id]/settings/index.tsx
   - apps/web/src/pages/crews/[id]/activities/[activityId]/index.tsx
-  - apps/web/src/pages/messages/crew/[crewId]/activity/[activityId]/index.tsx
+  - apps/web/src/pages/crews/[id]/activities/[activityId]/chat.tsx
   - apps/web/src/pages/crews/[id]/activities/[activityId]/qr-check-in.tsx
   - apps/web/src/pages/messages/index.tsx
   - apps/web/src/components/crew/CrewActivityList.tsx
@@ -36,7 +36,7 @@ sources:
 - `/crews/:id/settings` configures the crew
 - `/crews/:id/activities/:activityId` shows an activity detail page
 - `/crews/:id/activities/:activityId/edit` edits an activity
-- `/messages/crew/:crewId/activity/:activityId` opens activity chat
+- `/crews/:id/activities/:activityId/chat` opens activity chat
 - `/crews/:id/activities/:activityId/qr-check-in` handles QR attendance
 
 비로그인 진입은 공개 탐색 우선을 유지한다.
@@ -63,7 +63,8 @@ sources:
 - hero 안의 채팅 아이콘 버튼은 `/messages/crew/:crewId`로 바로 연결된다
 - hero 안의 겹친 아바타 + 인원수 요약은 멤버 목록 시트로 이어진다
 - 주 콘텐츠와 경쟁하지 않으면서 멤버 목록을 계속 보여주는 2차 멤버 패널
-- 출석 통계, 태그, 승인 대기 멤버를 위한 별도 운영 패널
+- 출석 통계와 승인 대기 멤버를 위한 별도 운영 패널
+- 태그 관리는 구현된 feature로 남아 있지만 크루 허브 UI에서는 의도적으로 가려진다
 - `/crews/:id?invite=1`로 들어온 초대 유입 사용자는 가입하거나 가입 요청이 대기 상태가 될 때까지 hero 위에서 가벼운 초대 설명을 계속 본다
 - 비로그인 초대 유입 사용자는 인증 유도 다이얼로그를 거치더라도 로그인 후 복귀 대상으로 같은 초대 URL을 유지한다
 
@@ -76,12 +77,26 @@ sources:
 - hero는 `공개/비공개`, `내 크루`, `가입 승인형`, `만든이` 같은 설명성 메타에 기대기보다 제목, 설명, 잠금 아이콘, 행동 차이로 상태를 보여준다
 - 일반 멤버의 `크루 탈퇴`는 hero의 주 액션으로 세우지 않고, secondary action이나 overflow 안에서 확인 절차와 함께 다룬다
 - 게스트와 비멤버에게는 크루 허브의 읽기 가능 범위가 summary + activity list + board list에 머물러야 한다
+- 공지사항은 1차 탭이나 게시판 내부 진입점으로 분리하지 않고 게시판 탭의 통합 글 목록에서 일반 글과 함께 바로 보여준다
+- 공지 글은 목록과 상세에서 `공지` label을 함께 표시하며, owner/admin은 게시판 글쓰기 폼의 `공지` 체크박스로 공지 글을 등록한다
+- 크루 허브 탭과 작성 상태는 query가 아니라 path로 표현한다: `/crews/:id/activities`, `/crews/:id/activities/new`, `/crews/:id/board`, `/crews/:id/board/new`, `/crews/:id/members`, `/crews/:id/manage`, `/crews/:id/pending`
+- 게시판 글 상세 진입은 `/crews/:id/board/:boardId/posts/:postId`로 push해 뒤로가기와 직접 링크를 보존한다
+- 가입대기는 운영진 전용 1차 탭으로 분리하고, 운영진이 아닌 사용자는 탭과 화면에 접근할 수 없다
 - Storybook workbench에서는 참여 흐름을 `가입`, `승인`, `관리`, `출석`, `게시판`, `채팅`으로 나눠 보되, CTA tone과 destructive confirm wording은 같은 패턴을 공유해야 한다
+
+### 생성 퍼널
+
+- `/crews/new`는 모바일에서 문서 전체가 스크롤되지 않는 viewport-contained 퍼널이다.
+- 앱 셸은 생성 라우트에서 header/bottom navigation이 차지하는 높이를 뺀 고정 작업 영역을 제공하고, 폼 본문만 내부 스크롤을 사용한다.
+- 생성 퍼널은 별도 페이지 제목을 시각적으로 반복하지 않고, 현재 단계 제목과 진행률을 주 orientation으로 사용한다.
 
 빠른 스캔을 위해 1차 탭 순서는 고정한다.
 
 1. 활동
 2. 게시판
+3. 멤버
+4. 관리
+5. 가입대기
 
 ### 설정 셸
 
@@ -114,13 +129,12 @@ sources:
 ## 채팅과 실시간성
 
 - 크루 채팅과 활동 채팅은 group-chat 훅 위에 구축된다
-- direct, crew, activity chat은 모두 shared chat WebSocket transport를 사용한다
+- DM은 SSE를 쓰지만, 크루/활동 채팅은 여전히 group-chat polling 모델에 의존한다
 - 이제 크루 채팅과 활동 채팅은 generic room name 대신 라우트가 소유한 라벨과 카피를 사용한다
 - 메인 `/messages` 허브는 이제 크루/활동 채팅방을 명시적인 방 정체성과 함께 계속 보여준다
   - 크루 방은 `크루명`으로 렌더링하고 썸네일을 아바타로 사용한다
-  - 활동 방은 `활동명`을 먼저 보여주고, 어느 크루의 활동인지 보조 정보로 보여준다
+  - 활동 방은 `크루명 / 활동명`으로 렌더링한다
 - 메시지 허브에서 크루 또는 활동 방을 선택하면, 모든 방을 DM thread처럼 취급하지 않고 해당 크루/활동 채팅 화면으로 다시 라우팅한다
-- activity detail의 `대화` CTA도 같은 `/messages/crew/:crewId/activity/:activityId` 경로를 사용한다
 - raw `crewId`, `activityId`, 또는 fallback conversation id는 크루용 채팅 헤더나 empty state에 노출하지 않는다
 - 활동 채팅 라우트 접근 권한은 의도적으로 활동 상세 CTA와 정렬한다
   - `RSVP`
@@ -133,5 +147,6 @@ sources:
 
 - `/crews/:id`는 아직 전용 hook/query owner 대신 페이지 레벨 직접 fetch를 수행한다
 - 크루 허브의 범위는 여전히 넓지만, 페이지는 이제 세 개의 1차 탭 표면과 2차 운영 영역으로 나뉘어 있다
-- 가입 승인, 태그 관리, 활동 운영은 구현되어 있지만 상태가 하나의 공유 crew query 레이어로 아직 정규화되지는 않았다
-- chat realtime은 socket fan-out을 쓰지만 process-local delivery이므로, 멀티 인스턴스 환경에서는 별도 pub/sub 없이 cross-instance fan-out을 보장하지 않는다
+- 가입 승인과 활동 운영은 구현되어 있지만 상태가 하나의 공유 crew query 레이어로 아직 정규화되지는 않았다
+- 태그 관리는 구현된 feature지만 현재 크루 허브 UI에서 가려져 있으며, 별도 UX 재개방 task 전까지 운영 표면에 노출하지 않는다
+- group chat은 여전히 10초마다 polling하므로, 스크롤 동작은 새로고침 중에도 이전 메시지를 읽는 사용자를 보호해야 한다

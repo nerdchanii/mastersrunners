@@ -20,7 +20,7 @@ interface Props {
 
 export default function CrewAttendanceStats({
   crewId,
-  crewName,
+  crewName: _crewName,
   initialData,
   initialLoading = false,
 }: Props) {
@@ -66,14 +66,10 @@ export default function CrewAttendanceStats({
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5 md:space-y-6">
       <section className="space-y-3 border-b border-border/60 pb-4">
-        <h2 className="text-[1.6rem] font-medium tracking-tight text-foreground md:text-[1.85rem]">
-          {crewName ? `${crewName} 출석부` : "크루 출석부"}
-        </h2>
-
         <Tabs value={view} onValueChange={setView} className="space-y-0">
           <TabsList variant="line" className="w-full justify-start md:w-auto">
             <TabsTrigger value="activities" className="px-0 pr-5 md:px-2">
-              달력
+              월별
             </TabsTrigger>
             <TabsTrigger value="members" className="px-0 pr-5 md:px-2">
               멤버별

@@ -1,4 +1,4 @@
-import { ArrowLeft, ChevronRight, Heart, MessageSquare, Pin, Plus, Send } from "lucide-react";
+import { ArrowLeft, Heart, MessageSquare, Pin, Plus, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -7,13 +7,16 @@ import { TimeAgo } from "@/components/common/TimeAgo";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
   type Board,
   type BoardPost,
+  type BoardPostWithBoard,
   useBoardPost,
+  useBoardPostFeeds,
   useBoardPosts,
   useBoards,
   useCreateComment,
@@ -32,11 +35,16 @@ interface Props {
   defaultSelectedBoardId?: string;
   defaultSelectedPostId?: string;
   defaultSelectedBoardType?: string;
+  composerDefaultBoardType?: string;
   allowedBoardTypes?: string[];
+  routedBoardId?: string;
+  routedPostId?: string;
   composerNonce?: number;
   hideBoardHeader?: boolean;
   showInlineCreateAction?: boolean;
   isActive?: boolean;
+  onCloseRoutedPost?: () => void;
+  onSelectRoutedPost?: (board: Board, postId: string) => void;
   onComposerHandled?: () => void;
 }
 
@@ -50,11 +58,16 @@ export default function CrewBoardList({
   defaultSelectedBoardId,
   defaultSelectedPostId,
   defaultSelectedBoardType,
+  composerDefaultBoardType,
   allowedBoardTypes,
+  routedBoardId,
+  routedPostId,
   composerNonce = 0,
   hideBoardHeader = false,
   showInlineCreateAction = true,
   isActive = true,
+  onCloseRoutedPost,
+  onSelectRoutedPost,
   onComposerHandled,
 }: Props) {
   const { data: boards, isLoading } = useBoards(crewId);
@@ -63,6 +76,12 @@ export default function CrewBoardList({
   const visibleBoards = allowedBoardTypes?.length
     ? boards?.filter((board) => allowedBoardTypes.includes(board.type))
     : boards;
+  const announcementBoard = visibleBoards?.find((item) => item.type === "ANNOUNCEMENT") ?? null;
+  const defaultComposerBoard =
+    visibleBoards?.find((item) => item.type === composerDefaultBoardType) ?? visibleBoards?.[0];
+  const routedPostBoard = routedBoardId
+    ? visibleBoards?.find((item) => item.id === routedBoardId)
+    : undefined;
 
   useEffect(() => {
     if (!visibleBoards || selectedBoard) {
@@ -88,12 +107,51 @@ export default function CrewBoardList({
     selectedBoard,
   ]);
 
+  useEffect(() => {
+    if (!isActive || !composerNonce || !defaultSelectedBoardId || selectedBoard) {
+      return;
+    }
+
+    const board = visibleBoards?.find((item) => item.id === defaultSelectedBoardId);
+    if (board) {
+      setSelectedBoard(board);
+    }
+  }, [composerNonce, defaultSelectedBoardId, isActive, selectedBoard, visibleBoards]);
+
+  const openPost = (board: Board, postId: string) => {
+    if (onSelectRoutedPost) {
+      onSelectRoutedPost(board, postId);
+      return;
+    }
+
+    setSelectedBoard(board);
+    setSelectedPost(postId);
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-3">
         <Skeleton className="h-16 w-full" />
         <Skeleton className="h-16 w-full" />
       </div>
+    );
+  }
+
+  if (routedPostId && routedPostBoard) {
+    return (
+      <PostDetail
+        crewId={crewId}
+        board={routedPostBoard}
+        postId={routedPostId}
+        isMember={isMember}
+        onBack={
+          onCloseRoutedPost ??
+          (() => {
+            setSelectedPost(null);
+            setSelectedBoard(null);
+          })
+        }
+      />
     );
   }
 
@@ -121,64 +179,265 @@ export default function CrewBoardList({
         hideBoardHeader={hideBoardHeader}
         showInlineCreateAction={showInlineCreateAction}
         composerNonce={composerNonce}
+        announcementBoard={announcementBoard}
         onComposerHandled={onComposerHandled}
         onBack={() => setSelectedBoard(null)}
-        onSelectPost={setSelectedPost}
+        onSelectBoard={setSelectedBoard}
+        onSelectPost={(postId) => openPost(selectedBoard, postId)}
       />
     );
   }
 
   return (
-    <div className="space-y-3">
-      {!visibleBoards || visibleBoards.length === 0 ? (
+    <BoardFeed
+      crewId={crewId}
+      boards={visibleBoards}
+      defaultComposerBoard={defaultComposerBoard}
+      announcementBoard={announcementBoard}
+      isAuthenticated={isAuthenticated}
+      isMember={isMember}
+      isAdmin={isAdmin}
+      canOpenBoardPosts={canOpenBoardPosts}
+      isActive={isActive}
+      composerNonce={composerNonce}
+      onComposerHandled={onComposerHandled}
+      onRequireAuth={onRequireAuth}
+      onSelectPost={(post) => openPost(post.board, post.id)}
+    />
+  );
+}
+
+function BoardFeed({
+  crewId,
+  boards,
+  defaultComposerBoard,
+  announcementBoard,
+  isAuthenticated,
+  isMember,
+  isAdmin,
+  canOpenBoardPosts,
+  isActive = true,
+  composerNonce = 0,
+  onComposerHandled,
+  onRequireAuth,
+  onSelectPost,
+}: {
+  crewId: string;
+  boards: Board[] | undefined;
+  defaultComposerBoard: Board | undefined;
+  announcementBoard: Board | null;
+  isAuthenticated: boolean;
+  isMember: boolean;
+  isAdmin: boolean;
+  canOpenBoardPosts: boolean;
+  isActive?: boolean;
+  composerNonce?: number;
+  onComposerHandled?: () => void;
+  onRequireAuth: () => void;
+  onSelectPost: (post: BoardPostWithBoard) => void;
+}) {
+  const { items, isLoading } = useBoardPostFeeds(crewId, boards);
+  const [showForm, setShowForm] = useState(false);
+
+  const canWrite = !!defaultComposerBoard && (isMember || isAdmin);
+
+  useEffect(() => {
+    if (!isActive || !composerNonce || !canWrite) {
+      return;
+    }
+    setShowForm(true);
+    onComposerHandled?.();
+  }, [composerNonce, canWrite, isActive, onComposerHandled]);
+
+  useEffect(() => {
+    if (isActive) {
+      return;
+    }
+    setShowForm(false);
+  }, [isActive]);
+
+  const closeCreateForm = () => {
+    setShowForm(false);
+  };
+
+  if (!boards || boards.length === 0) {
+    return (
+      <div className="border-t border-border/50 py-8 text-center text-muted-foreground">
+        아직 게시판이 없습니다.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {showForm && defaultComposerBoard && (
+        <BoardPostComposer
+          crewId={crewId}
+          board={defaultComposerBoard}
+          announcementBoard={announcementBoard}
+          isAdmin={isAdmin}
+          onCancel={closeCreateForm}
+          onCreated={() => setShowForm(false)}
+        />
+      )}
+
+      {isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      ) : items.length === 0 ? (
         <div className="border-t border-border/50 py-8 text-center text-muted-foreground">
-          아직 게시판이 없습니다.
+          아직 글이 없습니다.
         </div>
       ) : (
-        <div className="divide-y divide-border/50 border-t border-border/50">
-          {visibleBoards.map((board) => {
-            const canAttemptOpen = canOpenBoardPosts || !isAuthenticated;
-
-            return (
-              <article
-                key={board.id}
-                className={
-                  canAttemptOpen
-                    ? "cursor-pointer py-4 transition-colors hover:bg-accent/20"
-                    : "py-4"
-                }
-                onClick={() => {
-                  if (canOpenBoardPosts) {
-                    setSelectedBoard(board);
-                    return;
-                  }
-
-                  if (!isAuthenticated) {
-                    onRequireAuth();
-                  }
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium">{board.name}</h3>
-                      <Badge variant="outline" className="text-xs">
-                        {board.type === "ANNOUNCEMENT"
-                          ? "공지"
-                          : board.type === "FREE"
-                            ? "자유"
-                            : "일반"}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{board._count.posts}개 글</p>
-                  </div>
-                  <ChevronRight className="size-5 text-muted-foreground" />
-                </div>
-              </article>
-            );
-          })}
-        </div>
+        <BoardPostFeedList
+          posts={items}
+          canOpenBoardPosts={canOpenBoardPosts}
+          isAuthenticated={isAuthenticated}
+          onRequireAuth={onRequireAuth}
+          onSelectPost={onSelectPost}
+        />
       )}
+    </div>
+  );
+}
+
+export function BoardPostComposer({
+  crewId,
+  board,
+  announcementBoard,
+  isAdmin,
+  onCancel,
+  onCreated,
+}: {
+  crewId: string;
+  board: Board;
+  announcementBoard: Board | null;
+  isAdmin: boolean;
+  onCancel: () => void;
+  onCreated: (board: Board) => void;
+}) {
+  const createPost = useCreatePost();
+  const [isAnnouncementPost, setIsAnnouncementPost] = useState(board.type === "ANNOUNCEMENT");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const canWriteAnnouncement = isAdmin && !!announcementBoard;
+  const targetBoard = isAnnouncementPost && announcementBoard ? announcementBoard : board;
+
+  const handleSubmit = () => {
+    if (!title.trim() || !content.trim()) return;
+    createPost.mutate(
+      { crewId, boardId: targetBoard.id, data: { title: title.trim(), content: content.trim() } },
+      {
+        onSuccess: () => {
+          toast.success(
+            targetBoard.type === "ANNOUNCEMENT"
+              ? "공지사항이 작성되었습니다."
+              : "글이 작성되었습니다.",
+          );
+          setTitle("");
+          setContent("");
+          onCreated(targetBoard);
+        },
+        onError: () => toast.error("글 작성에 실패했습니다."),
+      },
+    );
+  };
+
+  return (
+    <section className="space-y-3 border-t border-border/50 pt-4">
+      {canWriteAnnouncement && (
+        <label className="flex cursor-pointer items-center gap-3 rounded-md border border-border/50 bg-muted/20 p-3 text-sm font-medium">
+          <Checkbox
+            checked={isAnnouncementPost}
+            onCheckedChange={(checked) => setIsAnnouncementPost(checked === true)}
+          />
+          공지
+        </label>
+      )}
+      <Input placeholder="제목" value={title} onChange={(e) => setTitle(e.target.value)} />
+      <Textarea
+        className="min-h-[120px]"
+        placeholder="크루 멤버가 바로 이해할 수 있게 짧게 적어주세요."
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+      />
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={onCancel}>
+          취소
+        </Button>
+        <Button size="sm" onClick={handleSubmit} disabled={createPost.isPending}>
+          작성
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+function BoardPostFeedList({
+  posts,
+  canOpenBoardPosts,
+  isAuthenticated,
+  onRequireAuth,
+  onSelectPost,
+}: {
+  posts: BoardPostWithBoard[];
+  canOpenBoardPosts: boolean;
+  isAuthenticated: boolean;
+  onRequireAuth: () => void;
+  onSelectPost: (post: BoardPostWithBoard) => void;
+}) {
+  return (
+    <div className="divide-y divide-border/50 border-t border-border/50">
+      {posts.map((post) => {
+        const canAttemptOpen = canOpenBoardPosts || !isAuthenticated;
+
+        return (
+          <article
+            key={`${post.board.id}:${post.id}`}
+            className={
+              canAttemptOpen ? "cursor-pointer py-4 transition-colors hover:bg-accent/20" : "py-4"
+            }
+            onClick={() => {
+              if (canOpenBoardPosts) {
+                onSelectPost(post);
+                return;
+              }
+
+              if (!isAuthenticated) {
+                onRequireAuth();
+              }
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <UserAvatar user={post.author} size="sm" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  {post.board.type === "ANNOUNCEMENT" && (
+                    <Badge variant="secondary" className="rounded-full px-2 py-0 text-[11px]">
+                      공지
+                    </Badge>
+                  )}
+                  {post.isPinned && <Pin className="size-3 text-primary" />}
+                  <h3 className="truncate text-sm font-medium">{post.title}</h3>
+                </div>
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">{post.content}</p>
+                <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>{post.author.name}</span>
+                  <TimeAgo date={post.createdAt} />
+                  <span className="flex items-center gap-0.5">
+                    <MessageSquare className="size-3" /> {post._count.comments}
+                  </span>
+                  <span className="flex items-center gap-0.5">
+                    <Heart className="size-3" /> {post._count.likes}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -193,8 +452,10 @@ function BoardPosts({
   hideBoardHeader = false,
   showInlineCreateAction = true,
   composerNonce = 0,
+  announcementBoard,
   onComposerHandled,
   onBack,
+  onSelectBoard,
   onSelectPost,
 }: {
   crewId: string;
@@ -206,15 +467,14 @@ function BoardPosts({
   hideBoardHeader?: boolean;
   showInlineCreateAction?: boolean;
   composerNonce?: number;
+  announcementBoard: Board | null;
   onComposerHandled?: () => void;
   onBack: () => void;
+  onSelectBoard: (board: Board) => void;
   onSelectPost: (postId: string) => void;
 }) {
   const { data, isLoading } = useBoardPosts(crewId, board.id);
-  const createPost = useCreatePost();
   const [showForm, setShowForm] = useState(false);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
 
   const canWrite = board.writePermission === "ALL_MEMBERS" ? isMember : isAdmin;
 
@@ -232,22 +492,6 @@ function BoardPosts({
     }
     setShowForm(false);
   }, [isActive]);
-
-  const handleSubmit = () => {
-    if (!title.trim() || !content.trim()) return;
-    createPost.mutate(
-      { crewId, boardId: board.id, data: { title: title.trim(), content: content.trim() } },
-      {
-        onSuccess: () => {
-          toast.success("글이 작성되었습니다.");
-          setTitle("");
-          setContent("");
-          setShowForm(false);
-        },
-        onError: () => toast.error("글 작성에 실패했습니다."),
-      },
-    );
-  };
 
   return (
     <div className="space-y-4">
@@ -271,23 +515,19 @@ function BoardPosts({
       )}
 
       {showForm && (
-        <section className="space-y-3 border-t border-border/50 pt-4">
-          <Input placeholder="제목" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <Textarea
-            className="min-h-[120px]"
-            placeholder="크루 멤버가 바로 이해할 수 있게 짧게 적어주세요."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          />
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowForm(false)}>
-              취소
-            </Button>
-            <Button size="sm" onClick={handleSubmit} disabled={createPost.isPending}>
-              작성
-            </Button>
-          </div>
-        </section>
+        <BoardPostComposer
+          crewId={crewId}
+          board={board}
+          announcementBoard={announcementBoard}
+          isAdmin={isAdmin}
+          onCancel={() => setShowForm(false)}
+          onCreated={(createdBoard) => {
+            setShowForm(false);
+            if (createdBoard.id !== board.id) {
+              onSelectBoard(createdBoard);
+            }
+          }}
+        />
       )}
 
       {isLoading ? (
@@ -311,6 +551,11 @@ function BoardPosts({
                 <UserAvatar user={post.author} size="sm" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
+                    {board.type === "ANNOUNCEMENT" && (
+                      <Badge variant="secondary" className="rounded-full px-2 py-0 text-[11px]">
+                        공지
+                      </Badge>
+                    )}
                     {post.isPinned && <Pin className="size-3 text-primary" />}
                     <h3 className="font-medium text-sm truncate">{post.title}</h3>
                   </div>
@@ -401,6 +646,11 @@ function PostDetail({
           <ArrowLeft className="size-4" />
         </Button>
         <h2 className="text-lg font-semibold">{board.name}</h2>
+        {board.type === "ANNOUNCEMENT" && (
+          <Badge variant="secondary" className="rounded-full px-2 py-0 text-[11px]">
+            공지
+          </Badge>
+        )}
       </div>
 
       <article className="space-y-4 border-t border-border/50 pt-4">
@@ -411,7 +661,14 @@ function PostDetail({
             <TimeAgo date={post.createdAt} />
           </div>
         </div>
-        <h3 className="text-xl font-semibold">{post.title}</h3>
+        <div className="flex items-center gap-2">
+          {board.type === "ANNOUNCEMENT" && (
+            <Badge variant="secondary" className="rounded-full px-2 py-0 text-[11px]">
+              공지
+            </Badge>
+          )}
+          <h3 className="text-xl font-semibold">{post.title}</h3>
+        </div>
         <div className="space-y-4">
           <p className="whitespace-pre-wrap">{post.content}</p>
 

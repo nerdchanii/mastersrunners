@@ -1,12 +1,20 @@
 import { lazy, Suspense } from "react";
-import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router-dom";
+import {
+  createBrowserRouter,
+  Navigate,
+  Outlet,
+  useLocation,
+  useOutletContext,
+} from "react-router-dom";
 
 import { BottomNav } from "@/components/common/BottomNav";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { FeatureRoute } from "@/components/common/FeatureRoute";
 import { LoadingPage } from "@/components/common/LoadingPage";
+import { isCrewHubSurfacePath } from "@/components/crew/crew-hub-routes";
 import Header from "@/components/layout/Header";
 import { useAuth } from "@/lib/auth-context";
+import { cn } from "@/lib/utils";
 import AuthCallbackPage from "@/pages/auth/callback";
 // Auth pages (small, load eagerly)
 import LoginPage from "@/pages/login";
@@ -31,6 +39,41 @@ const FollowingPage = lazy(() => import("@/pages/profile/[id]/following"));
 const CrewsPage = lazy(() => import("@/pages/crews"));
 const CrewNewPage = lazy(() => import("@/pages/crews/new"));
 const CrewDetailPage = lazy(() => import("@/pages/crews/[id]"));
+const CrewActivitiesPanel = lazy(() =>
+  import("@/pages/crews/[id]/CrewHubPanels").then((module) => ({
+    default: module.CrewActivitiesPanel,
+  })),
+);
+const CrewActivityCreatePanel = lazy(() =>
+  import("@/pages/crews/[id]/CrewHubPanels").then((module) => ({
+    default: module.CrewActivityCreatePanel,
+  })),
+);
+const CrewBoardPanel = lazy(() =>
+  import("@/pages/crews/[id]/CrewHubPanels").then((module) => ({
+    default: module.CrewBoardPanel,
+  })),
+);
+const CrewBoardCreatePanel = lazy(() =>
+  import("@/pages/crews/[id]/CrewHubPanels").then((module) => ({
+    default: module.CrewBoardCreatePanel,
+  })),
+);
+const CrewMembersPanel = lazy(() =>
+  import("@/pages/crews/[id]/CrewHubPanels").then((module) => ({
+    default: module.CrewMembersPanel,
+  })),
+);
+const CrewManagePanel = lazy(() =>
+  import("@/pages/crews/[id]/CrewHubPanels").then((module) => ({
+    default: module.CrewManagePanel,
+  })),
+);
+const CrewPendingMembersPanel = lazy(() =>
+  import("@/pages/crews/[id]/CrewHubPanels").then((module) => ({
+    default: module.CrewPendingMembersPanel,
+  })),
+);
 const CrewSettingsPage = lazy(() => import("@/pages/crews/[id]/settings"));
 const CrewActivityDetailPage = lazy(() => import("@/pages/crews/[id]/activities/[activityId]"));
 const CrewActivityEditPage = lazy(() => import("@/pages/crews/[id]/activities/[activityId]/edit"));
@@ -58,6 +101,7 @@ const FeedbackPage = lazy(() => import("@/pages/feedback"));
 function ProtectedRoute() {
   const { isLoading, isAuthenticated } = useAuth();
   const location = useLocation();
+  const outletContext = useOutletContext<unknown>();
 
   if (isLoading) {
     return <LoadingPage />;
@@ -68,7 +112,7 @@ function ProtectedRoute() {
     return <Navigate to={`/login?intent=login&next=${encodeURIComponent(nextPath)}`} replace />;
   }
 
-  return <Outlet />;
+  return <Outlet context={outletContext} />;
 }
 
 function RootLayout() {
@@ -78,19 +122,37 @@ function RootLayout() {
 function MainLayout() {
   const location = useLocation();
   const isChatRoute = location.pathname.startsWith("/messages");
+  const isViewportLockedRoute = location.pathname === "/crews/new";
+  const isCrewDetailRoute = isCrewHubSurfacePath(location.pathname);
+  const crewHubBoundaryKey = location.pathname.match(/^\/crews\/[^/]+/)?.[0];
+  const errorBoundaryKey =
+    isCrewDetailRoute && crewHubBoundaryKey ? crewHubBoundaryKey : location.key;
+  const isProfileSurfaceRoute =
+    location.pathname === "/profile" || /^\/profile\/[^/]+$/.test(location.pathname);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div
+      className={cn(
+        "bg-background",
+        isViewportLockedRoute ? "h-svh overflow-hidden" : "min-h-screen",
+      )}
+    >
       <Header />
       <main
-        className={
-          isChatRoute
-            ? "h-svh md:h-[calc(100svh-3.5rem)] md:px-0 md:py-0"
-            : "mx-auto max-w-5xl px-4 py-4 pb-20 md:py-6 md:pb-6"
-        }
+        className={cn(
+          isChatRoute ? "h-svh md:h-[calc(100svh-3.5rem)] md:px-0 md:py-0" : "mx-auto max-w-5xl",
+          !isChatRoute &&
+            (isViewportLockedRoute
+              ? "flex h-[calc(100svh-4rem)] overflow-hidden px-4 py-0 pb-0 md:h-[calc(100svh-3.5rem)] md:py-6"
+              : isCrewDetailRoute
+                ? "px-0 py-0 pb-20 md:pb-0"
+                : isProfileSurfaceRoute
+                  ? "px-0 py-0 pb-20 md:pb-6"
+                  : "px-4 py-4 pb-20 md:py-6 md:pb-6"),
+        )}
       >
         <Suspense fallback={<LoadingPage />}>
-          <ErrorBoundary key={location.key}>
+          <ErrorBoundary key={errorBoundaryKey}>
             <Outlet />
           </ErrorBoundary>
         </Suspense>
@@ -137,7 +199,26 @@ export const router = createBrowserRouter([
         children: [
           { path: "/feed", element: <FeedPage /> },
           { path: "/crews", element: <CrewsPage /> },
-          { path: "/crews/:id", element: <CrewDetailPage /> },
+          {
+            path: "/crews/:id",
+            element: <CrewDetailPage />,
+            children: [
+              { index: true, element: <CrewActivitiesPanel /> },
+              { path: "activities", element: <CrewActivitiesPanel /> },
+              { path: "board", element: <CrewBoardPanel /> },
+              { path: "board/:boardId/posts/:postId", element: <CrewBoardPanel /> },
+              { path: "members", element: <CrewMembersPanel /> },
+              {
+                element: <ProtectedRoute />,
+                children: [
+                  { path: "activities/new", element: <CrewActivityCreatePanel /> },
+                  { path: "board/new", element: <CrewBoardCreatePanel /> },
+                  { path: "manage", element: <CrewManagePanel /> },
+                  { path: "pending", element: <CrewPendingMembersPanel /> },
+                ],
+              },
+            ],
+          },
           {
             path: "/challenges",
             element: (
