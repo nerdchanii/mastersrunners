@@ -144,17 +144,11 @@ export default function CrewBoardList({
   }
 
   if (routedBoardId && routedPostId && !routedPostBoard) {
-    return <BoardPostUnavailable onBack={closeRoutedPost} />;
+    return <BoardPostUnavailable showBackAction={false} />;
   }
 
   if (routedBoardId && routedPostId && !canOpenBoardPosts) {
-    return (
-      <BoardPostAccessGate
-        isAuthenticated={isAuthenticated}
-        onRequireAuth={onRequireAuth}
-        onBack={closeRoutedPost}
-      />
-    );
+    return <BoardPostAccessGate isAuthenticated={isAuthenticated} onRequireAuth={onRequireAuth} />;
   }
 
   if (routedPostId && routedPostBoard) {
@@ -165,6 +159,7 @@ export default function CrewBoardList({
         postId={routedPostId}
         isMember={isMember}
         onBack={closeRoutedPost}
+        showUnavailableBackAction={false}
       />
     );
   }
@@ -224,11 +219,9 @@ export default function CrewBoardList({
 function BoardPostAccessGate({
   isAuthenticated,
   onRequireAuth,
-  onBack,
 }: {
   isAuthenticated: boolean;
   onRequireAuth: () => void;
-  onBack: () => void;
 }) {
   return (
     <section className="space-y-4 border-t border-border/50 py-8 text-center">
@@ -240,21 +233,24 @@ function BoardPostAccessGate({
             : "로그인 후 크루에 가입하면 게시글 상세를 볼 수 있습니다."}
         </p>
       </div>
-      <div className="flex flex-wrap justify-center gap-2">
-        {!isAuthenticated && (
+      {!isAuthenticated ? (
+        <div className="flex justify-center">
           <Button type="button" onClick={onRequireAuth}>
             로그인하고 보기
           </Button>
-        )}
-        <Button type="button" variant="outline" onClick={onBack}>
-          게시판으로 돌아가기
-        </Button>
-      </div>
+        </div>
+      ) : null}
     </section>
   );
 }
 
-function BoardPostUnavailable({ onBack }: { onBack: () => void }) {
+function BoardPostUnavailable({
+  onBack,
+  showBackAction = true,
+}: {
+  onBack?: () => void;
+  showBackAction?: boolean;
+}) {
   return (
     <section className="space-y-4 border-t border-border/50 py-8 text-center">
       <div className="mx-auto max-w-sm space-y-2">
@@ -263,9 +259,11 @@ function BoardPostUnavailable({ onBack }: { onBack: () => void }) {
           삭제되었거나 현재 게시판 목록에서 확인할 수 없는 글입니다.
         </p>
       </div>
-      <Button type="button" variant="outline" onClick={onBack}>
-        게시판으로 돌아가기
-      </Button>
+      {showBackAction && onBack ? (
+        <Button type="button" variant="outline" onClick={onBack}>
+          게시판으로 돌아가기
+        </Button>
+      ) : null}
     </section>
   );
 }
@@ -654,12 +652,14 @@ function PostDetail({
   postId,
   isMember,
   onBack,
+  showUnavailableBackAction = true,
 }: {
   crewId: string;
   board: Board;
   postId: string;
   isMember: boolean;
   onBack: () => void;
+  showUnavailableBackAction?: boolean;
 }) {
   const { data: post, isLoading } = useBoardPost(crewId, board.id, postId);
   const { user } = useAuth();
@@ -704,23 +704,11 @@ function PostDetail({
   }
 
   if (!post) {
-    return <BoardPostUnavailable onBack={onBack} />;
+    return <BoardPostUnavailable onBack={onBack} showBackAction={showUnavailableBackAction} />;
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={onBack} aria-label="게시판으로 돌아가기">
-          <ArrowLeft className="size-4" />
-        </Button>
-        <h2 className="text-lg font-semibold">{board.name}</h2>
-        {board.type === "ANNOUNCEMENT" && (
-          <Badge variant="secondary" className="rounded-full px-2 py-0 text-[11px]">
-            공지
-          </Badge>
-        )}
-      </div>
-
       <article className="space-y-4 border-t border-border/50 pt-4">
         <div className="flex items-center gap-3">
           <UserAvatar user={post.author} size="sm" linkToProfile />

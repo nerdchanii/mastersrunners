@@ -39,6 +39,11 @@ const FollowingPage = lazy(() => import("@/pages/profile/[id]/following"));
 const CrewsPage = lazy(() => import("@/pages/crews"));
 const CrewNewPage = lazy(() => import("@/pages/crews/new"));
 const CrewDetailPage = lazy(() => import("@/pages/crews/[id]"));
+const CrewHomePanel = lazy(() =>
+  import("@/pages/crews/[id]/CrewHubPanels").then((module) => ({
+    default: module.CrewHomePanel,
+  })),
+);
 const CrewActivitiesPanel = lazy(() =>
   import("@/pages/crews/[id]/CrewHubPanels").then((module) => ({
     default: module.CrewActivitiesPanel,
@@ -204,7 +209,7 @@ export const router = createBrowserRouter([
             path: "/crews/:id",
             element: <CrewDetailPage />,
             children: [
-              { index: true, element: <CrewActivitiesPanel /> },
+              { index: true, element: <CrewHomePanel /> },
               { path: "activities", element: <CrewActivitiesPanel /> },
               { path: "board", element: <CrewBoardPanel /> },
               { path: "board/:boardId/posts/:postId", element: <CrewBoardPanel /> },

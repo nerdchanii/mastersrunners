@@ -1,4 +1,4 @@
-export type CrewHubTab = "activities" | "board" | "members" | "manage" | "pending";
+export type CrewHubTab = "home" | "activities" | "board" | "members" | "manage" | "pending";
 
 export interface CrewHubRouteState {
   activeTab: CrewHubTab;
@@ -9,6 +9,10 @@ export interface CrewHubRouteState {
 }
 
 export function crewHubPath(crewId: string, tab: CrewHubTab): string {
+  if (tab === "home") {
+    return `/crews/${crewId}`;
+  }
+
   if (tab === "activities") {
     return `/crews/${crewId}/activities`;
   }
@@ -40,7 +44,7 @@ export function resolveCrewHubRoute(
   canManage: boolean,
 ): CrewHubRouteState {
   const baseState: CrewHubRouteState = {
-    activeTab: "activities",
+    activeTab: "home",
     isActivityCreateRoute: false,
     isBoardCreateRoute: false,
   };

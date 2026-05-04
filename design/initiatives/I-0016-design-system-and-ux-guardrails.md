@@ -106,7 +106,8 @@
 - `tasks/archive/I-0016-120-web-crew-participation-flow-polish.md`
 - `tasks/archive/I-0016-125-web-crew-announcement-composer.md`
 - `tasks/archive/I-0016-126-web-crew-board-feed-and-profile-gutter.md`
-- `tasks/active/I-0016-128-web-crew-hub-path-routing.md`
+- `tasks/archive/I-0016-128-web-crew-hub-path-routing.md`
+- `tasks/active/I-0016-129-web-crew-home-tab.md`
 - `tasks/todo/I-0016-130-web-workout-capture-and-analysis-flow-polish.md`
 - `tasks/todo/I-0016-140-web-discovery-and-participation-surface-flow-polish.md`
 - `tasks/todo/I-0016-170-web-design-system-primitive-consolidation.md`

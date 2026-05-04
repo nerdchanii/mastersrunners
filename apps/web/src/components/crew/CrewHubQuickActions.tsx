@@ -63,7 +63,7 @@ export default function CrewHubQuickActions({
   };
 
   return (
-    <div className="pointer-events-none fixed right-4 z-40 flex flex-col items-end gap-3 lg:hidden [bottom:calc(env(safe-area-inset-bottom)+5rem)]">
+    <div className="pointer-events-none fixed right-4 z-40 flex flex-col items-end gap-3 [bottom:calc(env(safe-area-inset-bottom)+5rem)] md:right-6 md:[bottom:calc(env(safe-area-inset-bottom)+1.5rem)]">
       {canCreateActivity && (
         <div
           className={cn(

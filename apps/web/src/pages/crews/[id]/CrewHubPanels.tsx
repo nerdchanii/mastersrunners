@@ -1,4 +1,5 @@
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { CalendarDays, MapPin } from "lucide-react";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 
 import { useCrewHubContext } from "@/components/crew/crew-hub-context";
 import {
@@ -13,17 +14,99 @@ import CrewBoardList, { BoardPostComposer } from "@/components/crew/CrewBoardLis
 import CrewMemberList from "@/components/crew/CrewMemberList";
 import PendingMemberList from "@/components/crew/PendingMemberList";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBoards } from "@/hooks/useCrewBoards";
+import { useCrewProfile } from "@/hooks/useCrewPosts";
 
 const panelClassName = "mt-0 px-4 focus-visible:outline-none lg:px-0";
+const activityPanelClassName = "mt-0 px-4 pt-4 focus-visible:outline-none sm:pt-5 lg:px-0";
+
+function formatHomeActivityDate(value: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+export function CrewHomePanel() {
+  const { crew, crewId, homeHero } = useCrewHubContext();
+  const { data, isError, isLoading } = useCrewProfile(crewId);
+  const upcomingActivities = data?.upcomingActivities.slice(0, 2) ?? [];
+
+  return (
+    <div className="mt-0 focus-visible:outline-none">
+      {homeHero}
+
+      <section className="space-y-3 px-5 py-5 sm:px-10 lg:px-10">
+        <h2 className="text-lg font-bold tracking-tight text-foreground">크루 소개</h2>
+        <p className="max-w-3xl whitespace-pre-wrap text-[15px] leading-relaxed text-muted-foreground/90 sm:text-base">
+          {crew.description ?? "소개가 없습니다."}
+        </p>
+      </section>
+
+      <section className="space-y-4 px-5 pb-6 pt-2 sm:px-10 sm:pb-8 lg:px-10">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-bold tracking-tight text-foreground">예정 활동</h2>
+          <Button asChild variant="ghost" size="sm" className="px-2">
+            <Link to={crewHubPath(crewId, "activities")}>전체 보기</Link>
+          </Button>
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
+        ) : isError ? (
+          <div className="border-t border-border/50 py-6 text-sm text-muted-foreground">
+            예정 활동을 불러오지 못했습니다.
+          </div>
+        ) : upcomingActivities.length === 0 ? (
+          <div className="border-t border-border/50 py-6 text-sm text-muted-foreground">
+            예정된 활동이 없습니다.
+          </div>
+        ) : (
+          <div className="divide-y divide-border/50 border-y border-border/50">
+            {upcomingActivities.map((activity) => (
+              <Link
+                key={activity.id}
+                to={crewHubPath(crewId, "activities")}
+                className="block py-4 transition-colors hover:bg-muted/30"
+              >
+                <div className="space-y-2">
+                  <p className="text-base font-semibold text-foreground">{activity.title}</p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      <CalendarDays className="size-4" />
+                      {formatHomeActivityDate(activity.activityDate)}
+                    </span>
+                    {activity.location ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <MapPin className="size-4" />
+                        {activity.location}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
 
 export function CrewActivitiesPanel() {
   const navigate = useNavigate();
   const { crewId, isAuthenticated, isMember, isOwnerOrAdmin, openAuthGate } = useCrewHubContext();
 
   return (
-    <div className={panelClassName}>
+    <div className={activityPanelClassName}>
       <CrewActivityList
         canOpenActivityDetails={isMember}
         crewId={crewId}
@@ -165,7 +248,7 @@ export function CrewManagePanel() {
   const { crew, crewId, isOwnerOrAdmin } = useCrewHubContext();
 
   if (!isOwnerOrAdmin) {
-    return <Navigate to={crewHubPath(crewId, "activities")} replace />;
+    return <Navigate to={crewHubPath(crewId, "home")} replace />;
   }
 
   return (
@@ -181,7 +264,7 @@ export function CrewPendingMembersPanel() {
   const { crew, crewId, isOwnerOrAdmin, onMembersUpdate } = useCrewHubContext();
 
   if (!isOwnerOrAdmin) {
-    return <Navigate to={crewHubPath(crewId, "activities")} replace />;
+    return <Navigate to={crewHubPath(crewId, "home")} replace />;
   }
 
   return (

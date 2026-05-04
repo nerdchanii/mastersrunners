@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useOutletContext } from "react-router-dom";
 
 export interface CrewHubMember {
@@ -40,6 +41,7 @@ export interface CrewHubOutletContext {
   crewId: string;
   currentUserId?: string;
   currentUserRole: CrewHubMember["role"] | null;
+  homeHero: ReactNode;
   isAuthenticated: boolean;
   isMember: boolean;
   isOwnerOrAdmin: boolean;

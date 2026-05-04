@@ -65,13 +65,13 @@ export default function CrewAttendanceStats({
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5 md:space-y-6">
-      <section className="space-y-3 border-b border-border/60 pb-4">
+      <section className="space-y-3">
         <Tabs value={view} onValueChange={setView} className="space-y-0">
-          <TabsList variant="line" className="w-full justify-start md:w-auto">
-            <TabsTrigger value="activities" className="px-0 pr-5 md:px-2">
+          <TabsList className="grid h-10 w-full grid-cols-2 rounded-lg bg-muted/40 p-1 md:w-80">
+            <TabsTrigger value="activities" className="rounded-md text-sm font-semibold">
               월별
             </TabsTrigger>
-            <TabsTrigger value="members" className="px-0 pr-5 md:px-2">
+            <TabsTrigger value="members" className="rounded-md text-sm font-semibold">
               멤버별
             </TabsTrigger>
           </TabsList>

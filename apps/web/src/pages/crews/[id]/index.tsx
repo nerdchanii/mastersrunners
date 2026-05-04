@@ -13,7 +13,7 @@ import {
   type CrewHubTab,
   resolveCrewHubRoute,
 } from "@/components/crew/crew-hub-routes";
-import CrewHubQuickActions, { CrewHubInlineActions } from "@/components/crew/CrewHubQuickActions";
+import CrewHubQuickActions from "@/components/crew/CrewHubQuickActions";
 import CrewIdentityHero from "@/components/crew/CrewIdentityHero";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +29,9 @@ import { useAuth } from "@/lib/auth-context";
 import { shareLink } from "@/lib/share-link";
 
 import { fetchCrewDetail, joinCrew, leaveCrew } from "./crew-detail-api";
+
+const crewHubTabTriggerClassName =
+  "h-full flex-none rounded-none border-x-0 border-t-0 border-b-[3px] border-transparent px-2.5 text-[17px] font-semibold leading-none text-foreground/55 transition-colors data-[state=active]:border-b-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:hidden sm:px-3 sm:text-lg";
 
 export default function CrewDetailClient() {
   const params = useParams();
@@ -71,6 +74,8 @@ export default function CrewDetailClient() {
   const canCreateActivity = isMember || isOwnerOrAdmin;
   const routeState = resolveCrewHubRoute(location.pathname, crewId, isOwnerOrAdmin);
   const activeTab = routeState.activeTab;
+  const shouldShowCrewHubActions =
+    !routeState.isActivityCreateRoute && !routeState.isBoardCreateRoute;
 
   const handleTabChange = (tab: string) => {
     navigate(crewHubPath(crewId, tab as CrewHubTab));
@@ -193,132 +198,116 @@ export default function CrewDetailClient() {
   const heroProfileImage = crew.profileImageUrl ?? crew.imageUrl ?? null;
   const heroCoverImage = crew.coverImageUrl ?? null;
 
+  const homeHero = (
+    <CrewIdentityHero
+      crewId={crewId}
+      name={crew.name}
+      description={null}
+      creatorName={crew.creator.name}
+      createdAt={crew.createdAt}
+      memberCount={crew._count.members}
+      maxMembers={crew.maxMembers}
+      isPublic={crew.isPublic}
+      profileImageUrl={heroProfileImage}
+      coverImageUrl={heroCoverImage}
+      members={activeMembers}
+      currentUserId={user?.id}
+      currentUserRole={currentUserRole}
+      onMembersUpdate={fetchCrew}
+      chatHref={`/messages/crew/${crewId}`}
+      topActions={
+        isMember && currentUserRole !== "OWNER" ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                variant="ghost"
+                className="border border-background/35 bg-background/55 shadow-xs backdrop-blur-sm"
+                aria-label="크루 멤버 메뉴"
+              >
+                <MoreHorizontal className="size-4" />
+              </IconButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem variant="destructive" onClick={() => setShowLeaveDialog(true)}>
+                <LogOut className="size-4" />
+                크루 탈퇴
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null
+      }
+      actions={
+        <>
+          {canJoinCrew && (
+            <IconButton
+              variant="default"
+              onClick={handleJoin}
+              disabled={isJoining}
+              aria-label={isJoining ? "가입 중" : "크루 가입"}
+            >
+              <UserPlus className="size-4" />
+            </IconButton>
+          )}
+
+          {isMember && (
+            <IconButton
+              variant="outline"
+              onClick={handleShareInvite}
+              disabled={isSharingInvite}
+              aria-label={isSharingInvite ? "공유 준비 중" : "크루 페이지 공유"}
+            >
+              <Share2 className="size-4" />
+            </IconButton>
+          )}
+
+          {isOwnerOrAdmin && (
+            <IconButton
+              variant="outline"
+              onClick={() => navigate(`/crews/${crewId}/settings`)}
+              aria-label="설정"
+            >
+              <Settings className="size-4" />
+            </IconButton>
+          )}
+        </>
+      }
+    />
+  );
+
   return (
-    <div className="mx-auto max-w-6xl sm:space-y-5">
-      <CrewIdentityHero
-        crewId={crewId}
-        name={crew.name}
-        description={crew.description}
-        creatorName={crew.creator.name}
-        createdAt={crew.createdAt}
-        memberCount={crew._count.members}
-        maxMembers={crew.maxMembers}
-        isPublic={crew.isPublic}
-        profileImageUrl={heroProfileImage}
-        coverImageUrl={heroCoverImage}
-        members={activeMembers}
-        currentUserId={user?.id}
-        currentUserRole={currentUserRole}
-        onMembersUpdate={fetchCrew}
-        chatHref={`/messages/crew/${crewId}`}
-        topActions={
-          isMember && currentUserRole !== "OWNER" ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  variant="ghost"
-                  className="border border-background/35 bg-background/55 shadow-xs backdrop-blur-sm"
-                  aria-label="크루 멤버 메뉴"
-                >
-                  <MoreHorizontal className="size-4" />
-                </IconButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem variant="destructive" onClick={() => setShowLeaveDialog(true)}>
-                  <LogOut className="size-4" />
-                  크루 탈퇴
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : null
-        }
-        actions={
-          <>
-            {canJoinCrew && (
-              <IconButton
-                variant="default"
-                onClick={handleJoin}
-                disabled={isJoining}
-                aria-label={isJoining ? "가입 중" : "크루 가입"}
-              >
-                <UserPlus className="size-4" />
-              </IconButton>
-            )}
-
-            {isMember && (
-              <IconButton
-                variant="outline"
-                onClick={handleShareInvite}
-                disabled={isSharingInvite}
-                aria-label={isSharingInvite ? "공유 준비 중" : "크루 페이지 공유"}
-              >
-                <Share2 className="size-4" />
-              </IconButton>
-            )}
-
-            {isOwnerOrAdmin && (
-              <IconButton
-                variant="outline"
-                onClick={() => navigate(`/crews/${crewId}/settings`)}
-                aria-label="설정"
-              >
-                <Settings className="size-4" />
-              </IconButton>
-            )}
-          </>
-        }
-      />
-
+    <div className="mx-auto max-w-6xl">
       <div className="px-0 lg:px-6">
         <section>
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <div className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-md">
-              <div className="flex items-center justify-between gap-3">
+            <div className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-md md:top-14">
+              <div className="flex items-center gap-3 overflow-x-auto px-4 lg:px-0">
                 <TabsList
                   variant="line"
-                  className="h-12 min-w-0 flex-1 justify-start gap-0 rounded-none border-0 px-0"
+                  className="h-12 min-w-0 flex-1 justify-start gap-0 overflow-x-auto rounded-none border-0 px-0"
                 >
-                  <TabsTrigger
-                    value="activities"
-                    className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
-                  >
+                  <TabsTrigger value="home" className={crewHubTabTriggerClassName}>
+                    홈
+                  </TabsTrigger>
+                  <TabsTrigger value="activities" className={crewHubTabTriggerClassName}>
                     활동
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="board"
-                    className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
-                  >
+                  <TabsTrigger value="board" className={crewHubTabTriggerClassName}>
                     게시판
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="members"
-                    className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
-                  >
+                  <TabsTrigger value="members" className={crewHubTabTriggerClassName}>
                     멤버
                   </TabsTrigger>
                   {isOwnerOrAdmin && (
                     <>
-                      <TabsTrigger
-                        value="manage"
-                        className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
-                      >
+                      <TabsTrigger value="manage" className={crewHubTabTriggerClassName}>
                         관리
                       </TabsTrigger>
-                      <TabsTrigger
-                        value="pending"
-                        className="h-full flex-none rounded-none px-2 text-base font-semibold text-foreground/55 data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground"
-                      >
+                      <TabsTrigger value="pending" className={crewHubTabTriggerClassName}>
                         가입대기
                       </TabsTrigger>
                     </>
                   )}
                 </TabsList>
-                <CrewHubInlineActions
-                  canWritePost={isMember}
-                  canCreateActivity={canCreateActivity}
-                  onWritePost={openBoardComposer}
-                  onCreateActivity={openActivityComposer}
-                />
               </div>
             </div>
 
@@ -330,6 +319,7 @@ export default function CrewDetailClient() {
                   crewId,
                   currentUserId: user?.id,
                   currentUserRole,
+                  homeHero,
                   isAuthenticated: !!user,
                   isMember,
                   isOwnerOrAdmin,
@@ -360,13 +350,15 @@ export default function CrewDetailClient() {
         title={authDialogTitle}
       />
 
-      <CrewHubQuickActions
-        dismissKey={activeTab}
-        canWritePost={isMember}
-        canCreateActivity={canCreateActivity}
-        onWritePost={openBoardComposer}
-        onCreateActivity={openActivityComposer}
-      />
+      {shouldShowCrewHubActions ? (
+        <CrewHubQuickActions
+          dismissKey={activeTab}
+          canWritePost={isMember}
+          canCreateActivity={canCreateActivity}
+          onWritePost={openBoardComposer}
+          onCreateActivity={openActivityComposer}
+        />
+      ) : null}
     </div>
   );
 }
