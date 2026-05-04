@@ -68,6 +68,7 @@ export default function CrewDetailClient() {
   const canJoinCrew = !currentMember || currentMember.status === "LEFT";
   const currentUserRole = currentMember?.role ?? null;
   const isOwnerOrAdmin = currentUserRole === "OWNER" || currentUserRole === "ADMIN";
+  const canCreateActivity = isMember || isOwnerOrAdmin;
   const routeState = resolveCrewHubRoute(location.pathname, crewId, isOwnerOrAdmin);
   const activeTab = routeState.activeTab;
 
@@ -314,7 +315,7 @@ export default function CrewDetailClient() {
                 </TabsList>
                 <CrewHubInlineActions
                   canWritePost={isMember}
-                  canCreateActivity={isOwnerOrAdmin}
+                  canCreateActivity={canCreateActivity}
                   onWritePost={openBoardComposer}
                   onCreateActivity={openActivityComposer}
                 />
@@ -362,7 +363,7 @@ export default function CrewDetailClient() {
       <CrewHubQuickActions
         dismissKey={activeTab}
         canWritePost={isMember}
-        canCreateActivity={isOwnerOrAdmin}
+        canCreateActivity={canCreateActivity}
         onWritePost={openBoardComposer}
         onCreateActivity={openActivityComposer}
       />

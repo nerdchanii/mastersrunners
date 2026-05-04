@@ -26,6 +26,7 @@ interface CrewActivityListProps {
   showInlineCreateAction?: boolean;
   showEmptyCreateAction?: boolean;
   isActive?: boolean;
+  onCreateActivity?: () => void;
   onComposerHandled?: () => void;
 }
 
@@ -49,6 +50,7 @@ export default function CrewActivityList({
   showInlineCreateAction = true,
   showEmptyCreateAction = showInlineCreateAction,
   isActive = true,
+  onCreateActivity,
   onComposerHandled,
 }: CrewActivityListProps) {
   const navigate = useNavigate();
@@ -130,6 +132,13 @@ export default function CrewActivityList({
   const closeCreateForm = () => {
     setShowForm(false);
   };
+  const openCreateForm = () => {
+    if (onCreateActivity) {
+      onCreateActivity();
+      return;
+    }
+    setShowForm(true);
+  };
 
   if (showForm) {
     return (
@@ -148,7 +157,7 @@ export default function CrewActivityList({
     <div className="space-y-4">
       {canCreate && showInlineCreateAction && (
         <div className="flex justify-end">
-          <Button onClick={() => setShowForm(true)}>
+          <Button onClick={openCreateForm}>
             <Plus className="size-4 mr-2" />
             활동 만들기
           </Button>
@@ -161,7 +170,7 @@ export default function CrewActivityList({
           title="활동이 없습니다"
           description={canCreate ? "아직 잡힌 일정이 없습니다." : "예정된 활동이 아직 없습니다."}
           actionLabel={canCreate && showEmptyCreateAction ? "활동 만들기" : undefined}
-          onAction={canCreate && showEmptyCreateAction ? () => setShowForm(true) : undefined}
+          onAction={canCreate && showEmptyCreateAction ? openCreateForm : undefined}
         />
       ) : (
         <div className="grid gap-4">

@@ -1,7 +1,11 @@
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 
 import { useCrewHubContext } from "@/components/crew/crew-hub-context";
-import { crewBoardPostPath, crewHubPath } from "@/components/crew/crew-hub-routes";
+import {
+  crewActivityCreatePath,
+  crewBoardPostPath,
+  crewHubPath,
+} from "@/components/crew/crew-hub-routes";
 import CrewActivityForm from "@/components/crew/CrewActivityForm";
 import CrewActivityList from "@/components/crew/CrewActivityList";
 import CrewAttendanceStats from "@/components/crew/CrewAttendanceStats";
@@ -15,6 +19,7 @@ import { useBoards } from "@/hooks/useCrewBoards";
 const panelClassName = "mt-0 px-4 focus-visible:outline-none lg:px-0";
 
 export function CrewActivitiesPanel() {
+  const navigate = useNavigate();
   const { crewId, isAuthenticated, isMember, isOwnerOrAdmin, openAuthGate } = useCrewHubContext();
 
   return (
@@ -27,6 +32,7 @@ export function CrewActivitiesPanel() {
         isAuthenticated={isAuthenticated}
         showInlineCreateAction={false}
         showEmptyCreateAction
+        onCreateActivity={() => navigate(crewActivityCreatePath(crewId))}
         onRequireAuth={() => openAuthGate("활동 자세히 보기")}
       />
     </div>
@@ -35,7 +41,12 @@ export function CrewActivitiesPanel() {
 
 export function CrewActivityCreatePanel() {
   const navigate = useNavigate();
-  const { crewId } = useCrewHubContext();
+  const { crewId, isMember, isOwnerOrAdmin } = useCrewHubContext();
+  const canCreateActivity = isMember || isOwnerOrAdmin;
+
+  if (!canCreateActivity) {
+    return <Navigate to={crewHubPath(crewId, "activities")} replace />;
+  }
 
   return (
     <div className={panelClassName}>
@@ -83,6 +94,7 @@ export function CrewBoardPanel() {
 export function CrewBoardCreatePanel() {
   const navigate = useNavigate();
   const { crewId, isMember, isOwnerOrAdmin } = useCrewHubContext();
+  const canWritePost = isMember || isOwnerOrAdmin;
   const { data: boards, isLoading } = useBoards(crewId);
   const visibleBoards = boards?.filter((board) =>
     ["ANNOUNCEMENT", "GENERAL", "FREE"].includes(board.type),
@@ -90,7 +102,10 @@ export function CrewBoardCreatePanel() {
   const announcementBoard = visibleBoards?.find((board) => board.type === "ANNOUNCEMENT") ?? null;
   const defaultComposerBoard =
     visibleBoards?.find((board) => board.type === "FREE") ?? visibleBoards?.[0];
-  const canWrite = !!defaultComposerBoard && (isMember || isOwnerOrAdmin);
+
+  if (!canWritePost) {
+    return <Navigate to={crewHubPath(crewId, "board")} replace />;
+  }
 
   if (isLoading) {
     return (
@@ -103,7 +118,7 @@ export function CrewBoardCreatePanel() {
     );
   }
 
-  if (!defaultComposerBoard || !canWrite) {
+  if (!defaultComposerBoard) {
     return (
       <div className={panelClassName}>
         <div className="border-t border-border/50 py-8 text-center text-muted-foreground">

@@ -11,8 +11,8 @@ po_review: required
 depends_on:
   - tasks/archive/I-0016-126-web-crew-board-feed-and-profile-gutter.md
 blocked_by: []
-execution_status: in_progress
-review_status: pending
+execution_status: ready_for_archive
+review_status: approved
 verification_status: passed
 closeout_blocker:
 verify:
@@ -30,6 +30,9 @@ artifacts:
   - apps/web/src/router.tsx
   - design/frontend/crew-experience.md
   - design/initiatives/I-0016-design-system-and-ux-guardrails.md
+  - tasks/reviews/I-0016-128/frontend-reviewer.json
+  - tasks/reviews/I-0016-128/ui-ux-reviewer.json
+  - tasks/reviews/I-0016-128/po-reviewer.json
 ---
 
 ## 목표
@@ -60,6 +63,7 @@ artifacts:
 - 검증:
   - `VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build`
   - `pnpm --filter @masters/web build-storybook`
+  - Specialist/PO review 후 권한 경계 보완 패치를 적용하고 위 두 검증을 재실행했다.
   - 브라우저에서 `/crews/cmopuzcoz0004078de3pwszxh/activities/new`, `/crews/cmopuzcoz0004078de3pwszxh/board/new`, `/crews/cmopuzcoz0004078de3pwszxh/board`, `/crews/cmopuzcoz0004078de3pwszxh/board/:boardId/posts/:postId` 진입을 확인했다. 생성 path는 각각 생성 폼만 노출하고 기존 리스트는 하단에 함께 렌더링하지 않는다. 상세 뒤로가기는 `/board`로 이동했으나 이후 로컬 API가 `ThrottlerException: Too Many Requests`를 반환했다.
   - 브라우저에서 `/crews/cmopuzcoz0004078de3pwszxh/board/new`의 공지 체크박스가 제목 위에 있고, `/manage`는 운영 현황만, `/pending`은 가입대기 탭만 렌더링하는 것을 확인했다.
 - 리뷰 라우팅: `frontend-reviewer`, `ui-ux-reviewer`, `po-reviewer`
@@ -88,20 +92,30 @@ Codex Stop-hook review automation을 쓰려면 위 다섯 항목을 placeholder 
 - 2026-05-04: 활동 생성과 게시글 생성 path를 각각 별도 패널 컴포넌트로 분리해 생성 화면에서는 리스트 대신 폼만 렌더링하도록 조정했다.
 - 2026-05-04: 공지 체크박스를 제목 위로 이동하고, 가입대기 섹션을 운영진 전용 `/pending` 탭으로 분리했다.
 - 2026-05-04: 관리 탭에서 상단 탭바와 출석부 콘텐츠가 붙어 보이지 않도록 운영 현황 패널 상단 여백을 보강했다.
+- 2026-05-04: `frontend-reviewer`와 `ui-ux-reviewer` 초기 리뷰에서 직접 링크 권한 경계, stale 게시글 URL, 뒤로가기 접근성, 활동 생성 route affordance 문제가 발견되어 수정했다.
+- 2026-05-04: `po-reviewer`가 `/board/new` direct route의 비멤버 경계를 추가로 지적했고, 비작성자는 `/board`로 replace 이동하도록 수정했다.
+- 2026-05-04: 수정 후 `frontend-reviewer`, `ui-ux-reviewer`, `po-reviewer` 재검토가 모두 approved로 닫혔다.
 
 ## 리뷰 노트
 
 - Specialist review:
-  - reviewer:
-  - reviewer protocol:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:
+  - reviewer: `frontend-reviewer`
+  - reviewer protocol: `.codex/agents/frontend-reviewer.toml`, `.agents/skills/review-output-contract/SKILL.md`, `.agents/skills/frontend-review-checklist/SKILL.md`
+  - artifact: `tasks/reviews/I-0016-128/frontend-reviewer.json`
+  - decision: approved
+  - findings: no findings
+  - residual risks: 리뷰어는 recorded build와 Storybook build 검증에 의존했고, 브라우저 플로우를 직접 재실행하지 않았다.
+- Specialist review:
+  - reviewer: `ui-ux-reviewer`
+  - reviewer protocol: `.codex/agents/ui-ux-reviewer.toml`, `.agents/skills/review-output-contract/SKILL.md`, `.agents/skills/ui-ux-review-checklist/SKILL.md`
+  - artifact: `tasks/reviews/I-0016-128/ui-ux-reviewer.json`
+  - decision: approved
+  - findings: no findings
+  - residual risks: 리뷰어는 recorded build와 Storybook build 검증에 의존했고, 브라우저 플로우를 직접 재실행하지 않았다.
 - PO review:
-  - reviewer:
-  - reviewer protocol:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:
+  - reviewer: `po-reviewer`
+  - reviewer protocol: `.codex/agents/po-reviewer.toml`, `.agents/skills/review-output-contract/SKILL.md`, `.agents/skills/po-review-checklist/SKILL.md`
+  - artifact: `tasks/reviews/I-0016-128/po-reviewer.json`
+  - decision: approved
+  - findings: no findings
+  - residual risks: 현재 dirty diff의 `.gitignore` `.worktrees` 추가는 이 task scope 밖이므로 별도 처리해야 한다.

@@ -13,6 +13,7 @@ import {
   type CrewHubTab,
   resolveCrewHubRoute,
 } from "@/components/crew/crew-hub-routes";
+import CrewActivityForm from "@/components/crew/CrewActivityForm";
 import CrewActivityList from "@/components/crew/CrewActivityList";
 import CrewAttendanceStats from "@/components/crew/CrewAttendanceStats";
 import CrewBoardList, { BoardPostComposer } from "@/components/crew/CrewBoardList";
@@ -113,6 +114,7 @@ function CrewHubPageStory({ role }: { role: HubRole }) {
   const nextPath = `/crews/${storybookCrew.id}`;
   const routeState = resolveCrewHubRoute(location.pathname, storybookCrew.id, isOwnerOrAdmin);
   const activeTab = routeState.activeTab;
+  const canCreateActivity = isMember || isOwnerOrAdmin;
 
   const openAuthGate = (title: string) => {
     setAuthDialogTitle(title);
@@ -234,7 +236,7 @@ function CrewHubPageStory({ role }: { role: HubRole }) {
                 </TabsList>
                 <CrewHubInlineActions
                   canWritePost={isMember}
-                  canCreateActivity={isOwnerOrAdmin}
+                  canCreateActivity={canCreateActivity}
                   onWritePost={openBoardComposer}
                   onCreateActivity={openActivityComposer}
                 />
@@ -246,22 +248,33 @@ function CrewHubPageStory({ role }: { role: HubRole }) {
                 value="activities"
                 className="mt-0 px-4 focus-visible:outline-none lg:px-0"
               >
-                <CrewActivityList
-                  crewId={storybookCrew.id}
-                  isAdmin={isOwnerOrAdmin}
-                  isAuthenticated={!isGuest}
-                  isMember={isMember}
-                  isActive={activeTab === "activities"}
-                  canOpenActivityDetails={isMember}
-                  defaultShowForm={routeState.isActivityCreateRoute}
-                  showInlineCreateAction={false}
-                  showEmptyCreateAction
-                  onRequireAuth={() => openAuthGate("활동 자세히 보기")}
-                />
+                {routeState.isActivityCreateRoute && canCreateActivity ? (
+                  <section className="space-y-4 border-t border-border/50 pt-4">
+                    <h3 className="text-base font-semibold">새 활동 만들기</h3>
+                    <CrewActivityForm
+                      crewId={storybookCrew.id}
+                      onSuccess={() => navigate(crewHubPath(storybookCrew.id, "activities"))}
+                      onCancel={() => navigate(crewHubPath(storybookCrew.id, "activities"))}
+                    />
+                  </section>
+                ) : (
+                  <CrewActivityList
+                    crewId={storybookCrew.id}
+                    isAdmin={isOwnerOrAdmin}
+                    isAuthenticated={!isGuest}
+                    isMember={isMember}
+                    isActive={activeTab === "activities"}
+                    canOpenActivityDetails={isMember}
+                    showInlineCreateAction={false}
+                    showEmptyCreateAction
+                    onCreateActivity={openActivityComposer}
+                    onRequireAuth={() => openAuthGate("활동 자세히 보기")}
+                  />
+                )}
               </TabsContent>
 
               <TabsContent value="board" className="mt-0 px-4 focus-visible:outline-none lg:px-0">
-                {routeState.isBoardCreateRoute ? (
+                {routeState.isBoardCreateRoute && isMember ? (
                   <BoardPostComposer
                     crewId={storybookCrew.id}
                     board={storybookCrewBoards.find((board) => board.type === "FREE")!}
@@ -359,7 +372,7 @@ function CrewHubPageStory({ role }: { role: HubRole }) {
       <CrewHubQuickActions
         dismissKey={activeTab}
         canWritePost={isMember}
-        canCreateActivity={isOwnerOrAdmin}
+        canCreateActivity={canCreateActivity}
         onWritePost={openBoardComposer}
         onCreateActivity={openActivityComposer}
       />
