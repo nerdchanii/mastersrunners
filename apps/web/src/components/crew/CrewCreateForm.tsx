@@ -133,7 +133,7 @@ export default function CrewCreateForm({
   );
 
   return (
-    <div className="mx-auto flex h-[100svh] max-w-xl flex-col px-4 pb-4 sm:px-0 sm:py-8">
+    <div className="flex min-h-0 w-full flex-1 flex-col px-5 pb-4 sm:px-8 md:px-10 lg:mx-auto lg:max-w-4xl lg:px-12">
       <Funnel.ProgressBar progress={progress} />
 
       <Funnel>

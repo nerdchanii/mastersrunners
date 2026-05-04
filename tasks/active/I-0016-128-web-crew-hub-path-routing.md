@@ -9,7 +9,7 @@ reviewers:
   - ui-ux-reviewer
 po_review: required
 depends_on:
-  - tasks/todo/I-0016-120-web-crew-participation-flow-polish.md
+  - tasks/archive/I-0016-126-web-crew-board-feed-and-profile-gutter.md
 blocked_by: []
 execution_status: in_progress
 review_status: pending

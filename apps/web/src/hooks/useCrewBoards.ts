@@ -149,6 +149,7 @@ export function useCreatePost() {
       }),
     onSuccess: (_r, { crewId, boardId }) => {
       qc.invalidateQueries({ queryKey: boardKeys.posts(crewId, boardId) });
+      qc.invalidateQueries({ queryKey: boardKeys.boards(crewId) });
     },
   });
 }

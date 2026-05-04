@@ -140,10 +140,11 @@ function MainLayout() {
       <Header />
       <main
         className={cn(
-          isChatRoute ? "h-svh md:h-[calc(100svh-3.5rem)] md:px-0 md:py-0" : "mx-auto max-w-5xl",
+          isChatRoute ? "h-svh md:h-[calc(100svh-3.5rem)] md:px-0 md:py-0" : undefined,
+          !isChatRoute && !isViewportLockedRoute ? "mx-auto max-w-5xl" : undefined,
           !isChatRoute &&
             (isViewportLockedRoute
-              ? "flex h-[calc(100svh-4rem)] overflow-hidden px-4 py-0 pb-0 md:h-[calc(100svh-3.5rem)] md:py-6"
+              ? "flex h-[calc(100svh-4rem)] w-full max-w-none overflow-hidden px-0 py-0 pb-0 md:h-[calc(100svh-3.5rem)]"
               : isCrewDetailRoute
                 ? "px-0 py-0 pb-20 md:pb-0"
                 : isProfileSurfaceRoute

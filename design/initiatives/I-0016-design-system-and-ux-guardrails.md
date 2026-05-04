@@ -103,7 +103,9 @@
 - `tasks/archive/I-0016-090-web-storybook-workbench-foundation.md`
 - `tasks/archive/I-0016-100-web-feed-post-action-flow-polish.md`
 - `tasks/archive/I-0016-110-web-profile-identity-flow-polish.md`
-- `tasks/todo/I-0016-120-web-crew-participation-flow-polish.md`
+- `tasks/archive/I-0016-120-web-crew-participation-flow-polish.md`
+- `tasks/archive/I-0016-125-web-crew-announcement-composer.md`
+- `tasks/archive/I-0016-126-web-crew-board-feed-and-profile-gutter.md`
 - `tasks/active/I-0016-128-web-crew-hub-path-routing.md`
 - `tasks/todo/I-0016-130-web-workout-capture-and-analysis-flow-polish.md`
 - `tasks/todo/I-0016-140-web-discovery-and-participation-surface-flow-polish.md`
@@ -141,5 +143,4 @@
 - 2026-04-08: `I-0016-090` push 단계에서 Storybook generated output이 dependency-cruiser 입력으로 섞여 merge를 막아, generated 산출물 제외 규칙을 `I-0016-150` follow-up으로 분리했다.
 - 2026-04-08: 같은 push 단계에서 knip가 Storybook wiring을 false positive로 잡아, Storybook baseline 예외를 `I-0016-160` follow-up으로 분리했다.
 - 2026-04-11: crew 참여/허브 작업을 진행하면서 아이콘 버튼, 라운드 값, 액션 래퍼가 여러 화면에서 제각각 다시 생길 수 있다는 문제가 드러나 `I-0016-170`으로 디자인 시스템 프리미티브를 더 작은 재사용 단위로 묶는 후속 정비를 추가했다. 우선순위는 `icon button`, 공통 `pill/tag` 스타일, 그리고 crew/workout/messages에 흩어진 primitive wrapper를 버튼/태그 컴포넌트로 흡수하는 것이다.
-- 2026-04-22: active-task cleanup에서 `I-0016-120`이 아직 review closeout 없이 `tasks/active/`에 남아 있는 상태를 발견했다. 현재 작업축이 `I-0009-040`으로 이동했으므로 `I-0016-120`은 completion truth를 보존한 채 `tasks/todo/`로 되돌려 단일 active-task 규칙을 복구한다.
 - 2026-05-04: `I-0016-128`에서 크루 허브를 path 기반 탭으로 정리하면서 운영진 전용 가입대기를 `/crews/:id/pending` 1차 탭으로 분리했다.

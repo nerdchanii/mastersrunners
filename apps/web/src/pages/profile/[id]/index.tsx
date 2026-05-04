@@ -219,7 +219,7 @@ export default function UserProfilePage() {
 
   return (
     <>
-      <div className="-mx-4 space-y-5 pb-8 md:mx-auto md:max-w-4xl md:px-4">
+      <div className="space-y-5 pb-8 md:mx-auto md:max-w-4xl md:px-4">
         <ProfileHeader
           user={profileData.user}
           isOwnProfile={false}
