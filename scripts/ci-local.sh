@@ -10,6 +10,7 @@ set -euo pipefail
 #   `pnpm install --frozen-lockfile` first.
 # - PostgreSQL for API tests is reachable at DATABASE_URL.
 # - Redis is reachable at REDIS_URL if the API test suite requires it.
+# - Playwright browser binaries can be downloaded locally when web UX tests run.
 # - Generated/build artifacts must not be tracked in git.
 # - This script intentionally omits the separate Docker image build job from CI.
 
@@ -23,7 +24,8 @@ JWT_SECRET="${JWT_SECRET:-test-secret}"
 JWT_ACCESS_TTL="${JWT_ACCESS_TTL:-900}"
 JWT_REFRESH_TTL="${JWT_REFRESH_TTL:-604800}"
 REDIS_URL="${REDIS_URL:-redis://localhost:6379}"
-VITE_API_URL="${VITE_API_URL:-http://localhost:4000}"
+VITE_API_URL="${VITE_API_URL:-http://localhost:4000/api/v1}"
+export VITE_API_URL
 
 run_step() {
   local name="$1"
@@ -40,7 +42,6 @@ run_step "Check harness structure" bash -c '
   test -d docs
   test -d tasks
   bash scripts/check-generated-artifacts.sh
-  node --test .github/scripts/pr-autofix-state.spec.cjs
 '
 
 if [ "$CI_LOCAL_INSTALL" = "1" ]; then
@@ -53,7 +54,19 @@ run_step "Run format check" pnpm format:check
 
 run_step "Run lint" pnpm lint
 
-run_step "Run explicit typecheck" pnpm typecheck
+run_step "Check first-wave UX copy guardrails" pnpm check:ux-copy
+
+run_step "Run explicit typecheck" bash scripts/run-typecheck.sh
+
+run_step "Check reviewer protocols" bash scripts/check-reviewer-protocols.sh
+
+run_step "Check reviewer protocol wiring" bash scripts/check-reviewer-protocol-wiring.sh
+
+run_step "Check task review metadata for active and todo tasks" bash scripts/check-task-review-metadata.sh
+
+run_step "Check deterministic active-task closeout state" bash scripts/check-active-task-closeout.sh
+
+run_step "Check Codex Stop review hook smoke scenarios" bash scripts/check-codex-stop-review-hook.sh
 
 run_step "Check dependency boundaries and cycles" pnpm depcruise
 
@@ -72,5 +85,12 @@ run_step "Run API coverage" env \
 run_step "Build web" env \
   VITE_API_URL="$VITE_API_URL" \
   pnpm --filter @masters/web build
+
+run_step "Install Playwright browser" \
+  pnpm --filter @masters/web exec playwright install chromium
+
+run_step "Run public web UX contracts" env \
+  VITE_API_URL="$VITE_API_URL" \
+  pnpm --filter @masters/web exec playwright test e2e/public-entry-auth.spec.ts e2e/ux-contract.spec.ts --project=chromium
 
 printf '\nLocal CI mirror completed successfully.\n'

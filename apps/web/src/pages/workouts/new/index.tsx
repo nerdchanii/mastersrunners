@@ -11,16 +11,19 @@ import {
   Route,
   Upload,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { DatePickerField } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 import { useWorkoutEntry } from "./use-workout-entry";
 
@@ -60,11 +63,28 @@ export default function NewWorkoutPage() {
   } = useWorkoutEntry();
 
   return (
-    <div className="container max-w-3xl py-6">
+    <div className="container max-w-3xl py-6 pb-32">
       <PageHeader
         title="새 기록 추가"
         description="훈련 파일을 업로드하거나 직접 기록을 입력하세요."
       />
+
+      <div className="mt-4 inline-flex rounded-full bg-muted p-1">
+        <Link
+          to="/posts/new"
+          className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          게시글
+        </Link>
+        <Link
+          to="/workouts/new"
+          className={cn(
+            "rounded-full bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm",
+          )}
+        >
+          운동 기록
+        </Link>
+      </div>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         {error && (
@@ -278,13 +298,7 @@ export default function NewWorkoutPage() {
                   <Label htmlFor="date-manual">
                     날짜 <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    type="date"
-                    id="date-manual"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    required
-                  />
+                  <DatePickerField id="date-manual" value={date} onChange={setDate} />
                 </div>
 
                 <div className="space-y-2">
@@ -437,16 +451,19 @@ export default function NewWorkoutPage() {
           </Card>
         )}
 
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting}>
-            취소
-          </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting || (activeTab === "file" && !workoutCreated && !parsedData)}
-          >
-            {isSubmitting ? "저장 중..." : workoutCreated ? "완료" : "저장"}
-          </Button>
+        <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-20 rounded-3xl border border-border/60 bg-background/95 p-3 shadow-lg backdrop-blur md:bottom-4">
+          <div className="flex gap-3">
+            <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting}>
+              취소
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={isSubmitting || (activeTab === "file" && !workoutCreated && !parsedData)}
+            >
+              {isSubmitting ? "저장 중..." : workoutCreated ? "완료" : "저장"}
+            </Button>
+          </div>
         </div>
       </form>
     </div>

@@ -1,0 +1,22 @@
+{
+  "task_id": "I-0016-129",
+  "reviewer": "frontend-reviewer",
+  "decision": "approved",
+  "tool": "codex-subagent-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/frontend-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/frontend-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/frontend-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/frontend-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-05-04T09:43:03Z",
+  "findings": [],
+  "residual_risks": [
+    "The final product direction intentionally relies on browser back for routed board post detail. Deep-linked post detail should still receive manual QA in embedded or reduced-browser-chrome contexts."
+  ]
+}

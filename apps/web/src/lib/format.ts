@@ -24,6 +24,7 @@ export function formatDurationKorean(seconds: number): string {
 
 /** sec/km → pace string (e.g. "5'30\"") */
 export function formatPace(secPerKm: number): string {
+  if (!secPerKm || isNaN(secPerKm) || !isFinite(secPerKm)) return "-'--\"";
   const min = Math.floor(secPerKm / 60);
   const sec = Math.round(secPerKm % 60);
   return `${min}'${sec.toString().padStart(2, "0")}"`;

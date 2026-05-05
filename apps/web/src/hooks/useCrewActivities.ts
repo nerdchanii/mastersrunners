@@ -30,6 +30,7 @@ export interface ActivityDetail {
   createdAt: string;
   qrCode: string;
   activityType: string; // "OFFICIAL" | "POP_UP"
+  activityIcon: string | null;
   status: string; // "SCHEDULED" | "ACTIVE" | "COMPLETED" | "CANCELLED"
   completedAt: string | null;
   workoutTypeId: string | null;
@@ -86,6 +87,7 @@ export function useUpdateActivity() {
         location?: string;
         activityDate?: string;
         activityType?: string;
+        activityIcon?: string;
       };
     }) =>
       api.fetch(`/crews/${crewId}/activities/${activityId}`, {

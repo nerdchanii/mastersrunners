@@ -86,9 +86,19 @@ describe("PostRepository", () => {
           workouts: {
             include: {
               workout: {
-                include: {
-                  workoutType: true,
-                },
+                select: expect.objectContaining({
+                  id: true,
+                  distance: true,
+                  duration: true,
+                  pace: true,
+                  date: true,
+                  encodedPolyline: true,
+                  elevationGain: true,
+                  avgHeartRate: true,
+                  avgCadence: true,
+                  calories: true,
+                  workoutType: expect.any(Object),
+                }),
               },
             },
           },
@@ -115,6 +125,18 @@ describe("PostRepository", () => {
       });
       expect(result).toBeNull();
     });
+
+    it("selects workout encodedPolyline from Workout instead of the route relation", async () => {
+      mockDatabaseService.prisma.post.findFirst.mockResolvedValue(null);
+
+      await repository.findById("post-123");
+
+      const workoutSelect =
+        mockDatabaseService.prisma.post.findFirst.mock.calls[0][0].include.workouts.include.workout
+          .select;
+      expect(workoutSelect).toHaveProperty("encodedPolyline", true);
+      expect(workoutSelect).not.toHaveProperty("route");
+    });
   });
 
   describe("findByUser", () => {
@@ -132,8 +154,23 @@ describe("PostRepository", () => {
         where: {
           userId,
           deletedAt: null,
+          visibility: "PUBLIC",
         },
-        include: expect.any(Object),
+        include: expect.objectContaining({
+          workouts: {
+            include: {
+              workout: {
+                select: expect.objectContaining({
+                  encodedPolyline: true,
+                  elevationGain: true,
+                  avgHeartRate: true,
+                  avgCadence: true,
+                  calories: true,
+                }),
+              },
+            },
+          },
+        }),
         orderBy: { createdAt: "desc" },
         take: 20,
       });
@@ -152,13 +189,74 @@ describe("PostRepository", () => {
         where: {
           userId,
           deletedAt: null,
+          visibility: "PUBLIC",
         },
-        include: expect.any(Object),
+        include: expect.objectContaining({
+          workouts: {
+            include: {
+              workout: {
+                select: expect.objectContaining({
+                  encodedPolyline: true,
+                  elevationGain: true,
+                  avgHeartRate: true,
+                  avgCadence: true,
+                  calories: true,
+                }),
+              },
+            },
+          },
+        }),
         orderBy: { createdAt: "desc" },
         take: 15,
         skip: 1,
         cursor: { id: cursor },
       });
+    });
+
+    it("should allow owners to fetch all of their posts", async () => {
+      const userId = "user-123";
+      mockDatabaseService.prisma.post.findMany.mockResolvedValue([]);
+
+      await repository.findByUser(userId, { currentUserId: userId });
+
+      expect(mockDatabaseService.prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            userId,
+            deletedAt: null,
+          },
+        }),
+      );
+    });
+
+    it("should restrict signed-in non-followers to public and accepted-follower posts", async () => {
+      const userId = "author-1";
+      mockDatabaseService.prisma.post.findMany.mockResolvedValue([]);
+
+      await repository.findByUser(userId, { currentUserId: "viewer-1" });
+
+      expect(mockDatabaseService.prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            userId,
+            deletedAt: null,
+            OR: [
+              { visibility: "PUBLIC" },
+              {
+                visibility: "FOLLOWERS",
+                user: {
+                  followers: {
+                    some: {
+                      followerId: "viewer-1",
+                      status: "ACCEPTED",
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        }),
+      );
     });
   });
 
@@ -180,7 +278,21 @@ describe("PostRepository", () => {
           userId: { in: followingIds },
           deletedAt: null,
         },
-        include: expect.any(Object),
+        include: expect.objectContaining({
+          workouts: {
+            include: {
+              workout: {
+                select: expect.objectContaining({
+                  encodedPolyline: true,
+                  elevationGain: true,
+                  avgHeartRate: true,
+                  avgCadence: true,
+                  calories: true,
+                }),
+              },
+            },
+          },
+        }),
         orderBy: { createdAt: "desc" },
         take: limit,
         skip: 1,

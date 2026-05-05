@@ -14,7 +14,9 @@
     "dev": "tsup --watch",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "clean": "rm -rf dist generated",
     "postinstall": "node ../../scripts/run-if-bin.mjs prisma generate"

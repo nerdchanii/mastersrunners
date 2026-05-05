@@ -94,7 +94,7 @@ export default function WorkoutCard({
               <MiniRouteMap
                 encodedPolyline={workout.encodedPolyline}
                 size={64}
-                strokeColor="hsl(var(--primary))"
+                strokeColor="var(--primary)"
                 strokeWidth={2}
                 className="shrink-0 opacity-75 mt-1"
               />

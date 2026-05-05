@@ -242,6 +242,82 @@ describe("GpxParserService", () => {
       expect(result.maxCadence).toBe(90);
     });
 
+    it("should prefer native gpxdata distance and parse gpxdata heart rate and cadence", async () => {
+      const gpxDataGpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="TestApp" xmlns:gpxdata="http://www.cluetrust.com/XML/GPXDATA/1/0">
+  <trk>
+    <trkseg>
+      <trkpt lat="37.7749" lon="-122.4194">
+        <time>2026-02-16T10:00:00Z</time>
+        <extensions>
+          <gpxdata:hr>145</gpxdata:hr>
+          <gpxdata:cadence>84</gpxdata:cadence>
+          <gpxdata:distance>0</gpxdata:distance>
+        </extensions>
+      </trkpt>
+      <trkpt lat="37.7750" lon="-122.4195">
+        <time>2026-02-16T10:05:00Z</time>
+        <extensions>
+          <gpxdata:hr>155</gpxdata:hr>
+          <gpxdata:cadence>88</gpxdata:cadence>
+          <gpxdata:distance>1000</gpxdata:distance>
+        </extensions>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>`;
+
+      const result = await service.parse(gpxDataGpx);
+
+      expect(result.distance).toBe(1000);
+      expect(result.duration).toBe(300);
+      expect(result.avgPace).toBe(300);
+      expect(result.avgHeartRate).toBe(150);
+      expect(result.maxHeartRate).toBe(155);
+      expect(result.avgCadence).toBe(86);
+      expect(result.maxCadence).toBe(88);
+      expect(result.gpsTrack?.[0]).toMatchObject({ heartRate: 145, cadence: 84 });
+      expect(result.gpsTrack?.[1]).toMatchObject({ heartRate: 155, cadence: 88 });
+    });
+
+    it("should ignore malformed numeric extension values instead of propagating NaN", async () => {
+      const malformedMetricsGpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="TestApp" xmlns:gpxdata="http://www.cluetrust.com/XML/GPXDATA/1/0">
+  <trk>
+    <trkseg>
+      <trkpt lat="37.7749" lon="-122.4194">
+        <ele>oops</ele>
+        <time>2026-02-16T10:00:00Z</time>
+        <extensions>
+          <gpxdata:hr>bad</gpxdata:hr>
+          <gpxdata:cadence>nan</gpxdata:cadence>
+          <gpxdata:distance>zeroish</gpxdata:distance>
+        </extensions>
+      </trkpt>
+      <trkpt lat="37.7750" lon="-122.4195">
+        <ele>101.5</ele>
+        <time>2026-02-16T10:05:00Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>`;
+
+      const result = await service.parse(malformedMetricsGpx);
+
+      expect(result.distance).toBeGreaterThan(0);
+      expect(Number.isFinite(result.distance)).toBe(true);
+      expect(result.elevationGain).toBeUndefined();
+      expect(result.avgHeartRate).toBeUndefined();
+      expect(result.maxHeartRate).toBeUndefined();
+      expect(result.avgCadence).toBeUndefined();
+      expect(result.maxCadence).toBeUndefined();
+      expect(result.gpsTrack?.[0]).toEqual({
+        lat: 37.7749,
+        lon: -122.4194,
+        timestamp: new Date("2026-02-16T10:00:00Z"),
+      });
+    });
+
     it("should parse GPX with all extensions (elevation, heart rate, cadence)", async () => {
       const fullGpx = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="TestApp" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">

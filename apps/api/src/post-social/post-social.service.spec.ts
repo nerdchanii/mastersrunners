@@ -2,6 +2,7 @@ import { ConflictException, ForbiddenException, NotFoundException } from "@nestj
 import { Test } from "@nestjs/testing";
 
 import { BlockRepository } from "../block/repositories/block.repository";
+import { FollowRepository } from "../follow/repositories/follow.repository";
 
 import { PostSocialRepository } from "./repositories/post-social.repository";
 import { PostSocialService } from "./post-social.service";
@@ -15,10 +16,16 @@ const mockPostSocialRepository = {
   deleteComment: jest.fn(),
   getComments: jest.fn(),
   findCommentById: jest.fn(),
+  findPostById: jest.fn(),
 };
 
 const mockBlockRepository = {
   getBlockedUserIds: jest.fn(),
+  isBlocked: jest.fn(),
+};
+
+const mockFollowRepository = {
+  findFollow: jest.fn(),
 };
 
 describe("PostSocialService", () => {
@@ -27,11 +34,19 @@ describe("PostSocialService", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     mockBlockRepository.getBlockedUserIds.mockResolvedValue([]);
+    mockBlockRepository.isBlocked.mockResolvedValue(false);
+    mockFollowRepository.findFollow.mockResolvedValue(null);
+    mockPostSocialRepository.findPostById.mockResolvedValue({
+      id: "post-456",
+      userId: "user-1",
+      visibility: "PUBLIC",
+    });
     const module = await Test.createTestingModule({
       providers: [
         PostSocialService,
         { provide: PostSocialRepository, useValue: mockPostSocialRepository },
         { provide: BlockRepository, useValue: mockBlockRepository },
+        { provide: FollowRepository, useValue: mockFollowRepository },
       ],
     }).compile();
     service = module.get(PostSocialService);
@@ -100,6 +115,20 @@ describe("PostSocialService", () => {
 
       expect(mockPostSocialRepository.isLiked).toHaveBeenCalledWith(userId, postId);
       expect(result).toBe(true);
+    });
+
+    it("should hide followers-only like status from signed-in non-followers", async () => {
+      mockPostSocialRepository.findPostById.mockResolvedValue({
+        id: "post-456",
+        userId: "author-1",
+        visibility: "FOLLOWERS",
+      });
+
+      await expect(service.isLiked("viewer-1", "post-456")).rejects.toThrow(
+        new NotFoundException("게시글을 찾을 수 없습니다."),
+      );
+      expect(mockFollowRepository.findFollow).toHaveBeenCalledWith("viewer-1", "author-1");
+      expect(mockPostSocialRepository.isLiked).not.toHaveBeenCalled();
     });
   });
 
@@ -250,6 +279,56 @@ describe("PostSocialService", () => {
   });
 
   describe("getComments", () => {
+    it("should hide non-public post comments from anonymous viewers", async () => {
+      const postId = "post-456";
+      mockPostSocialRepository.findPostById.mockResolvedValue({
+        id: postId,
+        userId: "user-1",
+        visibility: "FOLLOWERS",
+      });
+
+      await expect(service.getComments(postId)).rejects.toThrow(
+        new NotFoundException("게시글을 찾을 수 없습니다."),
+      );
+      expect(mockPostSocialRepository.getComments).not.toHaveBeenCalled();
+    });
+
+    it("should hide followers-only post comments from signed-in non-followers", async () => {
+      const postId = "post-456";
+      mockPostSocialRepository.findPostById.mockResolvedValue({
+        id: postId,
+        userId: "author-1",
+        visibility: "FOLLOWERS",
+      });
+
+      await expect(service.getComments(postId, "viewer-1")).rejects.toThrow(
+        new NotFoundException("게시글을 찾을 수 없습니다."),
+      );
+      expect(mockFollowRepository.findFollow).toHaveBeenCalledWith("viewer-1", "author-1");
+      expect(mockPostSocialRepository.getComments).not.toHaveBeenCalled();
+    });
+
+    it("should allow followers-only post comments for accepted followers", async () => {
+      const postId = "post-456";
+      mockPostSocialRepository.findPostById.mockResolvedValue({
+        id: postId,
+        userId: "author-1",
+        visibility: "FOLLOWERS",
+      });
+      mockFollowRepository.findFollow.mockResolvedValue({ status: "ACCEPTED" });
+      mockPostSocialRepository.getComments.mockResolvedValue([]);
+
+      await service.getComments(postId, "viewer-1");
+
+      expect(mockFollowRepository.findFollow).toHaveBeenCalledWith("viewer-1", "author-1");
+      expect(mockPostSocialRepository.getComments).toHaveBeenCalledWith(
+        postId,
+        undefined,
+        undefined,
+        [],
+      );
+    });
+
     it("should delegate to postSocialRepo.getComments with all parameters", async () => {
       const postId = "post-456";
       const cursor = "comment-10";
@@ -306,6 +385,22 @@ describe("PostSocialService", () => {
         undefined,
         blockedIds,
       );
+    });
+
+    it("should reject blocked viewers even when the post is public", async () => {
+      const postId = "post-456";
+      mockPostSocialRepository.findPostById.mockResolvedValue({
+        id: postId,
+        userId: "author-1",
+        visibility: "PUBLIC",
+      });
+      mockBlockRepository.isBlocked.mockResolvedValue(true);
+
+      await expect(service.getComments(postId, "viewer-1")).rejects.toThrow(
+        new ForbiddenException("차단된 사용자의 게시글입니다."),
+      );
+      expect(mockBlockRepository.getBlockedUserIds).not.toHaveBeenCalled();
+      expect(mockPostSocialRepository.getComments).not.toHaveBeenCalled();
     });
 
     it("should not call blockRepo when currentUserId is not provided", async () => {

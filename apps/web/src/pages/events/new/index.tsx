@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { eventKeys } from "@/hooks/useEvents";
-import { api } from "@/lib/api-client";
+
+import { createEvent } from "./event-create-api";
 
 export default function NewEventPage() {
   const navigate = useNavigate();
@@ -47,10 +48,7 @@ export default function NewEventPage() {
       if (location.trim()) body.location = location.trim();
       if (maxParticipants) body.maxParticipants = Number(maxParticipants);
 
-      const created = await api.fetch<{ id: string }>("/events", {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
+      const created = await createEvent(body);
       queryClient.invalidateQueries({ queryKey: eventKeys.all });
       toast.success("대회가 등록되었습니다.");
       navigate(`/events/${created.id}`);

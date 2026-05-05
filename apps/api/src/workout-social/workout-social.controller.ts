@@ -2,6 +2,8 @@ import { Body, Controller, Delete, Get, Param, Post, Query, Req } from "@nestjs/
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
+import { CursorLimitQueryDto } from "../common/dto/cursor-limit-query.dto.js";
+
 import { CreateWorkoutCommentDto } from "./dto/create-workout-comment.dto.js";
 import { WorkoutSocialService } from "./workout-social.service.js";
 
@@ -43,12 +45,10 @@ export class WorkoutSocialController {
   async getComments(
     @Param("workoutId") workoutId: string,
     @Req() req: Request,
-    @Query("cursor") cursor?: string,
-    @Query("limit") limit?: string,
+    @Query() query: CursorLimitQueryDto,
   ) {
     const { userId } = req.user as { userId: string };
-    const parsedLimit = limit ? parseInt(limit, 10) : 20;
-    return this.service.getComments(workoutId, userId, cursor, parsedLimit);
+    return this.service.getComments(workoutId, userId, query.cursor, query.resolveOptionalLimit());
   }
 
   @Delete(":workoutId/comments/:commentId")

@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const PLAYWRIGHT_PORT = 3100;
+const PLAYWRIGHT_BASE_URL = `http://127.0.0.1:${PLAYWRIGHT_PORT}`;
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -9,7 +12,7 @@ export default defineConfig({
   reporter: "html",
   timeout: 15000,
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: PLAYWRIGHT_BASE_URL,
     trace: "on-first-retry",
     actionTimeout: 10000,
   },
@@ -20,8 +23,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
+    command: `pnpm exec vite --host 127.0.0.1 --port ${PLAYWRIGHT_PORT}`,
+    url: PLAYWRIGHT_BASE_URL,
+    reuseExistingServer: false,
   },
 });

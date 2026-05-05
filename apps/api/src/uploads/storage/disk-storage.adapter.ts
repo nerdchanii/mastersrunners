@@ -61,7 +61,7 @@ export class DiskStorageAdapter implements StorageAdapter {
     }
   }
 
-  async saveFile(key: string, buffer: Buffer): Promise<void> {
+  async saveFile(key: string, buffer: Buffer, _contentType?: string): Promise<void> {
     const filePath = join(this.storageDir, key);
     await fs.mkdir(dirname(filePath), { recursive: true });
     await fs.writeFile(filePath, buffer);

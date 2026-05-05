@@ -2,10 +2,12 @@ import { BadRequestException, Body, Controller, Delete, Param, Post, Req } from 
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
+import { ParseUploadDto } from "./dto/parse-upload.dto.js";
+import { PresignUploadDto } from "./dto/presign-upload.dto.js";
 import { UploadsService } from "./uploads.service.js";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const ALLOWED_FILE_TYPES = [...ALLOWED_IMAGE_TYPES, "application/octet-stream"]; // octet-stream for FIT/GPX
+const ALLOWED_PUBLIC_ASSET_FOLDERS = new Set(["images", "posts", "profiles"]);
 
 @ApiTags("Uploads")
 @Controller("uploads")
@@ -13,49 +15,33 @@ export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}
 
   @Post("presign")
-  async getPresignedUrl(
-    @Req() req: Request,
-    @Body() body: { filename: string; contentType: string; folder?: string },
-  ) {
+  async getPresignedUrl(@Req() req: Request, @Body() dto: PresignUploadDto) {
     const { userId } = req.user as { userId: string };
-    const { filename, contentType, folder = "images" } = body;
+    const folder = dto.folder ?? "images";
 
-    if (!filename || !contentType) {
-      throw new BadRequestException("filename and contentType are required");
+    if (!ALLOWED_PUBLIC_ASSET_FOLDERS.has(folder)) {
+      throw new BadRequestException("Unsupported upload folder");
     }
 
-    if (folder === "images" && !ALLOWED_IMAGE_TYPES.includes(contentType)) {
+    if (!ALLOWED_IMAGE_TYPES.includes(dto.contentType)) {
       throw new BadRequestException("Unsupported image type");
     }
 
-    if (!ALLOWED_FILE_TYPES.includes(contentType)) {
-      throw new BadRequestException("Unsupported file type");
-    }
-
-    const key = this.uploadsService.generateKey(userId, folder, filename);
-    return this.uploadsService.getUploadUrl(key, contentType);
+    return this.uploadsService.createPublicAssetUploadTarget(
+      userId,
+      folder,
+      dto.filename,
+      dto.contentType,
+    );
   }
 
   @Post("parse")
-  async parseFile(
-    @Req() req: Request,
-    @Body() body: { fileKey: string; fileType: string; originalFileName: string },
-  ) {
+  async parseFile(@Req() req: Request, @Body() dto: ParseUploadDto) {
     const { userId } = req.user as { userId: string };
-    const { fileKey, fileType, originalFileName } = body;
-
-    if (!fileKey || !fileType || !originalFileName) {
-      throw new BadRequestException("fileKey, fileType, and originalFileName are required");
-    }
-
-    if (fileType !== "FIT" && fileType !== "GPX") {
-      throw new BadRequestException("fileType must be FIT or GPX");
-    }
-
     return this.uploadsService.parseAndCreateWorkout(userId, {
-      fileKey,
-      fileType: fileType as "FIT" | "GPX",
-      originalFileName,
+      fileKey: dto.fileKey,
+      fileType: dto.fileType,
+      originalFileName: dto.originalFileName,
     });
   }
 

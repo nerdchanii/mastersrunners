@@ -2,7 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/commo
 
 import { UserRepository } from "../auth/repositories/user.repository.js";
 import { BlockRepository } from "../block/repositories/block.repository.js";
-import { DatabaseService } from "../database/database.service.js";
+import { CrewMemberRepository } from "../crews/repositories/crew-member.repository.js";
 import { FollowRepository } from "../follow/repositories/follow.repository.js";
 import { WorkoutRepository } from "../workouts/repositories/workout.repository.js";
 
@@ -15,7 +15,7 @@ export class ProfileService {
     private readonly workoutRepo: WorkoutRepository,
     private readonly blockRepo: BlockRepository,
     private readonly followRepo: FollowRepository,
-    private readonly db: DatabaseService,
+    private readonly crewMemberRepo: CrewMemberRepository,
   ) {}
 
   async getProfile(userId: string, currentUserId?: string) {
@@ -32,18 +32,6 @@ export class ProfileService {
       throw new NotFoundException("사용자를 찾을 수 없습니다.");
     }
 
-    const [stats, followersCount, followingCount, postCount] = await Promise.all([
-      this.workoutRepo.aggregateByUser(userId),
-      this.followRepo.countFollowers(userId),
-      this.followRepo.countFollowing(userId),
-      this.db.prisma.post.count({ where: { userId, deletedAt: null } }),
-    ]);
-
-    const totalWorkouts = stats._count;
-    const totalDistance = stats._sum.distance ?? 0;
-    const totalDuration = stats._sum.duration ?? 0;
-    const averagePace = totalDistance > 0 ? totalDuration / (totalDistance / 1000) : 0;
-
     let isFollowing: boolean | undefined;
     let isPending: boolean | undefined;
     if (currentUserId && currentUserId !== userId) {
@@ -52,11 +40,60 @@ export class ProfileService {
       isPending = follow?.status === "PENDING";
     }
 
+    const isOwnProfile = currentUserId === userId;
+    const hasFullAccess = isOwnProfile || !user.isPrivate || isFollowing;
+
+    if (!hasFullAccess) {
+      return {
+        accessLevel: "LOCKED" as const,
+        user: {
+          ...user,
+          backgroundImage: null,
+          bio: null,
+          region: null,
+          subRegion: null,
+          pb5kSeconds: null,
+          pb10kSeconds: null,
+          pbHalfMarathonSeconds: null,
+          pbMarathonSeconds: null,
+        },
+        stats: null,
+        followersCount: null,
+        followingCount: null,
+        crewCount: null,
+        isFollowing,
+        isPending,
+        isPrivate: user.isPrivate,
+      };
+    }
+
+    const [followersCount, followingCount, postCount, crewCount, workoutStats] = await Promise.all([
+      this.followRepo.countFollowers(userId),
+      this.followRepo.countFollowing(userId),
+      this.userRepo.countVisiblePostsByUser(userId, currentUserId),
+      isOwnProfile
+        ? this.crewMemberRepo.countActiveCrewsForUser(userId)
+        : this.crewMemberRepo.countPublicCrewsForUser(userId),
+      isOwnProfile
+        ? this.workoutRepo.aggregateByUser(userId)
+        : Promise.resolve({
+            _count: 0,
+            _sum: { distance: 0, duration: 0 },
+          }),
+    ]);
+
+    const totalWorkouts = workoutStats._count;
+    const totalDistance = workoutStats._sum.distance ?? 0;
+    const totalDuration = workoutStats._sum.duration ?? 0;
+    const averagePace = totalDistance > 0 ? totalDuration / (totalDistance / 1000) : 0;
+
     return {
+      accessLevel: "FULL" as const,
       user,
       stats: { totalWorkouts, totalDistance, totalDuration, averagePace, postCount },
       followersCount,
       followingCount,
+      crewCount,
       isFollowing,
       isPending,
       isPrivate: user.isPrivate,
@@ -73,17 +110,8 @@ export class ProfileService {
   }
 
   async deleteAccount(userId: string) {
-    // 팔로우 관계 삭제
-    await this.db.prisma.follow.deleteMany({
-      where: {
-        OR: [{ followerId: userId }, { followingId: userId }],
-      },
-    });
-
-    // 크루 멤버십 삭제
-    await this.db.prisma.crewMember.deleteMany({
-      where: { userId },
-    });
+    await this.followRepo.deleteAllForUser(userId);
+    await this.crewMemberRepo.deleteAllForUser(userId);
 
     // User soft delete + 개인정보 익명화
     await this.userRepo.softDelete(userId);

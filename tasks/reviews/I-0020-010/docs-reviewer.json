@@ -1,0 +1,23 @@
+{
+  "task_id": "I-0020-010",
+  "reviewer": "docs-reviewer",
+  "decision": "approved",
+  "tool": "codex-manual-protocol-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/docs-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/docs-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/docs-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/docs-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-05-05T08:18:51Z",
+  "findings": [],
+  "residual_risks": [
+    "Archive tasks intentionally preserve historical Storybook references as audit history, so future docs work should keep those references clearly marked as historical rather than current instructions.",
+    "Reviewer subagent spawning was attempted in-session but blocked by an agent thread-limit error, so this artifact was produced with the same protocol as an in-session fallback."
+  ]
+}

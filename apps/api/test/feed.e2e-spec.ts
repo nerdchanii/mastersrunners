@@ -1,7 +1,7 @@
 import type { INestApplication } from "@nestjs/common";
 
 import { authRequest, createTestUser } from "./helpers/auth.helper";
-import { cleanDatabase, closeTestApp, createTestApp } from "./setup";
+import { cleanDatabase, closeTestApp, createTestApp, getDbService } from "./setup";
 
 describe("Feed (E2E)", () => {
   let app: INestApplication;
@@ -33,7 +33,11 @@ describe("Feed (E2E)", () => {
       // Poster creates public posts
       await authRequest(app, poster.accessToken)
         .post("/api/v1/posts")
-        .send({ content: "Poster's first post", visibility: "PUBLIC" });
+        .send({
+          content: "Poster's first post",
+          visibility: "PUBLIC",
+          imageUrls: ["https://pub-554fa59edea143768fe7d87a16310baf.r2.dev/posts/tester/first.png"],
+        });
 
       await authRequest(app, poster.accessToken)
         .post("/api/v1/posts")
@@ -59,6 +63,15 @@ describe("Feed (E2E)", () => {
       // Should NOT contain stranger's posts (not followed)
       const strangerPosts = res.body.items.filter((p: any) => p.userId === stranger.userId);
       expect(strangerPosts.length).toBe(0);
+
+      const imagedPosterPost = posterPosts.find((post: any) => (post.images?.length ?? 0) > 0);
+      expect(imagedPosterPost).toBeDefined();
+      expect(imagedPosterPost.images).toEqual([
+        expect.objectContaining({
+          url: "https://pub-554fa59edea143768fe7d87a16310baf.r2.dev/posts/tester/first.png",
+          order: 0,
+        }),
+      ]);
     });
 
     it("should include own posts in feed", async () => {
@@ -115,6 +128,72 @@ describe("Feed (E2E)", () => {
 
       const runnerWorkouts = res.body.items.filter((w: any) => w.userId === runner.userId);
       expect(runnerWorkouts.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe("Attached workout preview", () => {
+    let viewer: { accessToken: string; userId: string };
+    let poster: { accessToken: string; userId: string };
+
+    beforeAll(async () => {
+      await cleanDatabase();
+
+      viewer = await createTestUser(app, {
+        email: "feed-attachment-viewer@test.local",
+        name: "Attachment Viewer",
+      });
+      poster = await createTestUser(app, {
+        email: "feed-attachment-poster@test.local",
+        name: "Attachment Poster",
+      });
+
+      await authRequest(app, viewer.accessToken)
+        .post(`/api/v1/follow/${poster.userId}`)
+        .expect(201);
+
+      const db = getDbService();
+      const workout = await db.prisma.workout.create({
+        data: {
+          userId: poster.userId,
+          distance: 10000,
+          duration: 3600,
+          pace: 360,
+          date: new Date("2026-04-23T06:00:00.000Z"),
+          startedAt: new Date("2026-04-23T06:00:00.000Z"),
+          finishedAt: new Date("2026-04-23T07:00:00.000Z"),
+          visibility: "PUBLIC",
+          title: "Previewable long run",
+          encodedPolyline: "summary-preview-polyline",
+        },
+      });
+
+      await authRequest(app, poster.accessToken)
+        .post("/api/v1/posts")
+        .send({
+          content: "Workout preview should survive cleanup",
+          visibility: "PUBLIC",
+          workoutIds: [workout.id],
+        })
+        .expect(201);
+    });
+
+    it("keeps attached workout route preview shape in the post feed", async () => {
+      const res = await authRequest(app, viewer.accessToken).get("/api/v1/feed/posts").expect(200);
+
+      const previewPost = res.body.items.find(
+        (post: any) => post.content === "Workout preview should survive cleanup",
+      );
+
+      expect(previewPost).toBeDefined();
+      expect(previewPost.workouts).toHaveLength(1);
+      expect(previewPost.workouts[0].workout).toEqual(
+        expect.objectContaining({
+          title: "Previewable long run",
+          route: { encodedPolyline: "summary-preview-polyline" },
+        }),
+      );
+      expect(previewPost.workouts[0].workout).not.toHaveProperty("detailPath");
+      expect(previewPost.workouts[0].workout).not.toHaveProperty("detailFormatVersion");
     });
   });
 

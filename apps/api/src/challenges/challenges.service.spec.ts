@@ -317,14 +317,16 @@ describe("ChallengesService", () => {
   });
 
   describe("join", () => {
+    const buildActiveChallenge = (challengeId = "challenge-123") => ({
+      id: challengeId,
+      startDate: new Date(Date.now() - 86400000),
+      endDate: new Date(Date.now() + 86400000),
+    });
+
     it("should join challenge if not already joined and dates are valid", async () => {
       const challengeId = "challenge-123";
       const userId = "user-123";
-      const mockChallenge = {
-        id: challengeId,
-        startDate: new Date("2026-03-01"),
-        endDate: new Date("2026-03-31"),
-      };
+      const mockChallenge = buildActiveChallenge(challengeId);
       const mockParticipant = { id: "p1", challengeId, userId };
       mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
       mockChallengeParticipantRepository.findParticipant.mockResolvedValue(null);
@@ -348,11 +350,7 @@ describe("ChallengesService", () => {
     });
 
     it("should throw BadRequestException if already joined", async () => {
-      const mockChallenge = {
-        id: "challenge-123",
-        startDate: new Date("2026-03-01"),
-        endDate: new Date("2026-03-31"),
-      };
+      const mockChallenge = buildActiveChallenge();
       const mockParticipant = { id: "p1", challengeId: "challenge-123", userId: "user-123" };
       mockChallengeRepository.findById.mockResolvedValue(mockChallenge);
       mockChallengeParticipantRepository.findParticipant.mockResolvedValue(mockParticipant);

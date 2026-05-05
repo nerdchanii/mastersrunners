@@ -1,19 +1,21 @@
 ---
 doc_state: current
 owner: frontend
-last_verified: 2026-03-12
+last_verified: 2026-04-28
 sources:
   - apps/web/src/lib/api-client.ts
   - apps/web/src/lib/auth-context.tsx
+  - apps/web/src/lib/realtime-context.tsx
   - apps/web/src/lib/theme-context.tsx
   - apps/web/src/hooks/useNotifications.ts
   - apps/web/src/hooks/useMessages.ts
-  - apps/web/src/hooks/useGroupChat.ts
+  - apps/web/src/hooks/useUnreadCounts.ts
   - apps/web/src/hooks/useEvents.ts
   - apps/web/src/hooks/useChallenges.ts
   - apps/web/src/pages/events/[id]/index.tsx
   - apps/web/src/pages/challenges/[id]/index.tsx
   - apps/web/src/pages/messages/[id]/index.tsx
+  - apps/web/src/pages/messages/[id]/useMessageDetailPage.ts
   - apps/web/src/pages/profile/index.tsx
   - apps/web/src/pages/settings/profile/index.tsx
   - apps/web/src/components/layout/Header.tsx
@@ -25,7 +27,7 @@ sources:
 
 ## Summary
 
-The frontend is in a hybrid state: React Query is the preferred server-state layer, but auth, theme, SSE, and several detail pages still use local component or context state directly.
+The frontend is in a hybrid state: React Query is the preferred server-state layer, but auth, theme, realtime wiring, and several detail pages still use local component or context state directly.
 
 ## Current State Layers
 
@@ -65,20 +67,18 @@ Notable current exceptions still bypass the hook-first pattern with direct `api.
 - `pages/messages/[id]/index.tsx`
 - `pages/profile/index.tsx`
 - `pages/settings/profile/index.tsx`
-- `components/layout/Header.tsx`
-- `components/common/BottomNav.tsx`
 - `components/social/CommentList.tsx`
 
-Realtime state is also distributed:
+Realtime state is centralized:
 
-- `Header` owns DM and notification SSE for unread badges
-- direct-message detail owns its own SSE stream
-- desktop shell and direct-message detail can subscribe to the same DM SSE endpoint at the same time
-- group chat uses polling rather than SSE
+- `RealtimeProvider` owns one shared WebSocket and patches conversation, notification, and unread React Query state from `/realtime` events
+- the same provider revalidates unread snapshots on socket reconnect so shell badges recover after temporary disconnects without reintroducing polling
+- direct, crew, and activity chat screens subscribe their current room over that shared socket
+- `Header` consumes shared unread state and does not open its own realtime connection
 
 ## Current Constraints
 
 - The repo does not yet enforce a zero direct-fetch rule in route components.
 - The exception list above is illustrative, not exhaustive.
-- Badge counts and live update logic are duplicated between desktop and mobile shells.
-- Group chat polling and direct-message SSE use different freshness models.
+- Desktop and mobile shells consume one shared unread-count source backed by the app-level realtime socket.
+- Chat and notification delivery share one transport and remain process-local.

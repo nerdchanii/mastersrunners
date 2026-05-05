@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 
 import { BlockRepository } from "../block/repositories/block.repository.js";
+import { mapPostForRead } from "../posts/post-read.mapper.js";
 
 import { FeedRepository } from "./repositories/feed.repository.js";
 
@@ -11,7 +12,22 @@ export class FeedService {
     private readonly blockRepo: BlockRepository,
   ) {}
 
-  private async getFilteredFollowingIds(userId: string): Promise<string[]> {
+  private sanitizeWorkoutFeedItem<T extends Record<string, unknown>>(
+    workout: T,
+  ): Omit<T, "detailPath" | "detailFormatVersion"> {
+    const {
+      detailPath: _detailPath,
+      detailFormatVersion: _detailFormatVersion,
+      ...safeWorkout
+    } = workout;
+    return safeWorkout;
+  }
+
+  private async getFilteredFollowingIds(userId: string | undefined): Promise<string[]> {
+    if (!userId) {
+      return [];
+    }
+
     const [rawFollowingIds, blockedUserIds] = await Promise.all([
       this.feedRepo.getFollowingIds(userId),
       this.blockRepo.getBlockedUserIds(userId),
@@ -20,7 +36,7 @@ export class FeedService {
     return rawFollowingIds.filter((id) => !blockedSet.has(id));
   }
 
-  async getPostFeed(userId: string, cursor: string | undefined, limit: number) {
+  async getPostFeed(userId: string | undefined, cursor: string | undefined, limit: number) {
     const followingIds = await this.getFilteredFollowingIds(userId);
 
     const posts = await this.feedRepo.getPostFeed({
@@ -35,10 +51,10 @@ export class FeedService {
     const items = rawItems.map((post: (typeof rawItems)[number]) => {
       const { likes, ...rest } = post;
       const likeRows = likes ?? [];
-      return {
+      return mapPostForRead({
         ...rest,
         isLiked: likeRows.length > 0,
-      };
+      });
     });
     const nextCursor = hasMore ? items[items.length - 1].id : null;
 
@@ -46,7 +62,7 @@ export class FeedService {
   }
 
   async getWorkoutFeed(
-    userId: string,
+    userId: string | undefined,
     cursor: string | undefined,
     limit: number,
     excludeLinkedToPost?: boolean,
@@ -69,8 +85,9 @@ export class FeedService {
     const items = rawItems.map((workout: (typeof rawItems)[number]) => {
       const { workoutLikes, ...rest } = workout;
       const likeRows = workoutLikes ?? [];
+      const safeWorkout = this.sanitizeWorkoutFeedItem(rest);
       return {
-        ...rest,
+        ...safeWorkout,
         _count: {
           likes: workout._count.workoutLikes,
           comments: workout._count.workoutComments,

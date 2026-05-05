@@ -2,12 +2,19 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from "@
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
+import { FeatureGate } from "../common/decorators/feature-gate.decorator.js";
+import { CursorLimitQueryDto } from "../common/dto/cursor-limit-query.dto.js";
+import { LimitQueryDto } from "../common/dto/limit-query.dto.js";
+
 import { CreateChallengeDto } from "./dto/create-challenge.dto.js";
+import { CreateChallengeTeamDto } from "./dto/create-challenge-team.dto.js";
+import { ListChallengesQueryDto } from "./dto/list-challenges-query.dto.js";
 import { UpdateChallengeDto } from "./dto/update-challenge.dto.js";
 import { UpdateProgressDto } from "./dto/update-progress.dto.js";
 import { ChallengesService } from "./challenges.service.js";
 
 @ApiTags("Challenges")
+@FeatureGate("challenges")
 @Controller("challenges")
 export class ChallengesController {
   constructor(private readonly challengesService: ChallengesService) {}
@@ -23,30 +30,21 @@ export class ChallengesController {
   @ApiOperation({ summary: "챌린지 목록 조회" })
   @ApiResponse({ status: 200, description: "성공" })
   @Get()
-  findAll(
-    @Query("isPublic") isPublic?: string,
-    @Query("crewId") crewId?: string,
-    @Query("cursor") cursor?: string,
-    @Query("limit") limit?: string,
-  ) {
+  findAll(@Query() query: ListChallengesQueryDto) {
     return this.challengesService.findAll({
-      isPublic: isPublic === "true" ? true : isPublic === "false" ? false : undefined,
-      crewId,
-      cursor,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      isPublic: query.isPublic,
+      crewId: query.crewId,
+      cursor: query.cursor,
+      limit: query.resolveOptionalLimit(),
     });
   }
 
   @Get("my")
-  findMyChallenges(
-    @Req() req: Request,
-    @Query("cursor") cursor?: string,
-    @Query("limit") limit?: string,
-  ) {
+  findMyChallenges(@Req() req: Request, @Query() query: CursorLimitQueryDto) {
     const { userId } = req.user as { userId: string };
     return this.challengesService.findMyChallenges(userId, {
-      cursor,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      cursor: query.cursor,
+      limit: query.resolveOptionalLimit(),
     });
   }
 
@@ -91,16 +89,14 @@ export class ChallengesController {
   @ApiOperation({ summary: "챌린지 리더보드 조회" })
   @ApiResponse({ status: 200, description: "성공" })
   @Get(":id/leaderboard")
-  getLeaderboard(@Param("id") id: string, @Query("limit") limit?: string) {
-    return this.challengesService.getLeaderboard(id, limit ? parseInt(limit, 10) : undefined);
+  getLeaderboard(@Param("id") id: string, @Query() query: LimitQueryDto) {
+    return this.challengesService.getLeaderboard(id, query.resolveOptionalLimit());
   }
 
-  // ============ Teams ============
-
   @Post(":id/teams")
-  createTeam(@Param("id") id: string, @Req() req: Request, @Body("teamName") teamName: string) {
+  createTeam(@Param("id") id: string, @Req() req: Request, @Body() dto: CreateChallengeTeamDto) {
     const { userId } = req.user as { userId: string };
-    return this.challengesService.createTeam(id, userId, teamName);
+    return this.challengesService.createTeam(id, userId, dto.teamName);
   }
 
   @Get(":id/teams")

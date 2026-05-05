@@ -9,10 +9,35 @@ export const mockUser = {
   profileImage: null,
   backgroundImage: null,
   bio: "마스터즈 러닝 클럽 멤버",
+  isPrivate: false,
+  workoutSharingDefault: "FOLLOWERS",
+  region: "서울특별시",
+  subRegion: "마포구",
+  pb5kSeconds: 1260,
+  pb10kSeconds: 2700,
+  pbHalfMarathonSeconds: 5940,
+  pbMarathonSeconds: 12900,
   createdAt: "2026-01-01T00:00:00.000Z",
 };
 
 export async function setupAuth(page: Page) {
+  await page.route(`${API_BASE}/config/public`, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        authProviders: {
+          google: true,
+          kakao: true,
+        },
+        features: {
+          challenges: false,
+          events: false,
+        },
+      }),
+    });
+  });
+
   // Mock /auth/me endpoint BEFORE any navigation
   await page.route(`${API_BASE}/auth/me`, (route) => {
     route.fulfill({
@@ -25,20 +50,45 @@ export async function setupAuth(page: Page) {
   // Mock auth refresh endpoint
   await page.route(`${API_BASE}/auth/refresh`, (route) => {
     route.fulfill({
+      status: 204,
+    });
+  });
+
+  await page.route(`${API_BASE}/auth/logout`, (route) => {
+    route.fulfill({
+      status: 204,
+    });
+  });
+
+  await page.route(`${API_BASE}/conversations?limit=100`, (route) => {
+    route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        accessToken: "mock-access-token-new",
-        refreshToken: "mock-refresh-token-new",
+        data: [],
+        nextCursor: null,
       }),
     });
   });
 
-  // Navigate to a page on the origin first to set localStorage
-  await page.goto("/login");
-  await page.evaluate(() => {
-    window.localStorage.setItem("accessToken", "mock-access-token");
-    window.localStorage.setItem("refreshToken", "mock-refresh-token");
+  await page.route(`${API_BASE}/conversations/unread-count`, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 0,
+      }),
+    });
+  });
+
+  await page.route(`${API_BASE}/notifications/unread-count`, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 0,
+      }),
+    });
   });
 }
 
@@ -123,7 +173,7 @@ export const mockWorkoutDetail = {
   workoutFiles: [
     {
       id: "file-1",
-      originalFilename: "morning_run.fit",
+      originalFileName: "morning_run.fit",
       fileType: "FIT",
       fileSize: 245760,
       createdAt: "2026-02-15T09:30:00.000Z",
@@ -134,48 +184,60 @@ export const mockWorkoutDetail = {
       lapNumber: 1,
       distance: 1000,
       duration: 295,
-      avgPace: 295,
-      avgHeartRate: 142,
-      maxHeartRate: 155,
-      avgCadence: 168,
-      calories: 65,
+      pace: 295,
+      avgHeartRate: 158,
+      maxHeartRate: 165,
+      avgCadence: 175,
+      calories: 70,
     },
     {
+      id: "l2",
+      workoutId: "mock1",
       lapNumber: 2,
+      trigger: "AUTO_KM",
       distance: 1000,
       duration: 290,
-      avgPace: 290,
-      avgHeartRate: 148,
-      maxHeartRate: 162,
-      avgCadence: 170,
-      calories: 67,
+      pace: 290,
+      avgHeartRate: 162,
+      maxHeartRate: 168,
+      avgCadence: 176,
+      calories: 72,
     },
     {
+      id: "l3",
+      workoutId: "mock1",
       lapNumber: 3,
+      trigger: "AUTO_KM",
       distance: 1000,
       duration: 298,
-      avgPace: 298,
-      avgHeartRate: 150,
-      maxHeartRate: 165,
-      avgCadence: 171,
-      calories: 66,
+      pace: 298,
+      avgHeartRate: 165,
+      maxHeartRate: 172,
+      avgCadence: 174,
+      calories: 75,
     },
     {
+      id: "l4",
+      workoutId: "mock1",
       lapNumber: 4,
+      trigger: "AUTO_KM",
       distance: 1000,
       duration: 302,
-      avgPace: 302,
-      avgHeartRate: 153,
-      maxHeartRate: 170,
-      avgCadence: 172,
-      calories: 68,
+      pace: 302,
+      avgHeartRate: 168,
+      maxHeartRate: 175,
+      avgCadence: 173,
+      calories: 76,
     },
     {
+      id: "l5",
+      workoutId: "mock1",
       lapNumber: 5,
+      trigger: "AUTO_KM",
       distance: 1000,
       duration: 285,
-      avgPace: 285,
-      avgHeartRate: 158,
+      pace: 285,
+      avgHeartRate: 172,
       maxHeartRate: 178,
       avgCadence: 175,
       calories: 70,

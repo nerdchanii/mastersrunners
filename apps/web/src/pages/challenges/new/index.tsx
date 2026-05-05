@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DatePickerField } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -18,7 +19,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { challengeKeys } from "@/hooks/useChallenges";
-import { api } from "@/lib/api-client";
+
+import { createChallenge } from "./challenge-create-api";
 
 type GoalType = "DISTANCE" | "FREQUENCY" | "STREAK" | "PACE";
 
@@ -91,10 +93,7 @@ export default function NewChallengePage() {
       };
       if (description.trim()) body.description = description.trim();
 
-      const created = await api.fetch<{ id: string }>("/challenges", {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
+      const created = await createChallenge(body);
       queryClient.invalidateQueries({ queryKey: challengeKeys.all });
       toast.success("챌린지가 생성되었습니다.");
       navigate(`/challenges/${created.id}`);
@@ -190,22 +189,17 @@ export default function NewChallengePage() {
                 <Label htmlFor="startDate">
                   시작일 <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  type="date"
-                  id="startDate"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
+                <DatePickerField id="startDate" value={startDate} onChange={setStartDate} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="endDate">
                   종료일 <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  type="date"
+                <DatePickerField
                   id="endDate"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={setEndDate}
+                  min={startDate || undefined}
                 />
               </div>
             </div>

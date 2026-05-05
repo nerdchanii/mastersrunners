@@ -83,6 +83,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
       });
     }
 
+    if (response.headersSent) {
+      this.logger.warn(
+        `headers_already_sent for ${request.method} ${request.url}; skipping json error body`,
+        AllExceptionsFilter.name,
+      );
+      if (!response.writableEnded) {
+        response.end();
+      }
+      return;
+    }
+
     response.status(status).json({
       statusCode: status,
       message: typeof message === "string" ? message : (message as any).message || message,

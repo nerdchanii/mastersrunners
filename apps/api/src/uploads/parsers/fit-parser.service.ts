@@ -67,8 +67,8 @@ export class FitParserService {
         const tracks = fitData.records
           .filter((record: any) => record.position_lat != null && record.position_long != null)
           .map((record: any) => ({
-            lat: this.semicirclesToDegrees(record.position_lat),
-            lon: this.semicirclesToDegrees(record.position_long),
+            lat: record.position_lat,
+            lon: record.position_long,
             timestamp: record.timestamp,
             elevation: record.altitude ?? record.enhanced_altitude,
             heartRate: record.heart_rate,
@@ -155,10 +155,5 @@ export class FitParserService {
         }
       });
     });
-  }
-
-  private semicirclesToDegrees(semicircles: number): number {
-    // FIT files store coordinates in semicircles (2^31 semicircles = 180 degrees)
-    return semicircles * (180 / Math.pow(2, 31));
   }
 }

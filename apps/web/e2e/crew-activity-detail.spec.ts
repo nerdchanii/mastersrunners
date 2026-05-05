@@ -86,6 +86,23 @@ const mockPopUpActivity = {
   createdBy: "user-2",
 };
 
+const mockActivityWithViewerRsvp = {
+  ...mockActivity,
+  attendances: [
+    ...mockActivity.attendances,
+    {
+      id: "att-me",
+      userId: mockUser.id,
+      status: "RSVP",
+      method: null,
+      rsvpAt: "2026-02-16T08:58:00.000Z",
+      checkedAt: null,
+      checkedBy: null,
+      user: { id: mockUser.id, name: mockUser.name, profileImage: null },
+    },
+  ],
+};
+
 const mockCrew = {
   id: mockCrewId,
   name: "서울 러닝 크루",
@@ -248,6 +265,24 @@ test.describe("크루 활동 상세 페이지", () => {
       await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}`);
 
       await expect(page.getByRole("button", { name: "참석 신청" })).toBeVisible();
+    });
+  });
+
+  test.describe("일반 멤버 (MEMBER) - RSVP 후", () => {
+    test.beforeEach(async ({ page }) => {
+      await setupAuth(page);
+      await setupActivityRoutes(page, {
+        activity: mockActivityWithViewerRsvp,
+        crew: mockCrewMemberOnly,
+      });
+    });
+
+    test("수동 체크인 버튼 대신 QR 체크인 진입점이 표시된다", async ({ page }) => {
+      await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}`);
+
+      await expect(page.getByRole("button", { name: "수동 체크인" })).not.toBeVisible();
+      await expect(page.getByRole("button", { name: "QR 체크인" })).toBeVisible();
+      await expect(page.getByText("멤버 체크인은 현장 QR 코드로 진행됩니다.")).toBeVisible();
     });
   });
 

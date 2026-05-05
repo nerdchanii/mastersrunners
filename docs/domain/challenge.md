@@ -1,107 +1,143 @@
+---
+doc_state: current
+owner: product
+last_verified: 2026-03-30
+sources:
+  - packages/database/prisma/schema.prisma
+  - design/backend/events-challenges.md
+  - apps/api/src/challenges/challenges.controller.ts
+  - apps/api/src/challenges/challenges.service.ts
+  - apps/api/src/challenges/repositories/challenge.repository.ts
+  - apps/api/src/challenges/repositories/challenge-participant.repository.ts
+  - apps/api/src/challenges/repositories/challenge-team.repository.ts
+---
+
 # 챌린지 (Challenge)
 
 ## 정의
 
-목표 달성형 이벤트. 유저/크루/플랫폼이 생성하며, 개인 또는 크루 단위로 참여한다.
-워크아웃 등록 시 조건 매칭되면 자동으로 진행률에 반영된다.
+현재 챌린지는 기간과 목표 수치를 가진 참여형 목표 기능이다. 생성자는 항상 사용자이고, 챌린지는 공개 또는 크루 범위로 만들 수 있다. 참여자는 개인 단위로 들어오며 진행률은 `currentValue`로 관리된다.
 
-## 엔티티 구조
+## 현재 생성 입력
 
-### Challenge (챌린지)
+현재 API가 생성/수정에서 직접 다루는 필드는 다음과 같다.
 
-| 필드              | 타입     | 설명                             |
-| ----------------- | -------- | -------------------------------- |
-| id                | UUID     | PK                               |
-| creatorType       | enum     | USER / CREW / PLATFORM           |
-| creatorId         | UUID     | 생성자 (User ID 또는 Crew ID)    |
-| title             | string   | 챌린지 이름                      |
-| description       | string?  | 설명                             |
-| imageUrl          | string?  | 대표 이미지                      |
-| goalType          | enum     | DISTANCE / COUNT / STREAK / PACE |
-| goalValue         | float    | 목표 수치                        |
-| participationUnit | enum     | INDIVIDUAL / CREW                |
-| participationMode | enum     | SOLO / TEAM                      |
-| joinType          | enum     | OPEN / APPROVAL                  |
-| visibility        | enum     | PUBLIC / FOLLOWERS / CREW_ONLY   |
-| startDate         | date     | 시작일                           |
-| endDate           | date     | 종료일                           |
-| createdAt         | datetime | 생성 시각                        |
+| 필드 | 설명 |
+| --- | --- |
+| `title` | 챌린지 제목 |
+| `description` | 설명 |
+| `type` | `DISTANCE`, `FREQUENCY`, `STREAK`, `PACE` |
+| `targetValue` | 목표 수치 |
+| `targetUnit` | `KM`, `COUNT`, `DAYS`, `SEC_PER_KM` |
+| `startDate` / `endDate` | 시작일과 종료일 |
+| `crewId` | 선택적 크루 범위 |
+| `isPublic` | 공개 여부 |
+| `imageUrl` | 대표 이미지 |
 
-### 생성자별 조합 규칙
+현재 서비스는 `creatorId`를 로그인 사용자로 고정하고, 생성 직후 생성자를 자동 참여자로 추가한다.
 
-| 생성자       | 참여 단위            | 참여 모드      | 공개 범위             |
-| ------------ | -------------------- | -------------- | --------------------- |
-| **PLATFORM** | INDIVIDUAL 또는 CREW | SOLO 또는 TEAM | PUBLIC                |
-| **CREW**     | INDIVIDUAL           | SOLO 또는 TEAM | CREW_ONLY 또는 PUBLIC |
-| **CREW**     | CREW (크루 대항)     | SOLO           | PUBLIC                |
-| **USER**     | INDIVIDUAL           | SOLO 또는 TEAM | PUBLIC 또는 FOLLOWERS |
+## Challenge 모델
 
-### 참여 모드 설명
+스키마 기준 현재 필드는 다음과 같다.
 
-| 모드 | 설명                                        |
-| ---- | ------------------------------------------- |
-| SOLO | 각 참여자(개인/크루)가 개별적으로 목표 달성 |
-| TEAM | 챌린지 내에서 팀을 구성하여 팀 단위로 경쟁  |
+- 기본 식별과 설명
+  - `id`
+  - `title`
+  - `description`
+  - `imageUrl`
+- 목표와 기간
+  - `type`
+  - `targetValue`
+  - `targetUnit`
+  - `startDate`
+  - `endDate`
+- 생성자와 범위
+  - `creatorId`
+  - `crewId`
+  - `isPublic`
+- 스키마 확장 필드
+  - `creatorType`
+  - `goalType`
+  - `participationUnit`
+  - `participationMode`
+  - `joinType`
+  - `visibility`
+  - `deletedAt`
 
-## 목표 타입 (goalType)
+### 스키마 확장 필드의 현재 의미
 
-| 타입     | 설명               | 예시                       |
-| -------- | ------------------ | -------------------------- |
-| DISTANCE | 거리 누적 (meters) | "한 달 200km 달리기"       |
-| COUNT    | 횟수               | "이번 달 20회 러닝"        |
-| STREAK   | 연속 일수          | "30일 연속 달리기"         |
-| PACE     | 페이스 달성        | "5:00/km 이내로 10km 완주" |
+위 확장 필드는 스키마에 기본값과 함께 존재하지만, 현재 controller/service 계약은 이 필드들에 대한 별도 분기나 권한 흐름을 노출하지 않는다. 현재 비즈니스 truth는 `creatorType = USER` 전제의 개인 참여 챌린지에 가깝고, 승인형 참여나 플랫폼 생성 챌린지는 현재 문서 기준의 runtime truth가 아니다.
 
-## ChallengeParticipant (참여자)
+## 참여 모델
 
-| 필드            | 타입      | 설명                                               |
-| --------------- | --------- | -------------------------------------------------- |
-| challengeId     | UUID      | FK → Challenge                                     |
-| userId          | UUID?     | FK → User (개인 참여 시)                           |
-| crewId          | UUID?     | FK → Crew (크루 참여 시)                           |
-| challengeTeamId | UUID?     | FK → ChallengeTeam (팀 모드 시)                    |
-| status          | enum      | PENDING / ACTIVE / COMPLETED / WITHDRAWN / REMOVED |
-| progress        | float     | 현재 진행률                                        |
-| joinedAt        | datetime  | 참여 시각                                          |
-| completedAt     | datetime? | 목표 달성 시각                                     |
+### ChallengeParticipant
 
-### 참여 상태
+현재 participant 레코드는 다음 정보를 가진다.
 
-| 상태      | 설명                         |
-| --------- | ---------------------------- |
-| PENDING   | 승인 대기 중 (APPROVAL 모드) |
-| ACTIVE    | 참여 중                      |
-| COMPLETED | 목표 달성                    |
-| WITHDRAWN | 본인 포기                    |
-| REMOVED   | 주최자가 제외                |
+| 필드 | 설명 |
+| --- | --- |
+| `challengeId` | 대상 챌린지 |
+| `userId` | 참여 사용자 |
+| `currentValue` | 현재 진행 수치 |
+| `isCompleted` | 목표 달성 여부 |
+| `completedAt` | 달성 시각 |
+| `status` | 스키마 기본값은 `ACTIVE` |
+| `challengeTeamId` | 선택적 팀 연결 |
+| `joinedAt` | 참여 시각 |
 
-## ChallengeTeam (챌린지 팀)
+### 현재 참여 흐름
 
-팀 모드(TEAM) 시 챌린지 내부에서 편성되는 임시 팀.
+- 참여(`join`)
+  - 종료된 챌린지에는 참여할 수 없다.
+  - 이미 참여 중이면 중복 참여할 수 없다.
+  - 새 participant row를 생성한다.
+- 탈퇴(`leave`)
+  - 현재 구현은 `WITHDRAWN` 상태 전환이 아니라 participant row를 삭제한다.
+- 진행률 갱신(`updateProgress`)
+  - `currentValue`를 직접 갱신한다.
+  - `targetValue` 이상이면 `isCompleted = true`, `completedAt`을 기록한다.
 
-| 필드        | 타입   | 설명           |
-| ----------- | ------ | -------------- |
-| id          | UUID   | PK             |
-| challengeId | UUID   | FK → Challenge |
-| name        | string | 팀 이름        |
+즉, 스키마에는 `status`가 있지만 현재 leave 흐름은 soft state transition보다 hard removal에 가깝다.
 
-## 승인 권한
+## 팀 기능
 
-| 챌린지 생성자 | 참여 승인 권한     |
-| ------------- | ------------------ |
-| USER          | 생성자 본인        |
-| CREW          | 크루 OWNER / ADMIN |
-| PLATFORM      | 시스템 관리자      |
+현재 서비스는 챌린지 내부 팀을 지원한다.
 
-## 자동 집계 규칙
+- `ChallengeTeam`
+  - `challengeId`
+  - `name`
+  - `participants`
+- 현재 API 동작
+  - 참여자 또는 생성자가 팀을 생성할 수 있다.
+  - 참여자는 팀에 합류하거나 팀 연결을 해제할 수 있다.
+  - 팀 리더보드는 participant의 `currentValue` 합계로 계산한다.
 
-- 워크아웃이 등록되면 참여 중인 챌린지 조건과 매칭
-- 조건 충족 시 자동으로 progress 업데이트
-- CREW 참여 시 크루 멤버들의 워크아웃이 합산 집계
-- 크루 대표(OWNER/ADMIN)가 크루 단위 참여를 신청하며, 크루원은 별도 신청 없이 자동 집계
+현재 팀 기능은 챌린지 내부 편성 기능이며, 문서화된 별도 승인 워크플로우나 복잡한 팀 권한 모델은 없다.
 
-## 크루 참여 동작
+## 조회와 리더보드
 
-1. 크루 OWNER/ADMIN이 크루를 챌린지에 참여 등록
-2. 해당 크루의 모든 멤버 워크아웃이 자동으로 크루 합산에 반영
-3. 크루원 개개인은 별도 참여 신청 불필요
+- 목록 조회는 `isPublic`, `crewId`, cursor/limit 기반이다.
+- `my` 목록은 참여 중인 챌린지와 자신의 `currentValue`를 함께 돌려준다.
+- 상세 조회는 현재 사용자 기준으로
+  - `isJoined`
+  - `myProgress`
+    를 계산해 반환한다.
+- 개인 리더보드는 participant `currentValue` 내림차순이다.
+- 팀 리더보드는 팀별 participant 합산 값 기준이다.
+
+## 현재 제약
+
+- 승인형 참여, 플랫폼 생성, richer visibility 정책은 스키마 확장 필드로만 남아 있고 현재 서비스 계약으로 적극 사용되지 않는다.
+- participant `status`의 `WITHDRAWN` 의미는 현재 leave 구현과 완전히 일치하지 않는다. 현재 leave는 레코드 삭제다.
+- 챌린지 진행률은 명시적 업데이트와 workout aggregation service 호출에 의존하며, 완전히 분리된 비동기 플랫폼으로 동작하지는 않는다.
+
+## 삭제와 lifecycle
+
+- 챌린지 삭제
+  - `Challenge.deletedAt`을 채우는 soft delete다.
+- 참가 탈퇴
+  - `ChallengeParticipant` row를 hard delete한다.
+- 팀 삭제
+  - `ChallengeTeam` row를 hard delete한다.
+- 챌린지 삭제 후 정리
+  - participant/team relation은 스키마 cascade에 따라 함께 제거된다.

@@ -1,3 +1,12 @@
+---
+doc_state: current
+owner: product
+last_verified: 2026-04-03
+sources:
+  - packages/database/prisma/schema.prisma
+  - apps/api/src
+---
+
 # 크루 (Crew)
 
 ## 정의
@@ -10,7 +19,7 @@
 
 - `name`
 - `description`
-- `imageUrl`
+- `imageUrl` (`profile image` 역할의 대표 이미지)
 - `coverImageUrl`
 - `location`
 - `region`, `subRegion`
@@ -68,6 +77,9 @@
   - `QR`
   - `MANUAL`
   - `ADMIN_MANUAL`
+- 현재 정책
+  - 일반 멤버의 본인 체크인은 QR 경로를 기준으로 본다.
+  - 수동 체크인은 운영 권한 사용자 기준의 운영 동작으로 취급한다.
 
 ## 크루 콘텐츠
 
@@ -84,11 +96,27 @@
 
 - OWNER/ADMIN
   - 설정, 멤버 관리, 활동 운영, 태그 관리
+  - 안정적인 크루 초대 URL 공유
 - MEMBER
   - 가입 후 활동 참여, 채팅, 일부 활동 생성
 - 정확한 화면 권한은 현재 프론트엔드 route와 백엔드 서비스 규칙이 함께 결정한다.
 
+## 초대 URL
+
+- 현재 운영진 전용 초대 경로는 `GET /crews/:id/invite-link`로 조회한다.
+- 반환되는 안정 경로는 `/crews/:id?invite=1` 형식이다.
+- 초대 링크를 연 사용자가 로그인되지 않았다면, 로그인 후 다시 같은 초대 경로로 복귀해야 한다.
+- 초대 링크는 별도 토큰 기반 초대장이 아니라 기존 크루 join/request 정책 위에 얹힌 운영진 공유 진입점이다.
+
 ## 현재 제약
 
 - 크루 상세 화면은 멤버·활동·태그·통계·게시판·채팅을 한 route에 모은다.
+- 현재 persistence는 `imageUrl`와 `coverImageUrl`를 쓰지만, 제품 의미는 각각 `프로필 이미지`와 `커버 이미지`로 해석한다.
+- 커버 이미지가 비어 있으면 중립 배경을 쓰고, 프로필 이미지를 커버 이미지로 재사용하지 않는다.
 - 도메인 모델은 풍부하지만 UX와 코드 경계는 여전히 무겁다.
+
+## 삭제 규칙
+
+- `Crew` 삭제는 현재 `deletedAt` 기반 soft delete다.
+- 반면 `CrewActivity`, `CrewTag`, 일부 membership/ban 조작은 hard delete 경로를 쓴다.
+- 즉, “크루를 지우면 하위 엔티티도 모두 soft delete 된다”는 현재 truth가 아니다.

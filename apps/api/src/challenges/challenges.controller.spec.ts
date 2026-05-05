@@ -1,4 +1,7 @@
+import { Reflector } from "@nestjs/core";
 import { Test } from "@nestjs/testing";
+
+import { FeatureFlagsService } from "../config/feature-flags.service.js";
 
 import { ChallengesController } from "./challenges.controller.js";
 import { ChallengesService } from "./challenges.service.js";
@@ -25,14 +28,23 @@ const mockChallengesService = {
   getTeamLeaderboard: jest.fn(),
 };
 
+const mockFeatureFlagsService = {
+  isFeatureEnabled: jest.fn(),
+};
+
 describe("ChallengesController", () => {
   let controller: ChallengesController;
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockFeatureFlagsService.isFeatureEnabled.mockReturnValue(true);
     const module = await Test.createTestingModule({
       controllers: [ChallengesController],
-      providers: [{ provide: ChallengesService, useValue: mockChallengesService }],
+      providers: [
+        { provide: ChallengesService, useValue: mockChallengesService },
+        { provide: FeatureFlagsService, useValue: mockFeatureFlagsService },
+        { provide: Reflector, useValue: { getAllAndOverride: jest.fn() } },
+      ],
     }).compile();
     controller = module.get(ChallengesController);
   });
@@ -44,7 +56,9 @@ describe("ChallengesController", () => {
       const expected = { id: "team-1", name: "Team Alpha" };
       mockChallengesService.createTeam.mockResolvedValue(expected);
 
-      const result = await controller.createTeam("challenge-1", mockReq, "Team Alpha");
+      const result = await controller.createTeam("challenge-1", mockReq, {
+        teamName: "Team Alpha",
+      } as any);
 
       expect(mockChallengesService.createTeam).toHaveBeenCalledWith(
         "challenge-1",

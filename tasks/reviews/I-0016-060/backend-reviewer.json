@@ -1,0 +1,23 @@
+{
+  "task_id": "I-0016-060",
+  "reviewer": "backend-reviewer",
+  "decision": "approved",
+  "tool": "codex-manual-protocol-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/backend-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/backend-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/backend-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/backend-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-04-04T15:54:53Z",
+  "findings": [],
+  "residual_risks": [
+    "The profile API now aligns with the current web policy by zeroing foreign-profile workout aggregates, but any future non-web client that wants a different surface will need an explicit new contract instead of reusing this response shape implicitly.",
+    "This task keeps accepted followers and fully public viewers on the same foreign-profile workout policy; if product later wants follower-tier workout visibility, that will require a new API shape rather than toggling the current fields back on."
+  ]
+}

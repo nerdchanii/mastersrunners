@@ -20,8 +20,13 @@ export class RequestLoggingInterceptor implements NestInterceptor {
     const response = http.getResponse<Response>();
     const startedAt = Date.now();
     const requestId = (request.header("x-request-id") || randomUUID()).toString();
+    const isSseRequest =
+      request.headers.accept?.includes("text/event-stream") ||
+      (request.originalUrl || request.url).includes("/sse");
 
-    response.setHeader("x-request-id", requestId);
+    if (!isSseRequest && !response.headersSent) {
+      response.setHeader("x-request-id", requestId);
+    }
 
     return next.handle().pipe(
       finalize(() => {

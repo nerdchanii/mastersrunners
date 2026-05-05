@@ -7,6 +7,7 @@ WORKDIR /app
 
 # Copy workspace config
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY tsconfig.base.json ./
 COPY scripts/ scripts/
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
@@ -42,6 +43,7 @@ WORKDIR /app
 
 # Copy workspace config
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY tsconfig.base.json ./
 COPY scripts/ scripts/
 COPY apps/api/package.json apps/api/
 COPY packages/database/package.json packages/database/

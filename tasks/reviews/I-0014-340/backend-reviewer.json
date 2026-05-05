@@ -1,0 +1,23 @@
+{
+  "task_id": "I-0014-340",
+  "reviewer": "backend-reviewer",
+  "decision": "approved",
+  "tool": "codex-manual-protocol-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/backend-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/backend-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/backend-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/backend-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-04-04T09:27:58Z",
+  "findings": [],
+  "residual_risks": [
+    "The repaired detail contract is directly covered in the service mapping and focused workout e2e coverage, but the new requester-aware social fields are only exercised for PUBLIC visibility; FOLLOWERS visibility still relies on the existing controller logic without new focused e2e coverage.",
+    "The Jest E2E bootstrap shim in apps/api/jest-e2e.config.ts is proven for test/workouts.e2e-spec.ts, but other API e2e suites still depend on that same Prisma runtime mapping and were not part of this focused verification pass."
+  ]
+}

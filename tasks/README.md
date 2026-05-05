@@ -7,10 +7,9 @@
 ```text
 tasks/
   _templates/
-  I-0001-harness-foundation/
-    todo/
-    active/
-    archive/
+  todo/
+  active/
+  archive/
 ```
 
 ## Rules
@@ -22,6 +21,7 @@ tasks/
 - Every task must declare its required specialist reviewers.
 - Every task requires PO review before commit.
 - If a task discovers design divergence it cannot close, it must create a follow-up task instead of weakening design/docs.
+- Initiative grouping is handled by the task filename prefix and the matching initiative document's `Task Breakdown`, not by per-initiative directories.
 
 ## Naming
 
@@ -37,15 +37,22 @@ I-0002-010-meta-eslint-repair.md
 
 ## Lifecycle
 
-1. Claim from `todo/`
-2. Move to `active/`
+1. Create the task in `tasks/todo/`
+2. Move it to `tasks/active/`
 3. Implement and update notes
 4. Run self-review
 5. Run `verify`
 6. Complete specialist review
 7. Complete PO review
-8. Move to `archive/` in the same changeset that finalizes the task
+8. Move it to `tasks/archive/` in the same changeset that finalizes the task
 9. Commit after review and verify are both satisfied
+
+## Relationship to Initiatives
+
+- `design/initiatives/*.md` defines the large change area.
+- Each initiative's `Task Breakdown` is the canonical list of related tasks.
+- A task can be found by its `I-xxxx` prefix regardless of status folder.
+- Tasks should link back to their parent initiative in frontmatter.
 
 ## Divergence Rule
 

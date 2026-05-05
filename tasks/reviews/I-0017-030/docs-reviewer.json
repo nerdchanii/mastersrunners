@@ -1,0 +1,22 @@
+{
+  "task_id": "I-0017-030",
+  "reviewer": "docs-reviewer",
+  "decision": "approved",
+  "tool": "codex-spawn-agent",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/docs-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/docs-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/docs-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/docs-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-04-04T03:57:42Z",
+  "findings": [],
+  "residual_risks": [
+    "review note와 artifact의 reviewer/artifact/decision 필드가 함께 유지되지 않으면 새 closeout gate에서 바로 실패하게 된다."
+  ]
+}

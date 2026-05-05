@@ -1,23 +1,16 @@
 import { ConflictException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
-import { DatabaseService } from "../database/database.service.js";
-
 import { BlockRepository } from "./repositories/block.repository.js";
 import { BlockService } from "./block.service.js";
 
 const mockBlockRepository = {
   block: jest.fn(),
+  blockAndRemoveFollows: jest.fn(),
   unblock: jest.fn(),
   isBlocked: jest.fn(),
   findBlockedByUser: jest.fn(),
   isBlockedBy: jest.fn(),
-};
-
-const mockDatabaseService = {
-  prisma: {
-    $transaction: jest.fn(),
-  },
 };
 
 describe("BlockService", () => {
@@ -26,11 +19,7 @@ describe("BlockService", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
-      providers: [
-        BlockService,
-        { provide: BlockRepository, useValue: mockBlockRepository },
-        { provide: DatabaseService, useValue: mockDatabaseService },
-      ],
+      providers: [BlockService, { provide: BlockRepository, useValue: mockBlockRepository }],
     }).compile();
     service = module.get(BlockService);
   });
@@ -50,21 +39,11 @@ describe("BlockService", () => {
       const blockedId = "user-blocked";
       const mockBlock = { id: "block-1", blockerId, blockedId, createdAt: new Date() };
 
-      mockDatabaseService.prisma.$transaction.mockImplementation(async (cb) => {
-        const mockTx = {
-          block: {
-            create: jest.fn().mockResolvedValue(mockBlock),
-          },
-          follow: {
-            deleteMany: jest.fn().mockResolvedValue({ count: 2 }),
-          },
-        };
-        return cb(mockTx);
-      });
+      mockBlockRepository.blockAndRemoveFollows.mockResolvedValue(mockBlock);
 
       const result = await service.block(blockerId, blockedId);
 
-      expect(mockDatabaseService.prisma.$transaction).toHaveBeenCalledTimes(1);
+      expect(mockBlockRepository.blockAndRemoveFollows).toHaveBeenCalledWith(blockerId, blockedId);
       expect(result).toEqual(mockBlock);
     });
   });

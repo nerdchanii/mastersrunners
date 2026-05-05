@@ -9,15 +9,24 @@ interface User {
   profileImage: string | null;
   backgroundImage: string | null;
   bio: string | null;
+  isPrivate: boolean;
+  workoutSharingDefault: "PRIVATE" | "FOLLOWERS" | "PUBLIC";
+  region: string | null;
+  subRegion: string | null;
+  pb5kSeconds: number | null;
+  pb10kSeconds: number | null;
+  pbHalfMarathonSeconds: number | null;
+  pbMarathonSeconds: number | null;
   createdAt: string;
 }
+export type { User };
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   logout: () => void;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,34 +34,44 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   isAuthenticated: false,
   logout: () => {},
-  refreshUser: async () => {},
+  refreshUser: async () => null,
 });
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+interface AuthProviderProps {
+  children: ReactNode;
+  initialUser?: User | null;
+  disableSessionSync?: boolean;
+}
+
+export function AuthProvider({
+  children,
+  initialUser = null,
+  disableSessionSync = false,
+}: AuthProviderProps) {
+  const [user, setUser] = useState<User | null>(initialUser);
+  const [isLoading, setIsLoading] = useState(!disableSessionSync && initialUser == null);
 
   const refreshUser = useCallback(async () => {
-    if (!api.isAuthenticated()) {
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const userData = await api.fetch<User>("/auth/me");
+      const userData = await api.fetchSession<User>("/auth/me");
       setUser(userData);
+      return userData;
     } catch {
-      api.clearTokens();
       setUser(null);
+      return null;
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    if (disableSessionSync) {
+      setIsLoading(false);
+      return;
+    }
+
     refreshUser();
-  }, [refreshUser]);
+  }, [disableSessionSync, refreshUser]);
 
   useEffect(() => {
     const handleLogout = () => {
@@ -67,8 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    api.clearTokens();
+    void api.logout();
     setUser(null);
+    setIsLoading(false);
     window.location.href = "/login";
   }, []);
 

@@ -63,6 +63,29 @@ export class CrewMemberRepository {
     });
   }
 
+  async countActiveCrewsForUser(userId: string) {
+    return this.db.prisma.crewMember.count({
+      where: {
+        userId,
+        status: "ACTIVE",
+        crew: { deletedAt: null },
+      },
+    });
+  }
+
+  async countPublicCrewsForUser(userId: string) {
+    return this.db.prisma.crewMember.count({
+      where: {
+        userId,
+        status: "ACTIVE",
+        crew: {
+          deletedAt: null,
+          isPublic: true,
+        },
+      },
+    });
+  }
+
   async updateStatus(crewId: string, userId: string, status: string) {
     return this.db.prisma.crewMember.update({
       where: { crewId_userId: { crewId, userId } },
@@ -83,6 +106,12 @@ export class CrewMemberRepository {
         },
       },
       orderBy: { joinedAt: "asc" },
+    });
+  }
+
+  async deleteAllForUser(userId: string) {
+    return this.db.prisma.crewMember.deleteMany({
+      where: { userId },
     });
   }
 }

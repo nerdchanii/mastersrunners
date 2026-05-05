@@ -35,8 +35,8 @@ packages/
   database/   # Prisma schema and database package
   types/      # Shared TypeScript types
 design/       # Technical design, architecture, ADR, initiatives
-docs/         # Domain docs, runbooks, reports, checklists, guides
-tasks/        # Initiative-scoped execution queue
+docs/         # Domain docs, runbooks, guides, reports, history
+tasks/        # Status-scoped execution queue
 scripts/      # Executable helper scripts
 ```
 
@@ -78,7 +78,7 @@ pnpm deploy:verify -- http://localhost:4000
 이 저장소는 에이전트 친화적인 하네스로 정리 중입니다. 문서를 읽을 때는 아래 순서를 권장합니다.
 
 1. [AGENTS.md](./AGENTS.md)
-2. [tasks/](./tasks)
+2. [tasks/active/](./tasks/active) 또는 [tasks/README.md](./tasks/README.md)
 3. [design/](./design)
 4. [docs/domain/](./docs/domain)
 5. [docs/runbooks/environment-and-settings.md](./docs/runbooks/environment-and-settings.md)
@@ -87,8 +87,8 @@ pnpm deploy:verify -- http://localhost:4000
 역할은 다음처럼 나뉩니다.
 
 - `design/`: 프론트엔드, 백엔드, 아키텍처, ADR, initiative
-- `docs/`: 도메인 규칙, 운영 가이드, 보고서, 일반 가이드
-- `tasks/`: 실제 실행 상태
+- `docs/`: 도메인 규칙, 운영 가이드, 기여 가이드, 보고서, 역사성 자료
+- `tasks/`: `todo`, `active`, `archive`로 나뉜 실제 실행 상태
 - `.github/workflows/`, `scripts/`: 실행 가능한 자동화
 
 ## 주요 문서
@@ -100,6 +100,7 @@ pnpm deploy:verify -- http://localhost:4000
 - [docs/runbooks/environment-and-settings.md](./docs/runbooks/environment-and-settings.md): 환경 변수와 런타임 설정의 첫 진입점
 - [docs/runbooks/harness-diagnostics.md](./docs/runbooks/harness-diagnostics.md): 하네스 진단을 언제 어떻게 호출할지
 - [docs/runbooks/deployment.md](./docs/runbooks/deployment.md): 배포 runbook
+- [docs/reports/history/README.md](./docs/reports/history/README.md): 레거시 계획과 과거 설계 입력 보관 위치
 - [design/operating-rules/exceptions.md](./design/operating-rules/exceptions.md): repo 밖에서만 닫을 수 있는 예외 레지스트리
 - [design/initiatives/I-0004-truth-model-cleanup.md](./design/initiatives/I-0004-truth-model-cleanup.md): truth-model cleanup
 - [design/initiatives/I-0005-current-state-design-corpus.md](./design/initiatives/I-0005-current-state-design-corpus.md): current-state design corpus

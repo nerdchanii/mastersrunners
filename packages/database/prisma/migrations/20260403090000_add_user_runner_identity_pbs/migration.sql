@@ -1,0 +1,4 @@
+ALTER TABLE "User" ADD COLUMN "pb5kSeconds" INTEGER;
+ALTER TABLE "User" ADD COLUMN "pb10kSeconds" INTEGER;
+ALTER TABLE "User" ADD COLUMN "pbHalfMarathonSeconds" INTEGER;
+ALTER TABLE "User" ADD COLUMN "pbMarathonSeconds" INTEGER;

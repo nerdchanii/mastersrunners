@@ -1,0 +1,22 @@
+{
+  "task_id": "I-0006-250",
+  "reviewer": "harness-reviewer",
+  "decision": "approved",
+  "tool": "codex-manual-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/harness-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/harness-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/harness-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/harness-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-04-21T17:01:49Z",
+  "findings": [],
+  "residual_risks": [
+    "knip.json에는 아직 stale ignore 힌트가 남아 있으므로, 다음 baseline cleanup 때는 unused ignore entry 정리만 따로 닫는 편이 낫다."
+  ]
+}

@@ -167,14 +167,14 @@ test.describe("QR 체크인 페이지", () => {
       await setupRoutes(page);
     });
 
-    test("카메라 스캔 버튼과 수동 체크인 링크가 표시된다", async ({ page }) => {
+    test("카메라 스캔 버튼과 활동 상세 복귀 링크가 표시된다", async ({ page }) => {
       await page.goto(`/crews/${mockCrewId}/activities/${mockActivityId}/qr-check-in`);
 
       await expect(page.getByText("QR 체크인")).toBeVisible();
       await expect(page.getByText("QR 코드 스캔")).toBeVisible();
       await expect(page.getByRole("button", { name: /카메라로 QR 스캔/ })).toBeVisible();
       await expect(page.getByText("카메라를 사용할 수 없나요?")).toBeVisible();
-      await expect(page.getByRole("button", { name: "수동 체크인으로 이동" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "활동 상세로 돌아가기" })).toBeVisible();
     });
 
     test("활동 정보가 카드에 표시된다", async ({ page }) => {

@@ -5,6 +5,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+VITE_API_URL="${VITE_API_URL:-http://localhost:4000}"
+export VITE_API_URL
+
 find_knip_bin() {
   local root candidate
   root="$(pnpm root)"
