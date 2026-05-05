@@ -6,6 +6,7 @@
     "skipLibCheck": true,
     "strict": true,
     "esModuleInterop": true,
+    "ignoreDeprecations": "6.0",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
