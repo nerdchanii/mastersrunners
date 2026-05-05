@@ -64,6 +64,23 @@ const mockRecommend = [
   },
 ];
 
+const mockSearchUsers = [
+  {
+    id: "user-9",
+    name: "러너 김",
+    email: "runner@example.com",
+    profileImage: null,
+    bio: "주말마다 한강을 달립니다",
+    _count: { followers: 12, following: 8, workouts: 42 },
+    isFollowing: false,
+  },
+];
+
+const mockPopularHashtags = [
+  { tag: "러닝", count: 12 },
+  { tag: "한강", count: 8 },
+];
+
 function setupRoutes(page: import("@playwright/test").Page) {
   return Promise.all([
     page.route(`${API_BASE}/crews/my`, (route) => {
@@ -103,6 +120,20 @@ function setupRoutes(page: import("@playwright/test").Page) {
         body: JSON.stringify(mockSubRegions),
       });
     }),
+    page.route(`${API_BASE}/profile/search*`, (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(mockSearchUsers),
+      });
+    }),
+    page.route(`${API_BASE}/posts/hashtags/popular?limit=10`, (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(mockPopularHashtags),
+      });
+    }),
   ]);
 }
 
@@ -125,6 +156,30 @@ test.describe("크루 탐색", () => {
       await page.getByRole("tab", { name: "크루 찾기" }).click();
 
       await expect(page.getByText("한강 러너스")).toBeVisible();
+    });
+
+    test("데스크톱 shell에서 검색으로 바로 이동할 수 있다", async ({ page }) => {
+      await page.goto("/crews");
+
+      await page.getByTestId("desktop-search-link").click();
+
+      await expect(page).toHaveURL(/\/search$/);
+
+      const input = page.getByPlaceholder("러너 이름 또는 이메일로 검색...");
+      await input.fill("러너");
+
+      await expect(page).toHaveURL(/q=%EB%9F%AC%EB%84%88/);
+      await expect(page.getByText("러너 김")).toBeVisible();
+    });
+
+    test("모바일 shell에서도 검색 entry가 노출된다", async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto("/crews");
+
+      await page.getByTestId("mobile-search-link").click();
+
+      await expect(page).toHaveURL(/\/search$/);
+      await expect(page.getByRole("heading", { name: "검색" })).toBeVisible();
     });
   });
 

@@ -51,7 +51,7 @@ Current docs:
   - `upload-ingestion.md`
 - social feed, interactions, and notifications boundary
   - `social-feed-notifications.md`
-- direct messaging and SSE boundary
+- direct messaging and realtime boundary
   - `messaging-realtime.md`
 - crews, boards, and attendance boundary
   - `crew-platform.md`
@@ -66,4 +66,4 @@ Current docs:
 - External dependencies should stay behind explicit seams such as:
   - `StorageAdapter`
   - repository classes
-  - SSE fan-out services
+  - realtime fan-out services

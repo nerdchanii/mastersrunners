@@ -20,6 +20,8 @@ Use the lane that matches the branch and GitHub environment that produced the un
 
 Prefer `git revert` for code rollback so the failure remains visible in repository history.
 
+Use `docs/runbooks/correction-commit-flow.md` to decide whether the situation needs a forward `fix` commit or an immediate `revert` commit. This runbook covers the rollback branch of that decision.
+
 ## Cloud Run Rollback
 
 ### 1. List recent revisions

@@ -1,0 +1,23 @@
+{
+  "task_id": "I-0016-126",
+  "reviewer": "frontend-reviewer",
+  "decision": "approved",
+  "tool": "codex-manual-protocol-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/frontend-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/frontend-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/frontend-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/frontend-review-checklist/SKILL.md"
+  ],
+  "findings": [],
+  "summary": "no findings. The board tab now reads all visible board post queries, renders a combined feed with explicit announcement labels, and pushes boardId/postId query state before opening post detail. Profile route gutter removal is scoped to /profile and /profile/:id only.",
+  "residual_risks": [
+    "The combined feed merges each board's first page client-side; cross-board pagination would need a separate API/UI task."
+  ],
+  "reviewed_at": "2026-05-04T00:30:00Z"
+}

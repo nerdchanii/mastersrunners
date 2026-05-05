@@ -1,0 +1,5 @@
+interface:
+  display_name: "PO Review Checklist"
+  short_description: "Final review for user value, acceptance criteria, and release risk."
+policy:
+  allow_implicit_invocation: false

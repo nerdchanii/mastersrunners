@@ -2,6 +2,8 @@
 
 Run this checklist after implementation and before specialist review.
 
+Codex Stop-hook review automation only triggers once this checklist has been recorded in the task's `## 셀프 리뷰` section with non-placeholder answers.
+
 ## 1. Scope and Intent
 
 - Does this changeset stay within the task's stated scope?
@@ -42,6 +44,7 @@ Run this checklist after implementation and before specialist review.
 
 - Does the commit subject describe change intent with a normal type such as `feat`, `fix`, `refactor`, `docs`, or `ci`?
 - Did I keep task tracking out of the commit subject and reserve it for trailers?
+- If I am correcting already-shared history, am I using a dedicated `fix` or `revert` task and commit instead of hiding the mistake with rewritten history?
 - Is the task ready to move to `archive/` in the same changeset as the final commit?
 
 ## Recordkeeping
@@ -51,3 +54,4 @@ Capture any important self-review outcome in the task file, especially:
 - unresolved divergence
 - verify limitations
 - reasons for extra reviewer routing
+- whether the task is now a closeout candidate for Stop-hook review automation

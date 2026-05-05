@@ -36,7 +36,16 @@ export class UserRepository {
         email: true,
         name: true,
         profileImage: true,
+        backgroundImage: true,
         bio: true,
+        isPrivate: true,
+        workoutSharingDefault: true,
+        region: true,
+        subRegion: true,
+        pb5kSeconds: true,
+        pb10kSeconds: true,
+        pbHalfMarathonSeconds: true,
+        pbMarathonSeconds: true,
         createdAt: true,
       },
     });
@@ -54,6 +63,12 @@ export class UserRepository {
         bio: true,
         isPrivate: true,
         workoutSharingDefault: true,
+        region: true,
+        subRegion: true,
+        pb5kSeconds: true,
+        pb10kSeconds: true,
+        pbHalfMarathonSeconds: true,
+        pbMarathonSeconds: true,
         createdAt: true,
       },
     });
@@ -62,6 +77,37 @@ export class UserRepository {
   async countPostsByUser(id: string) {
     return this.db.prisma.post.count({
       where: { userId: id, deletedAt: null },
+    });
+  }
+
+  async countVisiblePostsByUser(userId: string, currentUserId?: string) {
+    const visibilityWhere = !currentUserId
+      ? { visibility: "PUBLIC" as const }
+      : currentUserId === userId
+        ? {}
+        : {
+            OR: [
+              { visibility: "PUBLIC" as const },
+              {
+                visibility: "FOLLOWERS" as const,
+                user: {
+                  followers: {
+                    some: {
+                      followerId: currentUserId,
+                      status: "ACCEPTED" as const,
+                    },
+                  },
+                },
+              },
+            ],
+          };
+
+    return this.db.prisma.post.count({
+      where: {
+        userId,
+        deletedAt: null,
+        ...visibilityWhere,
+      },
     });
   }
 
@@ -75,11 +121,17 @@ export class UserRepository {
     id: string,
     data: {
       name?: string;
-      bio?: string;
-      profileImage?: string;
-      backgroundImage?: string;
+      bio?: string | null;
+      profileImage?: string | null;
+      backgroundImage?: string | null;
       isPrivate?: boolean;
       workoutSharingDefault?: string;
+      region?: string | null;
+      subRegion?: string | null;
+      pb5kSeconds?: number | null;
+      pb10kSeconds?: number | null;
+      pbHalfMarathonSeconds?: number | null;
+      pbMarathonSeconds?: number | null;
     },
   ) {
     return this.db.prisma.user.update({

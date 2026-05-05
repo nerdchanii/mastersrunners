@@ -30,6 +30,11 @@ interface CrewDetail {
   name: string;
   description: string | null;
   imageUrl: string | null;
+  profileImageUrl?: string | null;
+  coverImageUrl?: string | null;
+  location?: string | null;
+  region?: string | null;
+  subRegion?: string | null;
   isPublic: boolean;
   maxMembers: number | null;
   createdAt: string;
@@ -57,8 +62,14 @@ export async function updateCrewSettings(
   data: {
     name: string;
     description?: string;
+    imageUrl?: string;
+    profileImageUrl?: string | null;
+    coverImageUrl?: string | null;
     isPublic: boolean;
     maxMembers?: number;
+    location?: string;
+    region?: string;
+    subRegion?: string;
   },
 ) {
   await api.fetch(`/crews/${crewId}`, {

@@ -1,8 +1,11 @@
-import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, ValidateIf } from "class-validator";
 
 export class SubmitEventResultDto {
+  @ValidateIf(
+    (dto: SubmitEventResultDto) => dto.status === "COMPLETED" || dto.resultTime !== undefined,
+  )
   @IsInt()
-  resultTime!: number;
+  resultTime?: number;
 
   @IsOptional()
   @IsInt()

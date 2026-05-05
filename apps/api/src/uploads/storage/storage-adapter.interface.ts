@@ -14,6 +14,7 @@ export interface StorageAdapter {
   getDownloadUrl(key: string, expiresIn?: number): Promise<string>;
   getPublicUrl(key: string): string;
   downloadFile(key: string): Promise<DownloadResult>;
+  saveFile(key: string, buffer: Buffer, contentType?: string): Promise<void>;
   deleteFile(key: string): Promise<void>;
 }
 

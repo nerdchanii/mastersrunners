@@ -17,6 +17,18 @@ Use this guide to decide which reviewer roles to request for a task.
 - `po-reviewer`
   - user value, acceptance criteria, scope fit, and release risk
 
+## Official Protocol Mapping
+
+baseline reviewer와 `po-reviewer`는 아래 공식 protocol artifact로 정의된다.
+
+- OpenAI Codex subagents: `.codex/agents/<reviewer>.toml`
+- OpenAI Codex skills: `.agents/skills/<skill>/SKILL.md`
+- Claude Code subagents: `.claude/agents/<reviewer>.md`
+- Claude Code skills: `.claude/skills/<skill>/SKILL.md`
+- repo-level routing and artifact truth: `reviewers/protocols.json`
+
+task frontmatter의 reviewer 이름은 `reviewers/protocols.json`의 reviewer key와 맞아야 한다. 이 파일은 공식 경로 자체를 대체하는 규격이 아니라, 저장소가 채택한 reviewer routing과 artifact overlay 계약이다.
+
 ## Escalation Reviewers
 
 - `architecture-reviewer`
@@ -36,7 +48,7 @@ Use this guide to decide which reviewer roles to request for a task.
 
 ## Examples
 
-- docs-only policy change
+- docs-only policy or process change that also changes harness/rules
   - `docs-reviewer` + `harness-reviewer` + `po-reviewer`
 - route refactor with visible UI impact
   - `frontend-reviewer` + `ui-ux-reviewer` + `refactor-reviewer` + `po-reviewer`

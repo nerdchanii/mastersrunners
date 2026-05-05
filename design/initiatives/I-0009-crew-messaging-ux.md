@@ -17,22 +17,24 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 
 ## Non-Goals
 
-- migrating crew or activity chat from polling to SSE
+- adding presence, typing, or delivery-receipt features on top of the transport change
 - redesigning unrelated feed, challenge, or workout surfaces
-- changing backend chat or notification contracts in this batch
+- changing notification contracts in this batch
 
 ## Scope
 
 - `apps/web/src/components/crew/GroupChat.tsx`
 - `apps/web/src/pages/crews/[id]/index.tsx`
-- `apps/web/src/pages/crews/[id]/activities/[activityId]/chat.tsx`
+- `apps/web/src/pages/messages/crew/[crewId]/activity/[activityId]/index.tsx`
 - `apps/web/src/pages/messages/[id]/index.tsx`
 - `apps/web/src/pages/messages/[id]/useMessageDetailPage.ts`
 - `apps/web/src/components/layout/Header.tsx`
 - `apps/web/src/components/common/BottomNav.tsx`
 - `apps/web/src/hooks/useMessages.ts`
 - `apps/web/src/hooks/useUnreadCounts.ts`
-- `apps/api/src/conversations/conversations-sse.service.ts`
+- `apps/api/src/realtime/realtime.gateway.ts`
+- `apps/api/src/realtime/realtime-events.service.ts`
+- `apps/web/src/lib/realtime-context.tsx`
 - `apps/web/e2e/crew-group-chat.spec.ts`
 - `apps/web/e2e/messages.spec.ts`
 - `design/frontend/crew-experience.md`
@@ -46,8 +48,8 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 
 ## Review Plan
 
-- `frontend-reviewer` checks route composition, shared state ownership, and UI behavior
-- `backend-reviewer` checks DM SSE delivery reliability stays inside the existing transport contract
+- `frontend-reviewer` checks route composition, shared socket ownership, and UI behavior
+- `backend-reviewer` checks gateway auth, room fan-out, and DM leave cut-line persistence stay coherent with the current transport contract
 - `ui-ux-reviewer` checks chat identity, copy, empty states, and interaction smoothness
 - `po-reviewer` checks the resulting messaging flow feels natural for community use
 
@@ -55,6 +57,10 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 
 - `tasks/archive/I-0009-010-web-crew-messaging-ux-polish.md`
 - `tasks/archive/I-0009-020-web-messaging-e2e-mock-fixtures.md`
+- `tasks/archive/I-0009-030-api-sse-stream-stability.md`
+- `tasks/archive/I-0009-040-api-web-chat-websocket-transport.md`
+- `tasks/archive/I-0009-050-api-web-dm-leave-cutline.md` (superseded by `I-0009-040`)
+- `tasks/archive/I-0009-060-api-web-realtime-unread-read-state.md`
 
 ## Success Criteria
 

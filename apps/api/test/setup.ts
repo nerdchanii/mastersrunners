@@ -9,12 +9,13 @@ process.env.JWT_REFRESH_TTL = process.env.JWT_REFRESH_TTL || "604800";
 
 import "reflect-metadata";
 
-import { type INestApplication, ValidationPipe } from "@nestjs/common";
+import type { INestApplication } from "@nestjs/common";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import { Test } from "@nestjs/testing";
 
-import { AppModule } from "../src/app.module";
-import { AllExceptionsFilter } from "../src/common/filters/http-exception.filter";
-import { DatabaseService } from "../src/database/database.service";
+import { AppModule } from "../src/app.module.js";
+import { configureApp } from "../src/bootstrap/configure-app.js";
+import { DatabaseService } from "../src/database/database.service.js";
 
 let app: INestApplication;
 let dbService: DatabaseService;
@@ -28,20 +29,12 @@ export async function createTestApp(): Promise<INestApplication> {
     imports: [AppModule],
   }).compile();
 
-  app = moduleRef.createNestApplication();
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
-
-  app.useGlobalFilters(new AllExceptionsFilter());
-  app.setGlobalPrefix("api/v1", {
-    exclude: ["health"],
+  app = moduleRef.createNestApplication<NestExpressApplication>({
+    bodyParser: false,
+    rawBody: true,
+    bufferLogs: true,
   });
+  configureApp(app);
 
   await app.init();
 
@@ -63,42 +56,42 @@ export function getDbService(): DatabaseService {
  */
 export async function cleanDatabase(): Promise<void> {
   const prisma = dbService.prisma;
-
-  // Delete in reverse dependency order
-  await prisma.crewAttendance.deleteMany();
-  await prisma.crewActivity.deleteMany();
-  await prisma.crewMemberTag.deleteMany();
-  await prisma.crewTag.deleteMany();
-  await prisma.crewBan.deleteMany();
-  await prisma.crewMember.deleteMany();
-  await prisma.notification.deleteMany();
-  await prisma.syncLog.deleteMany();
-  await prisma.connectedPlatform.deleteMany();
-  await prisma.eventParticipant.deleteMany();
-  await prisma.event.deleteMany();
-  await prisma.challengeParticipant.deleteMany();
-  await prisma.challengeTeam.deleteMany();
-  await prisma.challenge.deleteMany();
-  await prisma.crew.deleteMany();
-  await prisma.workoutComment.deleteMany();
-  await prisma.workoutLike.deleteMany();
-  await prisma.postComment.deleteMany();
-  await prisma.postLike.deleteMany();
-  await prisma.postWorkout.deleteMany();
-  await prisma.postImage.deleteMany();
-  await prisma.post.deleteMany();
-  await prisma.workoutPhoto.deleteMany();
-  await prisma.workoutLap.deleteMany();
-  await prisma.workoutRoute.deleteMany();
-  await prisma.workoutFile.deleteMany();
-  await prisma.workout.deleteMany();
-  await prisma.shoe.deleteMany();
-  await prisma.block.deleteMany();
-  await prisma.follow.deleteMany();
-  await prisma.session.deleteMany();
-  await prisma.verificationToken.deleteMany();
-  await prisma.account.deleteMany();
-  await prisma.user.deleteMany();
+  await prisma.$executeRawUnsafe(`
+    TRUNCATE TABLE
+      "CrewAttendance",
+      "CrewActivity",
+      "CrewMemberTag",
+      "CrewTag",
+      "CrewBan",
+      "CrewMember",
+      "Notification",
+      "SyncLog",
+      "ConnectedPlatform",
+      "EventParticipant",
+      "Event",
+      "ChallengeParticipant",
+      "ChallengeTeam",
+      "Challenge",
+      "Crew",
+      "WorkoutComment",
+      "WorkoutLike",
+      "PostComment",
+      "PostLike",
+      "PostWorkout",
+      "PostImage",
+      "Post",
+      "WorkoutPhoto",
+      "WorkoutFile",
+      "Workout",
+      "Shoe",
+      "Block",
+      "Follow",
+      "Session",
+      "VerificationToken",
+      "Account",
+      "User"
+    RESTART IDENTITY CASCADE
+  `);
 }
 
 /**

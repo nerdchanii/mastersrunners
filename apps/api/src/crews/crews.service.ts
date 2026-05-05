@@ -49,17 +49,36 @@ export class CrewsService {
     this.readService = new CrewReadService(crewRepo, crewMemberRepo, conversationsRepo, db);
   }
 
+  private normalizeNullableString(value: string | null | undefined) {
+    if (value === undefined) return undefined;
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : null;
+  }
+
+  private resolveProfileImageUrl(profileImageUrl?: string | null, legacyImageUrl?: string | null) {
+    if (profileImageUrl !== undefined) {
+      return this.normalizeNullableString(profileImageUrl);
+    }
+    if (legacyImageUrl !== undefined) {
+      return this.normalizeNullableString(legacyImageUrl);
+    }
+    return undefined;
+  }
+
   async create(userId: string, dto: CreateCrewDto) {
+    const profileImageUrl = this.resolveProfileImageUrl(dto.profileImageUrl, dto.imageUrl) ?? null;
+
     const crew = await this.crewRepo.create({
       name: dto.name,
       description: dto.description || null,
-      imageUrl: dto.imageUrl || null,
+      imageUrl: profileImageUrl,
+      coverImageUrl: this.normalizeNullableString(dto.coverImageUrl) ?? null,
       creatorId: userId,
       isPublic: dto.isPublic ?? true,
       maxMembers: dto.maxMembers || null,
-      location: dto.location || null,
-      region: dto.region || null,
-      subRegion: dto.subRegion || null,
+      location: this.normalizeNullableString(dto.location) ?? null,
+      region: this.normalizeNullableString(dto.region) ?? null,
+      subRegion: this.normalizeNullableString(dto.subRegion) ?? null,
     });
 
     await this.crewMemberRepo.addMember(crew.id, userId, "OWNER", "ACTIVE");
@@ -73,12 +92,38 @@ export class CrewsService {
     return crew;
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, currentUserId?: string) {
     const crew = await this.crewRepo.findById(id);
     if (!crew) {
       throw new NotFoundException("크루를 찾을 수 없습니다.");
     }
+    if (crew.isPublic === false) {
+      const member = currentUserId ? await this.crewMemberRepo.findMember(id, currentUserId) : null;
+      if (!member || member.status !== "ACTIVE") {
+        throw new NotFoundException("크루를 찾을 수 없습니다.");
+      }
+    }
     return crew;
+  }
+
+  async getInviteLink(crewId: string, userId: string) {
+    const crew = await this.crewRepo.findById(crewId);
+    if (!crew) {
+      throw new NotFoundException("크루를 찾을 수 없습니다.");
+    }
+
+    const member = await this.crewMemberRepo.findMember(crewId, userId);
+    if (
+      !member ||
+      member.status !== "ACTIVE" ||
+      (member.role !== "OWNER" && member.role !== "ADMIN")
+    ) {
+      throw new ForbiddenException("크루 운영진만 초대 링크를 공유할 수 있습니다.");
+    }
+
+    return {
+      path: `/crews/${crewId}?invite=1`,
+    };
   }
 
   async findAll(options: { isPublic?: boolean; cursor?: string; limit?: number }) {
@@ -87,6 +132,14 @@ export class CrewsService {
 
   async findMyCrews(userId: string) {
     return this.crewRepo.findByUser(userId);
+  }
+
+  async findVisibleProfileCrews(targetUserId: string, currentUserId?: string) {
+    if (currentUserId && currentUserId === targetUserId) {
+      return this.crewRepo.findByUser(targetUserId);
+    }
+
+    return this.crewRepo.findPublicByUser(targetUserId);
   }
 
   async update(id: string, userId: string, dto: UpdateCrewDto) {
@@ -100,7 +153,17 @@ export class CrewsService {
       throw new ForbiddenException("크루 관리자만 수정할 수 있습니다.");
     }
 
-    return this.crewRepo.update(id, dto);
+    return this.crewRepo.update(id, {
+      name: dto.name,
+      description: dto.description,
+      imageUrl: this.resolveProfileImageUrl(dto.profileImageUrl, dto.imageUrl),
+      coverImageUrl: this.normalizeNullableString(dto.coverImageUrl),
+      isPublic: dto.isPublic,
+      maxMembers: dto.maxMembers,
+      location: this.normalizeNullableString(dto.location),
+      region: this.normalizeNullableString(dto.region),
+      subRegion: this.normalizeNullableString(dto.subRegion),
+    });
   }
 
   async remove(id: string, userId: string) {
@@ -189,6 +252,7 @@ export class CrewsService {
       latitude?: number;
       longitude?: number;
       activityType?: string;
+      activityIcon?: string;
       workoutTypeId?: string;
     },
   ) {
@@ -198,8 +262,9 @@ export class CrewsService {
   async getActivities(
     crewId: string,
     opts?: { cursor?: string; limit?: number; type?: string; status?: string },
+    currentUserId?: string,
   ) {
-    return this.activitiesService.getActivities(crewId, opts);
+    return this.activitiesService.getActivities(crewId, opts, currentUserId);
   }
 
   async getActivity(activityId: string) {
@@ -267,7 +332,27 @@ export class CrewsService {
     return this.activitiesService.getMemberAttendanceStats(crewId, userId);
   }
 
-  async getCrewAttendanceStats(crewId: string, opts?: { month?: string; type?: string }) {
+  async getMemberAttendanceHistory(
+    crewId: string,
+    userId: string,
+    opts?: { range?: string; type?: string },
+  ) {
+    return this.activitiesService.getMemberAttendanceHistory(crewId, userId, opts);
+  }
+
+  async getCrewAttendanceStats(
+    crewId: string,
+    opts?: {
+      range?: string;
+      type?: string;
+      sort?: string;
+      order?: string;
+      q?: string;
+      checkInLte?: number;
+      noShowGte?: number;
+      limit?: number;
+    },
+  ) {
     return this.activitiesService.getCrewAttendanceStats(crewId, opts);
   }
 
@@ -295,8 +380,19 @@ export class CrewsService {
     return this.membershipService.getBannedMembers(crewId, userId);
   }
 
-  async getCrewChat(crewId: string, userId: string, cursor?: string) {
-    return this.readService.getCrewChat(crewId, userId, cursor);
+  async getCrewChat(
+    crewId: string,
+    userId: string,
+    options?: {
+      cursor?: string;
+      direction?: "older" | "newer";
+      entry?: "latest" | "unread";
+      historyLimit?: number;
+      unreadLimit?: number;
+      limit?: number;
+    },
+  ) {
+    return this.readService.getCrewChat(crewId, userId, options);
   }
 
   async createCrewPost(
@@ -307,15 +403,27 @@ export class CrewsService {
     return this.readService.createCrewPost(crewId, userId, data);
   }
 
-  async getCrewPosts(crewId: string, cursor?: string) {
-    return this.readService.getCrewPosts(crewId, cursor);
+  async getCrewPosts(crewId: string, cursor?: string, currentUserId?: string) {
+    return this.readService.getCrewPosts(crewId, cursor, currentUserId);
   }
 
-  async getCrewProfile(crewId: string) {
-    return this.readService.getCrewProfile(crewId);
+  async getCrewProfile(crewId: string, currentUserId?: string) {
+    return this.readService.getCrewProfile(crewId, currentUserId);
   }
 
-  async getActivityChat(crewId: string, activityId: string, userId: string, cursor?: string) {
-    return this.activitiesService.getActivityChat(crewId, activityId, userId, cursor);
+  async getActivityChat(
+    crewId: string,
+    activityId: string,
+    userId: string,
+    options?: {
+      cursor?: string;
+      direction?: "older" | "newer";
+      entry?: "latest" | "unread";
+      historyLimit?: number;
+      unreadLimit?: number;
+      limit?: number;
+    },
+  ) {
+    return this.activitiesService.getActivityChat(crewId, activityId, userId, options);
   }
 }

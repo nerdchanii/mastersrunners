@@ -19,6 +19,24 @@ export class CrewBoardsService {
     return role === "OWNER" || role === "ADMIN";
   }
 
+  private async assertReadableCrew(crewId: string, userId?: string) {
+    const crew = await this.repo.findCrewAccessById(crewId);
+    if (!crew) {
+      throw new NotFoundException("크루를 찾을 수 없습니다.");
+    }
+
+    if (crew.isPublic !== false) {
+      return crew;
+    }
+
+    const role = userId ? await this.getMemberRole(crewId, userId) : null;
+    if (!role) {
+      throw new NotFoundException("크루를 찾을 수 없습니다.");
+    }
+
+    return crew;
+  }
+
   // ============ Boards ============
 
   async createBoard(
@@ -33,7 +51,8 @@ export class CrewBoardsService {
     return this.repo.createBoard(crewId, { ...data, sortOrder: boards.length });
   }
 
-  async getBoards(crewId: string) {
+  async getBoards(crewId: string, userId?: string) {
+    await this.assertReadableCrew(crewId, userId);
     return this.repo.findBoards(crewId);
   }
 
@@ -93,7 +112,13 @@ export class CrewBoardsService {
     return this.repo.createPost(boardId, userId, data);
   }
 
-  async getPosts(crewId: string, boardId: string, opts?: { cursor?: string; limit?: number }) {
+  async getPosts(
+    crewId: string,
+    boardId: string,
+    opts?: { cursor?: string; limit?: number },
+    userId?: string,
+  ) {
+    await this.assertReadableCrew(crewId, userId);
     const board = await this.repo.findBoardById(boardId);
     if (!board || board.crewId !== crewId) throw new NotFoundException("채널을 찾을 수 없습니다.");
 
@@ -109,6 +134,7 @@ export class CrewBoardsService {
   }
 
   async getPost(crewId: string, boardId: string, postId: string, userId?: string) {
+    await this.assertReadableCrew(crewId, userId);
     const post = await this.repo.findPostById(postId);
     if (!post || post.boardId !== boardId) throw new NotFoundException("글을 찾을 수 없습니다.");
 

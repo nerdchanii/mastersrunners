@@ -20,118 +20,120 @@ if [ "${#task_files[@]}" -eq 0 ]; then
   exit 0
 fi
 
-errors=()
+python3 - "$ROOT_DIR" "${task_files[@]}" <<'PY'
+from __future__ import annotations
 
-check_file() {
-  local file="$1"
-  awk '
-    BEGIN {
-      frontmatter_done = 0
-      in_frontmatter = 0
-      in_reviewers = 0
-      reviewer_count = 0
-      po_review_required = 0
-      malformed_frontmatter = 0
-    }
+import json
+import re
+import sys
+from pathlib import Path
 
-    NR == 1 {
-      if ($0 == "---") {
-        in_frontmatter = 1
-        next
-      }
 
-      print "missing_frontmatter"
-      malformed_frontmatter = 1
-      exit 0
-    }
+def parse_frontmatter(path: Path):
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0] != "---":
+        return None, ["missing_frontmatter"]
 
-    in_frontmatter && $0 == "---" {
-      in_frontmatter = 0
-      frontmatter_done = 1
-      next
-    }
+    frontmatter: list[str] = []
+    for line in lines[1:]:
+        if line == "---":
+            return frontmatter, []
+        frontmatter.append(line)
 
-    in_frontmatter {
-      if ($0 ~ /^po_review:[[:space:]]*required[[:space:]]*$/) {
-        po_review_required = 1
-      }
+    return None, ["missing_frontmatter"]
 
-      if ($0 ~ /^reviewers:[[:space:]]*$/) {
-        in_reviewers = 1
-        next
-      }
 
-      if ($0 ~ /^reviewers:[[:space:]]*\[[[:space:]]*\][[:space:]]*$/) {
-        in_reviewers = 0
-        next
-      }
+def parse_review_metadata(frontmatter: list[str]):
+    reviewers: list[str] = []
+    po_review_required = False
+    in_reviewers = False
 
-      if ($0 ~ /^reviewers:[[:space:]]*\[[^]]+\][[:space:]]*$/) {
-        reviewer_count = 1
-        in_reviewers = 0
-        next
-      }
+    for line in frontmatter:
+        if re.match(r"^po_review:\s*required\s*$", line):
+            po_review_required = True
 
-      if (in_reviewers) {
-        if ($0 ~ /^[[:space:]]*-[[:space:]]+[^[:space:]].*$/) {
-          reviewer_count++
-          next
-        }
+        if re.match(r"^reviewers:\s*$", line):
+            in_reviewers = True
+            continue
 
-        if ($0 ~ /^[A-Za-z0-9_]+:/) {
-          in_reviewers = 0
-        }
-      }
-    }
+        if re.match(r"^reviewers:\s*\[\s*\]\s*$", line):
+            in_reviewers = False
+            continue
 
-    END {
-      if (malformed_frontmatter) {
-        exit 0
-      }
+        inline = re.match(r"^reviewers:\s*\[(.*)\]\s*$", line)
+        if inline:
+            raw = inline.group(1).strip()
+            if raw:
+                reviewers.extend(
+                    [item.strip().strip("'\"") for item in raw.split(",") if item.strip()]
+                )
+            in_reviewers = False
+            continue
 
-      if (!frontmatter_done) {
-        print "missing_frontmatter"
-        exit
-      }
+        if in_reviewers:
+            item = re.match(r"^\s*-\s+(.+?)\s*$", line)
+            if item:
+                reviewers.append(item.group(1).strip().strip("'\""))
+                continue
 
-      if (reviewer_count < 1) {
-        print "missing_reviewers"
-      }
+            if re.match(r"^[A-Za-z0-9_]+:", line):
+                in_reviewers = False
 
-      if (!po_review_required) {
-        print "missing_po_review"
-      }
-    }
-  ' "$file"
-}
+    problems: list[str] = []
+    if not reviewers:
+        problems.append("missing_reviewers")
+    if not po_review_required:
+        problems.append("missing_po_review")
 
-for file in "${task_files[@]}"; do
-  mapfile -t problems < <(check_file "$file")
+    return reviewers, po_review_required, problems
 
-  if [ "${#problems[@]}" -eq 0 ]; then
-    continue
-  fi
 
-  for problem in "${problems[@]}"; do
-    case "$problem" in
-      missing_frontmatter)
-        errors+=("$file: missing or malformed frontmatter")
-        ;;
-      missing_reviewers)
-        errors+=("$file: reviewers must be present and non-empty")
-        ;;
-      missing_po_review)
-        errors+=("$file: po_review must be set to required")
-        ;;
-    esac
-  done
-done
+root = Path(sys.argv[1])
+task_files = [Path(p) for p in sys.argv[2:]]
+protocols_path = root / "reviewers" / "protocols.json"
+errors: list[str] = []
 
-if [ "${#errors[@]}" -gt 0 ]; then
-  printf 'Task review metadata check failed.\n'
-  printf 'Expected every task under tasks/{todo,active}/ to declare a non-empty reviewers list and po_review: required.\n'
-  printf ' - %s\n' "${errors[@]}"
-  exit 1
-fi
+if not protocols_path.exists():
+    errors.append("reviewers/protocols.json: missing reviewer protocol registry")
+    active_reviewers: set[str] = set()
+else:
+    protocols = json.loads(protocols_path.read_text(encoding="utf-8"))
+    active_reviewers = set(protocols.get("reviewers", {}).keys())
+    if not active_reviewers:
+        errors.append("reviewers/protocols.json: no reviewers registered")
 
-printf 'Task review metadata check passed for %d non-archived task file(s).\n' "${#task_files[@]}"
+if "po-reviewer" not in active_reviewers:
+    errors.append("reviewers/protocols.json: po-reviewer must exist as a registered reviewer")
+
+for file in task_files:
+    frontmatter, frontmatter_errors = parse_frontmatter(file)
+    if frontmatter_errors:
+        errors.append(f"{file}: missing or malformed frontmatter")
+        continue
+
+    reviewers, _po_required, problems = parse_review_metadata(frontmatter)
+
+    for problem in problems:
+        if problem == "missing_reviewers":
+            errors.append(f"{file}: reviewers must be present and non-empty")
+        elif problem == "missing_po_review":
+            errors.append(f"{file}: po_review must be set to required")
+
+    for reviewer in reviewers:
+        if reviewer not in active_reviewers:
+            errors.append(
+                f"{file}: reviewer '{reviewer}' is not a registered reviewer protocol in reviewers/protocols.json"
+            )
+
+if errors:
+    print("Task review metadata check failed.")
+    print(
+        "Expected every task under tasks/{todo,active}/ to declare a non-empty reviewers list, "
+        "po_review: required, and only reviewer names registered in reviewers/protocols.json."
+    )
+    for error in errors:
+        print(f" - {error}")
+    raise SystemExit(1)
+
+print(f"Task review metadata check passed for {len(task_files)} non-archived task file(s).")
+PY

@@ -9,10 +9,35 @@ export const mockUser = {
   profileImage: null,
   backgroundImage: null,
   bio: "마스터즈 러닝 클럽 멤버",
+  isPrivate: false,
+  workoutSharingDefault: "FOLLOWERS",
+  region: "서울특별시",
+  subRegion: "마포구",
+  pb5kSeconds: 1260,
+  pb10kSeconds: 2700,
+  pbHalfMarathonSeconds: 5940,
+  pbMarathonSeconds: 12900,
   createdAt: "2026-01-01T00:00:00.000Z",
 };
 
 export async function setupAuth(page: Page) {
+  await page.route(`${API_BASE}/config/public`, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        authProviders: {
+          google: true,
+          kakao: true,
+        },
+        features: {
+          challenges: false,
+          events: false,
+        },
+      }),
+    });
+  });
+
   // Mock /auth/me endpoint BEFORE any navigation
   await page.route(`${API_BASE}/auth/me`, (route) => {
     route.fulfill({
@@ -25,20 +50,45 @@ export async function setupAuth(page: Page) {
   // Mock auth refresh endpoint
   await page.route(`${API_BASE}/auth/refresh`, (route) => {
     route.fulfill({
+      status: 204,
+    });
+  });
+
+  await page.route(`${API_BASE}/auth/logout`, (route) => {
+    route.fulfill({
+      status: 204,
+    });
+  });
+
+  await page.route(`${API_BASE}/conversations?limit=100`, (route) => {
+    route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        accessToken: "mock-access-token-new",
-        refreshToken: "mock-refresh-token-new",
+        data: [],
+        nextCursor: null,
       }),
     });
   });
 
-  // Navigate to a page on the origin first to set localStorage
-  await page.goto("/login");
-  await page.evaluate(() => {
-    window.localStorage.setItem("accessToken", "mock-access-token");
-    window.localStorage.setItem("refreshToken", "mock-refresh-token");
+  await page.route(`${API_BASE}/conversations/unread-count`, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 0,
+      }),
+    });
+  });
+
+  await page.route(`${API_BASE}/notifications/unread-count`, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 0,
+      }),
+    });
   });
 }
 
@@ -123,7 +173,7 @@ export const mockWorkoutDetail = {
   workoutFiles: [
     {
       id: "file-1",
-      originalFilename: "morning_run.fit",
+      originalFileName: "morning_run.fit",
       fileType: "FIT",
       fileSize: 245760,
       createdAt: "2026-02-15T09:30:00.000Z",

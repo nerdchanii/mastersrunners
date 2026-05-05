@@ -1,18 +1,25 @@
 import type { ConfigService } from "@nestjs/config";
 
-type OAuthCallbackContract = {
-  callbackEnv: "GOOGLE_CALLBACK_URL" | "KAKAO_CALLBACK_URL" | "NAVER_CALLBACK_URL";
-  clientIdEnv: "GOOGLE_CLIENT_ID" | "KAKAO_CLIENT_ID" | "NAVER_CLIENT_ID";
-};
-
-const oauthCallbackContracts: OAuthCallbackContract[] = [
-  { clientIdEnv: "KAKAO_CLIENT_ID", callbackEnv: "KAKAO_CALLBACK_URL" },
-  { clientIdEnv: "GOOGLE_CLIENT_ID", callbackEnv: "GOOGLE_CALLBACK_URL" },
-  { clientIdEnv: "NAVER_CLIENT_ID", callbackEnv: "NAVER_CALLBACK_URL" },
-];
+import {
+  isOAuthProviderEnabledInRepoConfig,
+  oauthProviderContracts,
+  type RepoTrackedRuntimeConfig,
+  repoTrackedRuntimeConfig,
+  type SupportedOAuthProvider,
+} from "./feature-flags.js";
 
 function readConfigValue(config: ConfigService, key: string) {
   return config.get<string>(key)?.trim() || "";
+}
+
+function readEnvValue(key: string) {
+  return process.env[key]?.trim() || "";
+}
+
+function assertPresentEnvValue(key: string, value: string) {
+  if (!value) {
+    throw new Error(`Missing required production environment variable: ${key}`);
+  }
 }
 
 function assertAbsoluteHttpUrl(key: string, value: string) {
@@ -32,18 +39,27 @@ function assertAbsoluteHttpUrl(key: string, value: string) {
   }
 }
 
-export function validateProductionRuntimeEnv(config: ConfigService) {
+export function validateProductionRuntimeEnv(
+  config: ConfigService,
+  runtimeConfig: RepoTrackedRuntimeConfig = repoTrackedRuntimeConfig,
+) {
   if (process.env.NODE_ENV !== "production") {
     return;
   }
 
   assertAbsoluteHttpUrl("FRONTEND_URL", readConfigValue(config, "FRONTEND_URL"));
 
-  for (const { clientIdEnv, callbackEnv } of oauthCallbackContracts) {
-    if (!process.env[clientIdEnv]?.trim()) {
+  for (const provider of Object.keys(oauthProviderContracts) as SupportedOAuthProvider[]) {
+    if (!isOAuthProviderEnabledInRepoConfig(provider, runtimeConfig)) {
       continue;
     }
 
+    const contract = oauthProviderContracts[provider];
+    for (const requiredEnvKey of contract.requiredEnvKeys) {
+      assertPresentEnvValue(requiredEnvKey, readEnvValue(requiredEnvKey));
+    }
+
+    const callbackEnv = contract.callbackEnv;
     assertAbsoluteHttpUrl(callbackEnv, readConfigValue(config, callbackEnv));
   }
 }

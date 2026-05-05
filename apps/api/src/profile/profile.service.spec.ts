@@ -15,6 +15,7 @@ const mockUserRepo = {
   update: jest.fn(),
   searchByName: jest.fn(),
   countPostsByUser: jest.fn(),
+  countVisiblePostsByUser: jest.fn(),
 };
 
 const mockWorkoutRepo = {
@@ -35,6 +36,8 @@ const mockFollowRepo = {
 
 const mockCrewMemberRepo = {
   deleteAllForUser: jest.fn(),
+  countActiveCrewsForUser: jest.fn(),
+  countPublicCrewsForUser: jest.fn(),
 };
 
 describe("ProfileService", () => {
@@ -49,7 +52,10 @@ describe("ProfileService", () => {
     mockFollowRepo.findFollow.mockResolvedValue(null);
     mockFollowRepo.deleteAllForUser.mockResolvedValue(undefined);
     mockUserRepo.countPostsByUser.mockResolvedValue(0);
+    mockUserRepo.countVisiblePostsByUser.mockResolvedValue(0);
     mockCrewMemberRepo.deleteAllForUser.mockResolvedValue(undefined);
+    mockCrewMemberRepo.countActiveCrewsForUser.mockResolvedValue(0);
+    mockCrewMemberRepo.countPublicCrewsForUser.mockResolvedValue(0);
 
     const module = await Test.createTestingModule({
       providers: [
@@ -82,7 +88,7 @@ describe("ProfileService", () => {
       mockFollowRepo.countFollowers.mockResolvedValue(5);
       mockFollowRepo.countFollowing.mockResolvedValue(3);
 
-      const result = await service.getProfile("u1");
+      const result = await service.getProfile("u1", "u1");
 
       expect(result.user).toEqual(mockUser);
       expect(result.stats.totalWorkouts).toBe(10);
@@ -90,6 +96,8 @@ describe("ProfileService", () => {
       expect(result.stats.totalDuration).toBe(36000);
       expect(result.followersCount).toBe(5);
       expect(result.followingCount).toBe(3);
+      expect(result.crewCount).toBe(0);
+      expect(result.accessLevel).toBe("FULL");
     });
 
     it("should calculate averagePace as totalDuration / (totalDistance / 1000)", async () => {
@@ -99,7 +107,7 @@ describe("ProfileService", () => {
         _sum: { distance: 50000, duration: 18000 },
       });
 
-      const result = await service.getProfile("u1");
+      const result = await service.getProfile("u1", "u1");
 
       // 18000 / (50000 / 1000) = 360 sec/km
       expect(result.stats.averagePace).toBe(360);
@@ -192,6 +200,69 @@ describe("ProfileService", () => {
 
       expect(result.isFollowing).toBe(false);
     });
+
+    it("should return a locked shell for a private profile when viewer is not accepted", async () => {
+      mockUserRepo.findByIdBasicSelect.mockResolvedValue({
+        id: "target",
+        email: "runner@example.com",
+        name: "비공개 러너",
+        profileImage: null,
+        backgroundImage: "https://example.com/bg.png",
+        bio: "숨겨질 소개",
+        isPrivate: true,
+        workoutSharingDefault: "FOLLOWERS",
+        region: "서울",
+        subRegion: "마포구",
+        pb5kSeconds: 1200,
+        pb10kSeconds: 2500,
+        pbHalfMarathonSeconds: null,
+        pbMarathonSeconds: null,
+        createdAt: new Date(),
+      });
+
+      const result = await service.getProfile("target");
+
+      expect(result.accessLevel).toBe("LOCKED");
+      expect(result.stats).toBeNull();
+      expect(result.followersCount).toBeNull();
+      expect(result.followingCount).toBeNull();
+      expect(result.crewCount).toBeNull();
+      expect(result.user.bio).toBeNull();
+      expect(result.user.backgroundImage).toBeNull();
+    });
+
+    it("should hide workout aggregates on another user's readable profile", async () => {
+      const targetUserId = "target";
+      const currentUserId = "viewer";
+
+      mockUserRepo.findByIdBasicSelect.mockResolvedValue({
+        id: targetUserId,
+        email: "runner@example.com",
+        name: "공개 러너",
+        profileImage: null,
+        backgroundImage: null,
+        bio: null,
+        isPrivate: false,
+        createdAt: new Date(),
+      });
+      mockFollowRepo.countFollowers.mockResolvedValue(12);
+      mockFollowRepo.countFollowing.mockResolvedValue(7);
+      mockUserRepo.countVisiblePostsByUser.mockResolvedValue(5);
+      mockCrewMemberRepo.countPublicCrewsForUser.mockResolvedValue(3);
+
+      const result = await service.getProfile(targetUserId, currentUserId);
+
+      expect(result.accessLevel).toBe("FULL");
+      expect(result.stats).toEqual({
+        totalWorkouts: 0,
+        totalDistance: 0,
+        totalDuration: 0,
+        averagePace: 0,
+        postCount: 5,
+      });
+      expect(mockCrewMemberRepo.countPublicCrewsForUser).toHaveBeenCalledWith(targetUserId);
+      expect(mockWorkoutRepo.aggregateByUser).not.toHaveBeenCalled();
+    });
   });
 
   describe("updateProfile", () => {
@@ -262,6 +333,48 @@ describe("ProfileService", () => {
         name: "Updated",
         bio: "New bio",
         backgroundImage: "https://example.com/bg.jpg",
+      };
+      const updatedUser = { id: userId, ...dto };
+
+      mockUserRepo.findById.mockResolvedValue({ id: userId });
+      mockUserRepo.update.mockResolvedValue(updatedUser);
+
+      const result = await service.updateProfile(userId, dto);
+
+      expect(mockUserRepo.update).toHaveBeenCalledWith(userId, dto);
+      expect(result).toEqual(updatedUser);
+    });
+
+    it("should update runner identity fields", async () => {
+      const userId = "u1";
+      const dto = {
+        region: "서울특별시",
+        subRegion: "마포구",
+        pb5kSeconds: 1320,
+        pb10kSeconds: 2815,
+        pbHalfMarathonSeconds: 6120,
+        pbMarathonSeconds: 13620,
+      };
+      const updatedUser = { id: userId, ...dto };
+
+      mockUserRepo.findById.mockResolvedValue({ id: userId });
+      mockUserRepo.update.mockResolvedValue(updatedUser);
+
+      const result = await service.updateProfile(userId, dto);
+
+      expect(mockUserRepo.update).toHaveBeenCalledWith(userId, dto);
+      expect(result).toEqual(updatedUser);
+    });
+
+    it("should allow clearing runner identity fields back to null", async () => {
+      const userId = "u1";
+      const dto = {
+        region: null,
+        subRegion: null,
+        pb5kSeconds: null,
+        pb10kSeconds: null,
+        pbHalfMarathonSeconds: null,
+        pbMarathonSeconds: null,
       };
       const updatedUser = { id: userId, ...dto };
 

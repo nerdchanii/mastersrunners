@@ -1,20 +1,20 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Share2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { PageHeader } from "@/components/common/PageHeader";
-import { TimeAgo } from "@/components/common/TimeAgo";
-import { UserAvatar } from "@/components/common/UserAvatar";
 import CrewForm from "@/components/crew/CrewForm";
+import CrewIdentityHero from "@/components/crew/CrewIdentityHero";
 import CrewMemberList from "@/components/crew/CrewMemberList";
 import PendingMemberList from "@/components/crew/PendingMemberList";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth-context";
+import { shareLink } from "@/lib/share-link";
+
+import { fetchCrewInviteLink, resolveCrewInviteUrl } from "../crew-invite-api";
 
 import {
   deleteCrew,
@@ -54,6 +54,11 @@ interface CrewDetail {
   name: string;
   description: string | null;
   imageUrl: string | null;
+  profileImageUrl?: string | null;
+  coverImageUrl?: string | null;
+  location?: string | null;
+  region?: string | null;
+  subRegion?: string | null;
   isPublic: boolean;
   maxMembers: number | null;
   createdAt: string;
@@ -79,8 +84,8 @@ export default function CrewSettingsClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSharingInvite, setIsSharingInvite] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState("edit");
 
   const fetchCrew = useCallback(async () => {
     if (!crewId || crewId === "_") return;
@@ -110,10 +115,8 @@ export default function CrewSettingsClient() {
   }, [fetchCrew]);
 
   useEffect(() => {
-    if (activeTab === "bans") {
-      fetchBans();
-    }
-  }, [activeTab, fetchBans]);
+    fetchBans();
+  }, [fetchBans]);
 
   // Access control
   const currentMember = crew?.members.find((m) => m.userId === user?.id);
@@ -124,8 +127,13 @@ export default function CrewSettingsClient() {
   const handleEditSubmit = async (data: {
     name: string;
     description?: string;
+    profileImageUrl?: string | null;
+    coverImageUrl?: string | null;
     isPublic: boolean;
     maxMembers?: number;
+    location?: string;
+    region?: string;
+    subRegion?: string;
   }) => {
     setIsSubmitting(true);
     try {
@@ -161,6 +169,32 @@ export default function CrewSettingsClient() {
       toast.error(err instanceof Error ? err.message : "차단 해제에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleShareInvite = async () => {
+    if (!crewId || !crew) {
+      return;
+    }
+
+    setIsSharingInvite(true);
+    try {
+      const invite = await fetchCrewInviteLink(crewId);
+      const result = await shareLink({
+        title: `${crew.name} 크루 초대`,
+        text: `${crew.name} 크루에 참여해보세요.`,
+        url: resolveCrewInviteUrl(invite.path),
+      });
+
+      if (result === "shared") {
+        toast.success("크루 초대 링크 공유 창을 열었습니다.");
+      } else if (result === "copied") {
+        toast.success("크루 초대 링크를 복사했습니다.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "초대 링크를 공유하지 못했습니다.");
+    } finally {
+      setIsSharingInvite(false);
     }
   };
 
@@ -212,106 +246,128 @@ export default function CrewSettingsClient() {
   }
 
   const activeMembers = crew.members.filter((m) => m.status === "ACTIVE");
+  const heroProfileImage = crew.profileImageUrl ?? crew.imageUrl ?? null;
+  const heroCoverImage = crew.coverImageUrl ?? null;
 
   return (
-    <div className="container max-w-4xl mx-auto py-6 space-y-6">
-      <PageHeader
-        title="크루 설정"
-        description={crew.name}
+    <div className="container mx-auto max-w-6xl space-y-6 px-4 py-6">
+      <CrewIdentityHero
+        eyebrow="크루 설정"
+        name={crew.name}
+        description="대표 정보와 운영 도구를 분리해서 정리합니다."
+        creatorName={crew.creator.name}
+        createdAt={crew.createdAt}
+        memberCount={crew._count.members}
+        maxMembers={crew.maxMembers}
+        isPublic={crew.isPublic}
+        profileImageUrl={heroProfileImage}
+        coverImageUrl={heroCoverImage}
+        chatHref={`/messages/crew/${crewId}`}
         actions={
-          <Button variant="outline" onClick={() => navigate(`/crews/${crewId}`)}>
-            돌아가기
-          </Button>
+          <>
+            <Button variant="outline" onClick={handleShareInvite} disabled={isSharingInvite}>
+              <Share2 className="mr-2 size-4" />
+              {isSharingInvite ? "공유 준비 중..." : "초대 링크"}
+            </Button>
+            <Button variant="outline" onClick={() => navigate(`/crews/${crewId}`)}>
+              돌아가기
+            </Button>
+          </>
         }
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="edit">기본 정보</TabsTrigger>
-          <TabsTrigger value="members">멤버 관리</TabsTrigger>
-          <TabsTrigger value="pending">대기 멤버</TabsTrigger>
-          <TabsTrigger value="bans">차단 목록</TabsTrigger>
-        </TabsList>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-6">
+          <section className="rounded-3xl border border-border/60 bg-background px-5 py-5 shadow-sm sm:px-6">
+            <div className="mb-5 space-y-1">
+              <h2 className="text-lg font-semibold text-foreground">기본 정보</h2>
+              <p className="text-sm text-muted-foreground">
+                이름, 소개, 공개 범위, 지역 같은 멤버가 가장 먼저 보는 정보를 정리합니다.
+              </p>
+            </div>
 
-        <TabsContent value="edit" className="mt-6 space-y-6">
-          <Card>
-            <CardContent className="p-6">
-              <CrewForm
-                initialValues={{
-                  name: crew.name,
-                  description: crew.description,
-                  isPublic: crew.isPublic,
-                  maxMembers: crew.maxMembers,
-                }}
-                onSubmit={handleEditSubmit}
-                onCancel={() => navigate(`/crews/${crewId}`)}
-                submitLabel="수정하기"
-                isSubmitting={isSubmitting}
-              />
-            </CardContent>
-          </Card>
+            <CrewForm
+              initialValues={{
+                name: crew.name,
+                description: crew.description,
+                isPublic: crew.isPublic,
+                maxMembers: crew.maxMembers,
+                location: crew.location,
+                region: crew.region,
+                subRegion: crew.subRegion,
+                profileImageUrl: heroProfileImage,
+                coverImageUrl: heroCoverImage,
+              }}
+              onSubmit={handleEditSubmit}
+              onCancel={() => navigate(`/crews/${crewId}`)}
+              submitLabel="수정하기"
+              isSubmitting={isSubmitting}
+            />
+          </section>
 
           {isOwner && (
-            <Card className="border-destructive">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
-                  <CardTitle className="text-destructive">위험 구역</CardTitle>
-                </div>
-                <CardDescription>
-                  크루를 삭제하면 모든 데이터가 영구적으로 삭제됩니다.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  variant="destructive"
-                  onClick={() => setShowDeleteDialog(true)}
-                  disabled={isSubmitting}
-                >
-                  크루 삭제
-                </Button>
-              </CardContent>
-            </Card>
+            <section className="rounded-3xl border border-destructive/40 bg-destructive/5 px-5 py-5">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                <h3 className="text-base font-semibold text-destructive">위험 구역</h3>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                크루를 삭제하면 모든 데이터가 영구적으로 삭제됩니다.
+              </p>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isSubmitting}
+                className="mt-4"
+              >
+                크루 삭제
+              </Button>
+            </section>
           )}
-        </TabsContent>
+        </div>
 
-        <TabsContent value="members" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>멤버 관리 ({activeMembers.length}명)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CrewMemberList
-                crewId={crewId}
-                members={activeMembers}
-                currentUserId={user?.id}
-                currentUserRole={currentUserRole}
-                onUpdate={fetchCrew}
-              />
+        <aside className="space-y-6">
+          <Card className="border-border/60">
+            <CardContent className="p-5">
+              <div className="space-y-1.5">
+                <h2 className="text-base font-semibold">멤버 관리</h2>
+                <p className="text-sm text-muted-foreground">
+                  멤버 목록은 운영 편집 영역과 분리해 더 빠르게 훑을 수 있습니다.
+                </p>
+              </div>
+              <div className="mt-4">
+                <CrewMemberList
+                  crewId={crewId}
+                  members={activeMembers}
+                  currentUserId={user?.id}
+                  currentUserRole={currentUserRole}
+                  onUpdate={fetchCrew}
+                />
+              </div>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="pending" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>대기 멤버</CardTitle>
-              <CardDescription>가입 요청 승인이 필요한 멤버 목록입니다</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PendingMemberList crewId={crewId} onUpdate={fetchCrew} />
+          <Card className="border-border/60">
+            <CardContent className="p-5">
+              <div className="space-y-1.5">
+                <h2 className="text-base font-semibold">대기 멤버</h2>
+                <p className="text-sm text-muted-foreground">
+                  가입 요청은 여기서만 확인하고 승인합니다.
+                </p>
+              </div>
+              <div className="mt-4">
+                <PendingMemberList crewId={crewId} onUpdate={fetchCrew} />
+              </div>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="bans" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>차단 목록</CardTitle>
+          <Card className="border-border/60">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">차단 목록</CardTitle>
             </CardHeader>
             <CardContent>
               {bans.length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground py-8">
+                <p className="py-6 text-center text-sm text-muted-foreground">
                   차단된 사용자가 없습니다.
                 </p>
               ) : (
@@ -319,21 +375,18 @@ export default function CrewSettingsClient() {
                   {bans.map((ban) => (
                     <div
                       key={ban.id}
-                      className="flex items-center justify-between p-3 rounded-lg border"
+                      className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 p-3"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <UserAvatar user={ban.user} size="default" linkToProfile />
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{ban.user.name}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <TimeAgo date={ban.createdAt} />
-                            {ban.reason && (
-                              <>
-                                <span>•</span>
-                                <span className="truncate">사유: {ban.reason}</span>
-                              </>
-                            )}
-                          </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{ban.user.name}</p>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{new Date(ban.createdAt).toLocaleDateString("ko-KR")}</span>
+                          {ban.reason && (
+                            <>
+                              <span>•</span>
+                              <span className="truncate">사유: {ban.reason}</span>
+                            </>
+                          )}
                         </div>
                       </div>
                       <Button
@@ -350,8 +403,8 @@ export default function CrewSettingsClient() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </aside>
+      </div>
 
       <ConfirmDialog
         open={showDeleteDialog}

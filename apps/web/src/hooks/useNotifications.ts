@@ -1,6 +1,9 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
+import { useRealtime } from "@/lib/realtime-context";
+
+import { notificationKeys } from "./notification-keys";
 
 export interface Notification {
   id: string;
@@ -38,12 +41,6 @@ export interface UnreadCountResponse {
   count: number;
 }
 
-export const notificationKeys = {
-  all: ["notifications"] as const,
-  list: () => [...notificationKeys.all, "list"] as const,
-  unreadCount: () => [...notificationKeys.all, "unread-count"] as const,
-};
-
 export function useNotifications() {
   return useInfiniteQuery({
     queryKey: notificationKeys.list(),
@@ -63,30 +60,56 @@ export function useUnreadNotificationCount(options?: { enabled?: boolean }) {
     queryFn: () => api.fetch<UnreadCountResponse>("/notifications/unread-count"),
     enabled: options?.enabled ?? true,
     staleTime: 1000 * 30,
-    refetchInterval: 10 * 1000,
     select: (data) => data?.count ?? 0,
   });
 }
 
 export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
+  const { markNotificationRead } = useRealtime();
 
   return useMutation({
-    mutationFn: (notificationId: string) =>
-      api.fetch(`/notifications/${notificationId}/read`, { method: "PATCH" }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    mutationFn: async (notificationId: string) => {
+      try {
+        return await markNotificationRead(notificationId);
+      } catch {
+        await api.fetch(`/notifications/${notificationId}/read`, { method: "PATCH" });
+        return null;
+      }
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: notificationKeys.list() });
+      if (result && typeof result.unreadCount === "number") {
+        queryClient.setQueryData(notificationKeys.unreadCount(), result.unreadCount);
+        return;
+      }
+
+      queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
     },
   });
 }
 
 export function useMarkAllNotificationsRead() {
   const queryClient = useQueryClient();
+  const { markAllNotificationsRead } = useRealtime();
 
   return useMutation({
-    mutationFn: () => api.fetch("/notifications/read-all", { method: "PATCH" }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    mutationFn: async () => {
+      try {
+        return await markAllNotificationsRead();
+      } catch {
+        await api.fetch("/notifications/read-all", { method: "PATCH" });
+        return null;
+      }
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: notificationKeys.list() });
+      if (result && typeof result.unreadCount === "number") {
+        queryClient.setQueryData(notificationKeys.unreadCount(), result.unreadCount);
+        return;
+      }
+
+      queryClient.invalidateQueries({ queryKey: notificationKeys.unreadCount() });
     },
   });
 }

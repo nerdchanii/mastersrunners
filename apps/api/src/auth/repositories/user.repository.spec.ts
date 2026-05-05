@@ -12,6 +12,7 @@ const mockTx = {
 const mockPrisma = {
   user: {
     findUnique: jest.fn(),
+    update: jest.fn(),
   },
   $transaction: jest.fn((cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx)),
 };
@@ -44,13 +45,22 @@ describe("UserRepository", () => {
   });
 
   describe("findByIdWithProfile", () => {
-    it("should include bio in select", async () => {
+    it("should include runner identity fields in select", async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
       await repository.findByIdWithProfile("u1");
 
       const call = mockPrisma.user.findUnique.mock.calls[0][0];
       expect(call.select.bio).toBe(true);
+      expect(call.select.backgroundImage).toBe(true);
+      expect(call.select.isPrivate).toBe(true);
+      expect(call.select.workoutSharingDefault).toBe(true);
+      expect(call.select.region).toBe(true);
+      expect(call.select.subRegion).toBe(true);
+      expect(call.select.pb5kSeconds).toBe(true);
+      expect(call.select.pb10kSeconds).toBe(true);
+      expect(call.select.pbHalfMarathonSeconds).toBe(true);
+      expect(call.select.pbMarathonSeconds).toBe(true);
       expect(call.select.id).toBe(true);
       expect(call.select.email).toBe(true);
       expect(call.select.name).toBe(true);
@@ -60,7 +70,7 @@ describe("UserRepository", () => {
   });
 
   describe("findByIdBasicSelect", () => {
-    it("should include bio and backgroundImage in select", async () => {
+    it("should include runner identity fields in basic select", async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
       await repository.findByIdBasicSelect("u1");
@@ -68,6 +78,14 @@ describe("UserRepository", () => {
       const call = mockPrisma.user.findUnique.mock.calls[0][0];
       expect(call.select.bio).toBe(true);
       expect(call.select.backgroundImage).toBe(true);
+      expect(call.select.isPrivate).toBe(true);
+      expect(call.select.workoutSharingDefault).toBe(true);
+      expect(call.select.region).toBe(true);
+      expect(call.select.subRegion).toBe(true);
+      expect(call.select.pb5kSeconds).toBe(true);
+      expect(call.select.pb10kSeconds).toBe(true);
+      expect(call.select.pbHalfMarathonSeconds).toBe(true);
+      expect(call.select.pbMarathonSeconds).toBe(true);
       expect(call.select.id).toBe(true);
       expect(call.select.email).toBe(true);
     });
@@ -84,6 +102,29 @@ describe("UserRepository", () => {
         where: { email: "test@test.com" },
       });
       expect(result).toEqual(mockUser);
+    });
+  });
+
+  describe("update", () => {
+    it("should pass nullable runner identity fields through to Prisma", async () => {
+      mockPrisma.user.update.mockResolvedValue({ id: "u1" });
+
+      await repository.update("u1", {
+        region: null,
+        subRegion: null,
+        pb5kSeconds: null,
+        pb10kSeconds: null,
+      });
+
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: "u1" },
+        data: {
+          region: null,
+          subRegion: null,
+          pb5kSeconds: null,
+          pb10kSeconds: null,
+        },
+      });
     });
   });
 

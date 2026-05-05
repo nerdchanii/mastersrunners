@@ -1,47 +1,46 @@
 import { Loader2 } from "lucide-react";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/lib/auth-context";
+import { rememberAuthReturnPath, sanitizeAuthReturnPath } from "@/lib/auth-return-path";
+import { defaultPublicRuntimeConfig, usePublicRuntimeConfig } from "@/lib/public-config";
 
-import {
-  fetchAuthProviders,
-  isLocalApiBase,
-  type LoginProviders,
-  performDevLogin,
-  startOAuthLogin,
-} from "./login-api";
+import { isLocalApiBase, performDevLogin, startOAuthLogin } from "./login-api";
 
 function LoginContent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isAuthenticated, isLoading, refreshUser } = useAuth();
-  const [providers, setProviders] = useState<LoginProviders | null>(null);
+  const { data: runtimeConfig, isPending: isRuntimeConfigPending } = usePublicRuntimeConfig();
   const error = searchParams.get("error");
+  const intent = searchParams.get("intent") === "signup" ? "signup" : "login";
+  const nextPath = sanitizeAuthReturnPath(searchParams.get("next"));
+  const destination = nextPath && nextPath !== "/" ? nextPath : "/feed";
+  const providers = runtimeConfig?.authProviders ?? defaultPublicRuntimeConfig.authProviders;
+  const title = intent === "signup" ? "회원가입" : "로그인";
+  const description =
+    intent === "signup"
+      ? "처음이라면 소셜 계정으로 바로 시작하고, 프로필은 나중에 가볍게 맞춰도 됩니다."
+      : "이미 마스터즈러너라면 계속하고, 처음이어도 같은 버튼으로 바로 시작할 수 있습니다.";
+  const kakaoLabel = intent === "signup" ? "카카오로 회원가입" : "카카오로 로그인";
+  const googleLabel = intent === "signup" ? "Google로 회원가입" : "Google로 로그인";
+  const supportCopy =
+    intent === "signup"
+      ? "이미 가입한 계정이라면 같은 소셜 계정으로 바로 로그인됩니다."
+      : "아직 계정이 없어도 같은 소셜 계정으로 바로 시작할 수 있습니다.";
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      navigate("/", { replace: true });
+      navigate(destination, { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate]);
-
-  useEffect(() => {
-    const loadProviderConfig = async () => {
-      try {
-        const data = await fetchAuthProviders();
-        setProviders(data);
-      } catch {
-        setProviders(null);
-      }
-    };
-
-    void loadProviderConfig();
-  }, []);
+  }, [destination, isAuthenticated, isLoading, navigate]);
 
   const handleOAuth = (provider: string) => {
+    rememberAuthReturnPath(nextPath);
     startOAuthLogin(provider);
   };
 
@@ -75,10 +74,8 @@ function LoginContent() {
             </svg>
             <span className="text-2xl font-bold">Masters Runners</span>
           </div>
-          <CardTitle className="text-3xl font-bold">로그인</CardTitle>
-          <CardDescription className="text-base">
-            마스터즈 러너스에 오신 것을 환영합니다
-          </CardDescription>
+          <CardTitle className="text-3xl font-bold">{title}</CardTitle>
+          <CardDescription className="text-base">{description}</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -88,41 +85,39 @@ function LoginContent() {
             </div>
           )}
 
-          {(!providers || providers.kakao) && (
+          {providers.kakao && (
             <Button
               onClick={() => handleOAuth("kakao")}
               className="w-full bg-[#FEE500] text-[#191919] hover:bg-[#FEE500]/90"
               size="lg"
             >
-              카카오로 시작하기
+              {kakaoLabel}
             </Button>
           )}
 
-          {(!providers || providers.google) && (
+          {providers.google && (
             <Button
               onClick={() => handleOAuth("google")}
               variant="outline"
               className="w-full"
               size="lg"
             >
-              Google로 시작하기
+              {googleLabel}
             </Button>
           )}
 
-          {(!providers || providers.naver) && (
-            <Button
-              onClick={() => handleOAuth("naver")}
-              className="w-full bg-[#03C75A] text-white hover:bg-[#03C75A]/90"
-              size="lg"
-            >
-              네이버로 시작하기
-            </Button>
-          )}
+          <p className="text-center text-xs text-muted-foreground">{supportCopy}</p>
 
-          {providers && !providers.kakao && !providers.google && !providers.naver && (
+          {!isRuntimeConfigPending && !providers.kakao && !providers.google && (
             <p className="text-center text-xs text-muted-foreground">
               현재 사용 가능한 소셜 로그인이 없습니다.
             </p>
+          )}
+
+          {isRuntimeConfigPending && (
+            <div className="flex items-center justify-center py-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </div>
           )}
 
           {isLocalApiBase() && (
@@ -136,7 +131,7 @@ function LoginContent() {
                     try {
                       await performDevLogin();
                       await refreshUser();
-                      navigate("/", { replace: true });
+                      navigate(destination, { replace: true });
                     } catch {
                       // silently fail
                     }

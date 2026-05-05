@@ -2,9 +2,9 @@ import type { Page } from "@playwright/test";
 
 import { mockUser } from "./mock-auth";
 
-export const API_BASE = "http://localhost:4000/api/v1";
+const API_BASE = "http://localhost:4000/api/v1";
 
-export const messagingFixtureIds = {
+const messagingFixtureIds = {
   activityConversationId: "conv-activity-1",
   activityId: "activity-1",
   crewConversationId: "conv-crew-1",
@@ -12,7 +12,7 @@ export const messagingFixtureIds = {
   directConversationId: "conv-direct-1",
 };
 
-export const messagingFixtureUsers = {
+const messagingFixtureUsers = {
   crewOwner: {
     id: "user-2",
     name: "러닝맨",
@@ -53,10 +53,21 @@ interface FixtureMessage extends FixtureMessageSummary {
 }
 
 interface FixtureConversationSummary {
+  activity?: {
+    crew: { id: string; name: string } | null;
+    crewId: string;
+    id: string;
+    status: string;
+    title: string;
+  } | null;
+  activityId?: string | null;
+  crew?: { id: string; name: string } | null;
+  crewId?: string | null;
   id: string;
   messages: FixtureMessageSummary[];
+  name?: string | null;
   participants: FixtureConversationParticipant[];
-  type: "DIRECT";
+  type: "ACTIVITY" | "CREW" | "DIRECT";
   unreadCount: number;
   updatedAt: string;
 }
@@ -64,22 +75,35 @@ interface FixtureConversationSummary {
 interface FixtureDirectConversationDetail {
   conversation: Omit<FixtureConversationSummary, "messages" | "unreadCount">;
   messages: FixtureMessage[];
-  nextCursor: string | null;
+  olderCursor: string | null;
+  newerCursor: string | null;
+  firstUnreadMessageId: string | null;
 }
 
 interface FixtureChatConversation {
+  activity?: {
+    crew: { id: string; imageUrl: string | null; name: string } | null;
+    crewId: string;
+    id: string;
+    status: string;
+    title: string;
+  } | null;
   activityId: string | null;
+  crew?: { id: string; imageUrl: string | null; name: string } | null;
   crewId: string | null;
   id: string;
   name: string | null;
   participants: FixtureConversationParticipant[];
   type: "ACTIVITY" | "CREW";
+  updatedAt: string;
 }
 
 interface FixtureChatResponse {
   conversation: FixtureChatConversation;
   messages: FixtureMessage[];
-  nextCursor: string | null;
+  olderCursor: string | null;
+  newerCursor: string | null;
+  firstUnreadMessageId: string | null;
 }
 
 interface FixtureCrewMember {
@@ -155,6 +179,7 @@ interface DirectMessagesScenario {
   conversationDetailResponse: FixtureDirectConversationDetail;
   conversationId: string;
   conversationsResponse: { data: FixtureConversationSummary[]; nextCursor: string | null };
+  startConversationResponse: { id: string };
   unreadNotificationsCount: number;
 }
 
@@ -172,7 +197,7 @@ function json(value: unknown, status = 200) {
   };
 }
 
-export function buildMessage(overrides: Partial<FixtureMessage> = {}): FixtureMessage {
+function buildMessage(overrides: Partial<FixtureMessage> = {}): FixtureMessage {
   return {
     content: "오늘도 달리시나요?",
     conversationId: messagingFixtureIds.directConversationId,
@@ -185,12 +210,16 @@ export function buildMessage(overrides: Partial<FixtureMessage> = {}): FixtureMe
   };
 }
 
-export function buildDirectConversation(
+function buildDirectConversation(
   overrides: Partial<FixtureConversationSummary> = {},
 ): FixtureConversationSummary {
   const id = overrides.id ?? messagingFixtureIds.directConversationId;
 
   return {
+    activity: null,
+    activityId: null,
+    crew: null,
+    crewId: null,
     id,
     messages: [
       {
@@ -200,6 +229,7 @@ export function buildDirectConversation(
         senderId: messagingFixtureUsers.runningMate.id,
       },
     ],
+    name: null,
     participants: [
       {
         lastReadAt: "2026-02-20T10:00:00.000Z",
@@ -219,11 +249,106 @@ export function buildDirectConversation(
   };
 }
 
-export function buildCrewConversation(
+export function buildCrewConversationSummary(
+  overrides: Partial<FixtureConversationSummary> = {},
+): FixtureConversationSummary {
+  return buildDirectConversation({
+    activity: null,
+    activityId: null,
+    crew: {
+      id: messagingFixtureIds.crewId,
+      name: "서울 러닝 크루",
+    },
+    crewId: messagingFixtureIds.crewId,
+    id: messagingFixtureIds.crewConversationId,
+    messages: [
+      {
+        content: "크루 공지를 확인해주세요.",
+        createdAt: "2026-02-20T09:55:00.000Z",
+        id: "msg-crew-last",
+        senderId: messagingFixtureUsers.crewOwner.id,
+      },
+    ],
+    name: null,
+    participants: [
+      {
+        lastReadAt: "2026-02-20T09:40:00.000Z",
+        user: messagingFixtureUsers.viewer,
+        userId: messagingFixtureUsers.viewer.id,
+      },
+      {
+        lastReadAt: null,
+        user: messagingFixtureUsers.crewOwner,
+        userId: messagingFixtureUsers.crewOwner.id,
+      },
+    ],
+    type: "CREW",
+    unreadCount: 1,
+    updatedAt: "2026-02-20T09:55:00.000Z",
+    ...overrides,
+  });
+}
+
+export function buildActivityConversationSummary(
+  overrides: Partial<FixtureConversationSummary> = {},
+): FixtureConversationSummary {
+  return buildDirectConversation({
+    activity: {
+      crew: {
+        id: messagingFixtureIds.crewId,
+        name: "서울 러닝 크루",
+      },
+      crewId: messagingFixtureIds.crewId,
+      id: messagingFixtureIds.activityId,
+      status: "SCHEDULED",
+      title: "월요일 아침 러닝",
+    },
+    activityId: messagingFixtureIds.activityId,
+    crew: {
+      id: messagingFixtureIds.crewId,
+      name: "서울 러닝 크루",
+    },
+    crewId: messagingFixtureIds.crewId,
+    id: messagingFixtureIds.activityConversationId,
+    messages: [
+      {
+        content: "집합 장소를 다시 확인해주세요.",
+        createdAt: "2026-02-20T08:30:00.000Z",
+        id: "msg-activity-last",
+        senderId: messagingFixtureUsers.crewOwner.id,
+      },
+    ],
+    name: null,
+    participants: [
+      {
+        lastReadAt: null,
+        user: messagingFixtureUsers.viewer,
+        userId: messagingFixtureUsers.viewer.id,
+      },
+      {
+        lastReadAt: "2026-02-20T08:00:00.000Z",
+        user: messagingFixtureUsers.crewOwner,
+        userId: messagingFixtureUsers.crewOwner.id,
+      },
+    ],
+    type: "ACTIVITY",
+    unreadCount: 4,
+    updatedAt: "2026-02-20T08:30:00.000Z",
+    ...overrides,
+  });
+}
+
+function buildCrewConversation(
   overrides: Partial<FixtureChatConversation> = {},
 ): FixtureChatConversation {
   return {
+    activity: null,
     activityId: null,
+    crew: {
+      id: messagingFixtureIds.crewId,
+      imageUrl: null,
+      name: "서울 러닝 크루",
+    },
     crewId: messagingFixtureIds.crewId,
     id: messagingFixtureIds.crewConversationId,
     name: null,
@@ -242,15 +367,32 @@ export function buildCrewConversation(
       },
     ],
     type: "CREW",
+    updatedAt: "2026-02-19T10:05:00.000Z",
     ...overrides,
   };
 }
 
-export function buildActivityConversation(
+function buildActivityConversation(
   overrides: Partial<FixtureChatConversation> = {},
 ): FixtureChatConversation {
   return {
+    activity: {
+      crew: {
+        id: messagingFixtureIds.crewId,
+        imageUrl: null,
+        name: "서울 러닝 크루",
+      },
+      crewId: messagingFixtureIds.crewId,
+      id: messagingFixtureIds.activityId,
+      status: "SCHEDULED",
+      title: "월요일 아침 러닝",
+    },
     activityId: messagingFixtureIds.activityId,
+    crew: {
+      id: messagingFixtureIds.crewId,
+      imageUrl: null,
+      name: "서울 러닝 크루",
+    },
     crewId: messagingFixtureIds.crewId,
     id: messagingFixtureIds.activityConversationId,
     name: null,
@@ -263,11 +405,12 @@ export function buildActivityConversation(
       },
     ],
     type: "ACTIVITY",
+    updatedAt: "2026-02-20T08:30:00.000Z",
     ...overrides,
   };
 }
 
-export function buildCrew(
+function buildCrew(
   overrides: Partial<FixtureCrew> = {},
   viewerRole: FixtureCrewMember["role"] = "MEMBER",
 ): FixtureCrew {
@@ -346,6 +489,7 @@ export function buildActivity(
 export function buildDirectConversationScenario(
   overrides: {
     conversation?: Partial<FixtureConversationSummary>;
+    conversations?: FixtureConversationSummary[];
     detailConversation?: Partial<FixtureDirectConversationDetail["conversation"]>;
     messages?: FixtureMessage[];
     unreadNotificationsCount?: number;
@@ -361,20 +505,28 @@ export function buildDirectConversationScenario(
   return {
     conversationDetailResponse: {
       conversation: {
+        activity: overrides.detailConversation?.activity ?? conversation.activity,
+        activityId: overrides.detailConversation?.activityId ?? conversation.activityId,
+        crew: overrides.detailConversation?.crew ?? conversation.crew,
+        crewId: overrides.detailConversation?.crewId ?? conversation.crewId,
         id: conversation.id,
+        name: overrides.detailConversation?.name ?? conversation.name,
         participants: overrides.detailConversation?.participants ?? conversation.participants,
         type: conversation.type,
         updatedAt: overrides.detailConversation?.updatedAt ?? conversation.updatedAt,
         ...overrides.detailConversation,
       },
       messages,
-      nextCursor: null,
+      olderCursor: null,
+      newerCursor: null,
+      firstUnreadMessageId: null,
     },
     conversationId: conversation.id,
     conversationsResponse: {
-      data: [conversation],
+      data: overrides.conversations ?? [conversation],
       nextCursor: null,
     },
+    startConversationResponse: { id: conversation.id },
     unreadNotificationsCount: overrides.unreadNotificationsCount ?? 2,
   };
 }
@@ -416,7 +568,9 @@ export function buildCrewChatScenario(
           senderId: messagingFixtureUsers.viewer.id,
         }),
       ],
-      nextCursor: null,
+      olderCursor: null,
+      newerCursor: null,
+      firstUnreadMessageId: null,
     },
     crew,
     crewId: crew.id,
@@ -448,7 +602,9 @@ export function buildActivityChatScenario(
     chatResponse: {
       conversation,
       messages: overrides.messages ?? [],
-      nextCursor: null,
+      olderCursor: null,
+      newerCursor: null,
+      firstUnreadMessageId: null,
     },
     crew,
     crewId: crew.id,
@@ -480,6 +636,11 @@ export async function setupMessagingRoutes(page: Page, scenario: MessagingRoutes
       page.route(`${API_BASE}/conversations*`, (route) => {
         if (route.request().url().includes("/conversations/")) {
           return route.fallback();
+        }
+
+        if (route.request().method() === "POST") {
+          route.fulfill(json(direct.startConversationResponse));
+          return;
         }
 
         route.fulfill(json(direct.conversationsResponse));

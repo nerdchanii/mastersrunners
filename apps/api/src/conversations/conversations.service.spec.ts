@@ -2,30 +2,34 @@ import { BadRequestException, ForbiddenException, NotFoundException } from "@nes
 import { Test } from "@nestjs/testing";
 
 import { BlockRepository } from "../block/repositories/block.repository";
+import { RealtimeEventsService } from "../realtime/realtime-events.service";
 
 import { ConversationsRepository } from "./repositories/conversations.repository";
 import { ConversationsService } from "./conversations.service";
-import { ConversationsSseService } from "./conversations-sse.service";
 
 const mockConversationsRepository = {
   findOrCreateDirect: jest.fn(),
   findByUserId: jest.fn(),
   findById: jest.fn(),
   isParticipant: jest.fn(),
-  getMessages: jest.fn(),
+  getConversationWindow: jest.fn(),
   createMessage: jest.fn(),
   updateLastRead: jest.fn(),
   deleteMessage: jest.fn(),
   getUnreadCount: jest.fn(),
+  getTotalUnreadCount: jest.fn(),
   getMessageById: jest.fn(),
+  removeParticipant: jest.fn(),
+  setParticipantLeftAt: jest.fn(),
 };
 
 const mockBlockRepository = {
   isBlocked: jest.fn(),
 };
 
-const mockSseService = {
-  sendToUser: jest.fn(),
+const mockRealtimeEvents = {
+  emitChatMessage: jest.fn(),
+  emitChatUnreadUpdate: jest.fn(),
 };
 
 describe("ConversationsService", () => {
@@ -38,7 +42,7 @@ describe("ConversationsService", () => {
         ConversationsService,
         { provide: ConversationsRepository, useValue: mockConversationsRepository },
         { provide: BlockRepository, useValue: mockBlockRepository },
-        { provide: ConversationsSseService, useValue: mockSseService },
+        { provide: RealtimeEventsService, useValue: mockRealtimeEvents },
       ],
     }).compile();
     service = module.get(ConversationsService);
@@ -157,6 +161,57 @@ describe("ConversationsService", () => {
       expect(result.nextCursor).toBeNull();
     });
 
+    it("preserves crew and activity room identity metadata", async () => {
+      const userId = "user-1";
+      const conversations = [
+        {
+          id: "conv-crew",
+          type: "CREW",
+          crewId: "crew-1",
+          activityId: null,
+          crew: { id: "crew-1", name: "서울 러닝 크루" },
+          activity: null,
+          updatedAt: new Date(),
+          participants: [],
+          messages: [],
+        },
+        {
+          id: "conv-activity",
+          type: "ACTIVITY",
+          crewId: "crew-1",
+          activityId: "activity-1",
+          crew: { id: "crew-1", name: "서울 러닝 크루" },
+          activity: {
+            id: "activity-1",
+            title: "월요일 아침 러닝",
+            crewId: "crew-1",
+            status: "SCHEDULED",
+            crew: { id: "crew-1", name: "서울 러닝 크루" },
+          },
+          updatedAt: new Date(),
+          participants: [],
+          messages: [],
+        },
+      ];
+
+      mockConversationsRepository.findByUserId.mockResolvedValue(conversations);
+      mockConversationsRepository.getUnreadCount.mockResolvedValue(0);
+
+      const result = await service.getConversations(userId);
+
+      expect(result.data[0]).toMatchObject({
+        type: "CREW",
+        crew: { id: "crew-1", name: "서울 러닝 크루" },
+      });
+      expect(result.data[1]).toMatchObject({
+        type: "ACTIVITY",
+        activity: {
+          id: "activity-1",
+          title: "월요일 아침 러닝",
+        },
+      });
+    });
+
     it("should return nextCursor if more items exist", async () => {
       const userId = "user-1";
       const limit = 2;
@@ -198,12 +253,31 @@ describe("ConversationsService", () => {
     it("should return conversation with messages", async () => {
       const conversationId = "conv-1";
       const userId = "user-1";
+      const now = new Date("2026-04-02T04:00:00.000Z");
       const conversation = {
         id: conversationId,
         type: "DIRECT",
+        name: null,
+        crewId: null,
+        activityId: null,
+        crew: null,
+        activity: null,
+        updatedAt: now,
         participants: [
-          { userId: "user-1", user: { id: "user-1", name: "User 1" } },
-          { userId: "user-2", user: { id: "user-2", name: "User 2" } },
+          {
+            userId: "user-1",
+            lastReadAt: null,
+            leftAt: null,
+            joinedAt: now,
+            user: { id: "user-1", name: "User 1", profileImage: null },
+          },
+          {
+            userId: "user-2",
+            lastReadAt: null,
+            leftAt: null,
+            joinedAt: now,
+            user: { id: "user-2", name: "User 2", profileImage: null },
+          },
         ],
       };
       const messages = [
@@ -212,15 +286,22 @@ describe("ConversationsService", () => {
           conversationId,
           senderId: "user-2",
           content: "Hello",
-          createdAt: new Date(),
-          sender: { id: "user-2", name: "User 2" },
+          deletedAt: null,
+          createdAt: now,
+          sender: { id: "user-2", name: "User 2", profileImage: null },
         },
       ];
 
       mockConversationsRepository.findById.mockResolvedValue(conversation);
       mockConversationsRepository.isParticipant.mockResolvedValue(true);
       mockBlockRepository.isBlocked.mockResolvedValue(false);
-      mockConversationsRepository.getMessages.mockResolvedValue(messages);
+      mockConversationsRepository.getConversationWindow.mockResolvedValue({
+        messages,
+        olderCursor: null,
+        newerCursor: null,
+        firstUnreadMessageId: null,
+      });
+      mockConversationsRepository.updateLastRead.mockResolvedValue({});
 
       const result = await service.getConversation(conversationId, userId);
 
@@ -229,13 +310,16 @@ describe("ConversationsService", () => {
         conversationId,
         userId,
       );
-      expect(mockConversationsRepository.getMessages).toHaveBeenCalledWith(
+      expect(mockConversationsRepository.getConversationWindow).toHaveBeenCalledWith(
         conversationId,
-        undefined,
-        50,
+        userId,
+        {},
       );
       expect(result.conversation).toEqual(conversation);
-      expect(result.messages).toHaveLength(1);
+      expect(result.messages).toEqual(messages);
+      expect(result.olderCursor).toBeNull();
+      expect(result.newerCursor).toBeNull();
+      expect(result.firstUnreadMessageId).toBeNull();
     });
 
     it("should throw NotFoundException if conversation not found", async () => {
@@ -299,6 +383,115 @@ describe("ConversationsService", () => {
         "차단 관계로 인해 대화를 볼 수 없습니다.",
       );
     });
+
+    it("does not apply direct-message block rules to crew conversations", async () => {
+      const conversationId = "conv-crew";
+      const userId = "user-1";
+      const conversation = {
+        id: conversationId,
+        type: "CREW",
+        name: "서울 러닝 크루",
+        crewId: "crew-1",
+        activityId: null,
+        crew: { id: "crew-1", name: "서울 러닝 크루", imageUrl: null },
+        activity: null,
+        updatedAt: new Date("2026-04-22T00:00:00.000Z"),
+        participants: [
+          {
+            userId,
+            lastReadAt: null,
+            leftAt: null,
+            joinedAt: new Date("2026-04-20T00:00:00.000Z"),
+            user: { id: userId, name: "User 1", profileImage: null },
+          },
+          {
+            userId: "user-2",
+            lastReadAt: null,
+            leftAt: null,
+            joinedAt: new Date("2026-04-20T00:00:00.000Z"),
+            user: { id: "user-2", name: "User 2", profileImage: null },
+          },
+          {
+            userId: "user-3",
+            lastReadAt: null,
+            leftAt: null,
+            joinedAt: new Date("2026-04-20T00:00:00.000Z"),
+            user: { id: "user-3", name: "User 3", profileImage: null },
+          },
+        ],
+      };
+
+      mockConversationsRepository.findById.mockResolvedValue(conversation);
+      mockConversationsRepository.isParticipant.mockResolvedValue(true);
+      mockConversationsRepository.getConversationWindow.mockResolvedValue({
+        messages: [],
+        olderCursor: null,
+        newerCursor: null,
+        firstUnreadMessageId: null,
+      });
+      mockConversationsRepository.updateLastRead.mockResolvedValue({});
+
+      await expect(service.getConversation(conversationId, userId)).resolves.toMatchObject({
+        conversation: expect.objectContaining({ id: conversationId, type: "CREW" }),
+      });
+      expect(mockBlockRepository.isBlocked).not.toHaveBeenCalled();
+    });
+
+    it("rejects direct conversation detail when the user left and no newer message exists", async () => {
+      const conversationId = "conv-hidden";
+      const userId = "user-1";
+      const now = new Date("2026-04-21T09:00:00.000Z");
+
+      mockConversationsRepository.findById.mockResolvedValue({
+        id: conversationId,
+        type: "DIRECT",
+        name: null,
+        crewId: null,
+        activityId: null,
+        crew: null,
+        activity: null,
+        updatedAt: now,
+        participants: [
+          {
+            userId,
+            lastReadAt: now,
+            leftAt: now,
+            joinedAt: now,
+            user: { id: userId, name: "User 1", profileImage: null },
+          },
+          {
+            userId: "user-2",
+            lastReadAt: null,
+            leftAt: null,
+            joinedAt: now,
+            user: { id: "user-2", name: "User 2", profileImage: null },
+          },
+        ],
+      });
+      mockConversationsRepository.isParticipant.mockResolvedValue(true);
+      mockBlockRepository.isBlocked.mockResolvedValue(false);
+      mockConversationsRepository.getConversationWindow.mockResolvedValue({
+        messages: [],
+        olderCursor: null,
+        newerCursor: null,
+        firstUnreadMessageId: null,
+      });
+      mockConversationsRepository.updateLastRead.mockResolvedValue({});
+
+      await expect(service.getConversation(conversationId, userId)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockConversationsRepository.updateLastRead).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getUnreadCount", () => {
+    it("returns the lightweight unread total for the current user", async () => {
+      mockConversationsRepository.getTotalUnreadCount.mockResolvedValue(7);
+
+      await expect(service.getUnreadCount("user-1")).resolves.toEqual({ count: 7 });
+      expect(mockConversationsRepository.getTotalUnreadCount).toHaveBeenCalledWith("user-1");
+    });
   });
 
   describe("sendMessage", () => {
@@ -309,6 +502,7 @@ describe("ConversationsService", () => {
       const otherUserId = "user-2";
       const conversation = {
         id: conversationId,
+        type: "DIRECT",
         participants: [{ userId: "user-1" }, { userId: otherUserId }],
       };
       const createdMessage = {
@@ -362,6 +556,7 @@ describe("ConversationsService", () => {
       const otherUserId = "user-2";
       const conversation = {
         id: conversationId,
+        type: "DIRECT",
         participants: [{ userId: "user-1" }, { userId: otherUserId }],
       };
 
@@ -377,13 +572,42 @@ describe("ConversationsService", () => {
       );
     });
 
-    it("should send SSE event to recipient when message is created", async () => {
+    it("does not apply direct-message block rules to crew chat sends", async () => {
+      const conversationId = "conv-crew";
+      const userId = "user-1";
+      const content = "Hello";
+      const conversation = {
+        id: conversationId,
+        type: "CREW",
+        participants: [{ userId: "user-1" }, { userId: "user-2" }, { userId: "user-3" }],
+      };
+      const createdMessage = {
+        id: "msg-1",
+        conversationId,
+        senderId: userId,
+        content,
+        createdAt: new Date(),
+        deletedAt: null,
+      };
+
+      mockConversationsRepository.isParticipant.mockResolvedValue(true);
+      mockConversationsRepository.findById.mockResolvedValue(conversation);
+      mockConversationsRepository.createMessage.mockResolvedValue(createdMessage);
+
+      await expect(service.sendMessage(conversationId, userId, content)).resolves.toEqual(
+        createdMessage,
+      );
+      expect(mockBlockRepository.isBlocked).not.toHaveBeenCalled();
+    });
+
+    it("should emit websocket event to all conversation participants when message is created", async () => {
       const conversationId = "conv-1";
       const userId = "user-1";
       const recipientId = "user-2";
       const content = "Hello";
       const conversation = {
         id: conversationId,
+        type: "DIRECT",
         participants: [{ userId: "user-1" }, { userId: recipientId }],
       };
       const createdMessage = {
@@ -403,7 +627,11 @@ describe("ConversationsService", () => {
 
       await service.sendMessage(conversationId, userId, content);
 
-      expect(mockSseService.sendToUser).toHaveBeenCalledWith(recipientId, createdMessage);
+      expect(mockRealtimeEvents.emitChatMessage).toHaveBeenCalledWith(
+        conversationId,
+        [userId, recipientId],
+        createdMessage,
+      );
     });
   });
 
@@ -418,6 +646,7 @@ describe("ConversationsService", () => {
         userId,
         lastReadAt: new Date(),
       });
+      mockConversationsRepository.getTotalUnreadCount.mockResolvedValue(3);
 
       await service.markAsRead(conversationId, userId);
 
@@ -429,6 +658,35 @@ describe("ConversationsService", () => {
         conversationId,
         userId,
       );
+      expect(mockRealtimeEvents.emitChatUnreadUpdate).toHaveBeenCalledWith(userId, {
+        conversationId,
+        unreadCount: 0,
+        totalUnreadCount: 3,
+      });
+    });
+
+    it("should keep read successful when unread total refresh fails", async () => {
+      const conversationId = "conv-1";
+      const userId = "user-1";
+
+      mockConversationsRepository.isParticipant.mockResolvedValue(true);
+      mockConversationsRepository.updateLastRead.mockResolvedValue({
+        conversationId,
+        userId,
+        lastReadAt: new Date(),
+      });
+      mockConversationsRepository.getTotalUnreadCount.mockRejectedValue(new Error("count failed"));
+
+      await expect(service.markAsRead(conversationId, userId)).resolves.toMatchObject({
+        conversationId,
+        userId,
+      });
+
+      expect(mockRealtimeEvents.emitChatUnreadUpdate).toHaveBeenCalledWith(userId, {
+        conversationId,
+        unreadCount: 0,
+        totalUnreadCount: null,
+      });
     });
 
     it("should throw if not participant", async () => {
@@ -440,6 +698,42 @@ describe("ConversationsService", () => {
       await expect(service.markAsRead(conversationId, userId)).rejects.toThrow(ForbiddenException);
       await expect(service.markAsRead(conversationId, userId)).rejects.toThrow(
         "이 대화에 참여할 권한이 없습니다.",
+      );
+    });
+  });
+
+  describe("leaveConversation", () => {
+    it("allows leaving direct conversations", async () => {
+      mockConversationsRepository.findById.mockResolvedValue({
+        id: "conv-1",
+        type: "DIRECT",
+        participants: [{ userId: "user-1" }, { userId: "user-2" }],
+      });
+      mockConversationsRepository.setParticipantLeftAt.mockResolvedValue({
+        conversationId: "conv-1",
+        userId: "user-1",
+        leftAt: new Date(),
+      });
+
+      await expect(service.leaveConversation("conv-1", "user-1")).resolves.toEqual({
+        id: "conv-1",
+      });
+      expect(mockConversationsRepository.setParticipantLeftAt).toHaveBeenCalledWith(
+        "conv-1",
+        "user-1",
+        expect.any(Date),
+      );
+    });
+
+    it("rejects leaving crew chat", async () => {
+      mockConversationsRepository.findById.mockResolvedValue({
+        id: "conv-crew",
+        type: "CREW",
+        participants: [{ userId: "user-1" }],
+      });
+
+      await expect(service.leaveConversation("conv-crew", "user-1")).rejects.toThrow(
+        BadRequestException,
       );
     });
   });

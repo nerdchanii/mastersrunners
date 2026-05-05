@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-03-12
+last_verified: 2026-04-01
 sources:
   - apps/api/src/events/events.controller.ts
   - apps/api/src/events/events.service.ts
@@ -19,7 +19,7 @@ sources:
 
 ## Summary
 
-Events and challenges are separate feature modules with their own controllers and repositories, but both expose user participation, ranking/progress, and workout-linked outcomes.
+Events and challenges are separate feature modules with their own controllers and repositories, but both now sit behind runtime feature gates and expose user participation, ranking/progress, and workout-linked outcomes only when enabled.
 
 ## Events Boundary
 
@@ -57,4 +57,5 @@ Events and challenges are separate feature modules with their own controllers an
 ## Current Constraints
 
 - Events and challenges still live as peer feature modules rather than a shared participation platform.
+- Controller access is guarded by repo-tracked runtime config, so disabled features return `404` instead of partial empty states.
 - Challenge progress and event result linking are app-level service behaviors, not decoupled asynchronous workflows.

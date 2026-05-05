@@ -1,17 +1,18 @@
 ---
 doc_state: current
 owner: architecture
-last_verified: 2026-03-12
+last_verified: 2026-04-01
 sources:
   - apps/api/src/uploads/uploads.module.ts
   - apps/api/src/uploads/uploads.service.ts
   - apps/api/src/uploads/storage/storage-adapter.interface.ts
   - apps/api/src/conversations/conversations.controller.ts
   - apps/api/src/conversations/conversations.service.ts
-  - apps/api/src/conversations/conversations-sse.service.ts
+  - apps/api/src/realtime/realtime.gateway.ts
+  - apps/api/src/realtime/realtime-events.service.ts
   - apps/api/src/notifications/notifications.controller.ts
-  - apps/api/src/notifications/notifications-sse.service.ts
   - apps/web/src/components/layout/Header.tsx
+  - apps/web/src/lib/realtime-context.tsx
   - apps/web/src/pages/messages/[id]/index.tsx
   - apps/web/src/hooks/useGroupChat.ts
 ---
@@ -36,26 +37,25 @@ When a FIT or GPX file is ingested:
 
 ## Realtime Flow
 
-Two realtime channels exist today:
+One realtime channel exists today:
 
-- direct and group conversation updates through `/conversations/sse`
-- notification updates through `/notifications/sse`
+- conversation and notification updates through the socket.io namespace `/realtime`
 
-Both SSE services keep one in-memory `Subject` per user connection and emit typed events:
+The realtime gateway authenticates from the browser cookie session, joins one user room per socket, and lets open chat screens join conversation rooms with `chat:subscribe`.
 
-- conversations: `new-message`
-- notifications: `notification`
+Typed events:
 
-At the server boundary, conversation SSE exists as one endpoint for conversation events. In the current service implementation, message fan-out is still written for "the other participant" rather than a true group-broadcast path, so it accurately fits direct-message delivery and not a full group-chat SSE model.
+- conversations: `chat:message`, `chat:unread:update`
+- notifications: `notification:new`, `notification:unread:update`
 
 ## Client Consumption
 
-- `Header` opens SSE connections for unread DM and notification updates.
-- the direct-message detail page opens its own conversation SSE stream.
-- group chat pages do not use SSE today; they poll via React Query every 10 seconds.
+- `RealtimeProvider` opens one shared WebSocket connection for chat, notification, and shell-level unread/list updates.
+- direct, crew, and activity chat screens subscribe their active conversation room over that shared socket.
+- `Header` reads unread counts from shared React Query state and does not own a separate realtime connection.
 
 ## Current Constraints
 
 - Realtime delivery is process-local in memory. There is no shared pub/sub or Redis fan-out in the current repo implementation.
-- SSE auth uses `?token=` rather than the normal `Authorization` header because `EventSource` cannot set custom headers directly.
-- Realtime ownership is split across page and layout components, and the desktop shell plus direct-message detail can subscribe to the same DM SSE stream at the same time.
+- Realtime socket auth uses the same access-token cookie as normal API requests.
+- Shared realtime ownership now sits in one app-level provider instead of being split across page and layout components.

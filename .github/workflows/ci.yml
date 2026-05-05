@@ -9,6 +9,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      VITE_API_URL: http://localhost:4000/api/v1
 
     services:
       postgres:
@@ -51,17 +53,35 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Playwright browser
+        run: pnpm --filter @masters/web exec playwright install --with-deps chromium
+
       - name: Run format check
         run: pnpm format:check
 
       - name: Run lint
         run: pnpm lint
 
+      - name: Check first-wave UX copy guardrails
+        run: pnpm check:ux-copy
+
       - name: Run explicit typecheck
         run: pnpm typecheck
 
+      - name: Check reviewer protocols
+        run: bash scripts/check-reviewer-protocols.sh
+
+      - name: Check reviewer protocol wiring
+        run: bash scripts/check-reviewer-protocol-wiring.sh
+
       - name: Check task review metadata for active and todo tasks
         run: bash scripts/check-task-review-metadata.sh
+
+      - name: Check deterministic active-task closeout state
+        run: bash scripts/check-active-task-closeout.sh
+
+      - name: Check Codex Stop review hook smoke scenarios
+        run: bash scripts/check-codex-stop-review-hook.sh
 
       - name: Check dependency boundaries and cycles
         run: pnpm depcruise
@@ -83,8 +103,12 @@ jobs:
 
       - name: Build web
         run: pnpm --filter @masters/web build
-        env:
-          VITE_API_URL: http://localhost:4000
+
+      - name: Run public web UX contracts
+        run: pnpm --filter @masters/web exec playwright test e2e/public-entry-auth.spec.ts e2e/ux-contract.spec.ts --project=chromium
+
+      - name: Build ops web
+        run: pnpm --filter @masters/ops-web build
 
   build-docker:
     runs-on: ubuntu-latest

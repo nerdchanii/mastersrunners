@@ -375,6 +375,43 @@ describe("EventsService", () => {
         service.submitResult("event-123", "user-123", { resultTime: 12600, status: "COMPLETED" }),
       ).rejects.toThrow(NotFoundException);
     });
+
+    it("should allow DNS without a resultTime", async () => {
+      const eventId = "event-123";
+      const userId = "user-123";
+      const resultData = { status: "DNS" as const, bibNumber: "A-101" };
+      const mockRegistration = { id: "reg-1", eventId, userId, status: "REGISTERED" };
+      const mockUpdated = { ...mockRegistration, ...resultData };
+
+      mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
+      mockEventRegistrationRepository.updateResult.mockResolvedValue(mockUpdated);
+
+      const result = await service.submitResult(eventId, userId, resultData);
+
+      expect(mockEventRegistrationRepository.updateResult).toHaveBeenCalledWith(eventId, userId, {
+        resultTime: undefined,
+        resultRank: undefined,
+        bibNumber: "A-101",
+        status: "DNS",
+      });
+      expect(result).toEqual(mockUpdated);
+    });
+
+    it("should reject COMPLETED without a resultTime", async () => {
+      const mockRegistration = {
+        id: "reg-1",
+        eventId: "event-123",
+        userId: "user-123",
+        status: "REGISTERED",
+      };
+      mockEventRegistrationRepository.findRegistration.mockResolvedValue(mockRegistration);
+
+      await expect(
+        service.submitResult("event-123", "user-123", { status: "COMPLETED" }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockEventRegistrationRepository.updateResult).not.toHaveBeenCalled();
+    });
   });
 
   describe("getResults", () => {

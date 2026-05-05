@@ -14,6 +14,7 @@ import {
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
+import { Public } from "../common/decorators/public.decorator.js";
 import { CursorLimitQueryDto } from "../common/dto/cursor-limit-query.dto.js";
 import { LimitQueryDto } from "../common/dto/limit-query.dto.js";
 
@@ -34,10 +35,13 @@ export class PostsController {
   }
 
   @Get()
+  @Public()
   findAll(@Req() req: Request, @Query() query: ListPostsQueryDto) {
-    const { userId } = req.user as { userId: string };
-    const viewerUserId = userId;
+    const viewerUserId = (req.user as { userId: string } | undefined)?.userId;
     const resolvedUserId = query.userId || viewerUserId;
+    if (!resolvedUserId) {
+      throw new ForbiddenException("사용자 ID가 필요합니다.");
+    }
     return this.postsService.findByUser(
       resolvedUserId,
       viewerUserId,
@@ -62,8 +66,9 @@ export class PostsController {
   }
 
   @Get(":id")
+  @Public()
   async findOne(@Param("id") id: string, @Req() req: Request) {
-    const { userId } = req.user as { userId: string };
+    const userId = (req.user as { userId: string } | undefined)?.userId;
     const post = await this.postsService.findById(id, userId);
     if (!post) throw new NotFoundException("게시글을 찾을 수 없습니다.");
     return post;

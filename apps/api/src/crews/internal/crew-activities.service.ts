@@ -19,6 +19,7 @@ interface CreateCrewActivityData {
   latitude?: number;
   longitude?: number;
   activityType?: string;
+  activityIcon?: string;
   workoutTypeId?: string;
 }
 
@@ -29,6 +30,7 @@ interface UpdateCrewActivityData {
   location?: string;
   latitude?: number;
   longitude?: number;
+  activityIcon?: string;
 }
 
 export class CrewActivitiesService {
@@ -64,6 +66,7 @@ export class CrewActivitiesService {
       createdBy: userId,
       qrCode,
       activityType,
+      activityIcon: data.activityType === "POP_UP" ? null : (data.activityIcon ?? null),
       workoutTypeId: data.workoutTypeId,
     });
 
@@ -80,8 +83,9 @@ export class CrewActivitiesService {
   async getActivities(
     crewId: string,
     opts?: { cursor?: string; limit?: number; type?: string; status?: string },
+    currentUserId?: string,
   ) {
-    await this.getCrewOrThrow(crewId);
+    await this.requireReadableCrew(crewId, currentUserId);
 
     const limit = opts?.limit ?? 20;
     const activities = await this.crewActivityRepo.findByCrewId(crewId, { ...opts, limit });
@@ -159,10 +163,21 @@ export class CrewActivitiesService {
   async checkIn(activityId: string, userId: string, method: string = "MANUAL") {
     const activity = await this.getActivityOrThrow(activityId);
     this.ensureActivityOpenForAttendance(activity, "체크인이 불가능한 활동입니다.");
+    const normalizedMethod = method || "MANUAL";
+
+    if (normalizedMethod !== "MANUAL") {
+      throw new BadRequestException("수동 체크인 전용 경로입니다.");
+    }
 
     const member = await this.crewMemberRepo.findMember(activity.crewId, userId);
     if (!member) {
       throw new ForbiddenException("크루 멤버만 체크인할 수 있습니다.");
+    }
+
+    const isAdmin = member.role === "OWNER" || member.role === "ADMIN";
+    const isHost = activity.createdBy === userId;
+    if (!isAdmin && !(activity.activityType === "POP_UP" && isHost)) {
+      throw new ForbiddenException("운영진만 수동 체크인할 수 있습니다.");
     }
 
     const existing = await this.crewActivityRepo.findAttendance(activityId, userId);
@@ -170,7 +185,7 @@ export class CrewActivitiesService {
       throw new BadRequestException("먼저 참석 신청을 해주세요.");
     }
 
-    return this.crewActivityRepo.checkIn(activityId, userId, method);
+    return this.crewActivityRepo.checkIn(activityId, userId, normalizedMethod);
   }
 
   async qrCheckIn(activityId: string, crewId: string, userId: string, qrCode: string) {
@@ -254,7 +269,11 @@ export class CrewActivitiesService {
       throw new ForbiddenException("활동을 취소할 권한이 없습니다.");
     }
 
-    return this.crewActivityRepo.cancelActivity(activityId);
+    const result = await this.crewActivityRepo.cancelActivity(activityId);
+    if (activity.chatConversationId) {
+      await this.conversationsRepo.removeAllParticipants(activity.chatConversationId);
+    }
+    return result;
   }
 
   async getAttendees(activityId: string, statusFilter?: string) {
@@ -267,30 +286,83 @@ export class CrewActivitiesService {
     return this.crewActivityRepo.getMemberAttendanceStats(crewId, userId);
   }
 
-  async getCrewAttendanceStats(crewId: string, opts?: { month?: string; type?: string }) {
+  async getMemberAttendanceHistory(
+    crewId: string,
+    userId: string,
+    opts?: { range?: string; type?: string },
+  ) {
+    await this.getCrewOrThrow(crewId);
+    return this.crewActivityRepo.getMemberAttendanceHistory(crewId, userId, opts);
+  }
+
+  async getCrewAttendanceStats(
+    crewId: string,
+    opts?: {
+      range?: string;
+      type?: string;
+      sort?: string;
+      order?: string;
+      q?: string;
+      checkInLte?: number;
+      noShowGte?: number;
+      limit?: number;
+    },
+  ) {
     await this.getCrewOrThrow(crewId);
     return this.crewActivityRepo.getCrewAttendanceStats(crewId, opts);
   }
 
-  async getActivityChat(crewId: string, activityId: string, userId: string, cursor?: string) {
+  async getActivityChat(
+    crewId: string,
+    activityId: string,
+    userId: string,
+    options?: {
+      cursor?: string;
+      direction?: "older" | "newer";
+      entry?: "latest" | "unread";
+      historyLimit?: number;
+      unreadLimit?: number;
+      limit?: number;
+    },
+  ) {
     const activity = await this.getActivityInCrewOrThrow(activityId, crewId);
+    if (activity.status === "CANCELLED") {
+      throw new ForbiddenException("취소된 활동의 채팅은 확인할 수 없습니다.");
+    }
     const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member) {
+    if (!member || member.status !== "ACTIVE") {
       throw new ForbiddenException("크루 멤버만 채팅에 참여할 수 있습니다.");
     }
 
+    const isAdmin = member.role === "OWNER" || member.role === "ADMIN";
+    const isHost = activity.createdBy === userId;
+    const canManage = isAdmin || (activity.activityType === "POP_UP" && isHost);
+    const myAttendance = activity.attendances.find(
+      (attendance: (typeof activity.attendances)[number]) => attendance.userId === userId,
+    );
+    const canAccessChat =
+      myAttendance?.status === "RSVP" || myAttendance?.status === "CHECKED_IN" || canManage;
+
+    if (!canAccessChat) {
+      throw new ForbiddenException("참석 후 대화를 확인할 수 있습니다.");
+    }
+
     if (!activity.chatConversationId) {
-      return { conversation: null, messages: [], nextCursor: null };
+      return {
+        conversation: null,
+        messages: [],
+        olderCursor: null,
+        newerCursor: null,
+        firstUnreadMessageId: null,
+      };
     }
 
     const conversation = await this.conversationsRepo.findById(activity.chatConversationId);
-    const messages = await this.conversationsRepo.getMessages(
+    const messageWindow = await this.conversationsRepo.getConversationWindow(
       activity.chatConversationId,
-      cursor,
-      30,
+      userId,
+      options ?? {},
     );
-    const hasMore = messages.length > 30;
-    const items = hasMore ? messages.slice(0, 30) : messages;
 
     await this.conversationsRepo
       .updateLastRead(activity.chatConversationId, userId)
@@ -298,8 +370,10 @@ export class CrewActivitiesService {
 
     return {
       conversation,
-      messages: items,
-      nextCursor: hasMore ? items[items.length - 1].id : null,
+      messages: messageWindow.messages,
+      olderCursor: messageWindow.olderCursor,
+      newerCursor: messageWindow.newerCursor,
+      firstUnreadMessageId: messageWindow.firstUnreadMessageId,
     };
   }
 
@@ -308,6 +382,22 @@ export class CrewActivitiesService {
     if (!crew) {
       throw new NotFoundException("크루를 찾을 수 없습니다.");
     }
+    return crew;
+  }
+
+  private async requireReadableCrew(crewId: string, currentUserId?: string) {
+    const crew = await this.getCrewOrThrow(crewId);
+    if (crew.isPublic !== false) {
+      return crew;
+    }
+
+    const member = currentUserId
+      ? await this.crewMemberRepo.findMember(crewId, currentUserId)
+      : null;
+    if (!member || member.status !== "ACTIVE") {
+      throw new NotFoundException("크루를 찾을 수 없습니다.");
+    }
+
     return crew;
   }
 

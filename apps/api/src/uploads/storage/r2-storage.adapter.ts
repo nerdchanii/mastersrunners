@@ -7,6 +7,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Injectable } from "@nestjs/common";
 
+import { resolveR2Endpoint } from "./r2-runtime.js";
 import type {
   DownloadResult,
   StorageAdapter,
@@ -27,7 +28,7 @@ export class R2StorageAdapter implements StorageAdapter {
     );
     this.s3 = new S3Client({
       region: "auto",
-      endpoint: process.env.R2_ENDPOINT || "",
+      endpoint: resolveR2Endpoint(process.env),
       credentials: {
         accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
@@ -73,6 +74,20 @@ export class R2StorageAdapter implements StorageAdapter {
       buffer: Buffer.from(bytes),
       size: response.ContentLength || bytes.length,
     };
+  }
+
+  async saveFile(
+    key: string,
+    buffer: Buffer,
+    contentType = "application/octet-stream",
+  ): Promise<void> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    });
+    await this.s3.send(command);
   }
 
   async deleteFile(key: string): Promise<void> {

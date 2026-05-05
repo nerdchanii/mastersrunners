@@ -1,0 +1,23 @@
+{
+  "task_id": "I-0016-126",
+  "reviewer": "ui-ux-reviewer",
+  "decision": "approved",
+  "tool": "codex-manual-protocol-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/ui-ux-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/ui-ux-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/ui-ux-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/ui-ux-review-checklist/SKILL.md"
+  ],
+  "findings": [],
+  "summary": "no findings. The board tab no longer asks users to choose an internal board before reading posts, announcement posts carry a visible 공지 badge, the redundant checkbox helper copy is removed, and profile mobile surfaces now align to the viewport edge.",
+  "residual_risks": [
+    "Announcement priority and pinning hierarchy remain minimal; richer ordering treatment belongs in a separate UX pass."
+  ],
+  "reviewed_at": "2026-05-04T00:30:00Z"
+}

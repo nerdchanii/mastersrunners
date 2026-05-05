@@ -1,9 +1,10 @@
 import type { TransactionClient } from "@masters/database";
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 
+import { StructuredLoggerService } from "../common/logging/structured-logger.service.js";
 import { DatabaseService } from "../database/database.service.js";
 
-import { FitParserService } from "./parsers/fit-parser.service.js";
+import { FitParserService, type ParsedWorkoutData } from "./parsers/fit-parser.service.js";
 import { GpxParserService } from "./parsers/gpx-parser.service.js";
 import { STORAGE_ADAPTER, type StorageAdapter } from "./storage/storage-adapter.interface.js";
 import { douglasPeucker as douglasPeuckerUtil } from "./utils/douglas-peucker.js";
@@ -11,6 +12,7 @@ import { encodePolyline } from "./utils/encoded-polyline.js";
 
 const DOWNSAMPLE_THRESHOLD = 1000;
 const DOWNSAMPLE_TARGET = 500;
+const DETAIL_FORMAT_VERSION = 1;
 
 type GpsPoint = {
   lat: number;
@@ -84,6 +86,55 @@ export interface ParseAndCreateResult {
   error?: string;
 }
 
+export interface WorkoutSourceUploadTarget {
+  uploadUrl: string;
+  key: string;
+}
+
+interface WorkoutDetailBlobV1 {
+  version: 1;
+  sourceFileType: "FIT" | "GPX";
+  summary: {
+    distance: number;
+    duration: number;
+    avgPace: number;
+    startTime: string;
+    endTime: string;
+    avgHeartRate: number | null;
+    maxHeartRate: number | null;
+    elevationGain: number | null;
+    avgCadence: number | null;
+    maxCadence: number | null;
+    calories: number | null;
+  };
+  track: Array<{
+    lat: number;
+    lon: number;
+    timestamp: string;
+    elevation?: number;
+    heartRate?: number;
+    cadence?: number;
+  }>;
+  laps: Array<{
+    lapNumber: number;
+    startTime: string;
+    distance: number;
+    duration: number;
+    avgPace: number;
+    avgHeartRate?: number;
+    maxHeartRate?: number;
+    avgCadence?: number;
+    calories?: number;
+  }>;
+  metrics: {
+    hasGps: boolean;
+    firstPoint: WorkoutDetailBlobV1["track"][number] | null;
+    lastPoint: WorkoutDetailBlobV1["track"][number] | null;
+    maxHeartRate: number | null;
+    maxCadence: number | null;
+  };
+}
+
 @Injectable()
 export class UploadsService {
   constructor(
@@ -91,6 +142,7 @@ export class UploadsService {
     private readonly fitParser: FitParserService,
     private readonly gpxParser: GpxParserService,
     private readonly db: DatabaseService,
+    private readonly logger: StructuredLoggerService,
   ) {}
 
   async getUploadUrl(key: string, contentType: string, expiresIn = 3600) {
@@ -111,8 +163,120 @@ export class UploadsService {
     return `${folder}/${userId}/${timestamp}-${sanitized}`;
   }
 
+  async createPublicAssetUploadTarget(
+    userId: string,
+    folder: string,
+    filename: string,
+    contentType: string,
+  ) {
+    const key = this.generateKey(userId, folder, filename);
+    return this.getUploadUrl(key, contentType);
+  }
+
+  async createWorkoutSourceUploadTarget(
+    userId: string,
+    filename: string,
+    contentType: string,
+  ): Promise<WorkoutSourceUploadTarget> {
+    const key = this.generateKey(userId, "workouts", filename);
+    const { uploadUrl } = await this.getUploadUrl(key, contentType);
+    return { uploadUrl, key };
+  }
+
   async downloadFile(key: string): Promise<{ buffer: Buffer; size: number }> {
     return this.storage.downloadFile(key);
+  }
+
+  private generateWorkoutDetailPath(userId: string, originalFileName: string): string {
+    const baseName = originalFileName.replace(/\.[^.]+$/, "");
+    return this.generateKey(userId, "workout-details", `${baseName}.detail.v1.json`);
+  }
+
+  private buildWorkoutDetailBlob(
+    parsedData: ParsedWorkoutData,
+    fileType: "FIT" | "GPX",
+  ): WorkoutDetailBlobV1 {
+    const track = (parsedData.gpsTrack ?? []).map((point) => ({
+      lat: point.lat,
+      lon: point.lon,
+      timestamp: point.timestamp.toISOString(),
+      ...(point.elevation !== undefined && { elevation: point.elevation }),
+      ...(point.heartRate !== undefined && { heartRate: point.heartRate }),
+      ...(point.cadence !== undefined && { cadence: point.cadence }),
+    }));
+    const laps = (parsedData.laps ?? []).map((lap) => ({
+      lapNumber: lap.lapNumber,
+      startTime: lap.startTime.toISOString(),
+      distance: lap.distance,
+      duration: lap.duration,
+      avgPace: lap.avgPace,
+      ...(lap.avgHeartRate !== undefined && { avgHeartRate: lap.avgHeartRate }),
+      ...(lap.maxHeartRate !== undefined && { maxHeartRate: lap.maxHeartRate }),
+      ...(lap.avgCadence !== undefined && { avgCadence: lap.avgCadence }),
+      ...(lap.calories !== undefined && { calories: lap.calories }),
+    }));
+    const firstPoint = track[0] ?? null;
+    const lastPoint = track[track.length - 1] ?? null;
+
+    return {
+      version: 1,
+      sourceFileType: fileType,
+      summary: {
+        distance: parsedData.distance,
+        duration: parsedData.duration,
+        avgPace: parsedData.avgPace,
+        startTime: parsedData.startTime.toISOString(),
+        endTime: parsedData.endTime.toISOString(),
+        avgHeartRate: parsedData.avgHeartRate ?? null,
+        maxHeartRate: parsedData.maxHeartRate ?? null,
+        elevationGain: parsedData.elevationGain ?? null,
+        avgCadence: parsedData.avgCadence ?? null,
+        maxCadence: parsedData.maxCadence ?? null,
+        calories: parsedData.calories ?? null,
+      },
+      track,
+      laps,
+      metrics: {
+        hasGps: track.length > 0,
+        firstPoint,
+        lastPoint,
+        maxHeartRate: parsedData.maxHeartRate ?? null,
+        maxCadence: parsedData.maxCadence ?? null,
+      },
+    };
+  }
+
+  private async discardTransientWorkoutSource(key: string): Promise<void> {
+    try {
+      await this.storage.deleteFile(key);
+    } catch (error) {
+      this.logger.logEvent("warn", "Failed to discard transient workout source", "UploadsService", {
+        fileKey: key,
+        error:
+          error instanceof Error
+            ? { name: error.name, message: error.message, stack: error.stack }
+            : error,
+      });
+    }
+  }
+
+  private async discardGeneratedWorkoutDetail(key: string): Promise<void> {
+    try {
+      await this.storage.deleteFile(key);
+    } catch (error) {
+      this.logger.logEvent(
+        "warn",
+        "Failed to discard generated workout detail blob",
+        "UploadsService",
+        {
+          detailPath: key,
+          error:
+            error instanceof Error
+              ? { name: error.name, message: error.message, stack: error.stack }
+              : error,
+        },
+      );
+    }
   }
 
   async parseAndCreateWorkout(
@@ -129,7 +293,7 @@ export class UploadsService {
     const { buffer, size } = await this.storage.downloadFile(input.fileKey);
 
     // 2. Parse
-    let parsedData;
+    let parsedData: ParsedWorkoutData;
     try {
       if (input.fileType === "FIT") {
         parsedData = await this.fitParser.parse(buffer);
@@ -137,105 +301,80 @@ export class UploadsService {
         parsedData = await this.gpxParser.parse(buffer.toString("utf-8"));
       }
     } catch (parseError) {
+      await this.discardTransientWorkoutSource(input.fileKey);
       const errorMessage = parseError instanceof Error ? parseError.message : "Unknown parse error";
       return { workout: null, workoutFile: null, error: errorMessage };
     }
 
-    // 3. Create Workout + WorkoutFile + WorkoutRoute in a transaction
-    const publicUrl = this.storage.getPublicUrl(input.fileKey);
-    return this.db.prisma.$transaction(async (tx: TransactionClient) => {
-      const workout = await tx.workout.create({
-        data: {
-          userId,
-          distance: parsedData.distance,
-          duration: parsedData.duration,
-          pace: parsedData.avgPace,
-          date: parsedData.startTime,
-          startedAt: parsedData.startTime,
-          finishedAt: parsedData.endTime,
-          source: input.fileType === "FIT" ? "FIT_FILE" : "GPX_FILE",
-          avgHeartRate: parsedData.avgHeartRate,
-          maxHeartRate: parsedData.maxHeartRate,
-          elevationGain: parsedData.elevationGain,
-          avgCadence: parsedData.avgCadence,
-          maxCadence: parsedData.maxCadence,
-          calories: parsedData.calories,
-          hasGps: !!parsedData.gpsTrack && parsedData.gpsTrack.length > 0,
-          startLat: parsedData.gpsTrack?.[0]?.lat,
-          startLng: parsedData.gpsTrack?.[0]?.lon,
-          endLat: parsedData.gpsTrack?.[parsedData.gpsTrack.length - 1]?.lat,
-          endLng: parsedData.gpsTrack?.[parsedData.gpsTrack.length - 1]?.lon,
-        },
-      });
+    const detailPath = this.generateWorkoutDetailPath(userId, input.originalFileName);
+    const detailBlob = this.buildWorkoutDetailBlob(parsedData, input.fileType);
+    await this.storage.saveFile(
+      detailPath,
+      Buffer.from(JSON.stringify(detailBlob), "utf-8"),
+      "application/json",
+    );
 
-      const workoutFile = await tx.workoutFile.create({
-        data: {
-          workoutId: workout.id,
-          fileType: input.fileType,
-          fileUrl: publicUrl,
-          originalFileName: input.originalFileName,
-          fileSize: size,
-          processStatus: "COMPLETED",
-          processedAt: new Date(),
-        },
-      });
+    let encodedPolylineStr: string | null = null;
+    if (parsedData.gpsTrack && parsedData.gpsTrack.length > 0) {
+      const routeTrackToSave =
+        parsedData.gpsTrack.length > DOWNSAMPLE_THRESHOLD
+          ? downsampleTrack(parsedData.gpsTrack, DOWNSAMPLE_TARGET)
+          : parsedData.gpsTrack;
 
-      // Create route if GPS data exists
-      if (parsedData.gpsTrack && parsedData.gpsTrack.length > 0) {
-        // Downsample large tracks using Douglas-Peucker algorithm
-        const trackToSave =
-          parsedData.gpsTrack.length > DOWNSAMPLE_THRESHOLD
-            ? downsampleTrack(parsedData.gpsTrack, DOWNSAMPLE_TARGET)
-            : parsedData.gpsTrack;
+      const polylinePoints = douglasPeuckerUtil(
+        routeTrackToSave.map((p) => ({ lat: p.lat, lon: p.lon })),
+        10,
+      ).map((p) => ({ lat: p.lat, lng: p.lon }));
+      encodedPolylineStr = encodePolyline(polylinePoints);
+    }
 
-        const lats = trackToSave.map((p) => p.lat);
-        const lons = trackToSave.map((p) => p.lon);
-
-        // Generate encoded polyline for map thumbnail display
-        // Further downsample to max 500 points for polyline using Douglas-Peucker
-        const polylinePoints = douglasPeuckerUtil(
-          trackToSave.map((p) => ({ lat: p.lat, lon: p.lon })),
-          10, // 10m epsilon
-        ).map((p) => ({ lat: p.lat, lng: p.lon }));
-        const encodedPolylineStr = encodePolyline(polylinePoints);
-
-        await tx.workoutRoute.create({
+    // 3. Create Workout + WorkoutFile in a transaction
+    try {
+      return await this.db.prisma.$transaction(async (tx: TransactionClient) => {
+        const workout = await tx.workout.create({
           data: {
-            workoutId: workout.id,
+            userId,
+            distance: parsedData.distance,
+            duration: parsedData.duration,
+            pace: parsedData.avgPace,
+            date: parsedData.startTime,
+            startedAt: parsedData.startTime,
+            finishedAt: parsedData.endTime,
+            source: input.fileType === "FIT" ? "FIT_FILE" : "GPX_FILE",
+            avgHeartRate: parsedData.avgHeartRate,
+            maxHeartRate: parsedData.maxHeartRate,
+            elevationGain: parsedData.elevationGain,
+            avgCadence: parsedData.avgCadence,
+            maxCadence: parsedData.maxCadence,
+            calories: parsedData.calories,
+            hasGps: !!parsedData.gpsTrack && parsedData.gpsTrack.length > 0,
+            startLat: parsedData.gpsTrack?.[0]?.lat,
+            startLng: parsedData.gpsTrack?.[0]?.lon,
+            endLat: parsedData.gpsTrack?.[parsedData.gpsTrack.length - 1]?.lat,
+            endLng: parsedData.gpsTrack?.[parsedData.gpsTrack.length - 1]?.lon,
             encodedPolyline: encodedPolylineStr,
-            routeData: JSON.stringify(trackToSave),
-            boundNorth: Math.max(...lats),
-            boundSouth: Math.min(...lats),
-            boundEast: Math.max(...lons),
-            boundWest: Math.min(...lons),
-            totalPoints: trackToSave.length,
+            detailPath,
+            detailFormatVersion: DETAIL_FORMAT_VERSION,
           },
         });
-      }
 
-      // Create laps if available
-      if (parsedData.laps && parsedData.laps.length > 0) {
-        await Promise.all(
-          parsedData.laps.map((lap) =>
-            tx.workoutLap.create({
-              data: {
-                workoutId: workout.id,
-                lapNumber: lap.lapNumber,
-                distance: lap.distance,
-                duration: lap.duration,
-                pace: lap.avgPace,
-                avgHeartRate: lap.avgHeartRate,
-                maxHeartRate: lap.maxHeartRate,
-                avgCadence: lap.avgCadence,
-                calories: lap.calories,
-                startedAt: lap.startTime,
-              },
-            }),
-          ),
-        );
-      }
+        const workoutFile = await tx.workoutFile.create({
+          data: {
+            workoutId: workout.id,
+            fileType: input.fileType,
+            sourcePath: input.fileKey,
+            originalFileName: input.originalFileName,
+            fileSize: size,
+            processStatus: "COMPLETED",
+            processedAt: new Date(),
+          },
+        });
 
-      return { workout, workoutFile };
-    });
+        return { workout, workoutFile };
+      });
+    } catch (error) {
+      await this.discardGeneratedWorkoutDetail(detailPath);
+      throw error;
+    }
   }
 }

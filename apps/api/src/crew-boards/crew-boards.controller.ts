@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from "@
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
+import { Public } from "../common/decorators/public.decorator.js";
 import { CursorLimitQueryDto } from "../common/dto/cursor-limit-query.dto.js";
 
 import { CreateBoardDto } from "./dto/create-board.dto.js";
@@ -23,8 +24,10 @@ export class CrewBoardsController {
   }
 
   @Get(":id/boards")
-  getBoards(@Param("id") id: string) {
-    return this.service.getBoards(id);
+  @Public()
+  getBoards(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as { userId: string } | undefined)?.userId;
+    return this.service.getBoards(id, userId);
   }
 
   @Patch(":id/boards/:boardId")
@@ -59,12 +62,19 @@ export class CrewBoardsController {
   getPosts(
     @Param("id") id: string,
     @Param("boardId") boardId: string,
+    @Req() req: Request,
     @Query() query: CursorLimitQueryDto,
   ) {
-    return this.service.getPosts(id, boardId, {
-      cursor: query.cursor,
-      limit: query.resolveOptionalLimit(),
-    });
+    const userId = (req.user as { userId: string } | undefined)?.userId;
+    return this.service.getPosts(
+      id,
+      boardId,
+      {
+        cursor: query.cursor,
+        limit: query.resolveOptionalLimit(),
+      },
+      userId,
+    );
   }
 
   @Get(":id/boards/:boardId/posts/:postId")

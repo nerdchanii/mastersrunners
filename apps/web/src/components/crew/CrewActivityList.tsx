@@ -1,223 +1,273 @@
 import { Calendar, MapPin, Plus, Users } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { EmptyState } from "@/components/common/EmptyState";
 import { TimeAgo } from "@/components/common/TimeAgo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ActivitiesResponse } from "@/hooks/useCrewActivities";
 import { useCrewActivities } from "@/hooks/useCrewActivities";
+import { cn } from "@/lib/utils";
 
+import { getCrewActivityIcon } from "./crew-activity-icons";
 import CrewActivityForm from "./CrewActivityForm";
 
 interface CrewActivityListProps {
+  canOpenActivityDetails: boolean;
   crewId: string;
   isAdmin: boolean;
+  isAuthenticated: boolean;
   isMember: boolean;
+  onRequireAuth: () => void;
+  defaultShowForm?: boolean;
+  composerNonce?: number;
+  showInlineCreateAction?: boolean;
+  showEmptyCreateAction?: boolean;
+  isActive?: boolean;
+  onCreateActivity?: () => void;
+  onComposerHandled?: () => void;
 }
 
-type ActivityTypeFilter = "ALL" | "OFFICIAL" | "POP_UP";
-type StatusFilter = "ALL" | "SCHEDULED" | "ACTIVE" | "COMPLETED" | "CANCELLED";
+function getLocalDateKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
 
-export default function CrewActivityList({ crewId, isAdmin, isMember }: CrewActivityListProps) {
+function isSameLocalDay(left: Date, right: Date) {
+  return getLocalDateKey(left) === getLocalDateKey(right);
+}
+
+export default function CrewActivityList({
+  canOpenActivityDetails,
+  crewId,
+  isAdmin,
+  isAuthenticated,
+  isMember,
+  onRequireAuth,
+  defaultShowForm = false,
+  composerNonce = 0,
+  showInlineCreateAction = true,
+  showEmptyCreateAction = showInlineCreateAction,
+  isActive = true,
+  onCreateActivity,
+  onComposerHandled,
+}: CrewActivityListProps) {
   const navigate = useNavigate();
-  const [showForm, setShowForm] = useState(false);
-  const [typeFilter, setTypeFilter] = useState<ActivityTypeFilter>("ALL");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [showForm, setShowForm] = useState(defaultShowForm);
 
   const { data, isLoading, refetch } = useCrewActivities(crewId);
 
   const activities = (data as ActivitiesResponse | undefined)?.items ?? [];
+  const now = new Date();
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
 
   const handleActivityCreated = () => {
     setShowForm(false);
     refetch();
   };
 
-  // 클라이언트 사이드 필터링
-  const filtered = activities.filter((a) => {
-    if (typeFilter !== "ALL" && a.activityType !== typeFilter) return false;
-    if (statusFilter !== "ALL" && a.status !== statusFilter) return false;
-    return true;
-  });
+  const visibleActivities = activities
+    .map((activity) => ({
+      activity,
+      scheduledDate: new Date(activity.activityDate),
+    }))
+    .filter(({ scheduledDate }) => scheduledDate >= today)
+    .sort((left, right) => {
+      const leftIsToday = isSameLocalDay(left.scheduledDate, now);
+      const rightIsToday = isSameLocalDay(right.scheduledDate, now);
+
+      if (leftIsToday !== rightIsToday) {
+        return leftIsToday ? -1 : 1;
+      }
+
+      if (leftIsToday && rightIsToday) {
+        return left.scheduledDate.getTime() - right.scheduledDate.getTime();
+      }
+
+      return right.scheduledDate.getTime() - left.scheduledDate.getTime();
+    });
 
   // POP_UP은 일반 멤버도 생성 가능
   const canCreate = isAdmin || isMember;
+
+  useEffect(() => {
+    if (!isActive || !composerNonce || !canCreate) {
+      return;
+    }
+    setShowForm(true);
+    onComposerHandled?.();
+  }, [composerNonce, canCreate, isActive, onComposerHandled]);
+
+  useEffect(() => {
+    if (isActive) {
+      return;
+    }
+    setShowForm(false);
+  }, [isActive]);
+
+  const handleOpenActivity = (activityId: string) => {
+    if (!isAuthenticated) {
+      onRequireAuth();
+      return;
+    }
+    if (!canOpenActivityDetails) {
+      return;
+    }
+
+    navigate(`/crews/${crewId}/activities/${activityId}`);
+  };
 
   if (isLoading) {
     return (
       <div className="space-y-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-32 rounded-lg" />
+          <Skeleton key={i} className="h-28 rounded-lg" />
         ))}
       </div>
     );
   }
 
+  const closeCreateForm = () => {
+    setShowForm(false);
+  };
+  const openCreateForm = () => {
+    if (onCreateActivity) {
+      onCreateActivity();
+      return;
+    }
+    setShowForm(true);
+  };
+
   if (showForm) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>새 활동 만들기</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CrewActivityForm
-            crewId={crewId}
-            onSuccess={handleActivityCreated}
-            onCancel={() => setShowForm(false)}
-          />
-        </CardContent>
-      </Card>
+      <section className="space-y-4 border-t border-border/50 pt-4">
+        <h3 className="text-base font-semibold">새 활동 만들기</h3>
+        <CrewActivityForm
+          crewId={crewId}
+          onSuccess={handleActivityCreated}
+          onCancel={closeCreateForm}
+        />
+      </section>
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* 헤더: 생성 버튼 */}
-      {canCreate && (
+      {canCreate && showInlineCreateAction && (
         <div className="flex justify-end">
-          <Button onClick={() => setShowForm(true)}>
+          <Button onClick={openCreateForm}>
             <Plus className="size-4 mr-2" />
             활동 만들기
           </Button>
         </div>
       )}
 
-      {/* 타입 탭 필터 */}
-      <Tabs value={typeFilter} onValueChange={(v) => setTypeFilter(v as ActivityTypeFilter)}>
-        <TabsList>
-          <TabsTrigger value="ALL">전체</TabsTrigger>
-          <TabsTrigger value="OFFICIAL">공식 모임</TabsTrigger>
-          <TabsTrigger value="POP_UP">번개</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {/* 상태 필터 버튼 */}
-      <div className="flex flex-wrap gap-2">
-        {(["ALL", "SCHEDULED", "ACTIVE", "COMPLETED", "CANCELLED"] as StatusFilter[]).map((s) => (
-          <Button
-            key={s}
-            variant={statusFilter === s ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatusFilter(s)}
-          >
-            {s === "ALL"
-              ? "전체"
-              : s === "SCHEDULED"
-                ? "예정"
-                : s === "ACTIVE"
-                  ? "진행중"
-                  : s === "COMPLETED"
-                    ? "종료"
-                    : "취소됨"}
-          </Button>
-        ))}
-      </div>
-
-      {filtered.length === 0 ? (
+      {visibleActivities.length === 0 ? (
         <EmptyState
           icon={Calendar}
           title="활동이 없습니다"
-          description={
-            canCreate ? "첫 번째 크루 활동을 만들어보세요!" : "아직 생성된 활동이 없습니다."
-          }
-          actionLabel={canCreate ? "활동 만들기" : undefined}
-          onAction={canCreate ? () => setShowForm(true) : undefined}
+          description={canCreate ? "아직 잡힌 일정이 없습니다." : "예정된 활동이 아직 없습니다."}
+          actionLabel={canCreate && showEmptyCreateAction ? "활동 만들기" : undefined}
+          onAction={canCreate && showEmptyCreateAction ? openCreateForm : undefined}
         />
       ) : (
-        <div className="grid gap-4">
-          {filtered.map((activity) => {
-            const scheduledDate = new Date(activity.activityDate);
+        <div className="grid gap-3 sm:gap-4">
+          {visibleActivities.map(({ activity, scheduledDate }) => {
+            const isToday = isSameLocalDay(scheduledDate, now);
+            const hasStarted = isToday && scheduledDate.getTime() <= now.getTime();
             const checkedInCount = activity.attendances.filter(
               (a) => a.status === "CHECKED_IN",
             ).length;
             const rsvpCount = activity.attendances.filter((a) => a.status === "RSVP").length;
             const totalActive = checkedInCount + rsvpCount;
+            const canAttemptOpen = canOpenActivityDetails || !isAuthenticated;
 
             return (
-              <Card
+              <article
                 key={activity.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => navigate(`/crews/${crewId}/activities/${activity.id}`)}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0 flex-1">
-                      <CardTitle className="truncate">{activity.title}</CardTitle>
-                      <CardDescription className="mt-1">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span>
-                            {scheduledDate.toLocaleDateString("ko-KR", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </div>
-                      </CardDescription>
-                    </div>
-                    <div className="flex gap-1.5 shrink-0">
-                      <Badge
-                        variant={activity.activityType === "OFFICIAL" ? "default" : "secondary"}
-                      >
-                        {activity.activityType === "OFFICIAL" ? "공식" : "번개"}
-                      </Badge>
-                      <Badge
-                        variant={
-                          activity.status === "SCHEDULED"
-                            ? "outline"
-                            : activity.status === "ACTIVE"
-                              ? "default"
-                              : activity.status === "COMPLETED"
-                                ? "secondary"
-                                : "destructive"
+                className={cn(
+                  "rounded-lg border border-border/60 bg-background p-4 shadow-sm transition-colors sm:p-5",
+                  hasStarted && "border-border/70 bg-muted/20",
+                  canAttemptOpen && "cursor-pointer hover:border-foreground/25 hover:bg-muted/30",
+                )}
+                onClick={canAttemptOpen ? () => handleOpenActivity(activity.id) : undefined}
+                onKeyDown={
+                  canAttemptOpen
+                    ? (event) => {
+                        if (event.key !== "Enter" && event.key !== " ") {
+                          return;
                         }
-                      >
-                        {activity.status === "SCHEDULED"
-                          ? "예정"
-                          : activity.status === "ACTIVE"
-                            ? "진행중"
-                            : activity.status === "COMPLETED"
-                              ? "종료"
-                              : "취소됨"}
-                      </Badge>
+                        event.preventDefault();
+                        handleOpenActivity(activity.id);
+                      }
+                    : undefined
+                }
+                role={canAttemptOpen ? "button" : undefined}
+                tabIndex={canAttemptOpen ? 0 : undefined}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 gap-3">
+                    <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/30 text-base text-muted-foreground">
+                      {getCrewActivityIcon(activity.activityType, activity.activityIcon).node}
                     </div>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-2">
-                  {activity.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {activity.description}
-                    </p>
-                  )}
-
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    {activity.location && (
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5" />
-                        <span className="truncate">{activity.location}</span>
+                    <div className="min-w-0 space-y-1.5">
+                      <h3 className="truncate text-base font-semibold leading-tight text-foreground">
+                        {activity.title}
+                      </h3>
+                      <div className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+                        <Calendar className="size-4 shrink-0" />
+                        <span className="truncate">
+                          {scheduledDate.toLocaleDateString("ko-KR", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        {isToday ? (
+                          <span className="shrink-0 text-xs font-medium">당일</span>
+                        ) : null}
                       </div>
-                    )}
-
-                    <div className="flex items-center gap-1.5 ml-auto">
-                      <Users className="w-3.5 h-3.5" />
-                      <span>{totalActive}명 참석</span>
                     </div>
                   </div>
-
-                  <div className="pt-2 border-t">
-                    <TimeAgo date={activity.createdAt} />
+                  <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
+                    <Badge variant={activity.activityType === "OFFICIAL" ? "default" : "secondary"}>
+                      {activity.activityType === "OFFICIAL" ? "공식" : "번개"}
+                    </Badge>
+                    {isToday ? (
+                      <Badge variant={hasStarted ? "secondary" : "outline"}>
+                        {hasStarted ? "진행됨" : "당일"}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">예정</Badge>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+
+                {activity.description ? (
+                  <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                    {activity.description}
+                  </p>
+                ) : null}
+
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border/50 pt-3 text-sm text-muted-foreground">
+                  <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                    <MapPin className="size-4 shrink-0" />
+                    <span className="truncate">{activity.location || "장소 미정"}</span>
+                  </div>
+
+                  <div className="ml-auto flex shrink-0 items-center gap-3">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Users className="size-4" />
+                      {totalActive}명 참석
+                    </span>
+                    <TimeAgo date={activity.createdAt} className="text-sm" />
+                  </div>
+                </div>
+              </article>
             );
           })}
         </div>

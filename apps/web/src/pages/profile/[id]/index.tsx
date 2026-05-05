@@ -1,77 +1,33 @@
+import { Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { AuthGateDialog } from "@/components/common/AuthGateDialog";
 import { LoadingPage } from "@/components/common/LoadingPage";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
 
 import {
+  fetchCrewPostsFromCrews,
   fetchUserCrews,
   fetchUserPosts,
   fetchUserProfile,
-  fetchUserWorkouts,
+  type ProfileApiResponse,
+  type ProfileCrew,
+  type ProfileCrewPost,
+  type ProfilePost,
   startConversation,
   toggleFollowUser,
 } from "./profile-api";
 
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  profileImage: string | null;
-  backgroundImage: string | null;
-  bio: string | null;
-}
-
-interface Post {
-  id: string;
-  content: string;
-  createdAt: string;
-  likesCount?: number;
-  commentsCount?: number;
-  _count?: {
-    likes: number;
-    comments: number;
-  };
-  user: User;
-}
-
-interface Workout {
-  id: string;
-  distance: number;
-  duration: number;
-  pace: number;
-  date: string;
-  memo: string | null;
-  workoutType?: {
-    id: string;
-    name: string;
-  };
-}
-
-interface Crew {
-  id: string;
-  name: string;
-  description: string | null;
-  imageUrl: string | null;
-  _count: {
-    members: number;
-  };
-}
-
-interface ProfileData {
-  user: User;
-  isFollowing: boolean;
-  isPending: boolean;
-  isPrivate: boolean;
-}
-
-interface ProfileStats {
-  postCount: number;
-  followerCount: number;
-  followingCount: number;
-  workoutCount: number;
+interface ProfileHeaderStats {
+  crewCount?: string | number;
+  followerCount: string | number;
+  followingCount: string | number;
+  postCount: string | number;
+  workoutCount: string | number;
 }
 
 export default function UserProfilePage() {
@@ -80,24 +36,20 @@ export default function UserProfilePage() {
   const { user: currentUser, isLoading: authLoading, isAuthenticated } = useAuth();
   const userId = params.id as string;
 
-  const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [profileStats, setProfileStats] = useState<ProfileStats | null>(null);
+  const [profileData, setProfileData] = useState<ProfileApiResponse | null>(null);
   const [activeTab, setActiveTab] = useState("posts");
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [crews, setCrews] = useState<Crew[]>([]);
+  const [posts, setPosts] = useState<ProfilePost[]>([]);
+  const [crews, setCrews] = useState<ProfileCrew[]>([]);
+  const [crewPosts, setCrewPosts] = useState<ProfileCrewPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isTabDataLoading, setIsTabDataLoading] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [isMessageLoading, setIsMessageLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authDialogTitle, setAuthDialogTitle] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
-    if (!isAuthenticated) {
-      navigate("/login", { replace: true });
-      return;
-    }
     if (!userId || userId === "_") return;
 
     if (currentUser?.id === userId) {
@@ -107,20 +59,16 @@ export default function UserProfilePage() {
 
     const fetchProfile = async () => {
       try {
+        setIsLoading(true);
         const data = await fetchUserProfile(userId);
-        if (!data) return;
-        setProfileData({
-          user: data.user,
-          isFollowing: data.isFollowing ?? false,
-          isPending: data.isPending ?? false,
-          isPrivate: data.isPrivate ?? true,
-        });
-        setProfileStats({
-          postCount: data.stats.postCount ?? 0,
-          followerCount: data.followersCount,
-          followingCount: data.followingCount,
-          workoutCount: data.stats.totalWorkouts,
-        });
+        setProfileData(data);
+        if (data.accessLevel === "FULL") {
+          const visibleCrews = await fetchUserCrews(userId);
+          setCrews(visibleCrews);
+        } else {
+          setCrews([]);
+        }
+        setActiveTab("posts");
       } catch (err) {
         setError(err instanceof Error ? err.message : "프로필을 불러오는데 실패했습니다.");
       } finally {
@@ -128,11 +76,13 @@ export default function UserProfilePage() {
       }
     };
 
-    fetchProfile();
-  }, [authLoading, isAuthenticated, userId, currentUser?.id, navigate]);
+    void fetchProfile();
+  }, [authLoading, currentUser?.id, navigate, userId]);
 
   useEffect(() => {
-    if (!userId || !profileData || !profileStats) return;
+    if (!userId || !profileData || profileData.accessLevel !== "FULL") {
+      return;
+    }
 
     const fetchTabData = async () => {
       setIsTabDataLoading(true);
@@ -140,65 +90,62 @@ export default function UserProfilePage() {
         if (activeTab === "posts") {
           const data = await fetchUserPosts(userId);
           setPosts(data);
-        } else if (activeTab === "workouts") {
-          const data = await fetchUserWorkouts(userId);
-          setWorkouts(data);
         } else if (activeTab === "crews") {
-          const data = await fetchUserCrews(userId);
-          setCrews(data);
+          const data = await fetchCrewPostsFromCrews(crews);
+          setCrewPosts(data);
         }
       } catch (err) {
-        console.error("Failed to fetch tab data:", err);
+        setError(err instanceof Error ? err.message : "프로필 목록을 불러오지 못했습니다.");
       } finally {
         setIsTabDataLoading(false);
       }
     };
 
-    fetchTabData();
-  }, [activeTab, userId, profileData, profileStats]);
+    void fetchTabData();
+  }, [activeTab, crews, profileData, userId]);
 
   const handleFollowToggle = async () => {
     if (!profileData || isFollowLoading || profileData.isPending) return;
+    if (!isAuthenticated) {
+      setAuthDialogTitle(profileData.isPrivate ? "팔로우 요청" : "팔로우");
+      return;
+    }
 
     setIsFollowLoading(true);
     try {
-      if (profileData.isFollowing) {
-        await toggleFollowUser(userId, true);
-        setProfileData({
-          ...profileData,
-          isFollowing: false,
-        });
-        if (profileStats) {
-          setProfileStats({
-            ...profileStats,
-            followerCount: Math.max(0, profileStats.followerCount - 1),
-          });
-        }
-      } else {
-        await toggleFollowUser(userId, false);
-        const newState = profileData.isPrivate
-          ? { isFollowing: false, isPending: true }
-          : { isFollowing: true, isPending: false };
-        setProfileData({
-          ...profileData,
-          ...newState,
-        });
-        if (profileStats && !profileData.isPrivate) {
-          setProfileStats({
-            ...profileStats,
-            followerCount: profileStats.followerCount + 1,
-          });
-        }
-      }
+      const wasFollowing = !!profileData.isFollowing;
+      await toggleFollowUser(userId, wasFollowing);
+
+      setProfileData((prev) => {
+        if (!prev) return prev;
+
+        const nextFollowing = wasFollowing ? false : !prev.isPrivate;
+        const nextPending = wasFollowing ? false : !!prev.isPrivate;
+        const followerDelta = wasFollowing ? -1 : prev.isPrivate ? 0 : 1;
+
+        return {
+          ...prev,
+          isFollowing: nextFollowing,
+          isPending: nextPending,
+          followersCount:
+            prev.followersCount === null ? null : Math.max(0, prev.followersCount + followerDelta),
+        };
+      });
     } catch (err) {
-      console.error("Failed to toggle follow:", err);
+      setError(err instanceof Error ? err.message : "팔로우 상태를 바꾸지 못했습니다.");
     } finally {
       setIsFollowLoading(false);
     }
   };
 
   const handleMessageClick = async () => {
+    if (!profileData) return;
+    if (!isAuthenticated) {
+      setAuthDialogTitle("메시지 보내기");
+      return;
+    }
     if (isMessageLoading) return;
+
     setIsMessageLoading(true);
     try {
       const conversation = await startConversation(userId);
@@ -223,7 +170,7 @@ export default function UserProfilePage() {
 
   if (!userId || userId === "_") {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="text-center py-12">
           <p className="text-muted-foreground">사용자 ID가 필요합니다.</p>
         </div>
@@ -233,15 +180,15 @@ export default function UserProfilePage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-8">
         <LoadingPage variant="profile" />
       </div>
     );
   }
 
-  if (error || !profileData || !profileStats) {
+  if (error || !profileData) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="rounded-xl border border-destructive bg-destructive/10 p-6">
           <h2 className="text-lg font-semibold text-destructive mb-2">오류</h2>
           <p className="text-destructive/90">{error || "프로필을 찾을 수 없습니다."}</p>
@@ -250,31 +197,87 @@ export default function UserProfilePage() {
     );
   }
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <ProfileHeader
-        user={profileData.user}
-        stats={profileStats}
-        isOwnProfile={false}
-        isFollowing={profileData.isFollowing}
-        isPending={profileData.isPending}
-        isPrivate={profileData.isPrivate}
-        onFollowToggle={handleFollowToggle}
-        onMessageClick={handleMessageClick}
-        onFollowersClick={handleFollowersClick}
-        onFollowingClick={handleFollowingClick}
-        isFollowLoading={isFollowLoading}
-        isMessageLoading={isMessageLoading}
-      />
+  const headerStats: ProfileHeaderStats | undefined =
+    profileData.followersCount !== null ||
+    profileData.followingCount !== null ||
+    profileData.crewCount !== null ||
+    profileData.stats !== null
+      ? {
+          postCount: profileData.stats?.postCount ?? "비공개",
+          followerCount: profileData.followersCount ?? "비공개",
+          followingCount: profileData.followingCount ?? "비공개",
+          workoutCount: "비공개",
+          crewCount: profileData.crewCount ?? "비공개",
+        }
+      : undefined;
 
-      <ProfileTabs
-        posts={posts}
-        workouts={workouts}
-        crews={crews}
-        isLoading={isTabDataLoading}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
+  const nextPath =
+    typeof window === "undefined"
+      ? `/profile/${userId}`
+      : `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const canShowMessage = profileData.accessLevel === "FULL";
+
+  return (
+    <>
+      <div className="space-y-5 pb-8 md:mx-auto md:max-w-4xl md:px-4">
+        <ProfileHeader
+          user={profileData.user}
+          isOwnProfile={false}
+          isFollowing={profileData.isFollowing}
+          isPending={profileData.isPending}
+          isPrivate={profileData.isPrivate}
+          stats={headerStats}
+          crews={crews}
+          onFollowToggle={handleFollowToggle}
+          onMessageClick={canShowMessage ? handleMessageClick : undefined}
+          isFollowLoading={isFollowLoading}
+          isMessageLoading={isMessageLoading}
+          onFollowersClick={handleFollowersClick}
+          onFollowingClick={handleFollowingClick}
+        />
+
+        {profileData.accessLevel === "LOCKED" ? (
+          <Card className="mx-4 border-border/60 md:mx-0">
+            <CardContent className="flex flex-col gap-3 py-8">
+              <div className="flex size-11 items-center justify-center rounded-2xl bg-muted text-foreground">
+                <Lock className="size-4" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-lg font-semibold">비공개 프로필입니다</h2>
+                <p className="text-sm text-muted-foreground">
+                  팔로우가 승인되면 게시글과 크루를 확인할 수 있습니다.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <ProfileTabs
+            posts={posts}
+            workouts={[]}
+            crews={crews}
+            crewPosts={crewPosts}
+            isLoading={isTabDataLoading}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            showWorkoutsTab={false}
+            postsEmptyDescription="게시글이 없습니다."
+            crewsEmptyTitle="크루가 없습니다"
+            crewsEmptyDescription="크루가 없습니다."
+            desktopStickyTopOffset={56}
+          />
+        )}
+      </div>
+
+      <AuthGateDialog
+        open={authDialogTitle !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAuthDialogTitle(null);
+          }
+        }}
+        nextPath={nextPath}
+        title={authDialogTitle ?? "로그인"}
       />
-    </div>
+    </>
   );
 }

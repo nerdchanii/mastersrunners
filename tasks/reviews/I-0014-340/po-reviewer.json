@@ -1,0 +1,23 @@
+{
+  "task_id": "I-0014-340",
+  "reviewer": "po-reviewer",
+  "decision": "approved",
+  "tool": "codex-manual-protocol-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/po-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/po-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/po-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/po-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-04-04T09:27:58Z",
+  "findings": [],
+  "residual_risks": [
+    "The user-visible bugfix is ready from a product perspective: /workouts/:id now tolerates missing social counts, the detail API again returns liked / likeCount / commentCount, the error fallback releases on navigation, and the focused verify set is recorded as passed.",
+    "Remaining risk is limited and non-blocking for this task: FOLLOWERS visibility for the restored social summary still leans on existing controller behavior rather than new focused e2e assertions, and the Jest Prisma runtime mapping is intentionally narrow to the currently affected API e2e path."
+  ]
+}

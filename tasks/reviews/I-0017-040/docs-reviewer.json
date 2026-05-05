@@ -1,0 +1,23 @@
+{
+  "task_id": "I-0017-040",
+  "reviewer": "docs-reviewer",
+  "decision": "approved",
+  "tool": "codex-spawn-agent",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/docs-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/docs-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/docs-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/docs-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-04-04T07:56:50Z",
+  "findings": [],
+  "residual_risks": [
+    "The Stop-hook block now applies only to dirty worktrees with multiple active tasks.",
+    "The docs distinguish between zero-active dirty worktrees that may exit normally and multi-active dirty worktrees that are intentionally blocked."
+  ]
+}

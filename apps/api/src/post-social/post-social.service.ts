@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 
 import { BlockRepository } from "../block/repositories/block.repository.js";
+import { FollowRepository } from "../follow/repositories/follow.repository.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 
 import { PostSocialRepository } from "./repositories/post-social.repository.js";
@@ -16,10 +17,45 @@ export class PostSocialService {
   constructor(
     private readonly postSocialRepo: PostSocialRepository,
     private readonly blockRepo: BlockRepository,
+    private readonly followRepo: FollowRepository,
     @Optional() private readonly notificationsService?: NotificationsService,
   ) {}
 
+  private async assertReadablePost(postId: string, currentUserId?: string) {
+    const post = await this.postSocialRepo.findPostById(postId);
+    if (!post) {
+      throw new NotFoundException("게시글을 찾을 수 없습니다.");
+    }
+
+    const isOwner = !!currentUserId && post.userId === currentUserId;
+    let readable = post.visibility === "PUBLIC";
+
+    if (!readable && currentUserId) {
+      if (isOwner) {
+        readable = true;
+      } else if (post.visibility === "FOLLOWERS") {
+        const follow = await this.followRepo.findFollow(currentUserId, post.userId);
+        readable = follow?.status === "ACCEPTED";
+      }
+    }
+
+    if (!readable) {
+      throw new NotFoundException("게시글을 찾을 수 없습니다.");
+    }
+
+    if (!isOwner && currentUserId) {
+      const blocked = await this.blockRepo.isBlocked(currentUserId, post.userId);
+      if (blocked) {
+        throw new ForbiddenException("차단된 사용자의 게시글입니다.");
+      }
+    }
+
+    return post;
+  }
+
   async likePost(userId: string, postId: string) {
+    await this.assertReadablePost(postId, userId);
+
     try {
       const like = await this.postSocialRepo.likePost(userId, postId);
 
@@ -50,6 +86,8 @@ export class PostSocialService {
   }
 
   async unlikePost(userId: string, postId: string) {
+    await this.assertReadablePost(postId, userId);
+
     try {
       return await this.postSocialRepo.unlikePost(userId, postId);
     } catch (error: any) {
@@ -61,6 +99,7 @@ export class PostSocialService {
   }
 
   async isLiked(userId: string, postId: string) {
+    await this.assertReadablePost(postId, userId);
     return this.postSocialRepo.isLiked(userId, postId);
   }
 
@@ -75,6 +114,8 @@ export class PostSocialService {
     parentId?: string,
     mentionedUserId?: string,
   ) {
+    await this.assertReadablePost(postId, userId);
+
     const comment = await this.postSocialRepo.addComment({
       userId,
       postId,
@@ -120,6 +161,8 @@ export class PostSocialService {
   }
 
   async getComments(postId: string, currentUserId?: string, cursor?: string, limit?: number) {
+    await this.assertReadablePost(postId, currentUserId);
+
     const excludeUserIds = currentUserId
       ? await this.blockRepo.getBlockedUserIds(currentUserId)
       : [];

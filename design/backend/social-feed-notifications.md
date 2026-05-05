@@ -12,6 +12,7 @@ sources:
   - apps/api/src/notifications/notifications.controller.ts
   - apps/api/src/notifications/notifications.service.ts
   - apps/api/src/notifications/repositories/notification.repository.ts
+  - apps/api/src/realtime/realtime-events.service.ts
 ---
 
 # Social Feed and Notifications
@@ -31,7 +32,7 @@ The backend splits social behavior into feed aggregation, content ownership, int
 - `WorkoutSocialController`
   - workout likes and comments
 - `NotificationsController`
-  - notification list, unread count, read actions, and SSE stream
+  - notification list, unread count, and read actions
 
 ## Module Responsibilities
 
@@ -45,7 +46,7 @@ The backend splits social behavior into feed aggregation, content ownership, int
 - `WorkoutSocialModule`
   - owns workout interaction writes
 - `NotificationsModule`
-  - stores notification records and streams them over SSE when connections exist
+  - stores notification records and emits realtime events when connections exist
 
 ## Contract Notes
 
@@ -53,9 +54,9 @@ The backend splits social behavior into feed aggregation, content ownership, int
 - Feed responses expose `isLiked` and count data already mapped into SPA-friendly shapes.
 - Notification delivery is dual-path:
   - durable persistence through `NotificationRepository`
-  - best-effort realtime fan-out through `NotificationsSseService`
+  - best-effort realtime fan-out through `RealtimeEventsService`
 
 ## Current Constraints
 
 - Feed aggregation still depends directly on repository-level response shaping rather than a separate domain view-model package.
-- Notification fan-out is in-process SSE only; external push channels are not wired in-repo.
+- Notification fan-out is in-process socket.io only; external push channels are not wired in-repo.

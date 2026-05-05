@@ -1,4 +1,12 @@
-import { ChevronDown, ChevronUp, Crown, MessageCircle, Shield, UserX } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Crown,
+  MessageCircle,
+  MoreHorizontal,
+  Shield,
+  UserX,
+} from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -9,6 +17,13 @@ import { TimeAgo } from "@/components/common/TimeAgo";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { api } from "@/lib/api-client";
 
 interface Member {
@@ -132,101 +147,109 @@ export default function CrewMemberList({
 
   return (
     <>
-      <div className="space-y-2">
+      <div className="divide-y divide-border/40">
         {sortedMembers.map((member) => {
           const isSelf = member.userId === currentUserId;
-          const canMessageThis = !isSelf;
+          const canMessageThis = !!currentUserId && !isSelf;
           const canKickThis = canManage && !isSelf && member.role !== "OWNER";
           const canPromoteThis = isOwner && !isSelf && member.role === "MEMBER";
           const canDemoteThis = isOwner && !isSelf && member.role === "ADMIN";
+          const hasAdminActions = canKickThis || canPromoteThis || canDemoteThis;
           const isMessagingThis = messagingUserId === member.userId;
 
           return (
             <div
               key={member.id}
-              className="flex items-center justify-between p-3 rounded-lg border"
+              className="group flex items-center justify-between gap-4 py-4 transition-colors hover:bg-muted/5 sm:px-2"
             >
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex min-w-0 items-center gap-3">
                 <UserAvatar user={member.user} size="default" linkToProfile />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium truncate">{member.user.name}</span>
-                    {member.role === "OWNER" && <Crown className="w-3.5 h-3.5 text-amber-600" />}
-                    {member.role === "ADMIN" && <Shield className="w-3.5 h-3.5 text-blue-600" />}
+                <div className="min-w-0 space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate text-[15px] font-semibold text-foreground">
+                      {member.user.name}
+                    </span>
+                    {isSelf && (
+                      <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-bold">
+                        나
+                      </Badge>
+                    )}
+                    {member.role === "OWNER" && (
+                      <Crown className="size-3.5 fill-amber-500 text-amber-500" />
+                    )}
+                    {member.role === "ADMIN" && (
+                      <Shield className="size-3.5 fill-blue-500 text-blue-500" />
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {ROLE_LABELS[member.role]}
-                    </Badge>
+                  <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                    <span className="font-medium text-primary/80">{ROLE_LABELS[member.role]}</span>
+                    <span className="size-1 rounded-full bg-border" />
                     <TimeAgo date={member.joinedAt} />
                   </div>
                 </div>
               </div>
 
-              {/* Actions */}
-              {(canMessageThis || canKickThis || canPromoteThis || canDemoteThis) && (
-                <div className="flex items-center gap-1.5">
-                  {canMessageThis && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 px-2 text-xs"
-                      onClick={() => handleStartDirectMessage(member.userId)}
-                      disabled={isLoading || isMessagingThis}
-                      title={`${member.user.name}님께 DM 보내기`}
-                    >
-                      <MessageCircle className="w-3.5 h-3.5 mr-1" />
-                      {isMessagingThis ? "이동 중..." : "DM"}
-                    </Button>
-                  )}
-                  {canPromoteThis && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handlePromote(member.userId)}
-                      disabled={isLoading}
-                      title="관리자로 승격"
-                    >
-                      <ChevronUp className="w-4 h-4" />
-                    </Button>
-                  )}
-                  {canDemoteThis && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDemote(member.userId)}
-                      disabled={isLoading}
-                      title="멤버로 강등"
-                    >
-                      <ChevronDown className="w-4 h-4" />
-                    </Button>
-                  )}
-                  {canKickThis && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setKickTarget(member)}
-                      disabled={isLoading}
-                      title="추방"
-                    >
-                      <UserX className="w-4 h-4 text-destructive" />
-                    </Button>
-                  )}
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                {canMessageThis && (
+                  <Button
+                    size="icon-sm"
+                    variant="outline"
+                    className="size-8 rounded-full border-primary/20 bg-primary/5 text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                    onClick={() => handleStartDirectMessage(member.userId)}
+                    disabled={isLoading || isMessagingThis}
+                    title={`${member.user.name}님께 메시지 보내기`}
+                  >
+                    <MessageCircle className="size-4" />
+                  </Button>
+                )}
+
+                {hasAdminActions && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon-sm" className="size-8 rounded-full">
+                        <MoreHorizontal className="size-4" />
+                        <span className="sr-only">멤버 관리</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      {canPromoteThis && (
+                        <DropdownMenuItem onClick={() => handlePromote(member.userId)}>
+                          <ChevronUp className="mr-2 size-4" />
+                          관리자 지정
+                        </DropdownMenuItem>
+                      )}
+                      {canDemoteThis && (
+                        <DropdownMenuItem onClick={() => handleDemote(member.userId)}>
+                          <ChevronDown className="mr-2 size-4" />
+                          관리자 해제
+                        </DropdownMenuItem>
+                      )}
+                      {hasAdminActions && canKickThis && <DropdownMenuSeparator />}
+                      {canKickThis && (
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={() => setKickTarget(member)}
+                        >
+                          <UserX className="mr-2 size-4" />
+                          내보내기
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* Kick Confirmation Dialog */}
       <ConfirmDialog
         open={!!kickTarget}
         onOpenChange={(open) => !open && setKickTarget(null)}
         onConfirm={() => handleKick()}
-        title="멤버 추방"
-        description={`${kickTarget?.user.name}님을 크루에서 추방하시겠습니까?`}
-        confirmLabel="추방"
+        title="멤버를 내보낼까요?"
+        description={`${kickTarget?.user.name}님은 다시 초대하거나 재가입 요청을 받아야 합니다.`}
+        confirmLabel="내보내기"
         variant="destructive"
         loading={isLoading}
       />

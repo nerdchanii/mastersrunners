@@ -3,35 +3,30 @@ import {
   Controller,
   Delete,
   Get,
-  MessageEvent,
   Param,
   Patch,
   Post,
   Query,
   Req,
-  Sse,
   UseGuards,
 } from "@nestjs/common";
-import { SkipThrottle } from "@nestjs/throttler";
-import { Observable } from "rxjs";
 
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard.js";
-import { JwtSseGuard } from "../auth/guards/jwt-sse.guard.js";
-import { Public } from "../common/decorators/public.decorator.js";
 import { CursorLimitQueryDto } from "../common/dto/cursor-limit-query.dto.js";
 
+import { ChatWindowQueryDto } from "./dto/chat-window-query.dto.js";
 import { CreateConversationDto } from "./dto/create-conversation.dto.js";
 import { SendMessageDto } from "./dto/send-message.dto.js";
-import { ConversationsService } from "./conversations.service.js";
-import { ConversationsSseService } from "./conversations-sse.service.js";
+import {
+  ConversationDetailResponse,
+  ConversationListResponse,
+  ConversationsService,
+} from "./conversations.service.js";
 
 @Controller("conversations")
 @UseGuards(JwtAuthGuard)
 export class ConversationsController {
-  constructor(
-    private readonly conversationsService: ConversationsService,
-    private readonly sseService: ConversationsSseService,
-  ) {}
+  constructor(private readonly conversationsService: ConversationsService) {}
 
   @Post()
   async startConversation(
@@ -45,7 +40,7 @@ export class ConversationsController {
   async getConversations(
     @Req() req: { user: { userId: string } },
     @Query() query: CursorLimitQueryDto,
-  ) {
+  ): Promise<ConversationListResponse> {
     return this.conversationsService.getConversations(
       req.user.userId,
       query.cursor,
@@ -53,26 +48,25 @@ export class ConversationsController {
     );
   }
 
-  @Sse("sse")
-  @Public()
-  @UseGuards(JwtSseGuard)
-  @SkipThrottle()
-  sse(@Req() req: { user: { userId: string } }): Observable<MessageEvent> {
-    return this.sseService.addConnection(req.user.userId);
+  @Get("unread-count")
+  async getUnreadCount(@Req() req: { user: { userId: string } }): Promise<{ count: number }> {
+    return this.conversationsService.getUnreadCount(req.user.userId);
   }
 
   @Get(":id")
   async getConversation(
     @Req() req: { user: { userId: string } },
     @Param("id") id: string,
-    @Query() query: CursorLimitQueryDto,
-  ) {
-    return this.conversationsService.getConversation(
-      id,
-      req.user.userId,
-      query.cursor,
-      query.resolveLimit(50, 100),
-    );
+    @Query() query: ChatWindowQueryDto,
+  ): Promise<ConversationDetailResponse> {
+    return this.conversationsService.getConversation(id, req.user.userId, {
+      cursor: query.cursor,
+      direction: query.resolveDirection(),
+      entry: query.resolveEntry(),
+      historyLimit: query.resolveHistoryLimit(40, 100),
+      unreadLimit: query.resolveUnreadLimit(100, 200),
+      limit: query.resolveDirectionalLimit(40, 200),
+    });
   }
 
   @Post(":id/messages")
@@ -87,6 +81,11 @@ export class ConversationsController {
   @Patch(":id/read")
   async markAsRead(@Req() req: { user: { userId: string } }, @Param("id") id: string) {
     return this.conversationsService.markAsRead(id, req.user.userId);
+  }
+
+  @Delete(":id/leave")
+  async leaveConversation(@Req() req: { user: { userId: string } }, @Param("id") id: string) {
+    return this.conversationsService.leaveConversation(id, req.user.userId);
   }
 
   @Delete("messages/:id")

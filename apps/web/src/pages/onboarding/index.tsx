@@ -1,4 +1,4 @@
-import { Activity, Check, ChevronRight, Lock, PartyPopper, User } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, PartyPopper, Sparkles, UserRound } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -8,59 +8,102 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useWorkoutTypes } from "@/hooks/useMessages";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
+import { formatRunnerTimeInput, parseRunnerTimeInput } from "@/lib/runner-time";
 import { cn } from "@/lib/utils";
 
 import { updateOnboardingProfile } from "./onboarding-api";
 
 const STEPS = [
-  { icon: User, label: "프로필" },
-  { icon: Activity, label: "관심 운동" },
-  { icon: Lock, label: "공개 설정" },
-  { icon: PartyPopper, label: "완료" },
-];
+  { key: "profile", title: "프로필" },
+  { key: "runner", title: "러너 정보" },
+  { key: "privacy", title: "공개 설정" },
+] as const;
+
+function FieldSummary({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-border/60 bg-background/80 px-4 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-medium text-foreground">{value || "미입력"}</p>
+    </div>
+  );
+}
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
-  const { data: workoutTypes = [], isLoading: workoutTypesLoading } = useWorkoutTypes();
 
   const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Step 1 state
   const [name, setName] = useState(user?.name ?? "");
-  const [bio, setBio] = useState("");
+  const [intro, setIntro] = useState(user?.bio ?? "");
+  const [region, setRegion] = useState(user?.region ?? "");
+  const [subRegion, setSubRegion] = useState(user?.subRegion ?? "");
+  const [pb5k, setPb5k] = useState(formatRunnerTimeInput(user?.pb5kSeconds));
+  const [pb10k, setPb10k] = useState(formatRunnerTimeInput(user?.pb10kSeconds));
+  const [pbHalf, setPbHalf] = useState(formatRunnerTimeInput(user?.pbHalfMarathonSeconds));
+  const [pbFull, setPbFull] = useState(formatRunnerTimeInput(user?.pbMarathonSeconds));
+  const [isPrivate, setIsPrivate] = useState(user?.isPrivate ?? false);
 
-  // Step 2 state
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-
-  // Step 3 state
-  const [isPrivate, setIsPrivate] = useState(false);
-
-  const toggleType = (id: string) => {
-    setSelectedTypes((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const handleSkip = () => {
+    navigate("/feed", { replace: true });
   };
 
-  const handleNext = () => setStep((s) => s + 1);
-  const handleBack = () => setStep((s) => s - 1);
+  const handleNext = () => {
+    if (step === 0 && !name.trim()) {
+      toast.error("닉네임을 입력해주세요.");
+      return;
+    }
+
+    if (step < STEPS.length - 1) {
+      setStep((current) => current + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (step > 0) setStep((current) => current - 1);
+  };
 
   const handleFinish = async () => {
     if (!name.trim()) {
       toast.error("닉네임을 입력해주세요.");
       return;
     }
+
+    const pb5kSeconds = parseRunnerTimeInput(pb5k);
+    const pb10kSeconds = parseRunnerTimeInput(pb10k);
+    const pbHalfMarathonSeconds = parseRunnerTimeInput(pbHalf);
+    const pbMarathonSeconds = parseRunnerTimeInput(pbFull);
+    const hasInvalidPb =
+      (pb5k.trim() && pb5kSeconds == null) ||
+      (pb10k.trim() && pb10kSeconds == null) ||
+      (pbHalf.trim() && pbHalfMarathonSeconds == null) ||
+      (pbFull.trim() && pbMarathonSeconds == null);
+
+    if (hasInvalidPb) {
+      toast.error("PB 시간은 mm:ss 또는 hh:mm:ss 형식으로 입력해주세요.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await updateOnboardingProfile({
         name: name.trim(),
-        bio: bio.trim() || undefined,
+        bio: intro.trim() || undefined,
+        region: region.trim() || undefined,
+        subRegion: subRegion.trim() || undefined,
         isPrivate,
+        pb5kSeconds: pb5kSeconds ?? undefined,
+        pb10kSeconds: pb10kSeconds ?? undefined,
+        pbHalfMarathonSeconds: pbHalfMarathonSeconds ?? undefined,
+        pbMarathonSeconds: pbMarathonSeconds ?? undefined,
       });
       await refreshUser();
-      toast.success("프로필 설정이 완료되었습니다!");
+      toast.success("프로필 설정이 완료되었습니다.");
       navigate("/feed", { replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "프로필 저장에 실패했습니다.");
@@ -70,242 +113,372 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* 로고 */}
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">마스터즈 러너스</h1>
-          <p className="text-sm text-muted-foreground mt-1">프로필을 설정하고 시작하세요</p>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.14),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_24%),linear-gradient(to_bottom,_hsl(var(--background)),_hsl(var(--muted)/0.24))] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-5xl flex-col">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <Badge variant="secondary" className="rounded-full px-3 py-1">
+              onboarding
+            </Badge>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              처음 한 번만, 가볍게 맞춰주세요.
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              닉네임만 필수고, 거점과 PB는 나중에 채워도 괜찮습니다.
+            </p>
+          </div>
+
+          <Button variant="ghost" onClick={handleSkip} className="shrink-0">
+            건너뛰기
+          </Button>
         </div>
 
-        {/* 스텝 인디케이터 */}
-        <div className="flex items-center justify-center gap-2">
-          {STEPS.map((s, i) => (
-            <div key={i} className="flex items-center">
-              <div
-                className={cn(
-                  "flex size-8 items-center justify-center rounded-full text-xs font-semibold transition-colors",
-                  i < step
-                    ? "bg-primary text-primary-foreground"
-                    : i === step
-                      ? "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2"
-                      : "bg-muted text-muted-foreground",
-                )}
-              >
-                {i < step ? <Check className="size-4" /> : i + 1}
+        <div className="grid flex-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.9fr)]">
+          <Card className="overflow-hidden border-border/70 bg-card/95 shadow-2xl shadow-black/5 backdrop-blur">
+            <CardContent className="space-y-6 p-6 sm:p-8">
+              <div className="flex flex-wrap gap-2">
+                {STEPS.map((item, index) => {
+                  const active = index === step;
+                  const done = index < step;
+
+                  return (
+                    <div
+                      key={item.key}
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                        active
+                          ? "border-primary bg-primary/10 text-primary"
+                          : done
+                            ? "border-primary/20 bg-primary/5 text-foreground"
+                            : "border-border bg-background text-muted-foreground",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex size-5 items-center justify-center rounded-full text-[10px]",
+                          active
+                            ? "bg-primary text-primary-foreground"
+                            : done
+                              ? "bg-primary/10 text-primary"
+                              : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {done ? <Check className="size-3" /> : index + 1}
+                      </span>
+                      {item.title}
+                    </div>
+                  );
+                })}
               </div>
-              {i < STEPS.length - 1 && (
-                <div
-                  className={cn(
-                    "h-0.5 w-8 transition-colors",
-                    i < step ? "bg-primary" : "bg-muted",
-                  )}
-                />
+
+              {step === 0 && (
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-primary">프로필</p>
+                    <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                      다른 러너에게 먼저 보여줄 이름을 정해주세요.
+                    </h2>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      온보딩에서 가장 중요한 건 닉네임입니다. 한 줄 소개는 선택으로 두고, 나머지는
+                      흐름을 끊지 않게 나중에 채울 수 있게 했습니다.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="name">
+                      닉네임 <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      maxLength={30}
+                      placeholder="러너들에게 보일 이름"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="intro">한 줄 소개 (선택)</Label>
+                    <Textarea
+                      id="intro"
+                      value={intro}
+                      onChange={(event) => setIntro(event.target.value)}
+                      maxLength={120}
+                      placeholder="예: 새벽 러닝과 크루 활동을 좋아해요."
+                      className="min-h-24"
+                    />
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>러너들이 가장 먼저 읽는 자기소개입니다.</span>
+                      <span>{intro.length}/120</span>
+                    </div>
+                  </div>
+                </div>
               )}
-            </div>
-          ))}
-        </div>
 
-        {/* 스텝 컨텐츠 */}
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            {/* Step 1: 프로필 */}
-            {step === 0 && (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <h2 className="text-lg font-semibold">닉네임을 설정하세요</h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    다른 러너들에게 표시될 이름입니다
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="name">
-                    닉네임 <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="닉네임을 입력하세요"
-                    maxLength={30}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bio">소개 (선택)</Label>
-                  <Input
-                    id="bio"
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="자신을 소개해보세요"
-                    maxLength={150}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: 관심 운동 */}
-            {step === 1 && (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <h2 className="text-lg font-semibold">관심 운동을 선택하세요</h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    여러 개 선택할 수 있습니다 (선택 사항)
-                  </p>
-                </div>
-                {workoutTypesLoading ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                      <Skeleton key={i} className="h-11 w-full rounded-lg" />
-                    ))}
+              {step === 1 && (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-primary">러너 정보</p>
+                    <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                      거점과 기록을 가볍게 적어두면 추천이 더 자연스러워집니다.
+                    </h2>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      지역은 선택이고, PB도 비워둘 수 있습니다. 5K / 10K / HM / FM만 적어도
+                      충분합니다.
+                    </p>
                   </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="region">거점 지역</Label>
+                      <Input
+                        id="region"
+                        value={region}
+                        onChange={(event) => setRegion(event.target.value)}
+                        placeholder="예: 서울"
+                        maxLength={40}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="subRegion">세부 지역</Label>
+                      <Input
+                        id="subRegion"
+                        value={subRegion}
+                        onChange={(event) => setSubRegion(event.target.value)}
+                        placeholder="예: 강남 / 마포"
+                        maxLength={40}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <Label>PB 기록</Label>
+                        <p className="text-xs text-muted-foreground">
+                          시간 형식은 mm:ss 또는 hh:mm:ss로 적으면 됩니다.
+                        </p>
+                      </div>
+                      <Badge variant="outline">선택</Badge>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="pb5k" className="text-xs text-muted-foreground">
+                          5K
+                        </Label>
+                        <Input
+                          id="pb5k"
+                          value={pb5k}
+                          onChange={(event) => setPb5k(event.target.value)}
+                          placeholder="21:30"
+                          inputMode="text"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="pb10k" className="text-xs text-muted-foreground">
+                          10K
+                        </Label>
+                        <Input
+                          id="pb10k"
+                          value={pb10k}
+                          onChange={(event) => setPb10k(event.target.value)}
+                          placeholder="45:00"
+                          inputMode="text"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="pbHalf" className="text-xs text-muted-foreground">
+                          HM
+                        </Label>
+                        <Input
+                          id="pbHalf"
+                          value={pbHalf}
+                          onChange={(event) => setPbHalf(event.target.value)}
+                          placeholder="1:40:00"
+                          inputMode="text"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="pbFull" className="text-xs text-muted-foreground">
+                          FM
+                        </Label>
+                        <Input
+                          id="pbFull"
+                          value={pbFull}
+                          onChange={(event) => setPbFull(event.target.value)}
+                          placeholder="3:30:00"
+                          inputMode="text"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {step === 2 && (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-primary">공개 설정</p>
+                    <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                      먼저 보일 정도만 정하고, 세부는 나중에 바꿔도 됩니다.
+                    </h2>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      공개 / 비공개는 언제든 바꿀 수 있습니다. 지금은 편한 쪽으로만 선택하세요.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsPrivate(false)}
+                      className={cn(
+                        "w-full rounded-3xl border px-4 py-4 text-left transition-colors",
+                        !isPrivate
+                          ? "border-primary bg-primary/10 shadow-sm"
+                          : "border-border/70 bg-background/70 hover:bg-accent/40",
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={cn(
+                            "mt-1 flex size-5 items-center justify-center rounded-full border-2",
+                            !isPrivate ? "border-primary" : "border-muted-foreground",
+                          )}
+                        >
+                          {!isPrivate && <div className="size-2 rounded-full bg-primary" />}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">공개 계정</p>
+                          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                            러닝 기록과 게시물이 다른 러너들에게 자연스럽게 노출됩니다.
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsPrivate(true)}
+                      className={cn(
+                        "w-full rounded-3xl border px-4 py-4 text-left transition-colors",
+                        isPrivate
+                          ? "border-primary bg-primary/10 shadow-sm"
+                          : "border-border/70 bg-background/70 hover:bg-accent/40",
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={cn(
+                            "mt-1 flex size-5 items-center justify-center rounded-full border-2",
+                            isPrivate ? "border-primary" : "border-muted-foreground",
+                          )}
+                        >
+                          {isPrivate && <div className="size-2 rounded-full bg-primary" />}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">비공개 계정</p>
+                          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                            팔로워에게만 보이도록 두고, 온보딩 뒤에 천천히 열 수 있습니다.
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="rounded-3xl border border-border/70 bg-background/70 p-4">
+                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <PartyPopper className="size-4 text-primary" />
+                      지금까지 입력한 내용
+                    </div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <FieldSummary label="닉네임" value={name.trim()} />
+                      <FieldSummary label="소개" value={intro.trim()} />
+                      <FieldSummary
+                        label="거점"
+                        value={[region.trim(), subRegion.trim()].filter(Boolean).join(" · ")}
+                      />
+                      <FieldSummary
+                        label="PB"
+                        value={[pb5k.trim(), pb10k.trim(), pbHalf.trim(), pbFull.trim()]
+                          .filter(Boolean)
+                          .join(" / ")}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3 border-t border-border/60 pt-5 sm:flex-row">
+                {step > 0 ? (
+                  <Button variant="outline" onClick={handleBack} className="sm:w-auto">
+                    <ChevronLeft className="size-4" />
+                    이전
+                  </Button>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    {workoutTypes.map((type) => (
-                      <button
-                        key={type.id}
-                        onClick={() => toggleType(type.id)}
-                        className={cn(
-                          "flex items-center gap-2 rounded-lg border p-3 text-sm font-medium transition-colors text-left",
-                          selectedTypes.includes(type.id)
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border hover:bg-accent",
-                        )}
-                      >
-                        <span className="truncate">{type.name}</span>
-                        {selectedTypes.includes(type.id) && (
-                          <Check className="size-3.5 ml-auto shrink-0" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
+                  <Button variant="outline" onClick={handleSkip} className="sm:w-auto">
+                    나중에 설정
+                  </Button>
                 )}
-                {selectedTypes.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {selectedTypes.map((id) => {
-                      const type = workoutTypes.find((t) => t.id === id);
-                      return type ? (
-                        <Badge key={id} variant="secondary">
-                          {type.name}
-                        </Badge>
-                      ) : null;
-                    })}
-                  </div>
+
+                <div className="flex-1" />
+
+                {step < STEPS.length - 1 ? (
+                  <Button onClick={handleNext} className="sm:w-auto">
+                    다음
+                    <ArrowRight className="size-4" />
+                  </Button>
+                ) : (
+                  <Button onClick={handleFinish} disabled={isSubmitting} className="sm:w-auto">
+                    {isSubmitting ? "저장 중..." : "시작하기"}
+                    <ArrowRight className="size-4" />
+                  </Button>
                 )}
               </div>
-            )}
+            </CardContent>
+          </Card>
 
-            {/* Step 3: 공개 설정 */}
-            {step === 2 && (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <h2 className="text-lg font-semibold">계정 공개 설정</h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    나중에 프로필 설정에서 변경할 수 있습니다
-                  </p>
+          <div className="space-y-4">
+            <Card className="border-border/70 bg-card/90 shadow-lg shadow-black/5 backdrop-blur">
+              <CardContent className="space-y-4 p-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <UserRound className="size-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">프로필 요약</p>
+                    <p className="text-xs text-muted-foreground">
+                      나중에 수정해도 되는 값은 여기서 가볍게 살펴보세요.
+                    </p>
+                  </div>
                 </div>
+
                 <div className="space-y-3">
-                  <button
-                    onClick={() => setIsPrivate(false)}
-                    className={cn(
-                      "w-full flex items-start gap-3 rounded-lg border p-4 text-left transition-colors",
-                      !isPrivate ? "border-primary bg-primary/10" : "border-border hover:bg-accent",
-                    )}
-                  >
-                    <div className="mt-0.5">
-                      <div
-                        className={cn(
-                          "size-4 rounded-full border-2 flex items-center justify-center",
-                          !isPrivate ? "border-primary" : "border-muted-foreground",
-                        )}
-                      >
-                        {!isPrivate && <div className="size-2 rounded-full bg-primary" />}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-medium">공개 계정</p>
-                      <p className="text-sm text-muted-foreground">
-                        누구나 내 러닝 기록과 게시글을 볼 수 있습니다
-                      </p>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setIsPrivate(true)}
-                    className={cn(
-                      "w-full flex items-start gap-3 rounded-lg border p-4 text-left transition-colors",
-                      isPrivate ? "border-primary bg-primary/10" : "border-border hover:bg-accent",
-                    )}
-                  >
-                    <div className="mt-0.5">
-                      <div
-                        className={cn(
-                          "size-4 rounded-full border-2 flex items-center justify-center",
-                          isPrivate ? "border-primary" : "border-muted-foreground",
-                        )}
-                      >
-                        {isPrivate && <div className="size-2 rounded-full bg-primary" />}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-medium">비공개 계정</p>
-                      <p className="text-sm text-muted-foreground">
-                        팔로워만 내 기록과 게시글을 볼 수 있습니다
-                      </p>
-                    </div>
-                  </button>
+                  <FieldSummary label="닉네임" value={name.trim() || "아직 비어 있어요"} />
+                  <FieldSummary label="한 줄 소개" value={intro.trim() || "선택 입력입니다"} />
+                  <FieldSummary label="거점" value={region.trim() || "선택 입력입니다"} />
+                  <FieldSummary label="공개 설정" value={isPrivate ? "비공개" : "공개"} />
                 </div>
-              </div>
-            )}
+              </CardContent>
+            </Card>
 
-            {/* Step 4: 완료 */}
-            {step === 3 && (
-              <div className="text-center space-y-4 py-4">
-                <div className="text-5xl">🎉</div>
-                <h2 className="text-lg font-semibold">준비 완료!</h2>
-                <p className="text-sm text-muted-foreground">
-                  프로필 설정이 완료되었습니다.
-                  <br />
-                  이제 다른 러너들과 함께 달려보세요!
+            <Card className="border-border/70 bg-gradient-to-br from-primary/10 via-background to-background">
+              <CardContent className="space-y-3 p-5">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Sparkles className="size-4 text-primary" />
+                  빠르게 시작하기
+                </div>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  닉네임만 넣고 바로 피드로 들어가도 됩니다. 지역과 PB는 빈칸으로 두고 나중에 채워도
+                  흐름이 끊기지 않습니다.
                 </p>
-                <div className="pt-2 space-y-1 text-sm text-muted-foreground">
-                  <p>
-                    닉네임: <span className="font-medium text-foreground">{name}</span>
-                  </p>
-                  <p>
-                    공개 설정:{" "}
-                    <span className="font-medium text-foreground">
-                      {isPrivate ? "비공개" : "공개"}
-                    </span>
-                  </p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* 버튼 영역 */}
-        <div className="flex gap-3">
-          {step > 0 && step < 3 && (
-            <Button variant="outline" onClick={handleBack} className="flex-1">
-              이전
-            </Button>
-          )}
-          {step < 2 && (
-            <Button onClick={handleNext} className="flex-1" disabled={step === 0 && !name.trim()}>
-              다음
-              <ChevronRight className="size-4 ml-1" />
-            </Button>
-          )}
-          {step === 2 && (
-            <Button onClick={handleNext} className="flex-1">
-              계속
-              <ChevronRight className="size-4 ml-1" />
-            </Button>
-          )}
-          {step === 3 && (
-            <Button onClick={handleFinish} className="flex-1" disabled={isSubmitting}>
-              {isSubmitting ? "저장 중..." : "시작하기!"}
-            </Button>
-          )}
+                <Button variant="secondary" onClick={handleSkip} className="w-full">
+                  지금은 건너뛰기
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

@@ -148,7 +148,7 @@ test.describe("크루 게시물", () => {
     test("게시물 탭이 표시된다", async ({ page }) => {
       await page.goto(`/crews/${mockCrewId}`);
 
-      await page.getByRole("tab", { name: "게시물" }).click();
+      await page.getByRole("tab", { name: "게시판" }).click();
 
       await expect(page.getByText("이번 주 토요일 한강 러닝에 참여해주세요!")).toBeVisible();
     });
@@ -156,7 +156,7 @@ test.describe("크루 게시물", () => {
     test("게시물에 좋아요/댓글 수가 표시된다", async ({ page }) => {
       await page.goto(`/crews/${mockCrewId}`);
 
-      await page.getByRole("tab", { name: "게시물" }).click();
+      await page.getByRole("tab", { name: "게시판" }).click();
 
       await expect(page.getByText("12")).toBeVisible();
       await expect(page.getByText("5")).toBeVisible();
@@ -165,7 +165,7 @@ test.describe("크루 게시물", () => {
     test("크루장에게 작성 버튼이 표시된다", async ({ page }) => {
       await page.goto(`/crews/${mockCrewId}`);
 
-      await page.getByRole("tab", { name: "게시물" }).click();
+      await page.getByRole("tab", { name: "게시판" }).click();
 
       await expect(page.getByRole("button", { name: "크루 게시물 작성" })).toBeVisible();
     });
@@ -180,7 +180,7 @@ test.describe("크루 게시물", () => {
     test("작성 버튼 클릭 시 폼이 표시된다", async ({ page }) => {
       await page.goto(`/crews/${mockCrewId}`);
 
-      await page.getByRole("tab", { name: "게시물" }).click();
+      await page.getByRole("tab", { name: "게시판" }).click();
       await page.getByRole("button", { name: "크루 게시물 작성" }).click();
 
       await expect(page.getByPlaceholder("크루 소식을 공유하세요...")).toBeVisible();
@@ -211,7 +211,7 @@ test.describe("크루 게시물", () => {
 
       await page.goto(`/crews/${mockCrewId}`);
 
-      await page.getByRole("tab", { name: "게시물" }).click();
+      await page.getByRole("tab", { name: "게시판" }).click();
       await page.getByRole("button", { name: "크루 게시물 작성" }).click();
       await page.getByPlaceholder("크루 소식을 공유하세요...").fill("새로운 크루 게시물입니다.");
       await page.getByRole("button", { name: "작성", exact: true }).click();

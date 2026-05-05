@@ -33,28 +33,49 @@ export class CrewReadService {
     return this.crewRepo.getSubRegions(region);
   }
 
-  async getCrewChat(crewId: string, userId: string, cursor?: string) {
+  async getCrewChat(
+    crewId: string,
+    userId: string,
+    options?: {
+      cursor?: string;
+      direction?: "older" | "newer";
+      entry?: "latest" | "unread";
+      historyLimit?: number;
+      unreadLimit?: number;
+      limit?: number;
+    },
+  ) {
     const crew = await this.getCrewOrThrow(crewId);
     const member = await this.crewMemberRepo.findMember(crewId, userId);
-    if (!member) {
+    if (!member || member.status !== "ACTIVE") {
       throw new ForbiddenException("크루 멤버만 채팅에 참여할 수 있습니다.");
     }
 
     if (!crew.chatConversationId) {
-      return { conversation: null, messages: [], nextCursor: null };
+      return {
+        conversation: null,
+        messages: [],
+        olderCursor: null,
+        newerCursor: null,
+        firstUnreadMessageId: null,
+      };
     }
 
     const conversation = await this.conversationsRepo.findById(crew.chatConversationId);
-    const messages = await this.conversationsRepo.getMessages(crew.chatConversationId, cursor, 30);
-    const hasMore = messages.length > 30;
-    const items = hasMore ? messages.slice(0, 30) : messages;
+    const messageWindow = await this.conversationsRepo.getConversationWindow(
+      crew.chatConversationId,
+      userId,
+      options ?? {},
+    );
 
     await this.conversationsRepo.updateLastRead(crew.chatConversationId, userId).catch(() => {});
 
     return {
       conversation,
-      messages: items,
-      nextCursor: hasMore ? items[items.length - 1].id : null,
+      messages: messageWindow.messages,
+      olderCursor: messageWindow.olderCursor,
+      newerCursor: messageWindow.newerCursor,
+      firstUnreadMessageId: messageWindow.firstUnreadMessageId,
     };
   }
 
@@ -79,12 +100,13 @@ export class CrewReadService {
     });
   }
 
-  async getCrewPosts(crewId: string, cursor?: string) {
-    await this.getCrewOrThrow(crewId);
+  async getCrewPosts(crewId: string, cursor?: string, currentUserId?: string) {
+    await this.requireActiveMember(crewId, currentUserId);
     return this.crewRepo.findCrewPosts(crewId, cursor);
   }
 
-  async getCrewProfile(crewId: string) {
+  async getCrewProfile(crewId: string, currentUserId?: string) {
+    await this.requireReadableCrew(crewId, currentUserId);
     const result = await this.crewRepo.getCrewProfile(crewId);
     if (!result) {
       throw new NotFoundException("크루를 찾을 수 없습니다.");
@@ -98,5 +120,32 @@ export class CrewReadService {
       throw new NotFoundException("크루를 찾을 수 없습니다.");
     }
     return crew;
+  }
+
+  private async requireReadableCrew(crewId: string, currentUserId?: string) {
+    const crew = await this.getCrewOrThrow(crewId);
+    if (crew.isPublic !== false) {
+      return crew;
+    }
+
+    const member = currentUserId
+      ? await this.crewMemberRepo.findMember(crewId, currentUserId)
+      : null;
+    if (!member || member.status !== "ACTIVE") {
+      throw new NotFoundException("크루를 찾을 수 없습니다.");
+    }
+
+    return crew;
+  }
+
+  private async requireActiveMember(crewId: string, currentUserId?: string) {
+    await this.getCrewOrThrow(crewId);
+
+    const member = currentUserId
+      ? await this.crewMemberRepo.findMember(crewId, currentUserId)
+      : null;
+    if (!member || member.status !== "ACTIVE") {
+      throw new ForbiddenException("크루 멤버만 크루 소식을 확인할 수 있습니다.");
+    }
   }
 }

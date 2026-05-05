@@ -25,7 +25,25 @@ export class CreateCrewDto {
   })
   @IsOptional()
   @IsString()
-  imageUrl?: string;
+  imageUrl?: string | null;
+
+  @ApiProperty({
+    description: "크루 프로필 이미지 URL",
+    example: "https://r2.example.com/crew-profile.jpg",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  profileImageUrl?: string | null;
+
+  @ApiProperty({
+    description: "크루 커버 이미지 URL",
+    example: "https://r2.example.com/crew-cover.jpg",
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  coverImageUrl?: string | null;
 
   @ApiProperty({ description: "공개 여부", example: true, required: false })
   @IsOptional()
@@ -41,15 +59,15 @@ export class CreateCrewDto {
   @ApiProperty({ description: "크루 활동 지역 (상세)", example: "강남구", required: false })
   @IsOptional()
   @IsString()
-  location?: string;
+  location?: string | null;
 
   @ApiProperty({ description: "광역시/도", example: "서울특별시", required: false })
   @IsOptional()
   @IsString()
-  region?: string;
+  region?: string | null;
 
   @ApiProperty({ description: "시/군/구", example: "강남구", required: false })
   @IsOptional()
   @IsString()
-  subRegion?: string;
+  subRegion?: string | null;
 }

@@ -7,6 +7,7 @@ Current runbooks:
 - `environment-and-settings.md`
 - `harness-diagnostics.md`
 - `deployment.md`
+- `correction-commit-flow.md`
 - `rollback.md`
 
 Rule:

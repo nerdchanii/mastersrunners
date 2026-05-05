@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from "@
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
+import { FeatureGate } from "../common/decorators/feature-gate.decorator.js";
 import { CursorLimitQueryDto } from "../common/dto/cursor-limit-query.dto.js";
 import { LimitQueryDto } from "../common/dto/limit-query.dto.js";
 
@@ -13,6 +14,7 @@ import { UpdateProgressDto } from "./dto/update-progress.dto.js";
 import { ChallengesService } from "./challenges.service.js";
 
 @ApiTags("Challenges")
+@FeatureGate("challenges")
 @Controller("challenges")
 export class ChallengesController {
   constructor(private readonly challengesService: ChallengesService) {}

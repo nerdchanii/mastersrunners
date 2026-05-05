@@ -13,6 +13,7 @@ interface CreateActivityData {
   createdBy: string;
   qrCode?: string;
   activityType?: string;
+  activityIcon?: string | null;
   workoutTypeId?: string;
 }
 
@@ -23,11 +24,91 @@ interface UpdateActivityData {
   location?: string;
   latitude?: number;
   longitude?: number;
+  activityIcon?: string | null;
 }
+
+type AttendanceDashboardOptions = {
+  range?: string;
+  type?: string;
+  sort?: string;
+  order?: string;
+  q?: string;
+  checkInLte?: number;
+  noShowGte?: number;
+  limit?: number;
+};
 
 @Injectable()
 export class CrewActivityRepository {
   constructor(private readonly databaseService: DatabaseService) {}
+
+  private resolveRangeStart(range?: string) {
+    const normalized = range?.toLowerCase();
+    if (!normalized || normalized === "all") {
+      return undefined;
+    }
+
+    const now = new Date();
+    const start = new Date(now);
+    if (normalized === "30d") start.setDate(now.getDate() - 30);
+    else if (normalized === "monthly") start.setDate(1);
+    else if (normalized === "10w") start.setDate(now.getDate() - 70);
+    else if (normalized === "12w") start.setDate(now.getDate() - 84);
+    else if (normalized === "90d") start.setDate(now.getDate() - 90);
+    else if (normalized === "180d") start.setDate(now.getDate() - 180);
+    else if (normalized === "365d") start.setDate(now.getDate() - 365);
+    else return undefined;
+
+    return start;
+  }
+
+  private buildActivityWhere(crewId: string, opts?: { range?: string; type?: string }) {
+    const activityDateGte = this.resolveRangeStart(opts?.range);
+    const activityType = opts?.type && opts.type !== "ALL" ? opts.type.toUpperCase() : undefined;
+
+    return {
+      crewId,
+      status: "COMPLETED",
+      ...(activityType ? { activityType } : {}),
+      ...(activityDateGte ? { activityDate: { gte: activityDateGte } } : {}),
+    };
+  }
+
+  private sortMemberRows<
+    T extends {
+      checkedIn: number;
+      noShow: number;
+      rate: number;
+      lastActivityAt: string | null;
+      user: { name: string };
+    },
+  >(rows: T[], opts?: { sort?: string; order?: string }) {
+    const direction = opts?.order === "asc" ? 1 : -1;
+    const sort = opts?.sort ?? "checkedIn";
+
+    return rows.sort((a, b) => {
+      const lastActivityA = a.lastActivityAt ? new Date(a.lastActivityAt).getTime() : 0;
+      const lastActivityB = b.lastActivityAt ? new Date(b.lastActivityAt).getTime() : 0;
+
+      if (sort === "name") {
+        return direction * a.user.name.localeCompare(b.user.name, "ko");
+      }
+      if (sort === "noShow") {
+        if (a.noShow !== b.noShow) return direction * (a.noShow - b.noShow);
+      } else if (sort === "rate") {
+        if (a.rate !== b.rate) return direction * (a.rate - b.rate);
+      } else if (sort === "lastActivity") {
+        if (lastActivityA !== lastActivityB) return direction * (lastActivityA - lastActivityB);
+      } else {
+        if (a.checkedIn !== b.checkedIn) return direction * (a.checkedIn - b.checkedIn);
+      }
+
+      if (a.checkedIn !== b.checkedIn) return b.checkedIn - a.checkedIn;
+      if (a.noShow !== b.noShow) return a.noShow - b.noShow;
+      if (lastActivityA !== lastActivityB) return lastActivityB - lastActivityA;
+      return a.user.name.localeCompare(b.user.name, "ko");
+    });
+  }
 
   async create(data: CreateActivityData) {
     return this.databaseService.prisma.crewActivity.create({
@@ -240,49 +321,176 @@ export class CrewActivityRepository {
     return { official, popUp, monthly };
   }
 
-  async getCrewAttendanceStats(crewId: string, opts?: { month?: string; type?: string }) {
-    const whereActivity: Record<string, unknown> = { crewId, status: "COMPLETED" };
-    if (opts?.type) whereActivity.activityType = opts.type;
+  async getMemberAttendanceHistory(
+    crewId: string,
+    userId: string,
+    opts?: { range?: string; type?: string },
+  ) {
+    const activityWhere = this.buildActivityWhere(crewId, opts);
 
-    if (opts?.month) {
-      const [year, mon] = opts.month.split("-").map(Number);
-      whereActivity.activityDate = {
-        gte: new Date(year, mon - 1, 1),
-        lt: new Date(year, mon, 1),
-      };
-    }
-
-    const activities = await this.databaseService.prisma.crewActivity.findMany({
-      where: whereActivity,
-      orderBy: { activityDate: "desc" },
+    const attendanceHistory = await this.databaseService.prisma.crewAttendance.findMany({
+      where: {
+        userId,
+        status: { in: ["RSVP", "CHECKED_IN", "NO_SHOW"] },
+        activity: activityWhere,
+      },
+      orderBy: { activity: { activityDate: "desc" } },
       include: {
-        attendances: {
-          select: { userId: true, status: true },
+        user: { select: { id: true, name: true, profileImage: true } },
+        activity: {
+          select: {
+            id: true,
+            title: true,
+            activityDate: true,
+            activityType: true,
+            activityIcon: true,
+            location: true,
+          },
         },
       },
     });
 
-    // Overall crew rate
-    let totalAttendances = 0;
-    let totalCheckedIn = 0;
+    const checkedIn = attendanceHistory.filter(
+      (item: (typeof attendanceHistory)[number]) => item.status === "CHECKED_IN",
+    ).length;
+    const noShow = attendanceHistory.filter(
+      (item: (typeof attendanceHistory)[number]) => item.status === "NO_SHOW",
+    ).length;
+    const totalEligible = attendanceHistory.length;
+    const lastActivityAt = attendanceHistory[0]?.activity.activityDate ?? null;
+    const lastCheckedInAt =
+      attendanceHistory.find(
+        (item: (typeof attendanceHistory)[number]) => item.status === "CHECKED_IN",
+      )?.checkedAt ?? null;
 
-    const activityStats = activities.map((act: (typeof activities)[number]) => {
-      const checkedIn = act.attendances.filter(
-        (a: (typeof act.attendances)[number]) => a.status === "CHECKED_IN",
+    return {
+      member: {
+        userId,
+        user: attendanceHistory[0]?.user ?? { id: userId, name: "알 수 없음", profileImage: null },
+        totalEligible,
+        checkedIn,
+        noShow,
+        rate: totalEligible > 0 ? Math.round((checkedIn / totalEligible) * 100) : 0,
+        lastActivityAt,
+        lastCheckedInAt,
+      },
+      history: attendanceHistory.map((item: (typeof attendanceHistory)[number]) => ({
+        id: item.id,
+        activityId: item.activity.id,
+        title: item.activity.title,
+        activityDate: item.activity.activityDate,
+        activityType: item.activity.activityType,
+        activityIcon: item.activity.activityIcon,
+        location: item.activity.location,
+        status: item.status,
+        checkedAt: item.checkedAt,
+        rsvpAt: item.rsvpAt,
+      })),
+    };
+  }
+
+  async getCrewAttendanceStats(crewId: string, opts?: AttendanceDashboardOptions) {
+    const activityWhere = this.buildActivityWhere(crewId, opts);
+    const activityLimit = opts?.limit ?? 20;
+
+    const [allActivities, visibleActivities, crewMembers] = await Promise.all([
+      this.databaseService.prisma.crewActivity.findMany({
+        where: activityWhere,
+        orderBy: { activityDate: "desc" },
+        include: {
+          attendances: {
+            select: { userId: true, status: true },
+          },
+        },
+      }),
+      this.databaseService.prisma.crewActivity.findMany({
+        where: activityWhere,
+        orderBy: { activityDate: "desc" },
+        take: activityLimit,
+        include: {
+          attendances: {
+            select: { userId: true, status: true },
+          },
+        },
+      }),
+      this.databaseService.prisma.crewMember.findMany({
+        where: {
+          crewId,
+          status: "ACTIVE",
+          ...(opts?.q
+            ? {
+                user: {
+                  name: {
+                    contains: opts.q,
+                    mode: "insensitive",
+                  },
+                },
+              }
+            : {}),
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              profileImage: true,
+              crewAttendances: {
+                where: {
+                  status: { in: ["RSVP", "CHECKED_IN", "NO_SHOW"] },
+                  activity: activityWhere,
+                },
+                select: {
+                  status: true,
+                  checkedAt: true,
+                  activity: {
+                    select: {
+                      activityDate: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    let totalEligible = 0;
+    let totalCheckedIn = 0;
+    let totalNoShow = 0;
+
+    for (const activity of allActivities) {
+      const eligible = activity.attendances.filter(
+        (attendance: (typeof activity.attendances)[number]) => attendance.status !== "CANCELLED",
+      );
+      totalEligible += eligible.length;
+      totalCheckedIn += eligible.filter(
+        (attendance: (typeof eligible)[number]) => attendance.status === "CHECKED_IN",
       ).length;
-      const noShow = act.attendances.filter(
-        (a: (typeof act.attendances)[number]) => a.status === "NO_SHOW",
+      totalNoShow += eligible.filter(
+        (attendance: (typeof eligible)[number]) => attendance.status === "NO_SHOW",
       ).length;
-      const total = act.attendances.filter(
-        (a: (typeof act.attendances)[number]) => a.status !== "CANCELLED",
+    }
+
+    const activities = visibleActivities.map((activity: (typeof visibleActivities)[number]) => {
+      const eligible = activity.attendances.filter(
+        (attendance: (typeof activity.attendances)[number]) => attendance.status !== "CANCELLED",
+      );
+      const checkedIn = eligible.filter(
+        (attendance: (typeof eligible)[number]) => attendance.status === "CHECKED_IN",
       ).length;
-      totalAttendances += total;
-      totalCheckedIn += checkedIn;
+      const noShow = eligible.filter(
+        (attendance: (typeof eligible)[number]) => attendance.status === "NO_SHOW",
+      ).length;
+      const total = eligible.length;
+
       return {
-        id: act.id,
-        title: act.title,
-        activityDate: act.activityDate,
-        activityType: act.activityType,
+        id: activity.id,
+        title: activity.title,
+        activityDate: activity.activityDate,
+        activityType: activity.activityType,
+        activityIcon: activity.activityIcon,
+        location: activity.location,
         total,
         checkedIn,
         noShow,
@@ -290,46 +498,66 @@ export class CrewActivityRepository {
       };
     });
 
-    // Member stats across all these activities
-    const memberMap = new Map<string, { total: number; checkedIn: number; noShow: number }>();
-    for (const act of activities) {
-      for (const att of act.attendances) {
-        if (att.status === "CANCELLED") continue;
-        if (!memberMap.has(att.userId))
-          memberMap.set(att.userId, { total: 0, checkedIn: 0, noShow: 0 });
-        const m = memberMap.get(att.userId)!;
-        m.total++;
-        if (att.status === "CHECKED_IN") m.checkedIn++;
-        else if (att.status === "NO_SHOW") m.noShow++;
-      }
-    }
+    const memberRows = crewMembers.map((member: (typeof crewMembers)[number]) => {
+      const attendances = member.user.crewAttendances;
+      const checkedIn = attendances.filter(
+        (attendance: (typeof attendances)[number]) => attendance.status === "CHECKED_IN",
+      ).length;
+      const noShow = attendances.filter(
+        (attendance: (typeof attendances)[number]) => attendance.status === "NO_SHOW",
+      ).length;
+      const totalEligibleForMember = attendances.length;
+      const sortedDates = attendances
+        .map((attendance: (typeof attendances)[number]) => attendance.activity.activityDate)
+        .sort((a: Date, b: Date) => new Date(b).getTime() - new Date(a).getTime());
+      const checkedInDates = attendances
+        .filter(
+          (attendance: (typeof attendances)[number]) =>
+            attendance.status === "CHECKED_IN" && attendance.checkedAt,
+        )
+        .map((attendance: (typeof attendances)[number]) => attendance.checkedAt as Date)
+        .sort((a: Date, b: Date) => b.getTime() - a.getTime());
 
-    // Fetch user info for member stats
-    const userIds = [...memberMap.keys()];
-    const users =
-      userIds.length > 0
-        ? await this.databaseService.prisma.user.findMany({
-            where: { id: { in: userIds } },
-            select: { id: true, name: true, profileImage: true },
-          })
-        : [];
+      return {
+        userId: member.userId,
+        user: {
+          id: member.user.id,
+          name: member.user.name,
+          profileImage: member.user.profileImage,
+        },
+        totalEligible: totalEligibleForMember,
+        checkedIn,
+        noShow,
+        rate:
+          totalEligibleForMember > 0 ? Math.round((checkedIn / totalEligibleForMember) * 100) : 0,
+        lastActivityAt: sortedDates[0] ?? null,
+        lastCheckedInAt: checkedInDates[0] ?? null,
+      };
+    });
 
-    const userMap = new Map(users.map((u: (typeof users)[number]) => [u.id, u]));
-    const memberStats = [...memberMap.entries()]
-      .map(([userId, stats]) => ({
-        userId,
-        user: userMap.get(userId) ?? { id: userId, name: "알 수 없음", profileImage: null },
-        total: stats.total,
-        checkedIn: stats.checkedIn,
-        noShow: stats.noShow,
-        rate: stats.total > 0 ? Math.round((stats.checkedIn / stats.total) * 100) : 0,
-      }))
-      .sort((a, b) => b.rate - a.rate || b.checkedIn - a.checkedIn);
+    const members = memberRows
+      .filter((member: (typeof memberRows)[number]) =>
+        opts?.checkInLte !== undefined ? member.checkedIn <= opts.checkInLte : true,
+      )
+      .filter((member: (typeof memberRows)[number]) =>
+        opts?.noShowGte !== undefined ? member.noShow >= opts.noShowGte : true,
+      );
+
+    const sortedMembers = this.sortMemberRows(members, {
+      sort: opts?.sort,
+      order: opts?.order,
+    });
 
     return {
-      activities: activityStats,
-      memberStats,
-      overallRate: totalAttendances > 0 ? Math.round((totalCheckedIn / totalAttendances) * 100) : 0,
+      summary: {
+        overallRate: totalEligible > 0 ? Math.round((totalCheckedIn / totalEligible) * 100) : 0,
+        activityCount: allActivities.length,
+        totalEligible,
+        totalCheckedIn,
+        totalNoShow,
+      },
+      activities,
+      members: sortedMembers,
     };
   }
 }

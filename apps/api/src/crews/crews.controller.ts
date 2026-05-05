@@ -1,8 +1,21 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+} from "@nestjs/common";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
+import { Public } from "../common/decorators/public.decorator.js";
 import { CursorQueryDto } from "../common/dto/cursor-query.dto.js";
+import { ChatWindowQueryDto } from "../conversations/dto/chat-window-query.dto.js";
 
 import { ChangeCrewMemberRoleDto } from "./dto/change-crew-member-role.dto.js";
 import { CreateCrewDto } from "./dto/create-crew.dto.js";
@@ -39,15 +52,19 @@ export class CrewsController {
   @ApiOperation({ summary: "크루 목록 조회" })
   @ApiResponse({ status: 200, description: "성공" })
   @Get()
+  @Public()
   findAll(@Req() req: Request, @Query() query: ListCrewsQueryDto) {
-    const { userId: requesterId } = req.user as { userId: string };
+    const requesterId = (req.user as { userId: string } | undefined)?.userId;
 
     if (query.my) {
+      if (!requesterId) {
+        throw new ForbiddenException("로그인이 필요합니다.");
+      }
       return this.crewsService.findMyCrews(requesterId);
     }
 
     if (query.userId) {
-      return this.crewsService.findMyCrews(query.userId);
+      return this.crewsService.findVisibleProfileCrews(query.userId, requesterId);
     }
 
     return this.crewsService.findAll({
@@ -64,6 +81,7 @@ export class CrewsController {
   }
 
   @Get("explore")
+  @Public()
   explore(@Query() query: ExploreCrewsQueryDto) {
     return this.crewsService.explore({
       region: query.region,
@@ -80,34 +98,49 @@ export class CrewsController {
   }
 
   @Get("regions")
+  @Public()
   getRegions() {
     return this.crewsService.getRegions();
   }
 
   @Get("regions/:region")
+  @Public()
   getSubRegions(@Param("region") region: string) {
     return this.crewsService.getSubRegions(region);
+  }
+
+  @ApiOperation({ summary: "크루 초대 링크 조회 (운영진 전용)" })
+  @ApiResponse({ status: 200, description: "성공" })
+  @Get(":id/invite-link")
+  getInviteLink(@Param("id") id: string, @Req() req: Request) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.getInviteLink(id, userId);
   }
 
   @ApiOperation({ summary: "크루 상세 조회" })
   @ApiResponse({ status: 200, description: "성공" })
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.crewsService.findOne(id);
+  @Public()
+  findOne(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as { userId: string } | undefined)?.userId;
+    return this.crewsService.findOne(id, userId);
   }
 
   @ApiOperation({ summary: "크루 프로필 조회 (집계 정보)" })
   @ApiResponse({ status: 200, description: "성공" })
   @Get(":id/profile")
-  getCrewProfile(@Param("id") id: string) {
-    return this.crewsService.getCrewProfile(id);
+  @Public()
+  getCrewProfile(@Param("id") id: string, @Req() req: Request) {
+    const userId = (req.user as { userId: string } | undefined)?.userId;
+    return this.crewsService.getCrewProfile(id, userId);
   }
 
   @ApiOperation({ summary: "크루 게시물 목록 조회" })
   @ApiResponse({ status: 200, description: "성공" })
   @Get(":id/posts")
-  getCrewPosts(@Param("id") id: string, @Query() query: CursorQueryDto) {
-    return this.crewsService.getCrewPosts(id, query.cursor);
+  getCrewPosts(@Param("id") id: string, @Req() req: Request, @Query() query: CursorQueryDto) {
+    const { userId } = req.user as { userId: string };
+    return this.crewsService.getCrewPosts(id, query.cursor, userId);
   }
 
   @ApiOperation({ summary: "크루 게시물 작성 (크루장 전용)" })
@@ -255,9 +288,16 @@ export class CrewsController {
   }
 
   @Get(":id/chat")
-  getCrewChat(@Param("id") id: string, @Req() req: Request, @Query() query: CursorQueryDto) {
+  getCrewChat(@Param("id") id: string, @Req() req: Request, @Query() query: ChatWindowQueryDto) {
     const { userId } = req.user as { userId: string };
-    return this.crewsService.getCrewChat(id, userId, query.cursor);
+    return this.crewsService.getCrewChat(id, userId, {
+      cursor: query.cursor,
+      direction: query.resolveDirection(),
+      entry: query.resolveEntry(),
+      historyLimit: query.resolveHistoryLimit(40, 100),
+      unreadLimit: query.resolveUnreadLimit(100, 200),
+      limit: query.resolveDirectionalLimit(100, 200),
+    });
   }
 
   @Get(":id/activities/:activityId/chat")
@@ -265,10 +305,17 @@ export class CrewsController {
     @Param("id") id: string,
     @Param("activityId") activityId: string,
     @Req() req: Request,
-    @Query() query: CursorQueryDto,
+    @Query() query: ChatWindowQueryDto,
   ) {
     const { userId } = req.user as { userId: string };
-    return this.crewsService.getActivityChat(id, activityId, userId, query.cursor);
+    return this.crewsService.getActivityChat(id, activityId, userId, {
+      cursor: query.cursor,
+      direction: query.resolveDirection(),
+      entry: query.resolveEntry(),
+      historyLimit: query.resolveHistoryLimit(40, 100),
+      unreadLimit: query.resolveUnreadLimit(100, 200),
+      limit: query.resolveDirectionalLimit(100, 200),
+    });
   }
 
   @Post(":id/activities")
@@ -282,18 +329,29 @@ export class CrewsController {
       latitude: dto.latitude,
       longitude: dto.longitude,
       activityType: dto.activityType,
+      activityIcon: dto.activityIcon,
       workoutTypeId: dto.workoutTypeId,
     });
   }
 
   @Get(":id/activities")
-  getActivities(@Param("id") id: string, @Query() query: ListCrewActivitiesQueryDto) {
-    return this.crewsService.getActivities(id, {
-      cursor: query.cursor,
-      limit: query.resolveOptionalLimit(),
-      type: query.type,
-      status: query.status,
-    });
+  @Public()
+  getActivities(
+    @Param("id") id: string,
+    @Req() req: Request,
+    @Query() query: ListCrewActivitiesQueryDto,
+  ) {
+    const userId = (req.user as { userId: string } | undefined)?.userId;
+    return this.crewsService.getActivities(
+      id,
+      {
+        cursor: query.cursor,
+        limit: query.resolveOptionalLimit(),
+        type: query.type,
+        status: query.status,
+      },
+      userId,
+    );
   }
 
   @Get(":id/activities/:activityId")
@@ -316,6 +374,7 @@ export class CrewsController {
     if (dto.location !== undefined) data.location = dto.location;
     if (dto.latitude !== undefined) data.latitude = dto.latitude;
     if (dto.longitude !== undefined) data.longitude = dto.longitude;
+    if (dto.activityIcon !== undefined) data.activityIcon = dto.activityIcon;
     return this.crewsService.updateActivity(activityId, id, userId, data);
   }
 
@@ -402,11 +461,29 @@ export class CrewsController {
     return this.crewsService.getMemberAttendanceStats(id, userId);
   }
 
+  @Get(":id/members/:userId/attendance-history")
+  getMemberAttendanceHistory(
+    @Param("id") id: string,
+    @Param("userId") userId: string,
+    @Query() query: CrewAttendanceStatsQueryDto,
+  ) {
+    return this.crewsService.getMemberAttendanceHistory(id, userId, {
+      range: query.range,
+      type: query.type,
+    });
+  }
+
   @Get(":id/attendance-stats")
   getCrewAttendanceStats(@Param("id") id: string, @Query() query: CrewAttendanceStatsQueryDto) {
     return this.crewsService.getCrewAttendanceStats(id, {
-      month: query.month,
+      range: query.range,
       type: query.type,
+      sort: query.sort,
+      order: query.order,
+      q: query.q,
+      checkInLte: query.checkInLte,
+      noShowGte: query.noShowGte,
+      limit: query.limit,
     });
   }
 

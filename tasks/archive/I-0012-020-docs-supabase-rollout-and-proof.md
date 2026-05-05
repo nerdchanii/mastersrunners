@@ -13,7 +13,7 @@ depends_on:
   - I-0012-010
 blocked_by: []
 verify:
-  - pnpm exec prettier --check design/initiatives/I-0012-supabase-postgres-rollout.md design/operating-rules/exceptions.md tasks/archive/I-0012-010-db-supabase-runtime-contract.md tasks/archive/I-0012-020-docs-supabase-rollout-and-proof.md tasks/todo/I-0012-030-db-supabase-pro-upgrade-readiness.md
+  - pnpm exec prettier --check design/initiatives/I-0012-supabase-postgres-rollout.md design/operating-rules/exceptions.md tasks/archive/I-0012-010-db-supabase-runtime-contract.md tasks/archive/I-0012-020-docs-supabase-rollout-and-proof.md tasks/todo/I-0012-030-docs-supabase-free-tier-rollout-posture.md
 artifacts:
   - design/initiatives/I-0012-supabase-postgres-rollout.md
   - design/operating-rules/exceptions.md

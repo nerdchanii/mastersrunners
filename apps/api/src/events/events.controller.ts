@@ -2,6 +2,8 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, Req } fr
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
+import { FeatureGate } from "../common/decorators/feature-gate.decorator.js";
+
 import { CreateEventDto } from "./dto/create-event.dto.js";
 import { LinkEventWorkoutDto } from "./dto/link-event-workout.dto.js";
 import { ListEventsQueryDto } from "./dto/list-events-query.dto.js";
@@ -10,6 +12,7 @@ import { UpdateEventDto } from "./dto/update-event.dto.js";
 import { EventsService } from "./events.service.js";
 
 @ApiTags("Events")
+@FeatureGate("events")
 @Controller("events")
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}

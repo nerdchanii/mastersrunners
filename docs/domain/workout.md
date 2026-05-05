@@ -1,10 +1,15 @@
 ---
 doc_state: current
 owner: product
-last_verified: 2026-03-30
+last_verified: 2026-05-05
 sources:
   - packages/database/prisma/schema.prisma
-  - apps/api/src
+  - packages/database/prisma/migrations/20260423022000_remove_workout_legacy_detail_schema/migration.sql
+  - apps/api/src/uploads/uploads.service.ts
+  - apps/api/src/workouts/workouts.service.ts
+  - tasks/archive/I-0018-060-db-deploy-migration-backfill-compat.md
+  - tasks/todo/I-0018-040-repo-cloudflare-workout-private-storage-backfill.md
+  - tasks/todo/I-0018-070-db-workout-legacy-physical-cleanup.md
 ---
 
 # 워크아웃 (Workout)
@@ -46,16 +51,17 @@ sources:
   - `memo`
   - `visibility`
   - `shoeId`
+  - `encodedPolyline`
+  - `detailPath`
+  - `detailFormatVersion`
   - `deletedAt`
 
 ### 연관 모델
 
 - `WorkoutFile`
-  - 원본 FIT/GPX/TCX 업로드 파일과 처리 상태를 저장한다.
-- `WorkoutRoute`
-  - 인코딩된 폴리라인과 상세 route JSON을 저장한다.
-- `WorkoutLap`
-  - 랩 번호, trigger, 거리, 시간, 페이스, 심박/케이던스, 고도 정보를 저장한다.
+  - 원본 FIT/GPX 업로드 파일과 처리 상태를 저장한다.
+  - canonical raw source 위치는 필수 `sourcePath`로 보관한다.
+  - legacy row는 final private-storage backfill 전까지 기존 `fileUrl` 값을 compatibility `sourcePath`로 보관할 수 있으며, 일반 API 응답에는 source 위치를 노출하지 않는다.
 - `WorkoutPhoto`
   - 워크아웃 사진과 정렬 순서를 저장한다.
 
@@ -88,7 +94,9 @@ sources:
 
 ## 현재 제약
 
-- 워크아웃 상세와 생성 UX는 풍부하지만 route 파일이 여전히 크다.
+- 워크아웃 상세와 생성 UX는 풍부하지만 detail blob payload는 여전히 크다.
+- detail 응답은 `Workout.detailPath` private blob을 정본으로 합성하므로, blob이 없거나 손상되면 route/lap 상세는 비게 된다.
+- raw source가 남아 있는데 `detailPath`가 없거나 읽을 수 없는 imported workout은 운영 경고 대상으로 취급한다.
 - 외부 동기화 모델은 스키마에 있지만, 모든 플랫폼이 동일 성숙도로 구현된 것은 아니다.
 
 ## 삭제 규칙

@@ -4,7 +4,7 @@ interface CrewMember {
   id: string;
   userId: string;
   role: "OWNER" | "ADMIN" | "MEMBER";
-  status: "ACTIVE" | "PENDING";
+  status: "ACTIVE" | "PENDING" | "LEFT";
   joinedAt: string;
   user: {
     id: string;
@@ -18,6 +18,11 @@ interface CrewDetail {
   name: string;
   description: string | null;
   imageUrl: string | null;
+  profileImageUrl?: string | null;
+  coverImageUrl?: string | null;
+  location?: string | null;
+  region?: string | null;
+  subRegion?: string | null;
   isPublic: boolean;
   maxMembers: number | null;
   createdAt: string;

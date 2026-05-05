@@ -77,11 +77,41 @@ Reviewers: harness-reviewer, po-reviewer
 Verify: bash scripts/check-size-budgets.sh
 ```
 
+## Commit Cadence
+
+- Prefer one reviewed commit per executable unit of work.
+- If a task is too broad to produce a coherent reviewed commit quickly, split the task instead of banking a long-lived hidden diff.
+- Do not push half-finished work to shared history just to create more commits; correction history starts once a bad commit is actually shared.
+
+Correction commits should add one of these linkage trailers as well:
+
+```text
+Fixes: <commit_sha>
+```
+
+or
+
+```text
+Reverts: <commit_sha>
+```
+
+Use the shortest clear SHA that resolves in the repository. Add a short reason in the body or a `Reason:` trailer when the correction would otherwise be ambiguous.
+
+## Correction History
+
+- Before a change is pushed or merged, keep fixing it inside the current task branch until it is ready for reviewed integration.
+- After a bad commit exists in shared history, do not hide it with force-push, silent replacement, or an unrelated follow-up task.
+- Use a follow-up `fix` commit when the intended change should stay but the implementation needs correction.
+- Use a `revert` commit when the fastest safe path is to roll back to the last known good state.
+- A correction to shared history should get its own task so the original mistake and the recovery remain understandable in `git log`, task archives, and review notes.
+- If you revert first and re-land later, the re-landing should be a new `fix` or `feat` task rather than an amendment of the reverted commit.
+
 ## Enforcement
 
 - Repository automation validates commit subjects in the `commit-msg` hook.
 - `pre-commit` is for file-content checks. Commit message validation belongs in `commit-msg`.
 - `pre-commit` escalates to `bash scripts/run-typecheck.sh` when staged changes touch TypeScript-sensitive files or configs.
+- `pre-push` runs `pnpm ci:local` so the full local CI mirror executes before changes leave the workstation.
 - The enforced rules currently cover:
   - allowed commit `type`
   - required non-empty `scope`
@@ -94,3 +124,4 @@ Verify: bash scripts/check-size-budgets.sh
 
 - Historical commits may predate this policy. Do not rewrite existing history just to match the convention.
 - `revert` commits should still explain the operational signal in the body or trailers.
+- See `docs/runbooks/correction-commit-flow.md` for the operating procedure that chooses between `fix` and `revert`.

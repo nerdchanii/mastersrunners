@@ -1,8 +1,9 @@
 ---
 doc_state: current
 owner: frontend
-last_verified: 2026-03-12
+last_verified: 2026-04-01
 sources:
+  - apps/web/src/components/common/FeatureRoute.tsx
   - apps/web/src/pages/events/index.tsx
   - apps/web/src/pages/events/[id]/index.tsx
   - apps/web/src/pages/events/[id]/useEventDetailPage.ts
@@ -19,7 +20,7 @@ sources:
 
 ## Summary
 
-Events and challenges share a similar discovery and detail pattern: public list routes, protected creation/edit routes, and detail pages that mix current-state hook/query usage with route-local orchestration.
+Events and challenges share a similar discovery and detail pattern: public list routes, protected creation/edit routes, and detail pages that mix current-state hook/query usage with route-local orchestration. Those routes are now also gated by public runtime config, so disabled features disappear from navigation and resolve to `NotFound`.
 
 ## Route Model
 
@@ -38,6 +39,11 @@ Events and challenges share a similar discovery and detail pattern: public list 
 - `/challenges/:id/edit`
 
 List and detail routes are public. Create and edit flows are protected.
+
+When the matching repo-tracked runtime setting is disabled:
+
+- header and mobile navigation links are hidden
+- route entries render the shared `NotFound` page instead of loading the feature surface
 
 ## List Behavior
 

@@ -1,7 +1,8 @@
 import { MapPin, Plus, Users } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { AuthGateDialog } from "@/components/common/AuthGateDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,8 +40,24 @@ const KOREA_REGIONS = [
 
 export default function CrewsPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("my");
+  const { isAuthenticated, user } = useAuth();
+  const defaultTab = useMemo(() => (isAuthenticated ? "my" : "explore"), [isAuthenticated]);
+  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+
+  useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
+
+  const handleTabChange = (value: string) => {
+    if (value === "my" && !isAuthenticated) {
+      setShowAuthDialog(true);
+      setActiveTab("explore");
+      return;
+    }
+
+    setActiveTab(value);
+  };
 
   return (
     <div className="container max-w-4xl mx-auto py-6 space-y-6">
@@ -54,26 +71,44 @@ export default function CrewsPage() {
         )}
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
           <TabsTrigger value="my">내 크루</TabsTrigger>
           <TabsTrigger value="explore">크루 찾기</TabsTrigger>
         </TabsList>
 
         <TabsContent value="my" className="mt-6">
-          <MyCrewsList />
+          <MyCrewsList enabled={isAuthenticated} onRequireAuth={() => setShowAuthDialog(true)} />
         </TabsContent>
 
         <TabsContent value="explore" className="mt-6">
           <CrewExplore />
         </TabsContent>
       </Tabs>
+
+      <AuthGateDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        nextPath="/crews"
+        title="내 크루 보기"
+      />
     </div>
   );
 }
 
-function MyCrewsList() {
-  const { data: crews, isLoading } = useMyCrews();
+function MyCrewsList({ enabled, onRequireAuth }: { enabled: boolean; onRequireAuth: () => void }) {
+  const { data: crews, isLoading } = useMyCrews(enabled);
+
+  if (!enabled) {
+    return (
+      <Card>
+        <CardContent className="space-y-4 py-8 text-center">
+          <p className="text-sm font-medium text-foreground">내 크루</p>
+          <Button onClick={onRequireAuth}>로그인</Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -124,6 +159,7 @@ function MyCrewsList() {
 }
 
 function CrewExplore() {
+  const { isAuthenticated } = useAuth();
   const [selectedRegion, setSelectedRegion] = useState<string | undefined>();
   const [selectedSubRegion, setSelectedSubRegion] = useState<string | undefined>();
   const [sort, setSort] = useState("activity");
@@ -135,7 +171,7 @@ function CrewExplore() {
     subRegion: selectedSubRegion,
     sort,
   });
-  const { data: recommended } = useCrewRecommend();
+  const { data: recommended } = useCrewRecommend(isAuthenticated);
 
   return (
     <div className="space-y-6">

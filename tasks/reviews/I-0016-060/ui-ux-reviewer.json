@@ -1,0 +1,23 @@
+{
+  "task_id": "I-0016-060",
+  "reviewer": "ui-ux-reviewer",
+  "decision": "approved",
+  "tool": "codex-manual-protocol-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/ui-ux-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/ui-ux-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/ui-ux-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/ui-ux-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-04-04T15:54:53Z",
+  "findings": [],
+  "residual_risks": [
+    "Keeping foreign-profile workouts fully hidden remains the most privacy-conservative choice, but it also means the social profile surface still stops at posts and crews rather than showing any training history hints.",
+    "If product later wants a privacy-safe workout teaser on profiles, the affordance and copy should be designed fresh rather than inferred from this zero-aggregate contract."
+  ]
+}

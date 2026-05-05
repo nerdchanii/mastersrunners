@@ -141,7 +141,8 @@ describe("CrewsService", () => {
       expect(mockCrewRepository.create).toHaveBeenCalledWith({
         name: dto.name,
         description: dto.description || null,
-        imageUrl: dto.imageUrl || null,
+        imageUrl: dto.imageUrl ?? null,
+        coverImageUrl: null,
         creatorId: userId,
         isPublic: dto.isPublic ?? true,
         maxMembers: dto.maxMembers || null,
@@ -173,6 +174,7 @@ describe("CrewsService", () => {
         name: dto.name,
         description: null,
         imageUrl: null,
+        coverImageUrl: null,
         creatorId: userId,
         isPublic: true,
         maxMembers: null,
@@ -181,6 +183,105 @@ describe("CrewsService", () => {
         subRegion: null,
       });
       expect(result).toEqual(mockCrew);
+    });
+  });
+
+  describe("findOne", () => {
+    it("should hide private crews from anonymous viewers", async () => {
+      mockCrewRepository.findById.mockResolvedValue({ id: "crew-1", isPublic: false });
+
+      await expect(service.findOne("crew-1")).rejects.toThrow(NotFoundException);
+      expect(mockCrewMemberRepository.findMember).not.toHaveBeenCalled();
+    });
+
+    it("should hide private crews from non-members", async () => {
+      mockCrewRepository.findById.mockResolvedValue({ id: "crew-1", isPublic: false });
+      mockCrewMemberRepository.findMember.mockResolvedValue(null);
+
+      await expect(service.findOne("crew-1", "viewer-1")).rejects.toThrow(NotFoundException);
+      expect(mockCrewMemberRepository.findMember).toHaveBeenCalledWith("crew-1", "viewer-1");
+    });
+
+    it("should allow private crews for active members", async () => {
+      const privateCrew = { id: "crew-1", isPublic: false };
+      mockCrewRepository.findById.mockResolvedValue(privateCrew);
+      mockCrewMemberRepository.findMember.mockResolvedValue({ status: "ACTIVE" });
+
+      const result = await service.findOne("crew-1", "member-1");
+
+      expect(result).toEqual(privateCrew);
+    });
+  });
+
+  describe("update", () => {
+    it("should map profile and cover image fields into the crew media contract", async () => {
+      const crewId = "crew-123";
+      const userId = "user-1";
+      const dto: UpdateCrewDto = {
+        profileImageUrl: "https://example.com/profile.jpg",
+        coverImageUrl: "https://example.com/cover.jpg",
+        region: "서울특별시",
+        subRegion: "마포구",
+      };
+      const existingCrew = { id: crewId };
+      const updatedCrew = {
+        id: crewId,
+        imageUrl: dto.profileImageUrl,
+        coverImageUrl: dto.coverImageUrl,
+      };
+
+      mockCrewRepository.findById.mockResolvedValue(existingCrew);
+      mockCrewMemberRepository.findMember.mockResolvedValue({ role: "OWNER" });
+      mockCrewRepository.update.mockResolvedValue(updatedCrew);
+
+      const result = await service.update(crewId, userId, dto);
+
+      expect(mockCrewRepository.update).toHaveBeenCalledWith(crewId, {
+        name: undefined,
+        description: undefined,
+        imageUrl: "https://example.com/profile.jpg",
+        coverImageUrl: "https://example.com/cover.jpg",
+        isPublic: undefined,
+        maxMembers: undefined,
+        location: undefined,
+        region: "서울특별시",
+        subRegion: "마포구",
+      });
+      expect(result).toEqual(updatedCrew);
+    });
+
+    it("should normalize blank strings and allow clearing crew media and region fields", async () => {
+      const crewId = "crew-123";
+      const userId = "user-1";
+      const dto: UpdateCrewDto = {
+        profileImageUrl: null,
+        coverImageUrl: "   ",
+        location: "   ",
+        region: "   ",
+        subRegion: "",
+      };
+
+      mockCrewRepository.findById.mockResolvedValue({ id: crewId });
+      mockCrewMemberRepository.findMember.mockResolvedValue({ role: "OWNER" });
+      mockCrewRepository.update.mockResolvedValue({
+        id: crewId,
+        imageUrl: null,
+        coverImageUrl: null,
+      });
+
+      await service.update(crewId, userId, dto);
+
+      expect(mockCrewRepository.update).toHaveBeenCalledWith(crewId, {
+        name: undefined,
+        description: undefined,
+        imageUrl: null,
+        coverImageUrl: null,
+        isPublic: undefined,
+        maxMembers: undefined,
+        location: null,
+        region: null,
+        subRegion: null,
+      });
     });
   });
 
@@ -200,6 +301,57 @@ describe("CrewsService", () => {
       mockCrewRepository.findById.mockResolvedValue(null);
 
       await expect(service.findOne("non-existent")).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe("getInviteLink", () => {
+    it("should return a stable invite path for owner", async () => {
+      const crewId = "crew-123";
+      const userId = "user-owner";
+
+      mockCrewRepository.findById.mockResolvedValue({ id: crewId });
+      mockCrewMemberRepository.findMember.mockResolvedValue({
+        role: "OWNER",
+        status: "ACTIVE",
+      });
+
+      await expect(service.getInviteLink(crewId, userId)).resolves.toEqual({
+        path: `/crews/${crewId}?invite=1`,
+      });
+    });
+
+    it("should throw NotFoundException if crew not found", async () => {
+      mockCrewRepository.findById.mockResolvedValue(null);
+
+      await expect(service.getInviteLink("non-existent", "user-owner")).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it("should throw ForbiddenException for non-admin members", async () => {
+      const crewId = "crew-123";
+
+      mockCrewRepository.findById.mockResolvedValue({ id: crewId });
+      mockCrewMemberRepository.findMember.mockResolvedValue({
+        role: "MEMBER",
+        status: "ACTIVE",
+      });
+
+      await expect(service.getInviteLink(crewId, "user-member")).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it("should throw ForbiddenException for pending admins", async () => {
+      const crewId = "crew-123";
+
+      mockCrewRepository.findById.mockResolvedValue({ id: crewId });
+      mockCrewMemberRepository.findMember.mockResolvedValue({
+        role: "ADMIN",
+        status: "PENDING",
+      });
+
+      await expect(service.getInviteLink(crewId, "user-admin")).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -1413,12 +1565,17 @@ describe("CrewsService", () => {
   });
 
   describe("checkIn", () => {
-    it("should check in member to activity", async () => {
+    it("should allow manual self check-in for operators", async () => {
       const activityId = "activity-1";
-      const userId = "user-member";
+      const userId = "user-owner";
       const crewId = "crew-123";
-      const mockActivity = { id: activityId, crewId, status: "SCHEDULED" };
-      const mockMember = { crewId, userId, role: "MEMBER" };
+      const mockActivity = {
+        id: activityId,
+        crewId,
+        status: "SCHEDULED",
+        activityType: "OFFICIAL",
+      };
+      const mockMember = { crewId, userId, role: "OWNER" };
       const mockRsvp = { id: "attendance-1", activityId, userId, status: "RSVP" };
       const mockAttendance = { id: "attendance-1", activityId, userId, method: "MANUAL" };
 
@@ -1433,11 +1590,36 @@ describe("CrewsService", () => {
       expect(result).toEqual(mockAttendance);
     });
 
-    it("should throw BadRequestException if no RSVP exists", async () => {
+    it("should throw ForbiddenException if a member attempts manual self check-in", async () => {
       const activityId = "activity-1";
       const userId = "user-member";
-      const mockActivity = { id: activityId, crewId: "crew-123", status: "SCHEDULED" };
-      const mockMember = { crewId: "crew-123", userId };
+      const crewId = "crew-123";
+      const mockActivity = {
+        id: activityId,
+        crewId,
+        status: "SCHEDULED",
+        activityType: "OFFICIAL",
+      };
+      const mockMember = { crewId, userId, role: "MEMBER" };
+
+      mockCrewActivityRepository.findById.mockResolvedValue(mockActivity);
+      mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
+
+      await expect(service.checkIn(activityId, userId)).rejects.toThrow(ForbiddenException);
+      expect(mockCrewActivityRepository.findAttendance).not.toHaveBeenCalled();
+      expect(mockCrewActivityRepository.checkIn).not.toHaveBeenCalled();
+    });
+
+    it("should throw BadRequestException if no RSVP exists", async () => {
+      const activityId = "activity-1";
+      const userId = "user-owner";
+      const mockActivity = {
+        id: activityId,
+        crewId: "crew-123",
+        status: "SCHEDULED",
+        activityType: "OFFICIAL",
+      };
+      const mockMember = { crewId: "crew-123", userId, role: "OWNER" };
 
       mockCrewActivityRepository.findById.mockResolvedValue(mockActivity);
       mockCrewMemberRepository.findMember.mockResolvedValue(mockMember);
@@ -1449,12 +1631,34 @@ describe("CrewsService", () => {
     it("should throw ForbiddenException if not a crew member", async () => {
       const activityId = "activity-1";
       const userId = "user-outsider";
-      const mockActivity = { id: activityId, crewId: "crew-123", status: "SCHEDULED" };
+      const mockActivity = {
+        id: activityId,
+        crewId: "crew-123",
+        status: "SCHEDULED",
+        activityType: "OFFICIAL",
+      };
 
       mockCrewActivityRepository.findById.mockResolvedValue(mockActivity);
       mockCrewMemberRepository.findMember.mockResolvedValue(null);
 
       await expect(service.checkIn(activityId, userId)).rejects.toThrow(ForbiddenException);
+    });
+
+    it("should throw BadRequestException for non-manual check-in methods on the manual path", async () => {
+      const activityId = "activity-1";
+      const userId = "user-owner";
+      const mockActivity = {
+        id: activityId,
+        crewId: "crew-123",
+        status: "SCHEDULED",
+        activityType: "OFFICIAL",
+      };
+
+      mockCrewActivityRepository.findById.mockResolvedValue(mockActivity);
+
+      await expect(service.checkIn(activityId, userId, "QR")).rejects.toThrow(BadRequestException);
+      expect(mockCrewMemberRepository.findMember).not.toHaveBeenCalled();
+      expect(mockCrewActivityRepository.checkIn).not.toHaveBeenCalled();
     });
   });
 

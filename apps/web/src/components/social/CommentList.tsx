@@ -1,6 +1,7 @@
 import { Send, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { AuthGateDialog } from "@/components/common/AuthGateDialog";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { TimeAgo } from "@/components/common/TimeAgo";
 import { UserAvatar } from "@/components/common/UserAvatar";
@@ -8,6 +9,7 @@ import { CommentContent } from "@/components/social/MentionLink";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { cn } from "@/lib/utils";
 
 interface Comment {
   id: string;
@@ -36,15 +38,32 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const nextPath =
+    typeof window === "undefined"
+      ? entityType === "workout"
+        ? `/workouts/${entityId}`
+        : `/posts/${entityId}`
+      : `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
   const endpoint =
     entityType === "workout" ? `/workouts/${entityId}/comments` : `/posts/${entityId}/comments`;
+  const authGateTitle = "댓글 남기기";
+  const guestEntryDescription =
+    entityType === "workout"
+      ? "로그인 후 이 기록에서 바로 대화를 이어갈 수 있습니다."
+      : "로그인 후 이 글에서 바로 대화를 이어갈 수 있습니다.";
+  const authGateDescription =
+    entityType === "workout"
+      ? "현재 보고 있는 기록 위치를 그대로 유지한 채 바로 이어서 작성할 수 있습니다."
+      : "현재 보고 있는 글 위치를 그대로 유지한 채 바로 이어서 작성할 수 있습니다.";
 
   const fetchComments = async () => {
     try {
       setIsLoading(true);
-      const data = await api.fetch<
+      const data = await api.fetchSession<
         { data: Comment[]; cursor: string | null; hasMore: boolean } | Comment[]
       >(`${endpoint}?limit=50`);
 
@@ -52,8 +71,10 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
 
       // Backend already returns top-level comments with nested replies
       setComments(items);
+      setLoadError(null);
     } catch {
-      // silent
+      setComments([]);
+      setLoadError("댓글을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
       setIsLoading(false);
     }
@@ -96,6 +117,11 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
   };
 
   const handleReply = (comment: Comment) => {
+    if (!user) {
+      setShowAuthDialog(true);
+      return;
+    }
+
     setReplyingTo(comment);
     setNewComment(`@${comment.user.name} `);
     inputRef.current?.focus();
@@ -132,16 +158,19 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
           <div className="flex items-center gap-3 mt-1">
             {!isReply && (
               <button
+                type="button"
                 onClick={() => handleReply(comment)}
-                className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                className="rounded-full px-2 py-1 text-xs font-medium text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 답글 달기
               </button>
             )}
             {user?.id === comment.user.id && (
               <button
+                type="button"
                 onClick={() => setDeleteTarget(comment.id)}
-                className="text-xs text-muted-foreground hover:text-destructive"
+                className="rounded-full p-1 text-xs text-muted-foreground outline-none transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                aria-label="댓글 삭제"
               >
                 <Trash2 className="size-3" />
               </button>
@@ -157,6 +186,8 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
       {/* Comment list */}
       {isLoading ? (
         <p className="text-sm text-muted-foreground text-center py-4">로딩 중...</p>
+      ) : loadError ? (
+        <p className="text-sm text-muted-foreground text-center py-6">{loadError}</p>
       ) : comments.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-6">첫 댓글을 작성해보세요</p>
       ) : (
@@ -171,7 +202,7 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
       )}
 
       {/* Comment input */}
-      {user && (
+      {user ? (
         <form onSubmit={handleSubmit} className="border-t pt-3">
           {replyingTo && (
             <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
@@ -185,14 +216,14 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
               </button>
             </div>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex min-h-10 items-center gap-2">
             <UserAvatar user={user} size="sm" linkToProfile={false} />
             <input
               ref={inputRef}
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="댓글 달기..."
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              className="h-10 flex-1 bg-transparent py-2 text-sm leading-5 outline-none placeholder:text-muted-foreground"
             />
             <Button
               type="submit"
@@ -205,6 +236,23 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
             </Button>
           </div>
         </form>
+      ) : (
+        <div className="border-t pt-3">
+          <button
+            type="button"
+            onClick={() => setShowAuthDialog(true)}
+            className={cn(
+              "flex w-full items-center justify-between rounded-xl border border-border/70 px-3 py-2.5 text-left transition-colors",
+              "hover:border-border hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            )}
+          >
+            <div className="space-y-0.5">
+              <p className="text-sm font-medium text-foreground">댓글 남기기</p>
+              <p className="text-xs text-muted-foreground">{guestEntryDescription}</p>
+            </div>
+            <span className="text-xs font-medium text-muted-foreground">로그인 필요</span>
+          </button>
+        </div>
       )}
 
       {/* Delete confirmation */}
@@ -216,6 +264,14 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
         confirmLabel="삭제"
         variant="destructive"
         onConfirm={handleDelete}
+      />
+
+      <AuthGateDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        nextPath={nextPath}
+        title={authGateTitle}
+        description={authGateDescription}
       />
     </div>
   );
