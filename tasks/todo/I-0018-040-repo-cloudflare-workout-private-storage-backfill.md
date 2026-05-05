@@ -35,6 +35,7 @@ Cloudflare R2의 public asset / private workout storage 경계를 실제 외부 
 
 - public asset bucket과 private workout bucket 경계가 문서와 외부 상태에서 정리된다.
 - 기존 workout source가 `sourcePath`로 backfill된다.
+- `I-0018-060`에서 legacy `fileUrl`로 compatibility-filled된 `sourcePath` row가 real private-storage identifier로 교체됐다는 증거를 남긴다.
 - raw source 재파싱 우선, legacy fallback 보조 규칙으로 `detailPath`가 backfill된다.
 - 관련 env/runbook/design/domain 문서가 현재 truth로 갱신된다.
 
@@ -58,7 +59,7 @@ Cloudflare R2의 public asset / private workout storage 경계를 실제 외부 
 
 ## 핸드오프
 
-- cleanup task는 이 task의 backfill 완료를 전제로 legacy schema를 제거한다.
+- `I-0018-070` physical cleanup task는 이 task의 backfill 완료를 전제로 legacy schema를 제거한다.
 
 ## 설계 divergence
 
