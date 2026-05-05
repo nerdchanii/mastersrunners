@@ -1,6 +1,6 @@
 export type CrewHubTab = "home" | "activities" | "board" | "members" | "manage" | "pending";
 
-export interface CrewHubRouteState {
+interface CrewHubRouteState {
   activeTab: CrewHubTab;
   isActivityCreateRoute: boolean;
   isBoardCreateRoute: boolean;

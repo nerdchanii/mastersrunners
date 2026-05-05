@@ -50,6 +50,10 @@ artifacts:
   - design/frontend/ui-system.md
 ---
 
+## Superseded
+
+2026-05-05: Storybook 기반 polish 흐름은 `design/initiatives/I-0020-storybook-retirement.md`에서 퇴역 처리됐다. 이 문서는 당시 profile identity polish 이력으로만 보존한다.
+
 ## 목표
 
 프로필 진입에서 보이는 identity hierarchy를 Storybook으로 정리해, header에서 stats와 tabs, preview card로 이어지는 읽기 리듬을 한 톤으로 맞춘다.

@@ -5,6 +5,8 @@ import { setupGuestPublicEntry } from "./helpers/public-entry-fixtures";
 const API_BASE = "http://localhost:4000/api/v1";
 
 test.describe("public entry auth recovery", () => {
+  test.describe.configure({ mode: "serial" });
+
   test.beforeEach(async ({ page }) => {
     await setupGuestPublicEntry(page);
   });

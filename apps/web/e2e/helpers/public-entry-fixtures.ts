@@ -181,6 +181,32 @@ export async function setupGuestPublicEntry(page: Page) {
     });
   });
 
+  await page.route(`${API_BASE}/crews/crew-1/profile`, (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        crew: {
+          ...guestCrew,
+          location: null,
+          region: "서울특별시",
+          subRegion: "마포구",
+          _count: { members: 12, activities: 1, boards: 1 },
+        },
+        recentPosts: [],
+        upcomingActivities: [
+          {
+            id: "activity-1",
+            title: "토요일 한강 10K",
+            activityDate: "2099-04-05T07:00:00.000Z",
+            location: "여의도 한강공원",
+            status: "SCHEDULED",
+          },
+        ],
+      }),
+    });
+  });
+
   await page.route(`${API_BASE}/crews/crew-1/activities`, (route) => {
     route.fulfill({
       status: 200,

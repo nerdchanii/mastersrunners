@@ -16,8 +16,6 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "vite.config.ts",
-    "../../.storybook/**/*.ts",
-    "../../.storybook/**/*.tsx",
     "../../packages/types/src/**/*.d.ts"
   ],
   "exclude": ["node_modules"]

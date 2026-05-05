@@ -35,6 +35,10 @@ artifacts:
   - tasks/reviews/I-0016-128/po-reviewer.json
 ---
 
+## Superseded
+
+2026-05-05: Storybook build 기반 확인은 `design/initiatives/I-0020-storybook-retirement.md`에서 퇴역 처리됐다. 이 문서는 path routing 변경 이력으로만 보존한다.
+
 ## 목표
 
 크루 상세의 탭, 새 글쓰기, 새 활동 만들기, 게시글 상세 상태를 query state가 아닌 path 라우팅으로 표현한다.

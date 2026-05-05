@@ -35,7 +35,7 @@ export interface CrewHubDetail {
   };
 }
 
-export interface CrewHubOutletContext {
+interface CrewHubOutletContext {
   activeMembers: CrewHubMember[];
   crew: CrewHubDetail;
   crewId: string;

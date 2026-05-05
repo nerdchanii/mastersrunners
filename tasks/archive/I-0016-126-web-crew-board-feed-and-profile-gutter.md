@@ -35,6 +35,10 @@ artifacts:
   - tasks/reviews/I-0016-126/po-reviewer.json
 ---
 
+## Superseded
+
+2026-05-05: Storybook 기반 확인은 `design/initiatives/I-0020-storybook-retirement.md`에서 퇴역 처리됐다. 이 문서는 당시 crew board/feed/gutter polish 이력으로만 보존한다.
+
 ## 목표
 
 크루 상세 게시판을 board 진입점 목록이 아닌 공지+일반 글 통합 피드로 바로 보여주고, 프로필 모바일 표면의 외부 gutter를 제거한다.

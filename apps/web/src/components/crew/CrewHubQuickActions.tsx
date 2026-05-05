@@ -12,34 +12,6 @@ interface CrewHubQuickActionsProps {
   dismissKey?: string;
 }
 
-export function CrewHubInlineActions({
-  canCreateActivity = false,
-  canWritePost = false,
-  onCreateActivity,
-  onWritePost,
-}: Omit<CrewHubQuickActionsProps, "dismissKey">) {
-  if (!canCreateActivity && !canWritePost) {
-    return null;
-  }
-
-  return (
-    <div className="hidden shrink-0 items-center gap-2 lg:flex">
-      {canWritePost && (
-        <Button type="button" variant="outline" className="rounded-full" onClick={onWritePost}>
-          <SquarePen className="size-4" />
-          글쓰기
-        </Button>
-      )}
-      {canCreateActivity && (
-        <Button type="button" className="rounded-full" onClick={onCreateActivity}>
-          <CalendarPlus className="size-4" />
-          활동 만들기
-        </Button>
-      )}
-    </div>
-  );
-}
-
 export default function CrewHubQuickActions({
   canCreateActivity = false,
   canWritePost = false,

@@ -48,6 +48,10 @@ artifacts:
   - design/frontend/ui-system.md
 ---
 
+## Superseded
+
+2026-05-05: Storybook 기반 polish 흐름은 `design/initiatives/I-0020-storybook-retirement.md`에서 퇴역 처리됐다. 이 문서는 당시 feed/post polish 이력으로만 보존한다.
+
 ## 목표
 
 가장 자주 노출되는 게시글/피드 action 흐름을 Storybook으로 보면서 다듬어, 버튼 affordance와 guest gate, meta hierarchy가 실제 앱과 같은 톤으로 읽히게 만든다.

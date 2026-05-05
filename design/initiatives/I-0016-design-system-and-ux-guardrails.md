@@ -2,7 +2,7 @@
 
 ## 요약
 
-소비자용 웹 앱의 UX 방향을 리서치 기반 제품 UX 규칙, 비주얼 시스템 규칙, 카피 규칙, 가벼운 자동 가드레일, 그리고 재사용 UI를 격리해서 다듬을 수 있는 시각 작업대 기준으로 명시해 레포의 현재 truth로 고정한다. 즉시 목표는 화면 전체를 다시 그리는 것이 아니라, 설명이 과하고 데모처럼 보이며 상호작용이 들쭉날쭉한 패턴이 다시 생기지 않도록 막는 것이다. 동시에 앱이 러너 중심 소셜 제품이라는 방향을 유지해야 한다.
+소비자용 웹 앱의 UX 방향을 리서치 기반 제품 UX 규칙, 비주얼 시스템 규칙, 카피 규칙, 가벼운 자동 가드레일, 그리고 실앱/Playwright 기반 검증 기준으로 명시해 레포의 현재 truth로 고정한다. 즉시 목표는 화면 전체를 다시 그리는 것이 아니라, 설명이 과하고 데모처럼 보이며 상호작용이 들쭉날쭉한 패턴이 다시 생기지 않도록 막는 것이다. 동시에 앱이 러너 중심 소셜 제품이라는 방향을 유지해야 한다.
 
 ## 문제
 
@@ -24,7 +24,7 @@
 - 데모처럼 보이거나 과도하게 설명하는 언어를 막는 1차 문구 규칙을 정의한다.
 - 카드 사용, 위계, 화면 구성에 대한 비주얼 시스템 규칙을 정의한다.
 - 금지 카피와 공개 진입 UX 회귀를 잡아내는 좁고 명확한 자동 가드레일을 추가한다.
-- 자주 손보는 consumer-web UI를 전체 라우트를 매번 순회하지 않고도 점검할 수 있는 시각 작업대 방향을 정리한다.
+- 자주 손보는 consumer-web UI를 current design docs, 실앱, Playwright 기준으로 반복 검토할 수 있게 정리한다.
 
 ## 비목표
 
@@ -87,7 +87,7 @@
 
 - UX 기반 문서와 사용자 가드레일: `frontend-reviewer`, `ui-ux-reviewer`, `docs-reviewer`
 - 레포 자동화와 태스크 템플릿 변경: `harness-reviewer`
-- Storybook 기반 visual workbench follow-up은 consumer-web UI 계층은 `frontend-reviewer`, `ui-ux-reviewer`, 실행 스크립트/작업흐름은 `harness-reviewer`로 본다.
+- Storybook은 `I-0020`에서 퇴역했으므로 이후 consumer-web UI 검증은 `frontend-reviewer`, `ui-ux-reviewer`, 필요 시 `harness-reviewer`가 실앱/Playwright/문서 truth 기준으로 본다.
 - PO 리뷰는 결과물이 마케팅용 셸이 아니라 러너 중심 소셜 제품 방향을 유지하는지 확인한다.
 
 ## 태스크 분해
@@ -107,9 +107,9 @@
 - `tasks/archive/I-0016-125-web-crew-announcement-composer.md`
 - `tasks/archive/I-0016-126-web-crew-board-feed-and-profile-gutter.md`
 - `tasks/archive/I-0016-128-web-crew-hub-path-routing.md`
-- `tasks/active/I-0016-129-web-crew-home-tab.md`
-- `tasks/todo/I-0016-130-web-workout-capture-and-analysis-flow-polish.md`
-- `tasks/todo/I-0016-140-web-discovery-and-participation-surface-flow-polish.md`
+- `tasks/archive/I-0016-129-web-crew-home-tab.md`
+- `tasks/archive/I-0016-130-web-workout-capture-and-analysis-flow-polish.md` (obsolete after `I-0020`)
+- `tasks/archive/I-0016-140-web-discovery-and-participation-surface-flow-polish.md` (obsolete after `I-0020`)
 - `tasks/todo/I-0016-170-web-design-system-primitive-consolidation.md`
 - `tasks/archive/I-0016-150-meta-storybook-build-output-depcruise-guard.md`
 - `tasks/archive/I-0016-160-meta-storybook-knip-baseline-guard.md`
@@ -121,7 +121,7 @@
 - 레포가 명백한 데모/설명형 문구에 대한 금지 패턴을 정의한다.
 - CI/local 검사에서 1차 금지 문구와 공개 진입 UX 회귀를 잡아낸다.
 - 이후 사용자용 웹 태스크를 채팅 기억이 아니라 구체적인 UX 문서 기준으로 리뷰할 수 있다.
-- 후속 UI 다듬기 작업이 전체 라우트 순회 대신 격리된 visual workbench와 실라우트 검증을 병행하는 방식으로 진행될 수 있다.
+- 후속 UI 다듬기 작업이 Storybook 대신 실앱, Playwright, current design docs 기준으로 진행될 수 있다.
 
 ## 진행 메모
 
@@ -145,3 +145,4 @@
 - 2026-04-08: 같은 push 단계에서 knip가 Storybook wiring을 false positive로 잡아, Storybook baseline 예외를 `I-0016-160` follow-up으로 분리했다.
 - 2026-04-11: crew 참여/허브 작업을 진행하면서 아이콘 버튼, 라운드 값, 액션 래퍼가 여러 화면에서 제각각 다시 생길 수 있다는 문제가 드러나 `I-0016-170`으로 디자인 시스템 프리미티브를 더 작은 재사용 단위로 묶는 후속 정비를 추가했다. 우선순위는 `icon button`, 공통 `pill/tag` 스타일, 그리고 crew/workout/messages에 흩어진 primitive wrapper를 버튼/태그 컴포넌트로 흡수하는 것이다.
 - 2026-05-04: `I-0016-128`에서 크루 허브를 path 기반 탭으로 정리하면서 운영진 전용 가입대기를 `/crews/:id/pending` 1차 탭으로 분리했다.
+- 2026-05-05: Storybook이 UI 관리 부담을 줄이지 못하고 별도 관리면을 늘린다는 판단에 따라 `I-0020`에서 Storybook runtime, stories, fixture, guardrail 예외를 퇴역시키기로 했다. 이후 UI 검증 truth는 실앱, Playwright, current design docs, reviewer protocol이다.

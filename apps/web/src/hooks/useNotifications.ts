@@ -3,6 +3,8 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { api } from "@/lib/api-client";
 import { useRealtime } from "@/lib/realtime-context";
 
+import { notificationKeys } from "./notification-keys";
+
 export interface Notification {
   id: string;
   type:
@@ -38,12 +40,6 @@ export interface NotificationPage {
 export interface UnreadCountResponse {
   count: number;
 }
-
-export const notificationKeys = {
-  all: ["notifications"] as const,
-  list: () => [...notificationKeys.all, "list"] as const,
-  unreadCount: () => [...notificationKeys.all, "unread-count"] as const,
-};
 
 export function useNotifications() {
   return useInfiniteQuery({

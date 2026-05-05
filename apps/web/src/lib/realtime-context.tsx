@@ -2,8 +2,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef } from "react";
 import { io, type Socket } from "socket.io-client";
 
+import { notificationKeys } from "@/hooks/notification-keys";
 import { messageKeys, patchConversationSummary } from "@/hooks/useMessages";
-import { notificationKeys } from "@/hooks/useNotifications";
 
 import { API_BASE } from "./api-client";
 import { useAuth } from "./auth-context";

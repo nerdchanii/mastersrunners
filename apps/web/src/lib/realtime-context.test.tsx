@@ -3,8 +3,8 @@ import { act, render } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { notificationKeys } from "@/hooks/notification-keys";
 import { messageKeys } from "@/hooks/useMessages";
-import { notificationKeys } from "@/hooks/useNotifications";
 
 import { RealtimeProvider } from "./realtime-context";
 

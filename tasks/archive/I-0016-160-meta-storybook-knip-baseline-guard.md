@@ -22,6 +22,10 @@ artifacts:
   - design/initiatives/I-0016-design-system-and-ux-guardrails.md
 ---
 
+## Superseded
+
+2026-05-05: Storybook knip baseline guard는 `design/initiatives/I-0020-storybook-retirement.md`에서 Storybook 자체가 제거되며 superseded됐다. 이 문서는 당시 knip 보정 이력으로만 보존한다.
+
 ## 목표
 
 Storybook 도입으로 생긴 preview entry, harness helper, fixture export, Storybook 전용 devDependency를 knip baseline에 반영해 push gate가 실제 dead code가 아닌 Storybook wiring 때문에 막히지 않게 한다.

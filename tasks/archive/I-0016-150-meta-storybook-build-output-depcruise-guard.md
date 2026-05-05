@@ -21,6 +21,10 @@ artifacts:
   - design/initiatives/I-0016-design-system-and-ux-guardrails.md
 ---
 
+## Superseded
+
+2026-05-05: Storybook generated output guard는 `design/initiatives/I-0020-storybook-retirement.md`에서 Storybook 자체가 제거되며 superseded됐다. 이 문서는 당시 depcruise 보정 이력으로만 보존한다.
+
 ## 목표
 
 Storybook static/smoke 빌드 산출물이 repo-local CI의 dependency-cruiser 입력으로 섞여 들어가 push가 막히지 않도록, 생성 산출물을 스캔 대상에서 명시적으로 제외한다.

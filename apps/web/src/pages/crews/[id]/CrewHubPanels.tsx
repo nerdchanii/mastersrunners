@@ -21,6 +21,8 @@ import { useCrewProfile } from "@/hooks/useCrewPosts";
 
 const panelClassName = "mt-0 px-4 focus-visible:outline-none lg:px-0";
 const activityPanelClassName = "mt-0 px-4 pt-4 focus-visible:outline-none sm:pt-5 lg:px-0";
+const homeActivityActionClassName =
+  "block w-full py-4 text-left transition-colors hover:bg-muted/30";
 
 function formatHomeActivityDate(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -33,7 +35,7 @@ function formatHomeActivityDate(value: string) {
 }
 
 export function CrewHomePanel() {
-  const { crew, crewId, homeHero } = useCrewHubContext();
+  const { crew, crewId, homeHero, isAuthenticated, openAuthGate } = useCrewHubContext();
   const { data, isError, isLoading } = useCrewProfile(crewId);
   const upcomingActivities = data?.upcomingActivities.slice(0, 2) ?? [];
 
@@ -71,32 +73,57 @@ export function CrewHomePanel() {
           </div>
         ) : (
           <div className="divide-y divide-border/50 border-y border-border/50">
-            {upcomingActivities.map((activity) => (
-              <Link
-                key={activity.id}
-                to={crewHubPath(crewId, "activities")}
-                className="block py-4 transition-colors hover:bg-muted/30"
-              >
-                <div className="space-y-2">
-                  <p className="text-base font-semibold text-foreground">{activity.title}</p>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                    <span className="inline-flex items-center gap-1.5">
-                      <CalendarDays className="size-4" />
-                      {formatHomeActivityDate(activity.activityDate)}
-                    </span>
-                    {activity.location ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <MapPin className="size-4" />
-                        {activity.location}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-              </Link>
-            ))}
+            {upcomingActivities.map((activity) =>
+              isAuthenticated ? (
+                <Link
+                  key={activity.id}
+                  to={crewHubPath(crewId, "activities")}
+                  className={homeActivityActionClassName}
+                >
+                  <HomeActivitySummary activity={activity} />
+                </Link>
+              ) : (
+                <button
+                  key={activity.id}
+                  type="button"
+                  onClick={() => openAuthGate("활동 자세히 보기")}
+                  className={homeActivityActionClassName}
+                >
+                  <HomeActivitySummary activity={activity} />
+                </button>
+              ),
+            )}
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function HomeActivitySummary({
+  activity,
+}: {
+  activity: {
+    title: string;
+    activityDate: string;
+    location: string | null;
+  };
+}) {
+  return (
+    <div className="w-full space-y-2">
+      <p className="text-base font-semibold text-foreground">{activity.title}</p>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <CalendarDays className="size-4" />
+          {formatHomeActivityDate(activity.activityDate)}
+        </span>
+        {activity.location ? (
+          <span className="inline-flex items-center gap-1.5">
+            <MapPin className="size-4" />
+            {activity.location}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }

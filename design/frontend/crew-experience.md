@@ -87,7 +87,7 @@ sources:
 - 크루 허브 탭과 작성 상태는 query가 아니라 path로 표현한다: `/crews/:id`, `/crews/:id/activities`, `/crews/:id/activities/new`, `/crews/:id/board`, `/crews/:id/board/new`, `/crews/:id/members`, `/crews/:id/manage`, `/crews/:id/pending`
 - 게시판 글 상세 진입은 `/crews/:id/board/:boardId/posts/:postId`로 push해 뒤로가기와 직접 링크를 보존한다
 - 가입대기는 운영진 전용 1차 탭으로 분리하고, 운영진이 아닌 사용자는 탭과 화면에 접근할 수 없다
-- Storybook workbench에서는 참여 흐름을 `가입`, `승인`, `관리`, `출석`, `게시판`, `채팅`으로 나눠 보되, CTA tone과 destructive confirm wording은 같은 패턴을 공유해야 한다
+- 참여 흐름은 실앱에서 `가입`, `승인`, `관리`, `출석`, `게시판`, `채팅`으로 나눠 확인하되, CTA tone과 destructive confirm wording은 같은 패턴을 공유해야 한다
 
 ### 크루 허브 라우트와 화면 도식
 

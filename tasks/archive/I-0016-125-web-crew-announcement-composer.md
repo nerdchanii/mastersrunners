@@ -30,6 +30,10 @@ artifacts:
   - tasks/reviews/I-0016-125/po-reviewer.json
 ---
 
+## Superseded
+
+2026-05-05: Storybook 기반 확인은 `design/initiatives/I-0020-storybook-retirement.md`에서 퇴역 처리됐다. 이 문서는 당시 crew announcement composer 이력으로만 보존한다.
+
 ## 목표
 
 크루 상세에서 공지 탭을 제거한 뒤에도 운영진과 크루장이 게시판 글쓰기 창에서 공지사항을 작성할 수 있게 한다.

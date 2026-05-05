@@ -84,10 +84,6 @@ next-env.d.ts
 
 # test artifacts
 **/test-results/
-**/storybook-static/
-**/storybook-smoke/
-**/.storybook-home/
-**/debug-storybook.log
 
 # activity file samples
 *.fit

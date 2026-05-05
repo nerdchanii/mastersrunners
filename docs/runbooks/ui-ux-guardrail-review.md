@@ -25,12 +25,12 @@ UX 리뷰를 반복 가능하게 만드는 것이 목적이다. 채팅 기억이
 - 공개 진입 인증 유도
 - 그 외 사용자 경험 변화가 있는 소비자용 웹 라우트
 
-## Storybook 과 실라우트 구분
+## 실앱과 Playwright 검증 구분
 
-- Storybook은 spacing, hierarchy, theme, empty state, section composition을 빠르게 다듬는 visual workbench로 사용한다.
-- Storybook starter stories는 reusable primitive와 대표 surface section까지만 유지한다. 전체 라우트 복제는 기본 전략이 아니다.
-- 실제 라우트 전환, 로그인 리다이렉트, 브라우저 뒤로가기, query invalidation, 공유/인증 계약은 실앱과 Playwright를 truth로 본다.
-- 리뷰 중 시각 polish가 애매하면 Storybook에서 먼저 조정하고, 동작 계약이 얽히면 곧바로 실라우트로 옮겨 재확인한다.
+- Storybook은 `I-0020`에서 퇴역했으므로 UX 리뷰의 truth로 사용하지 않는다.
+- spacing, hierarchy, theme, empty state, section composition은 실제 라우트와 대표 viewport에서 확인한다.
+- 실제 라우트 전환, 로그인 리다이렉트, 브라우저 뒤로가기, query invalidation, 공유/인증 계약은 Playwright와 실앱 브라우저 확인을 truth로 본다.
+- 리뷰 중 시각 polish가 애매하면 current design docs와 실제 화면을 함께 보고, 동작 계약이 얽히면 Playwright 시나리오로 재확인한다.
 
 ## 프론트엔드 리뷰 체크
 

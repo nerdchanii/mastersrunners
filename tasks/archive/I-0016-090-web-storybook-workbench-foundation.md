@@ -35,6 +35,10 @@ artifacts:
   - docs/runbooks/ui-ux-guardrail-review.md
 ---
 
+## Superseded
+
+2026-05-05: Storybook workbench 운영 방향은 `design/initiatives/I-0020-storybook-retirement.md`에서 퇴역 처리됐다. 이 문서는 도입 당시의 감사 이력으로만 보존한다.
+
 ## 목표
 
 전체 라우트를 매번 직접 순회하지 않고도 consumer-web UI를 빠르게 점검하고 다듬을 수 있도록, `apps/web`용 Storybook 기반 visual workbench를 실제 운영 가능한 범위까지 확장한다.
