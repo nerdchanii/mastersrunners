@@ -1,3 +1,12 @@
+-- This migration was first attempted by the 2026-05-05 dev deploy and failed
+-- before it was recorded in the target database. Preserve deployability by
+-- carrying legacy fileUrl forward as a compatibility sourcePath, then defer
+-- physical legacy cleanup until the explicit private-storage backfill task can
+-- write real detail blobs.
+UPDATE "WorkoutFile"
+SET "sourcePath" = "fileUrl"
+WHERE "sourcePath" IS NULL;
+
 DO $$
 BEGIN
   IF EXISTS (
@@ -5,34 +14,9 @@ BEGIN
     FROM "WorkoutFile" wf
     WHERE wf."sourcePath" IS NULL
   ) THEN
-    RAISE EXCEPTION 'Cannot drop WorkoutFile.fileUrl before sourcePath backfill is complete.';
-  END IF;
-
-  IF EXISTS (
-    SELECT 1
-    FROM "WorkoutRoute" wr
-    LEFT JOIN "Workout" w ON w."id" = wr."workoutId"
-    WHERE w."detailPath" IS NULL
-  ) THEN
-    RAISE EXCEPTION 'Cannot drop WorkoutRoute before detailPath backfill is complete.';
-  END IF;
-
-  IF EXISTS (
-    SELECT 1
-    FROM "WorkoutLap" wl
-    LEFT JOIN "Workout" w ON w."id" = wl."workoutId"
-    WHERE w."detailPath" IS NULL
-  ) THEN
-    RAISE EXCEPTION 'Cannot drop WorkoutLap before detailPath backfill is complete.';
+    RAISE EXCEPTION 'Cannot make WorkoutFile.sourcePath required before sourcePath backfill is complete.';
   END IF;
 END $$;
 
 ALTER TABLE "WorkoutFile"
 ALTER COLUMN "sourcePath" SET NOT NULL;
-
-DROP TABLE "WorkoutLap";
-
-DROP TABLE "WorkoutRoute";
-
-ALTER TABLE "WorkoutFile"
-DROP COLUMN "fileUrl";

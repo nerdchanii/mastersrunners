@@ -35,8 +35,8 @@ blob/source path cutover가 끝난 뒤 legacy detail schema와 dual-write를 제
 
 ## 완료 기준
 
-- `WorkoutRoute` / `WorkoutLap` 정본 역할이 완전히 제거된다.
-- legacy `WorkoutFile.fileUrl`이 제거된다.
+- `WorkoutRoute` / `WorkoutLap` 정본 역할이 runtime schema와 application contract에서 제거된다.
+- legacy `WorkoutFile.fileUrl` 의존성이 runtime schema와 application contract에서 제거된다.
 - 관련 코드, migration, 문서가 최종 canonical model에 맞게 정리된다.
 
 ## 노트
@@ -48,7 +48,7 @@ blob/source path cutover가 끝난 뒤 legacy detail schema와 dual-write를 제
 ## 셀프 리뷰
 
 - 범위와 의도:
-  - `WorkoutRoute`, `WorkoutLap`, `WorkoutFile.fileUrl`을 스키마/코드/문서에서 제거하고, canonical model을 `Workout.detailPath` + `WorkoutFile.sourcePath`로 고정했다.
+  - `WorkoutRoute`, `WorkoutLap`, `WorkoutFile.fileUrl`을 runtime schema와 코드 경로에서 제거하고, canonical model을 `Workout.detailPath` + `WorkoutFile.sourcePath`로 고정했다.
 - source of truth:
   - `packages/database/prisma/schema.prisma`
   - `apps/api/src/uploads/uploads.service.ts`
@@ -57,7 +57,7 @@ blob/source path cutover가 끝난 뒤 legacy detail schema와 dual-write를 제
   - `design/frontend/workout-experience.md`
   - `docs/domain/workout.md`
 - 설계 divergence:
-  - 없음.
+  - 2026-05-05 `I-0018-060`에서 physical legacy table/column drop을 defer했다. 이 task의 완료 범위는 runtime schema와 application dependency cleanup으로 supersede된다.
 - 검증:
   - `pnpm --filter @masters/api test`
   - `pnpm --filter @masters/database build`
@@ -77,18 +77,19 @@ blob/source path cutover가 끝난 뒤 legacy detail schema와 dual-write를 제
 
 ## 핸드오프
 
-- 없음.
+- 2026-05-05 `I-0018-060`에서 dev deploy migration failure를 수습하며 physical legacy table/column drop은 final private-storage backfill 이후 별도 cleanup task로 supersede됐다.
 
 ## 설계 divergence
 
-- 없음.
+- 이 archived task의 원래 migration cleanup 의도 중 physical `WorkoutRoute`, `WorkoutLap`, `WorkoutFile.fileUrl` drop은 `I-0018-060`에 의해 defer됐다. runtime schema와 application dependency cleanup은 유지된다.
 
 ## 시도 로그
 
 - 2026-04-22: task 생성.
-- 2026-04-23: legacy detail tables와 `WorkoutFile.fileUrl`을 제거하고, detail read/write path를 blob/source path 정본으로 정리했다.
+- 2026-04-23: legacy detail tables와 `WorkoutFile.fileUrl`의 runtime schema/application 의존성을 제거하고, detail read/write path를 blob/source path 정본으로 정리했다.
 - 2026-04-23: cleanup migration에 `detailPath`/`sourcePath` backfill precondition guard를 추가하고, imported workout의 missing blob 경고 및 blob-backed detail/feed acceptance e2e를 보강했다.
 - 2026-04-23: `WorkoutFile.sourcePath`를 required canonical field로 격상하고, missing blob degraded path를 API e2e + web detail page test로 고정했다.
+- 2026-05-05: `I-0018-060`에서 dev deploy target에 legacy backfill 미완료 row가 있음을 확인하고, physical legacy cleanup은 `I-0018-070`으로 분리했다.
 
 ## 리뷰 노트
 

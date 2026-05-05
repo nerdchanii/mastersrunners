@@ -1,7 +1,7 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-04-22
+last_verified: 2026-05-05
 sources:
   - apps/api/src/uploads/uploads.module.ts
   - apps/api/src/uploads/uploads.service.ts
@@ -15,6 +15,10 @@ sources:
   - apps/api/src/uploads/storage/storage-adapter.interface.ts
   - apps/api/src/uploads/storage/disk-storage.adapter.ts
   - apps/api/src/uploads/storage/r2-storage.adapter.ts
+  - packages/database/prisma/migrations/20260423022000_remove_workout_legacy_detail_schema/migration.sql
+  - tasks/archive/I-0018-060-db-deploy-migration-backfill-compat.md
+  - tasks/todo/I-0018-040-repo-cloudflare-workout-private-storage-backfill.md
+  - tasks/todo/I-0018-070-db-workout-legacy-physical-cleanup.md
   - apps/web/src/pages/settings/profile/index.tsx
   - apps/web/src/pages/posts/new/index.tsx
 ---
@@ -67,7 +71,9 @@ In disk mode the app also exposes public `PUT /uploads/disk/*` and `GET /disk-fi
 
 Cleanup posture:
 
-- legacy `WorkoutRoute`, `WorkoutLap`, and `WorkoutFile.fileUrl` removal is guarded by migration preconditions so cleanup cannot land before `detailPath` and `sourcePath` backfill is complete.
+- The Prisma schema and application code no longer use legacy `WorkoutRoute`, `WorkoutLap`, or `WorkoutFile.fileUrl`.
+- Existing environments may still retain those physical legacy tables/columns until the explicit storage backfill task verifies `sourcePath` and `detailPath` recovery and a follow-up physical cleanup task drops the legacy structures.
+- The deploy migration backfills missing `WorkoutFile.sourcePath` from legacy `fileUrl` as a compatibility source identifier, then makes `sourcePath` required without dropping legacy physical data.
 
 GPS routes are downsampled only for summary polyline generation; canonical detail storage keeps the normalized full-resolution track inside the private detail blob.
 
@@ -84,6 +90,7 @@ Parser normalization details:
 - Delete operations validate that the acting user owns the storage key path.
 - Public URL generation stays behind the adapter boundary for public assets only; workout source ingestion must not rely on a persistent public URL.
 - Private canonical storage now uses path identifiers (`WorkoutFile.sourcePath`, `Workout.detailPath`) rather than persisted download URLs or public URLs.
+- Legacy rows whose `sourcePath` was compatibility-filled from `fileUrl` remain a backfill target before the follow-up physical cleanup task.
 - File-type restrictions exist to keep the shared upload boundary from becoming a generic arbitrary-file ingress path.
 
 ## Current Constraints

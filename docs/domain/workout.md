@@ -1,11 +1,15 @@
 ---
 doc_state: current
 owner: product
-last_verified: 2026-04-22
+last_verified: 2026-05-05
 sources:
   - packages/database/prisma/schema.prisma
+  - packages/database/prisma/migrations/20260423022000_remove_workout_legacy_detail_schema/migration.sql
   - apps/api/src/uploads/uploads.service.ts
   - apps/api/src/workouts/workouts.service.ts
+  - tasks/archive/I-0018-060-db-deploy-migration-backfill-compat.md
+  - tasks/todo/I-0018-040-repo-cloudflare-workout-private-storage-backfill.md
+  - tasks/todo/I-0018-070-db-workout-legacy-physical-cleanup.md
 ---
 
 # 워크아웃 (Workout)
@@ -55,8 +59,9 @@ sources:
 ### 연관 모델
 
 - `WorkoutFile`
-  - 원본 FIT/GPX/TCX 업로드 파일과 처리 상태를 저장한다.
+  - 원본 FIT/GPX 업로드 파일과 처리 상태를 저장한다.
   - canonical raw source 위치는 필수 `sourcePath`로 보관한다.
+  - legacy row는 final private-storage backfill 전까지 기존 `fileUrl` 값을 compatibility `sourcePath`로 보관할 수 있으며, 일반 API 응답에는 source 위치를 노출하지 않는다.
 - `WorkoutPhoto`
   - 워크아웃 사진과 정렬 순서를 저장한다.
 
