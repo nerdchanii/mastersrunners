@@ -1,9 +1,10 @@
 import { NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
+import { RealtimeEventsService } from "../realtime/realtime-events.service.js";
+
 import { NotificationRepository } from "./repositories/notification.repository.js";
 import { NotificationsService } from "./notifications.service.js";
-import { NotificationsSseService } from "./notifications-sse.service.js";
 
 const mockRepo = {
   create: jest.fn(),
@@ -13,8 +14,9 @@ const mockRepo = {
   countUnread: jest.fn(),
 };
 
-const mockSseService = {
-  sendToUser: jest.fn(),
+const mockRealtimeEvents = {
+  emitNotificationNew: jest.fn(),
+  emitNotificationUnreadUpdate: jest.fn(),
 };
 
 describe("NotificationsService", () => {
@@ -26,14 +28,14 @@ describe("NotificationsService", () => {
       providers: [
         NotificationsService,
         { provide: NotificationRepository, useValue: mockRepo },
-        { provide: NotificationsSseService, useValue: mockSseService },
+        { provide: RealtimeEventsService, useValue: mockRealtimeEvents },
       ],
     }).compile();
     service = module.get(NotificationsService);
   });
 
   describe("createNotification", () => {
-    it("should create notification and send via SSE", async () => {
+    it("should create notification and send via realtime socket", async () => {
       const data = {
         userId: "user-1",
         actorId: "actor-1",
@@ -44,12 +46,36 @@ describe("NotificationsService", () => {
       };
       const mockNotif = { id: "notif-1", ...data, isRead: false, createdAt: new Date() };
       mockRepo.create.mockResolvedValue(mockNotif);
+      mockRepo.countUnread.mockResolvedValue(4);
 
       const result = await service.createNotification(data);
 
       expect(mockRepo.create).toHaveBeenCalledWith(data);
-      expect(mockSseService.sendToUser).toHaveBeenCalledWith("user-1", mockNotif);
+      expect(mockRealtimeEvents.emitNotificationNew).toHaveBeenCalledWith("user-1", mockNotif);
+      expect(mockRealtimeEvents.emitNotificationUnreadUpdate).toHaveBeenCalledWith("user-1", {
+        unreadCount: 4,
+      });
       expect(result).toEqual(mockNotif);
+    });
+
+    it("should still return the created notification when unread count refresh fails", async () => {
+      const data = {
+        userId: "user-1",
+        actorId: "actor-1",
+        type: "LIKE",
+        referenceType: "POST",
+        referenceId: "post-1",
+        message: "좋아요를 받았습니다.",
+      };
+      const mockNotif = { id: "notif-1", ...data, isRead: false, createdAt: new Date() };
+      mockRepo.create.mockResolvedValue(mockNotif);
+      mockRepo.countUnread.mockRejectedValue(new Error("count failed"));
+
+      const result = await service.createNotification(data);
+
+      expect(result).toEqual(mockNotif);
+      expect(mockRealtimeEvents.emitNotificationNew).toHaveBeenCalledWith("user-1", mockNotif);
+      expect(mockRealtimeEvents.emitNotificationUnreadUpdate).not.toHaveBeenCalled();
     });
   });
 
@@ -69,10 +95,14 @@ describe("NotificationsService", () => {
   describe("markAsRead", () => {
     it("should mark notification as read and return success", async () => {
       mockRepo.markAsRead.mockResolvedValue({ count: 1 });
+      mockRepo.countUnread.mockResolvedValue(2);
 
       const result = await service.markAsRead("notif-1", "user-1");
 
       expect(mockRepo.markAsRead).toHaveBeenCalledWith("notif-1", "user-1");
+      expect(mockRealtimeEvents.emitNotificationUnreadUpdate).toHaveBeenCalledWith("user-1", {
+        unreadCount: 2,
+      });
       expect(result).toEqual({ success: true });
     });
 
@@ -80,6 +110,16 @@ describe("NotificationsService", () => {
       mockRepo.markAsRead.mockResolvedValue({ count: 0 });
 
       await expect(service.markAsRead("non-existent", "user-1")).rejects.toThrow(NotFoundException);
+    });
+
+    it("should keep the read mutation successful when unread count refresh fails", async () => {
+      mockRepo.markAsRead.mockResolvedValue({ count: 1 });
+      mockRepo.countUnread.mockRejectedValue(new Error("count failed"));
+
+      const result = await service.markAsRead("notif-1", "user-1");
+
+      expect(result).toEqual({ success: true });
+      expect(mockRealtimeEvents.emitNotificationUnreadUpdate).not.toHaveBeenCalled();
     });
   });
 
@@ -90,6 +130,10 @@ describe("NotificationsService", () => {
       const result = await service.markAllAsRead("user-1");
 
       expect(mockRepo.markAllAsRead).toHaveBeenCalledWith("user-1");
+      expect(mockRealtimeEvents.emitNotificationUnreadUpdate).toHaveBeenCalledWith("user-1", {
+        unreadCount: 0,
+      });
+      expect(mockRepo.countUnread).not.toHaveBeenCalled();
       expect(result).toEqual({ success: true });
     });
   });

@@ -1,13 +1,17 @@
 ---
 doc_state: current
 owner: backend
-last_verified: 2026-03-12
+last_verified: 2026-04-28
 sources:
   - apps/api/src/conversations/conversations.controller.ts
   - apps/api/src/conversations/conversations.service.ts
-  - apps/api/src/conversations/conversations-sse.service.ts
+  - apps/api/src/realtime/realtime.gateway.ts
+  - apps/api/src/realtime/realtime-events.service.ts
+  - apps/api/src/notifications/notifications.controller.ts
+  - apps/api/src/common/filters/http-exception.filter.ts
   - apps/api/src/conversations/repositories/conversations.repository.ts
-  - apps/api/src/auth/guards/jwt-sse.guard.ts
+  - apps/api/src/crews/internal/crew-read.service.ts
+  - apps/api/src/crews/internal/crew-activities.service.ts
   - apps/api/src/block/repositories/block.repository.ts
 ---
 
@@ -15,44 +19,64 @@ sources:
 
 ## Summary
 
-Direct messaging is implemented as an authenticated conversations module with cursor pagination, soft-delete semantics, and SSE fan-out for new messages.
+Messaging is implemented as an authenticated conversations module with cursor pagination, soft-delete semantics, and one `/realtime` WebSocket fan-out path for conversation messages plus unread/read updates.
 
 ## Public API Boundaries
 
 - `POST /conversations`
   - start or find a direct conversation with another user
 - `GET /conversations`
-  - list the caller's conversations with unread counts
+  - list the caller's DM, crew, and activity conversations with unread counts plus room-identity context
 - `GET /conversations/:id`
   - fetch one conversation plus paginated messages
 - `POST /conversations/:id/messages`
   - send a message as a participant
 - `PATCH /conversations/:id/read`
   - advance the caller's last-read marker
+- `DELETE /conversations/:id/leave`
+  - mark a direct-message cut-line for the caller without removing the participant
 - `DELETE /conversations/messages/:id`
   - soft-delete the caller's own message
-- `GET /conversations/sse`
-  - realtime message stream authenticated by `JwtSseGuard`
+- WebSocket namespace `/realtime`
+  - cookie-authenticated realtime channel for chat, notification, and unread/read events
 
 ## Module Responsibilities
 
 - `ConversationsController`
-  - transport, pagination bounds, and SSE entrypoint
+  - HTTP transport and pagination bounds
+- `RealtimeGateway`
+  - cookie-authenticated WebSocket connection, room subscription, chat send/read commands, notification read commands, and realtime fan-out
 - `ConversationsService`
   - participant authorization, block checks, and write orchestration
 - `ConversationsRepository`
-  - durable conversation, participant, and message persistence
-- `ConversationsSseService`
-  - in-process connection registry and message fan-out
+  - durable conversation, participant, and message persistence, plus room-identity context hydration for crew/activity rooms
+- `RealtimeEventsService`
+  - shared process-local event emitter used by API services and the gateway
 
 ## Realtime Boundary
 
-- Realtime delivery is SSE, not WebSocket.
-- SSE endpoints are public at the route layer but protected by query-token auth through `JwtSseGuard`.
-- Message creation persists first, then fan-out happens as a non-blocking side effect.
+- Chat delivery is WebSocket-based for `DIRECT`, `CREW`, and `ACTIVITY` conversations.
+- The gateway authenticates from the same cookie session used by HTTP requests.
+- Each socket joins a per-user room on connect and can also join per-conversation rooms through `chat:subscribe`.
+- Message creation persists first, then realtime emits `chat:message` to the conversation room plus participant user rooms.
+- Chat read updates emit `chat:unread:update` to the caller's user room after `lastReadAt` advances.
+- Notification creation emits `notification:new`; notification read changes emit `notification:unread:update`.
+
+## Participant State
+
+- `ConversationParticipant` now carries `lastReadAt`, `leftAt`, and `joinedAt`.
+- `leftAt` is only meaningful for `DIRECT` conversations.
+- `DELETE /conversations/:id/leave` updates the caller's `leftAt` instead of deleting the participant row.
+
+## DM Leave Semantics
+
+- A left DM disappears from `/conversations` until a message newer than `leftAt` exists.
+- When a DM reappears, `/conversations/:id` only returns messages newer than `leftAt`.
+- Unread counts for DM are computed from `max(lastReadAt, leftAt)`.
+- Direct-entry to a DM with no message newer than `leftAt` is rejected so the web client can return to `/messages`.
 
 ## Current Constraints
 
-- The current repo only models direct conversations in the user-facing API.
+- The main `/conversations` API now returns mixed room types, but only direct-message routes use the dedicated `/messages/:id` detail screen today.
 - Presence, typing indicators, and reconnect replay are not first-class realtime features in the current implementation.
-- Realtime delivery is process-local; multi-instance fan-out would need extra infrastructure beyond the repo.
+- Realtime socket delivery is process-local; multi-instance fan-out would need extra infrastructure beyond the repo.

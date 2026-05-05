@@ -55,6 +55,14 @@ interface ErrorFallbackProps {
 
 function ErrorFallback({ error, onReload }: ErrorFallbackProps) {
   const navigate = useNavigate();
+  const handleGoBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/feed");
+  };
 
   return (
     <div className="flex min-h-[400px] items-center justify-center px-4 py-8">
@@ -80,6 +88,9 @@ function ErrorFallback({ error, onReload }: ErrorFallbackProps) {
         <CardFooter className="flex flex-col gap-2">
           <Button onClick={onReload} className="w-full">
             다시 시도
+          </Button>
+          <Button onClick={handleGoBack} variant="outline" className="w-full">
+            이전 화면
           </Button>
           <Button onClick={() => navigate("/feed")} variant="outline" className="w-full">
             홈으로

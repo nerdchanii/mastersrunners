@@ -63,11 +63,42 @@ describe("WorkoutRepository", () => {
           user: { select: { id: true, name: true, profileImage: true } },
           workoutType: { select: { id: true, category: true, name: true } },
           file: true,
-          route: true,
-          laps: { orderBy: { lapNumber: "asc" } },
+          _count: {
+            select: {
+              workoutLikes: true,
+              workoutComments: { where: { deletedAt: null } },
+            },
+          },
+          workoutLikes: false,
         },
       });
       expect(result).toEqual(mockData);
+    });
+
+    it("should scope requester workout likes when requesterUserId is provided", async () => {
+      mockPrisma.workout.findFirst.mockResolvedValue({ id: "w1" });
+
+      await repository.findByIdWithUser("w1", "requester-1");
+
+      expect(mockPrisma.workout.findFirst).toHaveBeenCalledWith({
+        where: { id: "w1", deletedAt: null },
+        include: {
+          user: { select: { id: true, name: true, profileImage: true } },
+          workoutType: { select: { id: true, category: true, name: true } },
+          file: true,
+          _count: {
+            select: {
+              workoutLikes: true,
+              workoutComments: { where: { deletedAt: null } },
+            },
+          },
+          workoutLikes: {
+            where: { userId: "requester-1" },
+            select: { id: true },
+            take: 1,
+          },
+        },
+      });
     });
   });
 

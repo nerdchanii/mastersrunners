@@ -1,0 +1,23 @@
+{
+  "task_id": "I-0016-125",
+  "reviewer": "po-reviewer",
+  "decision": "approved",
+  "tool": "codex-manual-protocol-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/po-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/po-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/po-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/po-review-checklist/SKILL.md"
+  ],
+  "findings": [],
+  "summary": "no findings. The change closes the product gap introduced by removing the 공지 tab: crew owners and admins can still create announcements directly from 글쓰기, while regular members keep the normal board writing flow.",
+  "residual_risks": [
+    "If operators later need scheduling or pinning controls for announcements, that should be handled as a separate product scope."
+  ],
+  "reviewed_at": "2026-05-03T13:45:00Z"
+}

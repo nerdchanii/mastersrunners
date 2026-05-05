@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { DatabaseService } from "../../database/database.service.js";
 
 interface FeedOptions {
-  userId: string;
+  userId?: string;
   followingIds: string[];
   cursor?: string;
   limit: number;
@@ -29,24 +29,24 @@ export class FeedRepository {
 
   async getPostFeed(options: FeedOptions) {
     const { userId, followingIds, cursor, limit } = options;
+    const visibilityFilter = userId
+      ? [
+          { userId },
+          {
+            userId: { in: followingIds },
+            visibility: "PUBLIC" as const,
+          },
+          {
+            userId: { in: followingIds },
+            visibility: "FOLLOWERS" as const,
+          },
+        ]
+      : [{ visibility: "PUBLIC" as const }];
 
     const posts = await this.db.prisma.post.findMany({
       where: {
         deletedAt: null,
-        OR: [
-          // Own posts
-          { userId },
-          // Public posts from followed users
-          {
-            userId: { in: followingIds },
-            visibility: "PUBLIC",
-          },
-          // Followers-only posts from followed users
-          {
-            userId: { in: followingIds },
-            visibility: "FOLLOWERS",
-          },
-        ],
+        OR: visibilityFilter,
       },
       include: {
         user: {
@@ -74,6 +74,11 @@ export class FeedRepository {
                 duration: true,
                 pace: true,
                 date: true,
+                encodedPolyline: true,
+                elevationGain: true,
+                avgHeartRate: true,
+                avgCadence: true,
+                calories: true,
                 workoutType: {
                   select: {
                     id: true,
@@ -91,11 +96,13 @@ export class FeedRepository {
             comments: true,
           },
         },
-        likes: {
-          where: { userId },
-          select: { id: true },
-          take: 1,
-        },
+        likes: userId
+          ? {
+              where: { userId },
+              select: { id: true },
+              take: 1,
+            }
+          : false,
       },
       orderBy: { createdAt: "desc" },
       cursor: cursor ? { id: cursor } : undefined,
@@ -108,25 +115,25 @@ export class FeedRepository {
 
   async getWorkoutFeed(options: FeedOptions & { excludeLinkedToPost?: boolean }) {
     const { userId, followingIds, cursor, limit, excludeLinkedToPost } = options;
+    const visibilityFilter = userId
+      ? [
+          { userId },
+          {
+            userId: { in: followingIds },
+            visibility: "PUBLIC" as const,
+          },
+          {
+            userId: { in: followingIds },
+            visibility: "FOLLOWERS" as const,
+          },
+        ]
+      : [{ visibility: "PUBLIC" as const }];
 
     const workouts = await this.db.prisma.workout.findMany({
       where: {
         deletedAt: null,
         ...(excludeLinkedToPost ? { postWorkouts: { none: {} } } : {}),
-        OR: [
-          // Own workouts
-          { userId },
-          // Public workouts from followed users
-          {
-            userId: { in: followingIds },
-            visibility: "PUBLIC",
-          },
-          // Followers-only workouts from followed users
-          {
-            userId: { in: followingIds },
-            visibility: "FOLLOWERS",
-          },
-        ],
+        OR: visibilityFilter,
       },
       include: {
         user: {
@@ -143,22 +150,19 @@ export class FeedRepository {
             category: true,
           },
         },
-        route: {
-          select: {
-            encodedPolyline: true,
-          },
-        },
         _count: {
           select: {
             workoutLikes: true,
             workoutComments: true,
           },
         },
-        workoutLikes: {
-          where: { userId },
-          select: { id: true },
-          take: 1,
-        },
+        workoutLikes: userId
+          ? {
+              where: { userId },
+              select: { id: true },
+              take: 1,
+            }
+          : false,
       },
       orderBy: { createdAt: "desc" },
       cursor: cursor ? { id: cursor } : undefined,

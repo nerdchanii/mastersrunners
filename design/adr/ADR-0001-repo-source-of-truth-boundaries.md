@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-The repository used to mix durable design knowledge, operational notes, temporary plans, and execution state across `README.md`, `docs/plans/`, and ad hoc notes. That made it hard for agents to know which document should win when files disagreed.
+The repository used to mix durable design knowledge, operational notes, temporary plans, and execution state across `README.md`, legacy planning buckets, and ad hoc notes. That made it hard for agents to know which document should win when files disagreed.
 
 The harness now depends on stable navigation and stable ownership boundaries between:
 
@@ -31,7 +31,7 @@ Use the repository itself as the source-of-truth system with explicit folder own
 - `design/initiatives/` for large change framing
 - `tasks/` for execution state and review history
 - `docs/runbooks/` for operational procedures
-- `docs/reports/` and `docs/plans/archive/` for historical evidence, not current truth
+- `docs/reports/` and `docs/reports/history/` for historical evidence, not current truth
 
 Approved design must not be downgraded to match weak implementation. Divergence is tracked with tasks and follow-up work rather than by rewriting the source of truth downward.
 
@@ -39,7 +39,7 @@ Approved design must not be downgraded to match weak implementation. Divergence 
 
 - Keep one large `README.md` as the primary source of truth
   - Rejected because it mixes navigation, product context, and implementation detail into one stale hotspot.
-- Treat `docs/plans/` and `.omc/` as equal peers to `design/`
+- Treat legacy planning material and `.omc/` as equal peers to `design/`
   - Rejected because historical plan material and current truth need different authority levels.
 - Let current implementation define the design documents
   - Rejected because it destroys the harness's ability to represent target design and controlled divergence.

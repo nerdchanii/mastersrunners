@@ -124,7 +124,7 @@ export class EventsService {
     eventId: string,
     userId: string,
     data: {
-      resultTime: number;
+      resultTime?: number;
       resultRank?: number;
       bibNumber?: string;
       status: "COMPLETED" | "DNS" | "DNF";
@@ -132,6 +132,9 @@ export class EventsService {
   ) {
     const registration = await this.registrationRepo.findRegistration(eventId, userId);
     if (!registration) throw new NotFoundException("등록하지 않은 이벤트입니다.");
+    if (data.status === "COMPLETED" && data.resultTime == null) {
+      throw new BadRequestException("완주 결과에는 기록이 필요합니다.");
+    }
 
     return this.registrationRepo.updateResult(eventId, userId, {
       resultTime: data.resultTime,

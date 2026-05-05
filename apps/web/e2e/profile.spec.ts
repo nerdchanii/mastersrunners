@@ -47,21 +47,20 @@ test.describe("프로필 페이지", () => {
     });
   });
 
-  test("프로필 페이지에 커버 이미지 영역이 표시된다 (그라데이션 fallback)", async ({ page }) => {
+  test("프로필 페이지에 가짜 커버 이미지 영역이 표시되지 않는다", async ({ page }) => {
     await page.goto("/profile");
-    await page.waitForSelector("[class*='rounded-xl']");
+    await page.waitForSelector("[data-testid='profile-header']");
 
-    // 커버 영역 (gradient fallback since no backgroundImage)
-    const coverGradient = page.locator("[class*='from-blue-500']");
-    await expect(coverGradient).toBeVisible();
+    await expect(page.locator("[class*='aspect-\\[3\\/1\\]']")).toHaveCount(0);
+    await expect(page.locator("[class*='from-blue-500']")).toHaveCount(0);
   });
 
-  test("프로필 사진이 커버 이미지 하단에 겹쳐서 표시된다", async ({ page }) => {
+  test("프로필 사진과 기본 정보가 평면 헤더에 표시된다", async ({ page }) => {
     await page.goto("/profile");
 
-    // Avatar with ring (overlapping cover)
-    const avatar = page.locator("[class*='ring-4'][class*='ring-card']").first();
-    await expect(avatar).toBeVisible();
+    await expect(page.getByTestId("profile-header")).toBeVisible();
+    await expect(page.getByTestId("profile-header-avatar")).toBeVisible();
+    await expect(page.getByText(mockUser.bio!)).toBeVisible();
   });
 
   test("이름과 bio가 표시된다", async ({ page }) => {

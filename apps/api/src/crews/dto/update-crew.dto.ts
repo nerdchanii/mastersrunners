@@ -18,7 +18,17 @@ export class UpdateCrewDto {
   @ApiProperty({ description: "크루 이미지 URL", required: false })
   @IsOptional()
   @IsString()
-  imageUrl?: string;
+  imageUrl?: string | null;
+
+  @ApiProperty({ description: "크루 프로필 이미지 URL", required: false })
+  @IsOptional()
+  @IsString()
+  profileImageUrl?: string | null;
+
+  @ApiProperty({ description: "크루 커버 이미지 URL", required: false })
+  @IsOptional()
+  @IsString()
+  coverImageUrl?: string | null;
 
   @ApiProperty({ description: "공개 여부", required: false })
   @IsOptional()
@@ -34,15 +44,15 @@ export class UpdateCrewDto {
   @ApiProperty({ description: "크루 활동 지역 (상세)", required: false })
   @IsOptional()
   @IsString()
-  location?: string;
+  location?: string | null;
 
   @ApiProperty({ description: "광역시/도", required: false })
   @IsOptional()
   @IsString()
-  region?: string;
+  region?: string | null;
 
   @ApiProperty({ description: "시/군/구", required: false })
   @IsOptional()
   @IsString()
-  subRegion?: string;
+  subRegion?: string | null;
 }

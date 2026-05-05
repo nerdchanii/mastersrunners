@@ -1,26 +1,10 @@
+import type { InfiniteData } from "@tanstack/react-query";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
+import type { ConversationListItem, ConversationParticipant } from "@/lib/message-room";
 
-interface ConversationParticipant {
-  userId: string;
-  lastReadAt: string | null;
-  user: { id: string; name: string; profileImage: string | null };
-}
-
-export interface Conversation {
-  id: string;
-  type: "DIRECT";
-  updatedAt: string;
-  participants: ConversationParticipant[];
-  messages: Array<{
-    id: string;
-    content: string;
-    senderId: string;
-    createdAt: string;
-  }>;
-  unreadCount: number;
-}
+export type { ConversationListItem as Conversation, ConversationParticipant };
 
 export interface Message {
   id: string;
@@ -33,21 +17,75 @@ export interface Message {
 }
 
 interface ConversationsResponse {
-  data: Conversation[];
+  data: ConversationListItem[];
   nextCursor: string | null;
 }
 
-interface ConversationDetailResponse {
-  conversation: Omit<Conversation, "messages" | "unreadCount">;
-  messages: Message[];
-  nextCursor: string | null;
+interface ConversationUnreadCountResponse {
+  count: number;
 }
 
 export const messageKeys = {
   all: ["messages"] as const,
   conversations: () => [...messageKeys.all, "conversations"] as const,
   conversation: (id: string) => [...messageKeys.all, "conversation", id] as const,
+  unreadCount: () => [...messageKeys.all, "unread-count"] as const,
 };
+
+export function patchConversationSummary(
+  data: InfiniteData<ConversationsResponse> | undefined,
+  conversationId: string,
+  updater: (conversation: ConversationListItem) => ConversationListItem,
+): InfiniteData<ConversationsResponse> | undefined {
+  if (!data) {
+    return data;
+  }
+
+  const pages = data.pages.map((page) => ({
+    ...page,
+    data: page.data.map((conversation) =>
+      conversation.id === conversationId ? updater(conversation) : conversation,
+    ),
+  }));
+
+  const foundConversation = pages
+    .flatMap((page) => page.data)
+    .find((item) => item.id === conversationId);
+  if (!foundConversation || pages.length === 0) {
+    return { ...data, pages };
+  }
+
+  const normalizedPages = pages.map((page) => ({
+    ...page,
+    data: page.data.filter((conversation) => conversation.id !== conversationId),
+  }));
+  normalizedPages[0] = {
+    ...normalizedPages[0],
+    data: [foundConversation, ...normalizedPages[0].data],
+  };
+
+  return {
+    ...data,
+    pages: normalizedPages,
+  };
+}
+
+export function removeConversationSummary(
+  data: InfiniteData<ConversationsResponse> | undefined,
+  conversationId: string,
+): InfiniteData<ConversationsResponse> | undefined {
+  if (!data) {
+    return data;
+  }
+
+  return {
+    ...data,
+    pages: data.pages.map((page) => ({
+      ...page,
+      data: page.data.filter((conversation) => conversation.id !== conversationId),
+    })),
+  };
+}
 
 export function useConversations() {
   return useInfiniteQuery({
@@ -61,7 +99,6 @@ export function useConversations() {
     getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
     staleTime: 30 * 1000,
     retry: 1,
-    refetchInterval: 10 * 1000,
   });
 }
 
@@ -71,14 +108,24 @@ export function useMessages(conversationId: string) {
     queryFn: ({ pageParam }) => {
       let path = `/conversations/${conversationId}?limit=50`;
       if (pageParam) path += `&cursor=${encodeURIComponent(pageParam as string)}`;
-      return api.fetch<ConversationDetailResponse>(path);
+      return api.fetch<{ nextCursor?: string | null }>(path);
     },
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage?.nextCursor ?? undefined,
     enabled: !!conversationId,
     staleTime: 10 * 1000,
     retry: 1,
-    refetchInterval: 10 * 1000,
+  });
+}
+
+export function useUnreadMessageCount(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: messageKeys.unreadCount(),
+    queryFn: () => api.fetch<ConversationUnreadCountResponse>("/conversations/unread-count"),
+    enabled: options?.enabled ?? true,
+    staleTime: 30 * 1000,
+    retry: 1,
+    select: (data) => data?.count ?? 0,
   });
 }
 
@@ -100,6 +147,23 @@ export function useSendMessage(conversationId: string) {
 export function useMarkAsRead(conversationId: string) {
   return useMutation({
     mutationFn: () => api.fetch(`/conversations/${conversationId}/read`, { method: "PATCH" }),
+  });
+}
+
+export function useLeaveConversation(conversationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.fetch(`/conversations/${conversationId}/leave`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.setQueryData(messageKeys.conversations(), (current: unknown) =>
+        removeConversationSummary(
+          current as InfiniteData<ConversationsResponse> | undefined,
+          conversationId,
+        ),
+      );
+      queryClient.invalidateQueries({ queryKey: messageKeys.unreadCount() });
+      queryClient.removeQueries({ queryKey: messageKeys.conversation(conversationId) });
+    },
   });
 }
 

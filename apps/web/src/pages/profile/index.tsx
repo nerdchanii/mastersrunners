@@ -4,8 +4,18 @@ import { useNavigate } from "react-router-dom";
 import { LoadingPage } from "@/components/common/LoadingPage";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
-import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+
+import {
+  fetchCrewPostsFromCrews,
+  fetchMyFollowersPreview,
+  fetchMyProfile,
+  fetchMyProfileCrews,
+  fetchMyProfilePosts,
+  fetchMyProfileWorkouts,
+  type FollowUserPreview,
+  type ProfileCrewPost,
+} from "./profile-api";
 
 interface Post {
   id: string;
@@ -31,6 +41,11 @@ interface Workout {
   pace: number;
   date: string;
   memo: string | null;
+  user?: {
+    id: string;
+    name: string;
+    profileImage: string | null;
+  };
   workoutType?: {
     id: string;
     name: string;
@@ -87,6 +102,8 @@ export default function ProfilePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [crews, setCrews] = useState<Crew[]>([]);
+  const [crewPosts, setCrewPosts] = useState<ProfileCrewPost[]>([]);
+  const [followerPreviewUsers, setFollowerPreviewUsers] = useState<FollowUserPreview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isTabDataLoading, setIsTabDataLoading] = useState(false);
 
@@ -100,9 +117,15 @@ export default function ProfilePage() {
 
     const fetchProfile = async () => {
       try {
-        const data = await api.fetch<ProfileApiResponse>("/profile");
+        const [data, membershipCrews, followerPreview] = await Promise.all([
+          fetchMyProfile(),
+          fetchMyProfileCrews(),
+          fetchMyFollowersPreview(),
+        ]);
         if (!data) return;
         setProfileUser(data.user);
+        setCrews(membershipCrews);
+        setFollowerPreviewUsers(followerPreview);
         setProfileStats({
           postCount: data.stats.postCount ?? 0,
           followerCount: data.followersCount,
@@ -126,18 +149,14 @@ export default function ProfilePage() {
       setIsTabDataLoading(true);
       try {
         if (activeTab === "posts") {
-          const data = await api.fetch<Post[] | { data: Post[] }>(
-            `/posts?userId=${user.id}&limit=12`,
-          );
-          setPosts(Array.isArray(data) ? data : (data?.data ?? []));
+          const data = await fetchMyProfilePosts(user.id);
+          setPosts(data);
         } else if (activeTab === "workouts") {
-          const data = await api.fetch<Workout[] | { data: Workout[] }>(
-            `/workouts?userId=${user.id}`,
-          );
-          setWorkouts(Array.isArray(data) ? data : (data?.data ?? []));
+          const data = await fetchMyProfileWorkouts(user.id);
+          setWorkouts(data);
         } else if (activeTab === "crews") {
-          const data = await api.fetch<Crew[] | { data: Crew[] }>("/crews/my");
-          setCrews(Array.isArray(data) ? data : (data?.data ?? []));
+          const data = await fetchCrewPostsFromCrews(crews);
+          setCrewPosts(data);
         }
       } catch (err) {
         console.error("Failed to fetch tab data:", err);
@@ -147,21 +166,21 @@ export default function ProfilePage() {
     };
 
     fetchTabData();
-  }, [activeTab, user?.id, profileStats]);
+  }, [activeTab, crews, user?.id, profileStats]);
 
   const handleFollowersClick = () => {
     if (!user?.id) return;
-    navigate(`/profile/${user.id}/followers`);
+    navigate(`/profile/${user.id}/connections?tab=followers`);
   };
 
   const handleFollowingClick = () => {
     if (!user?.id) return;
-    navigate(`/profile/${user.id}/following`);
+    navigate(`/profile/${user.id}/connections?tab=following`);
   };
 
   if (authLoading || isLoading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-8">
         <LoadingPage variant="profile" />
       </div>
     );
@@ -169,7 +188,7 @@ export default function ProfilePage() {
 
   if (!user || !profileStats) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="text-center py-12">
           <p className="text-muted-foreground">프로필을 불러올 수 없습니다.</p>
         </div>
@@ -178,22 +197,29 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="space-y-5 pb-8 md:mx-auto md:max-w-4xl md:px-4">
       <ProfileHeader
         user={profileUser || user}
-        stats={profileStats}
         isOwnProfile={true}
+        stats={profileStats}
+        crews={crews}
+        followerPreviewUsers={followerPreviewUsers}
         onFollowersClick={handleFollowersClick}
         onFollowingClick={handleFollowingClick}
       />
 
       <ProfileTabs
         posts={posts}
-        workouts={workouts}
+        workouts={workouts.map((workout) => ({
+          ...workout,
+          user: profileUser || user,
+        }))}
         crews={crews}
+        crewPosts={crewPosts}
         isLoading={isTabDataLoading}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        desktopStickyTopOffset={56}
       />
     </div>
   );

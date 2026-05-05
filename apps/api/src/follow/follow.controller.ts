@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Param, Post, Req } from "@nestjs/common";
+import { Controller, Delete, ForbiddenException, Get, Param, Post, Req } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
@@ -52,12 +52,20 @@ export class FollowController {
   }
 
   @Get(":userId/followers")
-  getUserFollowers(@Param("userId") userId: string) {
+  getUserFollowers(@Param("userId") userId: string, @Req() req: Request) {
+    const { userId: currentUserId } = req.user as { userId: string };
+    if (currentUserId !== userId) {
+      throw new ForbiddenException("팔로워 목록은 본인만 확인할 수 있습니다.");
+    }
     return this.followService.getFollowers(userId);
   }
 
   @Get(":userId/following")
-  getUserFollowing(@Param("userId") userId: string) {
+  getUserFollowing(@Param("userId") userId: string, @Req() req: Request) {
+    const { userId: currentUserId } = req.user as { userId: string };
+    if (currentUserId !== userId) {
+      throw new ForbiddenException("팔로잉 목록은 본인만 확인할 수 있습니다.");
+    }
     return this.followService.getFollowing(userId);
   }
 }

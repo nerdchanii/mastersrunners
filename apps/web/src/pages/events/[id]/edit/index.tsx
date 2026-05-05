@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { eventKeys, useEvent } from "@/hooks/useEvents";
-import { api } from "@/lib/api-client";
+
+import { updateEvent } from "./event-edit-api";
 
 export default function EditEventPage() {
   const { id } = useParams<{ id: string }>();
@@ -51,21 +52,23 @@ export default function EditEventPage() {
       return;
     }
 
+    const eventId = id;
+    if (!eventId) {
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await api.fetch(`/events/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          title: title.trim(),
-          description: description.trim() || undefined,
-          eventDate: new Date(eventDate).toISOString(),
-          location: location.trim() || undefined,
-          maxParticipants: maxParticipants ? Number(maxParticipants) : undefined,
-        }),
+      await updateEvent(eventId, {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        eventDate: new Date(eventDate).toISOString(),
+        location: location.trim() || undefined,
+        maxParticipants: maxParticipants ? Number(maxParticipants) : undefined,
       });
       queryClient.invalidateQueries({ queryKey: eventKeys.all });
       toast.success("대회 정보가 수정되었습니다.");
-      navigate(`/events/${id}`);
+      navigate(`/events/${eventId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "수정에 실패했습니다.");
     } finally {

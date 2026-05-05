@@ -1,11 +1,15 @@
 import type { INestApplication } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { JwtService } from "@nestjs/jwt";
 import request from "supertest";
 
-import { AuthService } from "../../src/auth/auth.service";
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "../../src/auth/auth-cookie.util";
+import { resolveJwtExpiresIn } from "../../src/auth/jwt-ttl";
 import { getDbService } from "../setup";
 
-interface TestUserResult {
+export interface TestUserResult {
   accessToken: string;
+  cookies: string[];
   refreshToken: string;
   userId: string;
 }
@@ -17,17 +21,17 @@ let userCounter = 0;
  * This always creates/returns the same hardcoded dev user.
  */
 export async function loginDevUser(app: INestApplication): Promise<TestUserResult> {
-  const res = await request(app.getHttpServer()).post("/api/v1/auth/dev-login").expect(201);
-
-  const { accessToken, refreshToken } = res.body;
-
-  // Decode the token to get userId
-  const payload = JSON.parse(Buffer.from(accessToken.split(".")[1], "base64").toString());
+  const res = await request(app.getHttpServer()).post("/api/v1/auth/dev-login").expect(204);
+  const cookies = extractCookies(res.headers["set-cookie"]);
+  const accessToken = extractCookieValue(cookies, ACCESS_TOKEN_COOKIE);
+  const refreshToken = extractCookieValue(cookies, REFRESH_TOKEN_COOKIE);
+  const meRes = await request(app.getHttpServer()).get("/api/v1/auth/me").set("Cookie", cookies);
 
   return {
     accessToken,
+    cookies,
     refreshToken,
-    userId: payload.sub,
+    userId: meRes.body.id,
   };
 }
 
@@ -62,29 +66,69 @@ export async function createTestUser(
     },
   });
 
-  // Use the AuthService to generate real JWT tokens
-  const authService = app.get(AuthService);
-  const tokens = authService.generateTokens({ id: user.id, email: user.email });
+  const jwtService = app.get(JwtService);
+  const configService = app.get(ConfigService);
+  const payload = { sub: user.id, email: user.email };
+  const tokens = {
+    accessToken: jwtService.sign(payload),
+    refreshToken: jwtService.sign(payload, {
+      expiresIn: resolveJwtExpiresIn(configService.get<string>("JWT_REFRESH_TTL"), 604800),
+    }),
+  };
 
   return {
     accessToken: tokens.accessToken,
+    cookies: [
+      `${ACCESS_TOKEN_COOKIE}=${encodeURIComponent(tokens.accessToken)}`,
+      `${REFRESH_TOKEN_COOKIE}=${encodeURIComponent(tokens.refreshToken)}`,
+    ],
     refreshToken: tokens.refreshToken,
     userId: user.id,
   };
 }
 
 /**
- * Create an authorized supertest request with Bearer token.
+ * Create an authorized supertest request with auth cookies.
  */
-export function authRequest(app: INestApplication, token: string) {
+export function authRequest(
+  app: INestApplication,
+  credentials: string | Pick<TestUserResult, "accessToken" | "cookies">,
+) {
+  const cookies = resolveCookies(credentials);
+
   return {
-    get: (url: string) =>
-      request(app.getHttpServer()).get(url).set("Authorization", `Bearer ${token}`),
-    post: (url: string) =>
-      request(app.getHttpServer()).post(url).set("Authorization", `Bearer ${token}`),
-    patch: (url: string) =>
-      request(app.getHttpServer()).patch(url).set("Authorization", `Bearer ${token}`),
-    delete: (url: string) =>
-      request(app.getHttpServer()).delete(url).set("Authorization", `Bearer ${token}`),
+    get: (url: string) => request(app.getHttpServer()).get(url).set("Cookie", cookies),
+    post: (url: string) => request(app.getHttpServer()).post(url).set("Cookie", cookies),
+    patch: (url: string) => request(app.getHttpServer()).patch(url).set("Cookie", cookies),
+    delete: (url: string) => request(app.getHttpServer()).delete(url).set("Cookie", cookies),
   };
+}
+
+function extractCookies(setCookieHeader: string[] | undefined) {
+  if (!setCookieHeader?.length) {
+    throw new Error("Expected auth cookies to be set");
+  }
+
+  return setCookieHeader.map((cookie) => cookie.split(";")[0]);
+}
+
+function extractCookieValue(cookies: string[], name: string) {
+  const cookie = cookies.find((entry) => entry.startsWith(`${name}=`));
+  if (!cookie) {
+    throw new Error(`Expected cookie ${name} to be present`);
+  }
+
+  return decodeURIComponent(cookie.slice(name.length + 1));
+}
+
+function resolveCookies(credentials: string | Pick<TestUserResult, "accessToken" | "cookies">) {
+  if (typeof credentials === "string") {
+    return [`${ACCESS_TOKEN_COOKIE}=${encodeURIComponent(credentials)}`];
+  }
+
+  if (credentials.cookies.length > 0) {
+    return credentials.cookies;
+  }
+
+  return [`${ACCESS_TOKEN_COOKIE}=${encodeURIComponent(credentials.accessToken)}`];
 }

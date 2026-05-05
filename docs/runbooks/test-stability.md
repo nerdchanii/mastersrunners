@@ -14,6 +14,7 @@ Blocking by default:
 
 - task `verify` commands
 - workspace lint
+- explicit typecheck via `bash scripts/run-typecheck.sh` when the task changes TypeScript or TS-sensitive config
 - required build steps
 - CI blocking suites already wired into the repository
 

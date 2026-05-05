@@ -1,17 +1,48 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 
 import { BlockRepository } from "../block/repositories/block.repository.js";
+import { FollowRepository } from "../follow/repositories/follow.repository.js";
 
 import type { CreatePostDto } from "./dto/create-post.dto.js";
 import type { UpdatePostDto } from "./dto/update-post.dto.js";
 import { PostRepository } from "./repositories/post.repository.js";
+import { mapPostForRead, mapPostsForRead } from "./post-read.mapper.js";
 
 @Injectable()
 export class PostsService {
   constructor(
     private readonly postRepo: PostRepository,
     private readonly blockRepo: BlockRepository,
+    private readonly followRepo: FollowRepository,
   ) {}
+
+  private async canReadPost(
+    post: { userId: string; visibility: string } | null,
+    currentUserId?: string,
+  ) {
+    if (!post) {
+      return false;
+    }
+
+    if (post.visibility === "PUBLIC") {
+      return true;
+    }
+
+    if (!currentUserId) {
+      return false;
+    }
+
+    if (post.userId === currentUserId) {
+      return true;
+    }
+
+    if (post.visibility === "FOLLOWERS") {
+      const follow = await this.followRepo.findFollow(currentUserId, post.userId);
+      return follow?.status === "ACCEPTED";
+    }
+
+    return false;
+  }
 
   extractHashtags(content: string | null | undefined): string[] {
     if (!content) return [];
@@ -37,13 +68,16 @@ export class PostsService {
 
   async findById(id: string, currentUserId?: string) {
     const post = await this.postRepo.findById(id, currentUserId);
+    if (!(await this.canReadPost(post, currentUserId))) {
+      return null;
+    }
     if (post && currentUserId && post.userId !== currentUserId) {
       const blocked = await this.blockRepo.isBlocked(currentUserId, post.userId);
       if (blocked) {
         throw new ForbiddenException("차단된 사용자의 게시글입니다.");
       }
     }
-    return post;
+    return post ? mapPostForRead(post) : post;
   }
 
   async findByUser(userId: string, currentUserId?: string, cursor?: string, limit?: number) {
@@ -53,7 +87,8 @@ export class PostsService {
         throw new ForbiddenException("차단된 사용자입니다.");
       }
     }
-    return this.postRepo.findByUser(userId, { cursor, limit, currentUserId });
+    const posts = await this.postRepo.findByUser(userId, { cursor, limit, currentUserId });
+    return mapPostsForRead(posts);
   }
 
   async update(id: string, dto: UpdatePostDto) {
@@ -62,7 +97,13 @@ export class PostsService {
 
   async findByHashtag(tag: string, currentUserId: string, cursor?: string, limit?: number) {
     const blockedUserIds = await this.blockRepo.getBlockedUserIds(currentUserId);
-    return this.postRepo.findByHashtag(tag, { blockedUserIds, cursor, limit, currentUserId });
+    const posts = await this.postRepo.findByHashtag(tag, {
+      blockedUserIds,
+      cursor,
+      limit,
+      currentUserId,
+    });
+    return mapPostsForRead(posts);
   }
 
   async getPopularHashtags(limit = 20) {

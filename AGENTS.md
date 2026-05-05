@@ -7,7 +7,7 @@ This repository is being reshaped into an agent-friendly engineering harness for
 Read in this order:
 
 1. `AGENTS.md`
-2. `tasks/` for the active initiative or assigned task
+2. `tasks/active/` for in-flight work, or `tasks/` to inspect the queue
 3. `design/` for technical design and architecture
 4. `docs/domain/` for business rules
 5. `docs/runbooks/environment-and-settings.md`
@@ -24,7 +24,7 @@ Read in this order:
 - Readability budget registry: `scripts/check-size-budgets.targets.json`
 - Operating rules and exceptions: `design/operating-rules/`
 - Large change framing: `design/initiatives/`
-- Execution state: `tasks/`
+- Execution state: `tasks/todo/`, `tasks/active/`, `tasks/archive/`
 - Operational guidance: `docs/runbooks/`
 - Runtime environment and settings index: `docs/runbooks/environment-and-settings.md`
 - Executable deployment/test automation: `.github/workflows/`, `scripts/`
@@ -52,7 +52,7 @@ Read in this order:
 - Every task also needs a PO review before commit, including docs-only work.
 - Multi-scope changes need the union of the relevant specialist reviewers, not just one reviewer.
 - Review requirements live in the task file. Do not treat a task as done until review and verify are both complete.
-- GitHub PR auto-fix commits are a branch-level automation exception. They may push to the PR head branch before human review, but they do not mark a task complete, do not satisfy task review gates, and do not bypass protected-branch merge rules.
+- Pull requests are optional collaboration artifacts. Do not treat PR state, comments, or approvals as the repository's completion truth.
 - Do not commit free-floating `TODO` or `FIXME` markers. Link them to a task as described in `docs/guides/todo-fixme-policy.md`.
 
 ## Coding Conventions
@@ -63,10 +63,9 @@ Read in this order:
 - If those docs are stricter than current implementation, keep the design truth and track the gap with tasks instead of weakening the convention.
 - Agent self-review guidance lives in `docs/guides/agent-self-review.md`.
 - Reviewer-role guidance lives in `docs/guides/reviewer-taxonomy.md`.
-- Dev PR AI review and Codex auto-fix workflow lives in `docs/guides/ai-pr-review-workflow.md`.
 - Commit message subjects are validated in the `commit-msg` hook, not the `pre-commit` hook.
 - Parallel split and merge workflow lives in `design/operating-rules/parallel-worktree-lifecycle.md` and `docs/guides/parallel-worktree-workflow.md`.
-- Self-hosted macOS runner setup lives in `docs/runbooks/self-hosted-runner-macos.md`.
+- Codex hook automation guidance lives in `docs/runbooks/codex-hook-review-automation.md`.
 
 ## Design Divergence Handling
 
@@ -74,32 +73,55 @@ Read in this order:
 - If code diverges from approved design, record the gap as a `Current Divergence` note or task note, then create a follow-up task.
 - The default resolution path is delegated agent work, not direct human patching outside the task system.
 - A commit message should describe change intent, not replace intent with a task ID. Put task tracking in trailers.
+- If a bad change has already been pushed or merged, preserve that signal with a follow-up `fix` or `revert` commit plus a linked task instead of silently replacing shared history.
 - If the current worktree already has unrelated dirty changes, preserve them and run new parallel work in dedicated git worktrees.
+- Dirty Codex worktrees should keep exactly one task under `tasks/active/` so Stop-hook review automation can deterministically decide ownership. This repository currently adopts that rule as an immediate hard stop, even if older active-task backlog has not yet been normalized.
 
 ## Task Workflow
 
 Task path pattern:
 
 ```text
-tasks/<initiative-slug>/{todo,active,archive}/<initiative-id>-<order>-<scope>-<slug>.md
+tasks/<status>/<initiative-id>-<order>-<scope>-<slug>.md
 ```
 
 Example:
 
 ```text
-tasks/I-0002-harness-verification/todo/I-0002-010-meta-eslint-repair.md
+tasks/todo/I-0002-010-meta-eslint-repair.md
 ```
 
 Lifecycle:
 
-1. Move a task from `todo/` to `active/` when work starts
-2. Update the task notes while working
-3. Run the self-review checklist in `docs/guides/agent-self-review.md`
-4. Run the task's `verify` commands
-5. Get the required specialist review
-6. Get PO review
-7. Move the task from `active/` to `archive/` in the same changeset that finalizes the work
-8. Commit only after review and verify gates are satisfied
+1. Create a task in `tasks/todo/`
+2. Move the task to `tasks/active/` when work starts
+3. Keep the matching initiative document's `Task Breakdown` in sync with the task path
+4. Update the task notes while working
+5. Run the self-review checklist in `docs/guides/agent-self-review.md`
+6. Run the task's `verify` commands
+7. Get the required specialist review
+8. Get PO review
+9. Move the task from `tasks/active/` to `tasks/archive/` in the same changeset that finalizes the work
+10. Commit only after review and verify gates are satisfied
+
+Active tasks also need machine-readable closeout state in frontmatter:
+
+- `execution_status`: `in_progress`, `blocked`, or `ready_for_archive`
+- `review_status`: `pending` or `approved`
+- `verification_status`: `pending`, `partial`, or `passed`
+- `closeout_blocker`: required when `execution_status: blocked`
+
+`bash scripts/check-active-task-closeout.sh` is the deterministic gate for this state. A task that is ready to archive must not remain in `tasks/active/`.
+
+For Codex-driven work, the repository expects review automation to kick in only when a dirty worktree has exactly one active task, and that task has `verification_status: passed`, `review_status: pending`, and a fully written `## 셀프 리뷰` section. Dirty worktrees with zero active tasks may exit normally; dirty worktrees with more than one active task are blocked by the repo-local Codex `Stop` hook under `.codex/hooks.json`.
+
+Initiative and ADR order:
+
+1. Create or update a matching file in `design/initiatives/` when the change is larger than one task
+2. Create tasks under `tasks/todo/` and link them from the initiative's `Task Breakdown`
+3. Update `design/` docs as current technical truth while implementing
+4. Update `docs/domain/` or `docs/runbooks/` when business or operational truth changes
+5. Add an ADR in `design/adr/` only when a technical choice needs a durable decision record
 
 ## Review Routing
 
@@ -110,11 +132,16 @@ Lifecycle:
 - `ci`, `repo`, `meta`, or deployment workflow changes: `harness-reviewer` + `po-reviewer`
 - cross-cutting changes: include every matching specialist reviewer plus `po-reviewer`
 
+Reviewer protocol files adopted by this repository live under `.codex/agents/`, `.agents/skills/`, `.claude/agents/`, and `.claude/skills/`. Reviewer routing and artifact truth lives in `reviewers/protocols.json`. The official OpenAI/Claude docs define the protocol locations; this repository adds an overlay contract for routing and review artifacts. When these protocol files exist, specialist review and PO review should use that overlay contract instead of ad hoc reviewer prompts.
+
+Codex Stop-hook review automation is configured through `.codex/config.toml` and `.codex/hooks.json`. The hook should continue the same Codex session into reviewer subagents; Git `pre-push` remains a fallback closeout gate, not the primary review trigger.
+
 ## Common Commands
 
 - Install dependencies: `pnpm install`
 - Run dev: `pnpm dev`
 - Build workspace: `pnpm build`
+- Create a new task by copying `tasks/_templates/TASK-TEMPLATE.md` into `tasks/todo/`
 - Run workspace lint: `pnpm lint`
 - Run explicit workspace typecheck: `pnpm typecheck`
 - Run local CI approximation: `pnpm ci:local`
@@ -128,7 +155,7 @@ Lifecycle:
 
 - Frontend is a SPA, not an active Next.js app, even though old `.next` artifacts exist.
 - Canonical workout units are meters, seconds, and seconds per kilometer.
-- Public health endpoint is `GET /health`, not `/api/v1/health`.
+- Canonical deploy verification health endpoint is `GET /api/v1/health`; legacy `GET /health` remains available for compatibility.
 - Start env/config lookup at `docs/runbooks/environment-and-settings.md`, then follow the linked runbooks and example env files instead of searching old plans.
 - Generated or build output must not be treated as editable source:
   - `apps/web/dist`
@@ -141,16 +168,7 @@ Lifecycle:
   - `packages/database/generated`
   - `apps/api/src/coverage`
 
-## Current Harness Initiatives
-
-- Foundation: `design/initiatives/I-0001-harness-foundation.md`
-- Verification: `design/initiatives/I-0002-harness-verification.md`
-- Review: `design/initiatives/I-0003-review-harness.md`
-- Truth model cleanup: `design/initiatives/I-0004-truth-model-cleanup.md`
-- Current-state design corpus: `design/initiatives/I-0005-current-state-design-corpus.md`
-- Guardrail hardening: `design/initiatives/I-0006-guardrail-hardening.md`
-- Readability hardening: `design/initiatives/I-0007-readability-hardening.md`
-
 ## Current Limitation
 
 - A few guardrail and readability items still rely on external exceptions or follow-up tasks. Check `design/operating-rules/exceptions.md`, `scripts/check-size-budgets.targets.json`, and run `harness-diagnostics` on demand when you need a fresh audit.
+- Initiative inventory lives under `design/initiatives/`; avoid duplicating a separate live list here.

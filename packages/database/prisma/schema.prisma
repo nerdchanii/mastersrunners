@@ -81,6 +81,10 @@ model User {
   workoutSharingDefault String    @default("FOLLOWERS") // PRIVATE, FOLLOWERS, PUBLIC
   region                String?
   subRegion             String?
+  pb5kSeconds           Int?
+  pb10kSeconds          Int?
+  pbHalfMarathonSeconds Int?
+  pbMarathonSeconds     Int?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   deletedAt             DateTime? // soft delete (탈퇴)
@@ -140,6 +144,7 @@ model User {
   // DM
   conversationParticipants ConversationParticipant[]
   sentMessages             Message[]                 @relation("sender")
+  feedbackSubmissions      FeedbackSubmission[]
 }
 
 model Workout {
@@ -198,6 +203,9 @@ model Workout {
   visibility String  @default("FOLLOWERS") // PRIVATE, FOLLOWERS, PUBLIC
   shoeId     String?
   shoe       Shoe?   @relation(fields: [shoeId], references: [id], onDelete: SetNull)
+  encodedPolyline    String?
+  detailPath         String?
+  detailFormatVersion Int?
 
   deletedAt DateTime?
   createdAt DateTime  @default(now())
@@ -205,8 +213,6 @@ model Workout {
 
   // Relations
   file             WorkoutFile?
-  route            WorkoutRoute?
-  laps             WorkoutLap[]
   photos           WorkoutPhoto[]
   workoutLikes     WorkoutLike[]
   workoutComments  WorkoutComment[]
@@ -224,8 +230,8 @@ model WorkoutFile {
   workoutId String  @unique
   workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
 
-  fileType           String // FIT, GPX, TCX
-  fileUrl            String // 파일 저장 경로 (S3/local)
+  fileType           String // FIT, GPX
+  sourcePath         String
   originalFileName   String
   fileSize           Int // bytes
   checksum           String? // SHA-256
@@ -236,43 +242,6 @@ model WorkoutFile {
   processError  String?
   processedAt   DateTime?
   createdAt     DateTime  @default(now())
-}
-
-model WorkoutRoute {
-  id        String  @id @default(cuid())
-  workoutId String  @unique
-  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
-
-  encodedPolyline String // Google Encoded Polyline (지도 표시용)
-  routeData       String // JSON: [{lat, lng, ele, time, hr, cad, pace}, ...]
-  boundNorth      Float
-  boundSouth      Float
-  boundEast       Float
-  boundWest       Float
-  totalPoints     Int
-
-  createdAt DateTime @default(now())
-}
-
-model WorkoutLap {
-  id        String  @id @default(cuid())
-  workoutId String
-  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
-
-  lapNumber     Int
-  trigger       String    @default("AUTO_KM") // AUTO_KM, AUTO_MILE, MANUAL, CUSTOM_DISTANCE
-  distance      Float // 구간 거리 (m)
-  duration      Int // 구간 시간 (초)
-  pace          Float // 구간 페이스 (초/km)
-  avgHeartRate  Int?
-  maxHeartRate  Int?
-  avgCadence    Int?
-  elevationGain Float?
-  elevationLoss Float?
-  calories      Int?
-  startedAt     DateTime?
-
-  @@unique([workoutId, lapNumber])
 }
 
 model WorkoutPhoto {
@@ -550,6 +519,7 @@ model CrewActivity {
 
   // 활동 타입 & 상태
   activityType  String    @default("OFFICIAL") // OFFICIAL, POP_UP
+  activityIcon  String?
   status        String    @default("SCHEDULED") // SCHEDULED, ACTIVE, COMPLETED, CANCELLED
   completedAt   DateTime?
 
@@ -804,6 +774,59 @@ model SyncLog {
 }
 
 // ============================================================================
+// Feedback Intake
+// ============================================================================
+
+model PlatformOperatorIdentity {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  revokedAt DateTime?
+
+  @@index([revokedAt, email])
+}
+
+model FeedbackSubmission {
+  id                     String                    @id @default(cuid())
+  userId                 String
+  user                   User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category               String // BUG, IMPROVEMENT, QUESTION, OTHER
+  title                  String
+  description            String
+  currentPath            String?
+  userAgent              String?
+  status                 String                    @default("NEW") // NEW, IN_REVIEW, PLANNED, RESOLVED, DISMISSED
+  triageNote             String?
+  reviewedAt             DateTime?
+  reviewedByOperatorEmail String?
+  handoffNote            String?
+  handoffUpdatedAt       DateTime?
+  handoffUpdatedByOperatorEmail String?
+  createdAt              DateTime                  @default(now())
+  updatedAt              DateTime                  @updatedAt
+
+  followUpReferences FeedbackFollowUpReference[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+}
+
+model FeedbackFollowUpReference {
+  id                     String             @id @default(cuid())
+  submissionId           String
+  submission             FeedbackSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  kind                   String // TASK, INITIATIVE, ISSUE, LINK
+  label                  String
+  target                 String
+  createdAt              DateTime           @default(now())
+  createdByOperatorEmail String
+
+  @@index([submissionId, createdAt(sort: Desc)])
+}
+
+// ============================================================================
 // Notification
 // ============================================================================
 
@@ -849,6 +872,7 @@ model ConversationParticipant {
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   lastReadAt     DateTime?
+  leftAt         DateTime?
   joinedAt       DateTime     @default(now())
 
   @@id([conversationId, userId])

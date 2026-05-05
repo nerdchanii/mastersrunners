@@ -47,10 +47,10 @@ Several high-traffic files are too large and carry too much mixed responsibility
 
 ## Task Breakdown
 
-- `tasks/I-0007-readability-hardening/archive/I-0007-010-web-route-batch-a.md`
-- `tasks/I-0007-readability-hardening/archive/I-0007-020-web-route-batch-b.md`
-- `tasks/I-0007-readability-hardening/archive/I-0007-030-api-crews-service-decomposition.md`
-- `tasks/I-0007-readability-hardening/archive/I-0007-040-meta-size-budget-stop-rule.md`
+- `tasks/archive/I-0007-010-web-route-batch-a.md`
+- `tasks/archive/I-0007-020-web-route-batch-b.md`
+- `tasks/archive/I-0007-030-api-crews-service-decomposition.md`
+- `tasks/archive/I-0007-040-meta-size-budget-stop-rule.md`
 
 ## Success Criteria
 

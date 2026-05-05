@@ -1,6 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 
+import { StructuredLoggerService } from "../common/logging/structured-logger.service.js";
 import { DatabaseService } from "../database/database.service.js";
 
 import { FitParserService } from "./parsers/fit-parser.service.js";
@@ -13,6 +14,7 @@ const mockStorageAdapter = {
   getDownloadUrl: jest.fn(),
   getPublicUrl: jest.fn(),
   downloadFile: jest.fn(),
+  saveFile: jest.fn(),
   deleteFile: jest.fn(),
 };
 
@@ -30,6 +32,10 @@ const mockDatabaseService = {
   },
 };
 
+const mockLogger = {
+  logEvent: jest.fn(),
+};
+
 describe("UploadsService", () => {
   let service: UploadsService;
 
@@ -43,6 +49,7 @@ describe("UploadsService", () => {
         { provide: FitParserService, useValue: mockFitParser },
         { provide: GpxParserService, useValue: mockGpxParser },
         { provide: DatabaseService, useValue: mockDatabaseService },
+        { provide: StructuredLoggerService, useValue: mockLogger },
       ],
     }).compile();
 
@@ -69,6 +76,60 @@ describe("UploadsService", () => {
       const result = await service.getUploadUrl("k", "image/png");
       expect(result).toEqual(expected);
       expect(mockStorageAdapter.getUploadUrl).toHaveBeenCalledWith("k", "image/png", 3600);
+    });
+  });
+
+  describe("createPublicAssetUploadTarget", () => {
+    it("should generate a public asset key and keep the publicUrl response", async () => {
+      mockStorageAdapter.getUploadUrl.mockResolvedValue({
+        uploadUrl: "http://upload",
+        key: "posts/user123/123-test.jpg",
+        publicUrl: "http://cdn/posts/user123/123-test.jpg",
+      });
+
+      const result = await service.createPublicAssetUploadTarget(
+        "user123",
+        "posts",
+        "test.jpg",
+        "image/jpeg",
+      );
+
+      expect(result).toEqual({
+        uploadUrl: "http://upload",
+        key: "posts/user123/123-test.jpg",
+        publicUrl: "http://cdn/posts/user123/123-test.jpg",
+      });
+      expect(mockStorageAdapter.getUploadUrl).toHaveBeenCalledWith(
+        expect.stringMatching(/^posts\/user123\/\d+-test\.jpg$/),
+        "image/jpeg",
+        3600,
+      );
+    });
+  });
+
+  describe("createWorkoutSourceUploadTarget", () => {
+    it("should return uploadUrl and key only for workout sources", async () => {
+      mockStorageAdapter.getUploadUrl.mockResolvedValue({
+        uploadUrl: "http://upload",
+        key: "workouts/user123/123-run.fit",
+        publicUrl: "http://cdn/workouts/user123/123-run.fit",
+      });
+
+      const result = await service.createWorkoutSourceUploadTarget(
+        "user123",
+        "run.fit",
+        "application/octet-stream",
+      );
+
+      expect(result).toEqual({
+        uploadUrl: "http://upload",
+        key: expect.stringMatching(/^workouts\/user123\/\d+-run\.fit$/),
+      });
+      expect(mockStorageAdapter.getUploadUrl).toHaveBeenCalledWith(
+        expect.stringMatching(/^workouts\/user123\/\d+-run\.fit$/),
+        "application/octet-stream",
+        3600,
+      );
     });
   });
 
@@ -124,28 +185,39 @@ describe("UploadsService", () => {
         { lat: 37.51, lon: 127.01, timestamp: new Date("2026-01-01T08:25:00Z") },
         { lat: 37.5, lon: 127.0, timestamp: new Date("2026-01-01T08:50:00Z") },
       ],
+      laps: [
+        {
+          lapNumber: 1,
+          startTime: new Date("2026-01-01T08:00:00Z"),
+          distance: 1000,
+          duration: 300,
+          avgPace: 300,
+          avgHeartRate: 148,
+          maxHeartRate: 155,
+          avgCadence: 170,
+          calories: 80,
+        },
+      ],
     };
 
-    it("should parse FIT file and create workout with route", async () => {
+    it("stores canonical detail fields and detail blob without legacy route or lap writes", async () => {
       const mockBuffer = Buffer.from("fake-fit-data");
       mockStorageAdapter.downloadFile.mockResolvedValue({
         buffer: mockBuffer,
         size: mockBuffer.length,
       });
-      mockStorageAdapter.getPublicUrl.mockReturnValue(
-        "https://cdn.example.com/files/user-1/12345-run.fit",
-      );
+      mockStorageAdapter.saveFile.mockResolvedValue(undefined);
 
       mockFitParser.parse.mockResolvedValue(mockParsedData);
 
       const mockWorkout = { id: "workout-1", ...mockParsedData };
       const mockWorkoutFile = { id: "file-1", workoutId: "workout-1" };
-
+      const workoutCreate = jest.fn().mockResolvedValue(mockWorkout);
+      const workoutFileCreate = jest.fn().mockResolvedValue(mockWorkoutFile);
       mockDatabaseService.prisma.$transaction.mockImplementation(async (cb: any) => {
         const tx = {
-          workout: { create: jest.fn().mockResolvedValue(mockWorkout) },
-          workoutFile: { create: jest.fn().mockResolvedValue(mockWorkoutFile) },
-          workoutRoute: { create: jest.fn().mockResolvedValue({ id: "route-1" }) },
+          workout: { create: workoutCreate },
+          workoutFile: { create: workoutFileCreate },
         };
         return cb(tx);
       });
@@ -153,7 +225,39 @@ describe("UploadsService", () => {
       const result = await service.parseAndCreateWorkout(userId, baseInput);
 
       expect(mockFitParser.parse).toHaveBeenCalled();
+      expect(mockStorageAdapter.deleteFile).not.toHaveBeenCalled();
+      expect(mockStorageAdapter.saveFile).toHaveBeenCalledWith(
+        expect.stringMatching(/^workout-details\/user-1\/\d+-run\.detail\.v1\.json$/),
+        expect.any(Buffer),
+        "application/json",
+      );
+      const [detailPath, detailBuffer] = mockStorageAdapter.saveFile.mock.calls[0];
+      const detailPayload = JSON.parse((detailBuffer as Buffer).toString("utf-8"));
+      expect(detailPayload).toMatchObject({
+        version: 1,
+        track: expect.arrayContaining([expect.objectContaining({ lat: 37.5, lon: 127.0 })]),
+        laps: [expect.objectContaining({ lapNumber: 1, distance: 1000 })],
+        metrics: expect.objectContaining({
+          maxHeartRate: 180,
+          maxCadence: 185,
+          hasGps: true,
+          firstPoint: expect.objectContaining({ lat: 37.5, lon: 127.0 }),
+          lastPoint: expect.objectContaining({ lat: 37.5, lon: 127.0 }),
+        }),
+      });
       expect(mockDatabaseService.prisma.$transaction).toHaveBeenCalled();
+      expect(workoutCreate).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          detailPath,
+          detailFormatVersion: 1,
+          encodedPolyline: expect.any(String),
+        }),
+      });
+      expect(workoutFileCreate).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          sourcePath: baseInput.fileKey,
+        }),
+      });
       expect(result.workout).toBeDefined();
       expect(result.workoutFile).toBeDefined();
     });
@@ -170,9 +274,7 @@ describe("UploadsService", () => {
         buffer: Buffer.from("<gpx>...</gpx>"),
         size: 100,
       });
-      mockStorageAdapter.getPublicUrl.mockReturnValue(
-        "https://cdn.example.com/files/user-1/run.gpx",
-      );
+      mockStorageAdapter.saveFile.mockResolvedValue(undefined);
 
       mockGpxParser.parse.mockResolvedValue(mockParsedData);
 
@@ -181,7 +283,6 @@ describe("UploadsService", () => {
         const tx = {
           workout: { create: jest.fn().mockResolvedValue(mockWorkout) },
           workoutFile: { create: jest.fn().mockResolvedValue({ id: "file-2" }) },
-          workoutRoute: { create: jest.fn().mockResolvedValue({ id: "route-2" }) },
         };
         return cb(tx);
       });
@@ -189,6 +290,8 @@ describe("UploadsService", () => {
       const result = await service.parseAndCreateWorkout(userId, gpxInput);
 
       expect(mockGpxParser.parse).toHaveBeenCalled();
+      expect(mockStorageAdapter.deleteFile).not.toHaveBeenCalled();
+      expect(mockStorageAdapter.saveFile).toHaveBeenCalled();
       expect(result.workout).toBeDefined();
     });
 
@@ -196,18 +299,17 @@ describe("UploadsService", () => {
       const noGpsData = { ...mockParsedData, gpsTrack: undefined };
 
       mockStorageAdapter.downloadFile.mockResolvedValue({ buffer: Buffer.from("data"), size: 4 });
-      mockStorageAdapter.getPublicUrl.mockReturnValue(
-        "https://cdn.example.com/files/user-1/12345-run.fit",
-      );
+      mockStorageAdapter.saveFile.mockResolvedValue(undefined);
 
       mockFitParser.parse.mockResolvedValue(noGpsData);
 
       const mockWorkout = { id: "workout-3" };
+      const workoutCreate = jest.fn().mockResolvedValue(mockWorkout);
+      const workoutFileCreate = jest.fn().mockResolvedValue({ id: "file-3" });
       mockDatabaseService.prisma.$transaction.mockImplementation(async (cb: any) => {
         const tx = {
-          workout: { create: jest.fn().mockResolvedValue(mockWorkout) },
-          workoutFile: { create: jest.fn().mockResolvedValue({ id: "file-3" }) },
-          workoutRoute: { create: jest.fn() },
+          workout: { create: workoutCreate },
+          workoutFile: { create: workoutFileCreate },
         };
         return cb(tx);
       });
@@ -215,11 +317,26 @@ describe("UploadsService", () => {
       const result = await service.parseAndCreateWorkout(userId, baseInput);
 
       expect(result.workout).toBeDefined();
+      expect(mockStorageAdapter.deleteFile).not.toHaveBeenCalled();
+      expect(mockStorageAdapter.saveFile).toHaveBeenCalled();
+      expect(workoutCreate).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          detailPath: expect.stringMatching(/^workout-details\/user-1\/\d+-run\.detail\.v1\.json$/),
+          detailFormatVersion: 1,
+          encodedPolyline: null,
+        }),
+      });
+      expect(workoutFileCreate).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          sourcePath: baseInput.fileKey,
+        }),
+      });
       expect(mockDatabaseService.prisma.$transaction).toHaveBeenCalled();
     });
 
     it("should handle parse failure gracefully", async () => {
       mockStorageAdapter.downloadFile.mockResolvedValue({ buffer: Buffer.from("bad"), size: 3 });
+      mockStorageAdapter.deleteFile.mockResolvedValue(undefined);
 
       mockFitParser.parse.mockRejectedValue(new Error("Invalid FIT file"));
 
@@ -228,6 +345,88 @@ describe("UploadsService", () => {
       expect(result.workout).toBeNull();
       expect(result.workoutFile).toBeNull();
       expect(result.error).toBe("Invalid FIT file");
+      expect(mockStorageAdapter.deleteFile).toHaveBeenCalledWith(baseInput.fileKey);
+      expect(mockLogger.logEvent).not.toHaveBeenCalled();
+    });
+
+    it("should preserve parse error details when raw source cleanup fails", async () => {
+      mockStorageAdapter.downloadFile.mockResolvedValue({ buffer: Buffer.from("bad"), size: 3 });
+      mockStorageAdapter.deleteFile.mockRejectedValue(new Error("cleanup failed"));
+      mockFitParser.parse.mockRejectedValue(new Error("Invalid FIT file"));
+
+      const result = await service.parseAndCreateWorkout(userId, baseInput);
+
+      expect(result.workout).toBeNull();
+      expect(result.workoutFile).toBeNull();
+      expect(result.error).toBe("Invalid FIT file");
+      expect(mockStorageAdapter.deleteFile).toHaveBeenCalledWith(baseInput.fileKey);
+      expect(mockLogger.logEvent).toHaveBeenCalledWith(
+        "warn",
+        "Failed to discard transient workout source",
+        "UploadsService",
+        expect.objectContaining({
+          fileKey: baseInput.fileKey,
+          error: expect.objectContaining({ message: "cleanup failed" }),
+        }),
+      );
+    });
+
+    it("should retain the raw source and canonical sourcePath after a successful parse", async () => {
+      mockStorageAdapter.downloadFile.mockResolvedValue({
+        buffer: Buffer.from("fake-fit-data"),
+        size: 12,
+      });
+      mockStorageAdapter.saveFile.mockResolvedValue(undefined);
+      mockFitParser.parse.mockResolvedValue(mockParsedData);
+
+      const mockWorkout = { id: "workout-4", ...mockParsedData };
+      const mockWorkoutFile = { id: "file-4", workoutId: "workout-4" };
+      const workoutFileCreate = jest.fn().mockResolvedValue(mockWorkoutFile);
+      mockDatabaseService.prisma.$transaction.mockImplementation(async (cb: any) => {
+        const tx = {
+          workout: { create: jest.fn().mockResolvedValue(mockWorkout) },
+          workoutFile: { create: workoutFileCreate },
+        };
+        return cb(tx);
+      });
+
+      const result = await service.parseAndCreateWorkout(userId, baseInput);
+
+      expect(result.workout).toEqual(mockWorkout);
+      expect(result.workoutFile).toEqual(mockWorkoutFile);
+      expect(mockStorageAdapter.deleteFile).not.toHaveBeenCalled();
+      expect(workoutFileCreate).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          sourcePath: baseInput.fileKey,
+        }),
+      });
+      expect(mockDatabaseService.prisma.$transaction).toHaveBeenCalled();
+      expect(mockLogger.logEvent).not.toHaveBeenCalled();
+    });
+
+    it("should clean up the persisted detail blob if the database transaction fails", async () => {
+      const mockBuffer = Buffer.from("fake-fit-data");
+      mockStorageAdapter.downloadFile.mockResolvedValue({
+        buffer: mockBuffer,
+        size: mockBuffer.length,
+      });
+      mockStorageAdapter.saveFile.mockResolvedValue(undefined);
+      mockStorageAdapter.deleteFile.mockResolvedValue(undefined);
+      mockFitParser.parse.mockResolvedValue(mockParsedData);
+
+      mockDatabaseService.prisma.$transaction.mockImplementation(async (cb: any) => {
+        const tx = {
+          workout: { create: jest.fn().mockRejectedValue(new Error("db failed")) },
+          workoutFile: { create: jest.fn() },
+        };
+        return cb(tx);
+      });
+
+      await expect(service.parseAndCreateWorkout(userId, baseInput)).rejects.toThrow("db failed");
+
+      const [detailPath] = mockStorageAdapter.saveFile.mock.calls[0];
+      expect(mockStorageAdapter.deleteFile).toHaveBeenCalledWith(detailPath);
+      expect(mockStorageAdapter.deleteFile).not.toHaveBeenCalledWith(baseInput.fileKey);
     });
 
     it("should throw BadRequestException for unsupported file type", async () => {

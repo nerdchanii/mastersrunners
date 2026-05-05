@@ -10,6 +10,14 @@ interface ProfileApiResponse {
     profileImage: string | null;
     backgroundImage: string | null;
     bio: string | null;
+    isPrivate: boolean;
+    workoutSharingDefault: "PRIVATE" | "FOLLOWERS" | "PUBLIC";
+    region: string | null;
+    subRegion: string | null;
+    pb5kSeconds: number | null;
+    pb10kSeconds: number | null;
+    pbHalfMarathonSeconds: number | null;
+    pbMarathonSeconds: number | null;
     createdAt: string;
   };
   stats: {
@@ -25,9 +33,17 @@ interface ProfileApiResponse {
 
 interface UpdateProfileDto {
   name?: string;
-  bio?: string;
-  profileImage?: string;
-  backgroundImage?: string;
+  bio?: string | null;
+  profileImage?: string | null;
+  backgroundImage?: string | null;
+  region?: string | null;
+  subRegion?: string | null;
+  isPrivate?: boolean;
+  workoutSharingDefault?: "PRIVATE" | "FOLLOWERS" | "PUBLIC";
+  pb5kSeconds?: number | null;
+  pb10kSeconds?: number | null;
+  pbHalfMarathonSeconds?: number | null;
+  pbMarathonSeconds?: number | null;
 }
 
 export const profileKeys = {

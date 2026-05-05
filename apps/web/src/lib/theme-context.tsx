@@ -1,6 +1,7 @@
+import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark" | "system";
+export type Theme = "light" | "dark" | "system";
 
 interface ThemeContextValue {
   theme: Theme;
@@ -16,15 +17,26 @@ function getSystemTheme(): "light" | "dark" {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+interface ThemeProviderProps {
+  children: ReactNode;
+  defaultTheme?: Theme;
+  persist?: boolean;
+}
+
+export function ThemeProvider({ children, defaultTheme, persist = true }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => {
+    if (!persist) {
+      return defaultTheme ?? "system";
+    }
+
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === "light" || stored === "dark" || stored === "system") return stored;
     } catch {
       // Ignore storage access failures and fall back to system theme.
     }
-    return "system";
+
+    return defaultTheme ?? "system";
   });
 
   const resolvedTheme: "light" | "dark" = theme === "system" ? getSystemTheme() : theme;
@@ -48,6 +60,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme]);
 
   const setTheme = (next: Theme) => {
+    if (!persist) {
+      setThemeState(next);
+      return;
+    }
+
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch {

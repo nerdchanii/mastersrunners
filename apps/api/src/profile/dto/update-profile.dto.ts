@@ -1,10 +1,12 @@
 import {
   IsBoolean,
   IsIn,
+  IsInt,
   IsOptional,
   IsString,
   IsUrl,
   MaxLength,
+  Min,
   MinLength,
 } from "class-validator";
 
@@ -18,17 +20,27 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   @MaxLength(300)
-  bio?: string;
+  bio?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  region?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  subRegion?: string | null;
 
   @IsOptional()
   @IsString()
   @IsUrl({ require_tld: false })
-  profileImage?: string;
+  profileImage?: string | null;
 
   @IsOptional()
   @IsString()
   @IsUrl({ require_tld: false })
-  backgroundImage?: string;
+  backgroundImage?: string | null;
 
   @IsOptional()
   @IsBoolean()
@@ -38,4 +50,24 @@ export class UpdateProfileDto {
   @IsString()
   @IsIn(["PRIVATE", "FOLLOWERS", "PUBLIC"])
   workoutSharingDefault?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  pb5kSeconds?: number | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  pb10kSeconds?: number | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  pbHalfMarathonSeconds?: number | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  pbMarathonSeconds?: number | null;
 }

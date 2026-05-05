@@ -1,0 +1,25 @@
+{
+  "task_id": "I-0016-110",
+  "reviewer": "frontend-reviewer",
+  "decision": "approved",
+  "tool": "codex-subagent-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    "reviewers/protocols.json",
+    ".codex/agents/frontend-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/frontend-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/frontend-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/frontend-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-04-09T07:50:50Z",
+  "findings": [],
+  "residual_risks": [
+    "Public-profile crew tabs can still fall back to `/crews/:id/profile` `recentPosts` previews when the viewer cannot read the full member-only crew posts feed, so feed depth may differ by permission.",
+    "FeedCard/PostFeedCard reuse now matches the target surface more closely, but there is still no dedicated automated coverage around `fetchCrewPostsFromCrews()` and its permission-based fallback path.",
+    "Own-profile workouts now receive the real runner identity again, but feed-only metadata still depends on what the `/workouts?userId=` contract returns."
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "task_id": "I-0016-080",
+  "reviewer": "ui-ux-reviewer",
+  "decision": "approved",
+  "tool": "codex-manual-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/ui-ux-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/ui-ux-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/ui-ux-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/ui-ux-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-04-05T00:00:00+09:00",
+  "findings": [],
+  "residual_risks": [
+    "PB 노출은 다시 복구됐지만, 추후 프로필 헤더에 지역/소개/기록을 더 얹을 때는 다시 카드형 대시보드처럼 돌아가지 않도록 주의가 필요하다."
+  ]
+}

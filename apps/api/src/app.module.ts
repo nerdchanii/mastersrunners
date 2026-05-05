@@ -1,6 +1,3 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, Reflector } from "@nestjs/core";
@@ -17,44 +14,38 @@ import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard.js";
 import { BlockModule } from "./block/block.module.js";
 import { ChallengesModule } from "./challenges/challenges.module.js";
 import { AllExceptionsFilter } from "./common/filters/http-exception.filter.js";
+import { FeatureFlagGuard } from "./common/guards/feature-flag.guard.js";
 import { RequestLoggingInterceptor } from "./common/logging/request-logging.interceptor.js";
 import { StructuredLoggerService } from "./common/logging/structured-logger.service.js";
 import { MonitoringService } from "./common/monitoring/monitoring.service.js";
+import { FeatureFlagsService } from "./config/feature-flags.service.js";
+import { runtimeEnvFilePaths } from "./config/load-env.js";
+import { PublicConfigController } from "./config/public-config.controller.js";
 import { ConversationsModule } from "./conversations/conversations.module.js";
 import { CrewBoardsModule } from "./crew-boards/crew-boards.module.js";
 import { CrewsModule } from "./crews/crews.module.js";
 import { DatabaseModule } from "./database/database.module.js";
 import { EventsModule } from "./events/events.module.js";
 import { FeedModule } from "./feed/feed.module.js";
+import { FeedbackModule } from "./feedback/feedback.module.js";
 import { FollowModule } from "./follow/follow.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { NotificationsModule } from "./notifications/notifications.module.js";
 import { PostSocialModule } from "./post-social/post-social.module.js";
 import { PostsModule } from "./posts/posts.module.js";
 import { ProfileModule } from "./profile/profile.module.js";
+import { RealtimeModule } from "./realtime/realtime.module.js";
 import { ShoesModule } from "./shoes/shoes.module.js";
 import { UploadsModule } from "./uploads/uploads.module.js";
 import { WorkoutSocialModule } from "./workout-social/workout-social.module.js";
 import { WorkoutTypesModule } from "./workout-types/workout-types.module.js";
 import { WorkoutsModule } from "./workouts/workouts.module.js";
-import { AppController } from "./app.controller.js";
-import { AppService } from "./app.service.js";
-
-const envCandidates = [
-  resolve(process.cwd(), ".env"),
-  resolve(process.cwd(), ".env.local"),
-  resolve(process.cwd(), "../../.env"),
-  resolve(process.cwd(), "../../../.env"),
-  "/app/.env",
-];
-
-const envFilePath = envCandidates.filter((path) => existsSync(path));
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      ...(envFilePath.length ? { envFilePath } : {}),
+      ...(runtimeEnvFilePaths.length ? { envFilePath: runtimeEnvFilePaths } : {}),
     }),
     DatabaseModule,
     AuthModule,
@@ -71,21 +62,27 @@ const envFilePath = envCandidates.filter((path) => existsSync(path));
     CrewBoardsModule,
     ChallengesModule,
     EventsModule,
+    FeedbackModule,
     UploadsModule,
     ProfileModule,
     HealthModule,
+    RealtimeModule,
     ConversationsModule,
     NotificationsModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
   ],
-  controllers: [AppController],
+  controllers: [PublicConfigController],
   providers: [
-    AppService,
     StructuredLoggerService,
     MonitoringService,
+    FeatureFlagsService,
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: FeatureFlagGuard,
     },
     {
       provide: APP_GUARD,

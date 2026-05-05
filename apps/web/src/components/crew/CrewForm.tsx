@@ -1,48 +1,5 @@
-import { useState } from "react";
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-
-const KOREA_REGIONS = [
-  "서울특별시",
-  "부산광역시",
-  "대구광역시",
-  "인천광역시",
-  "광주광역시",
-  "대전광역시",
-  "울산광역시",
-  "세종특별자치시",
-  "경기도",
-  "강원특별자치도",
-  "충청북도",
-  "충청남도",
-  "전북특별자치도",
-  "전라남도",
-  "경상북도",
-  "경상남도",
-  "제주특별자치도",
-];
-
-interface CrewFormData {
-  name: string;
-  description: string;
-  isPublic: boolean;
-  maxMembers: string;
-  location: string;
-  region: string;
-  subRegion: string;
-}
+import CrewCreateForm from "./CrewCreateForm";
+import CrewEditForm from "./CrewEditForm";
 
 interface CrewFormProps {
   initialValues?: {
@@ -53,10 +10,14 @@ interface CrewFormProps {
     location?: string | null;
     region?: string | null;
     subRegion?: string | null;
+    profileImageUrl?: string | null;
+    coverImageUrl?: string | null;
   };
   onSubmit: (data: {
     name: string;
     description?: string;
+    profileImageUrl?: string | null;
+    coverImageUrl?: string | null;
     isPublic: boolean;
     maxMembers?: number;
     location?: string;
@@ -75,194 +36,24 @@ export default function CrewForm({
   submitLabel,
   isSubmitting,
 }: CrewFormProps) {
-  const [formData, setFormData] = useState<CrewFormData>({
-    name: initialValues?.name || "",
-    description: initialValues?.description || "",
-    isPublic: initialValues?.isPublic ?? true,
-    maxMembers: initialValues?.maxMembers?.toString() || "",
-    location: initialValues?.location || "",
-    region: initialValues?.region || "",
-    subRegion: initialValues?.subRegion || "",
-  });
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!formData.name.trim()) {
-      setError("크루 이름을 입력해주세요.");
-      return;
-    }
-    if (formData.name.trim().length < 2) {
-      setError("크루 이름은 2자 이상이어야 합니다.");
-      return;
-    }
-    if (formData.name.trim().length > 50) {
-      setError("크루 이름은 50자 이하여야 합니다.");
-      return;
-    }
-    if (formData.description.length > 500) {
-      setError("설명은 500자 이하여야 합니다.");
-      return;
-    }
-
-    const maxMembersNum = formData.maxMembers ? parseInt(formData.maxMembers, 10) : undefined;
-    if (maxMembersNum !== undefined && (isNaN(maxMembersNum) || maxMembersNum < 2)) {
-      setError("최대 인원은 2명 이상이어야 합니다.");
-      return;
-    }
-
-    try {
-      await onSubmit({
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        isPublic: formData.isPublic,
-        maxMembers: maxMembersNum,
-        location: formData.location.trim() || undefined,
-        region: formData.region || undefined,
-        subRegion: formData.subRegion.trim() || undefined,
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
-    }
-  };
+  if (initialValues) {
+    return (
+      <CrewEditForm
+        initialValues={initialValues}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+        submitLabel={submitLabel}
+        isSubmitting={isSubmitting}
+      />
+    );
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {error && (
-        <Card className="border-destructive/50 bg-destructive/10">
-          <CardContent className="pt-4 pb-4">
-            <p className="text-sm font-medium text-destructive">{error}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardContent className="pt-6 space-y-5">
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="crew-name">
-              크루 이름 <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="crew-name"
-              value={formData.name}
-              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder="크루 이름을 입력하세요"
-              maxLength={50}
-            />
-            <p className="text-xs text-muted-foreground text-right">{formData.name.length} / 50</p>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="crew-description">설명</Label>
-            <Textarea
-              id="crew-description"
-              value={formData.description}
-              onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-              rows={4}
-              placeholder="크루에 대한 설명을 입력하세요"
-              maxLength={500}
-            />
-            <p className="text-xs text-muted-foreground text-right">
-              {formData.description.length} / 500
-            </p>
-          </div>
-
-          {/* Public Toggle */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="crew-public">공개 설정</Label>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {formData.isPublic
-                    ? "누구나 크루를 검색하고 바로 가입할 수 있습니다."
-                    : "관리자 승인 후 가입할 수 있습니다."}
-                </p>
-              </div>
-              <Switch
-                id="crew-public"
-                checked={formData.isPublic}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({ ...prev, isPublic: checked }))
-                }
-              />
-            </div>
-          </div>
-
-          {/* Max Members */}
-          <div className="space-y-2">
-            <Label htmlFor="max-members">최대 인원 (선택)</Label>
-            <Input
-              type="number"
-              id="max-members"
-              value={formData.maxMembers}
-              onChange={(e) => setFormData((prev) => ({ ...prev, maxMembers: e.target.value }))}
-              placeholder="제한 없음"
-              min={2}
-            />
-            <p className="text-xs text-muted-foreground">비워두면 인원 제한이 없습니다.</p>
-          </div>
-
-          {/* Location */}
-          <div className="space-y-2">
-            <Label htmlFor="crew-location">활동 지역 (선택)</Label>
-            <Input
-              id="crew-location"
-              value={formData.location}
-              onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
-              placeholder="활동 지역 (예: 서울 한강)"
-            />
-          </div>
-
-          {/* Region */}
-          <div className="space-y-2">
-            <Label htmlFor="crew-region">지역 (선택)</Label>
-            <Select
-              value={formData.region}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, region: value, subRegion: "" }))
-              }
-            >
-              <SelectTrigger id="crew-region">
-                <SelectValue placeholder="지역 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                {KOREA_REGIONS.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {r}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Sub-Region */}
-          {formData.region && (
-            <div className="space-y-2">
-              <Label htmlFor="crew-subregion">세부 지역 (선택)</Label>
-              <Input
-                id="crew-subregion"
-                value={formData.subRegion}
-                onChange={(e) => setFormData((prev) => ({ ...prev, subRegion: e.target.value }))}
-                placeholder="세부 지역 (예: 마포구)"
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Actions */}
-      <div className="flex justify-end gap-3">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-          취소
-        </Button>
-        <Button type="submit" disabled={isSubmitting || !formData.name.trim()}>
-          {isSubmitting ? "처리 중..." : submitLabel}
-        </Button>
-      </div>
-    </form>
+    <CrewCreateForm
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+      submitLabel={submitLabel}
+      isSubmitting={isSubmitting}
+    />
   );
 }

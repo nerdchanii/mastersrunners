@@ -30,8 +30,8 @@ The repository has domain docs and workflows, but no standard agent entry point,
 
 ## Task Breakdown
 
-- Archived scaffold work in `tasks/I-0001-harness-foundation/archive/`
-- Remaining root-doc sync work in `tasks/I-0001-harness-foundation/todo/`
+- Archived scaffold work in `tasks/archive/`
+- Remaining root-doc sync work in `tasks/todo/`
 
 ## Success Criteria
 

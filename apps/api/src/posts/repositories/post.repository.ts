@@ -27,6 +27,27 @@ interface FindByUserOptions {
   limit?: number;
 }
 
+const postWorkoutSelect = {
+  id: true,
+  title: true,
+  distance: true,
+  duration: true,
+  pace: true,
+  date: true,
+  encodedPolyline: true,
+  elevationGain: true,
+  avgHeartRate: true,
+  avgCadence: true,
+  calories: true,
+  workoutType: {
+    select: {
+      id: true,
+      name: true,
+      category: true,
+    },
+  },
+} as const;
+
 @Injectable()
 export class PostRepository {
   constructor(private readonly db: DatabaseService) {}
@@ -52,9 +73,7 @@ export class PostRepository {
         workouts: {
           include: {
             workout: {
-              include: {
-                workoutType: true,
-              },
+              select: postWorkoutSelect,
             },
           },
         },
@@ -90,11 +109,32 @@ export class PostRepository {
   async findByUser(userId: string, options?: FindByUserOptions & { currentUserId?: string }) {
     const { cursor, limit = 20 } = options || {};
     const currentUserId = options?.currentUserId;
+    const visibilityWhere = !currentUserId
+      ? { visibility: "PUBLIC" as const }
+      : currentUserId === userId
+        ? {}
+        : {
+            OR: [
+              { visibility: "PUBLIC" as const },
+              {
+                visibility: "FOLLOWERS" as const,
+                user: {
+                  followers: {
+                    some: {
+                      followerId: currentUserId,
+                      status: "ACCEPTED" as const,
+                    },
+                  },
+                },
+              },
+            ],
+          };
 
     const posts = await this.db.prisma.post.findMany({
       where: {
         userId,
         deletedAt: null,
+        ...visibilityWhere,
       },
       include: {
         user: {
@@ -110,9 +150,7 @@ export class PostRepository {
         workouts: {
           include: {
             workout: {
-              include: {
-                workoutType: true,
-              },
+              select: postWorkoutSelect,
             },
           },
         },
@@ -175,9 +213,7 @@ export class PostRepository {
         workouts: {
           include: {
             workout: {
-              include: {
-                workoutType: true,
-              },
+              select: postWorkoutSelect,
             },
           },
         },
@@ -270,7 +306,11 @@ export class PostRepository {
         },
         images: { orderBy: { sortOrder: "asc" } },
         workouts: {
-          include: { workout: { include: { workoutType: true } } },
+          include: {
+            workout: {
+              select: postWorkoutSelect,
+            },
+          },
         },
         _count: { select: { likes: true, comments: true } },
         ...(currentUserId

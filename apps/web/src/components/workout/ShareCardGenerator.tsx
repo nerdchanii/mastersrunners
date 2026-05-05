@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
-import { decodePolyline, normalizePath } from "@/lib/polyline";
 
 type ColorPreset = "dark" | "blue" | "green" | "orange";
 
@@ -22,7 +21,6 @@ interface ShareCardData {
   pace: number;
   date: string;
   userName: string;
-  encodedPolyline?: string;
 }
 
 interface ShareCardGeneratorProps {
@@ -105,59 +103,6 @@ function drawCard(canvas: HTMLCanvasElement, data: ShareCardData, preset: ColorP
   ctx.fillStyle = "rgba(255,255,255,0.3)";
   ctx.font = "12px -apple-system, sans-serif";
   ctx.fillText("Masters Runners", 32, CARD_H - 28);
-
-  // Route minimap (right side)
-  if (data.encodedPolyline) {
-    try {
-      const coords = decodePolyline(data.encodedPolyline);
-      if (coords.length >= 2) {
-        const mapSize = 180;
-        const mapPad = 12;
-        const mapX = CARD_W - mapSize - 32;
-        const mapY = (CARD_H - mapSize) / 2;
-
-        // Map background
-        ctx.fillStyle = "rgba(255,255,255,0.06)";
-        ctx.beginPath();
-        ctx.roundRect(mapX - mapPad, mapY - mapPad, mapSize + mapPad * 2, mapSize + mapPad * 2, 12);
-        ctx.fill();
-
-        const normalized = normalizePath(coords, mapSize, mapSize, 8);
-
-        // Route line
-        ctx.strokeStyle = p.accent;
-        ctx.lineWidth = 2.5;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        ctx.beginPath();
-        normalized.forEach((pt, idx) => {
-          const px = mapX + pt.x;
-          const py = mapY + pt.y;
-          if (idx === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        });
-        ctx.stroke();
-
-        // Start dot
-        if (normalized.length > 0) {
-          const start = normalized[0];
-          ctx.fillStyle = "#4ade80";
-          ctx.beginPath();
-          ctx.arc(mapX + start.x, mapY + start.y, 4, 0, Math.PI * 2);
-          ctx.fill();
-
-          // End dot
-          const end = normalized[normalized.length - 1];
-          ctx.fillStyle = "#f87171";
-          ctx.beginPath();
-          ctx.arc(mapX + end.x, mapY + end.y, 4, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    } catch {
-      // polyline 오류 무시
-    }
-  }
 }
 
 export function ShareCardGenerator({ open, onOpenChange, data }: ShareCardGeneratorProps) {

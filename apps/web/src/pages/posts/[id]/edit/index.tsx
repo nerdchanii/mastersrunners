@@ -18,9 +18,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdatePost } from "@/hooks/usePosts";
-import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { formatDistance, formatDuration, formatPace } from "@/lib/format";
+
+import { fetchEditablePost } from "./post-edit-api";
 
 interface User {
   id: string;
@@ -39,7 +40,8 @@ interface Workout {
 
 interface PostImage {
   id: string;
-  imageUrl: string;
+  url: string;
+  order: number;
 }
 
 interface PostWorkoutRelation {
@@ -94,7 +96,7 @@ export default function EditPostPage() {
     const fetchPost = async () => {
       try {
         setIsLoading(true);
-        const data = await api.fetch<Post>(`/posts/${postId}`);
+        const data = await fetchEditablePost(postId);
 
         if (user && data.user.id !== user.id) {
           setFetchError("본인의 게시글만 수정할 수 있습니다.");
@@ -279,7 +281,7 @@ export default function EditPostPage() {
                       className="relative aspect-square bg-muted-foreground/10 rounded-lg overflow-hidden border"
                     >
                       <img
-                        src={img.imageUrl}
+                        src={img.url}
                         alt="Post attachment"
                         className="w-full h-full object-cover"
                       />

@@ -1,77 +1,78 @@
-# 외부 플랫폼 연동 (External Integration)
+---
+doc_state: current
+owner: product
+last_verified: 2026-04-22
+sources:
+  - packages/database/prisma/schema.prisma
+  - apps/api/src/uploads/uploads.controller.ts
+  - apps/api/src/workouts/workouts.controller.ts
+  - apps/api/src/uploads/uploads.service.ts
+  - apps/api/src/uploads/uploads.module.ts
+  - apps/api/src/uploads/storage/disk-storage.adapter.ts
+  - apps/api/src/uploads/storage/r2-storage.adapter.ts
+  - design/backend/upload-ingestion.md
+---
 
-## 연동 우선순위
+# 외부 업로드와 플랫폼 연동 (External Integration)
 
-| 순위 | 플랫폼              | 방식        | 사유                                               |
-| ---- | ------------------- | ----------- | -------------------------------------------------- |
-| 1    | FIT/GPX 수동 업로드 | 파일 파싱   | API 승인 불필요, 모든 GPS 워치 지원                |
-| 2    | Garmin Connect      | OAuth + API | 한국 GPS 워치 점유율 1위                           |
-| 3    | Coros               | OAuth + API | 국내 사용자 증가 추세                              |
-| 4    | Strava              | OAuth + API | 한국 철수로 우선순위 낮음, 기존 사용자 선택적 지원 |
+## 현재 구현된 integration boundary
 
-## FIT/GPX 파일 업로드
+현재 제품에서 검증된 integration surface는 두 축이다.
 
-### 흐름
+1. 업로드/파일 파싱 경계
+2. 스키마에만 존재하는 외부 플랫폼 연결 메타데이터
 
-1. 유저가 앱에서 파일 업로드 요청
-2. NestJS API가 JWT 검증 후 Presigned URL 발급
-3. 프론트엔드가 Presigned URL로 Cloudflare R2에 직접 업로드
-4. 업로드 완료 후 API에 알림 → 파일 파싱
-5. 파싱 결과로 Workout 자동 생성 (유저 확인/수정 후 저장)
+## 현재 업로드 경계
 
-### 지원 데이터
+### Presigned upload
 
-- 거리, 시간, 페이스, 심박, 케이던스, 고도
-- GPS 경로 (위도/경도/고도/타임스탬프)
-- 랩 데이터
+- public asset는 `POST /uploads/presign`으로 업로드 타겟을 요청한다.
+- workout source(FIT/GPX)는 `POST /workouts/source/presign`으로 업로드 타겟을 요청한다.
+- API는 boundary별 파일 타입과 folder intent를 검증한다.
+- public asset는 업로드 URL, storage key, public URL을 받는다.
+- workout source는 업로드 URL과 storage key만 받고 `publicUrl`은 받지 않는다.
+- 클라이언트는 그 URL로 직접 업로드한다.
+- R2 direct upload를 쓰는 lane에서는 버킷 CORS allowlist가 현재 프런트엔드 origin을 허용해야 하며, localhost 같은 추가 origin은 명시적으로 지원하기로 결정한 경우에만 연다.
 
-### 파일 저장
+### 저장소 adapter
 
-- Cloudflare R2 (S3 호환)
-- Presigned URL로 인증된 접근 (JWT → Presigned URL 변환)
-- 원본 파일 보관 (WorkoutFile 엔티티)
+- `UploadsModule`은 환경에 따라 `DiskStorageAdapter` 또는 `R2StorageAdapter`를 선택한다.
+- 개발/검증 경로에서는 disk fallback이 사용될 수 있다.
+- R2 환경에서는 presigned URL 기반 업로드를 제공한다.
 
-## Garmin Connect API (2순위)
+### 현재 파일 타입
 
-- OAuth 2.0 인증
-- Activity 동기화 (Push/Pull)
-- 랩, 심박, GPS 데이터 포함
-- ConnectedPlatform 엔티티로 연결 관리
+- 이미지: `image/jpeg`, `image/png`, `image/webp`, `image/gif`
+- 워크아웃 파일: FIT/GPX용 `application/octet-stream`, `application/gpx+xml`, `application/xml`, `text/xml`, `application/fit`, `application/vnd.ant.fit` 기반 흐름
 
-## Coros API (3순위)
+## 현재 워크아웃 파일 ingestion
 
-- OAuth 인증
-- Activity 동기화
-- 구체적 API 스펙은 TBD
+현재 구현된 자동 파이프라인은 FIT/GPX 업로드다.
 
-## Strava API (4순위)
+1. `POST /workouts/source/presign`으로 presign 발급
+2. 파일 업로드
+3. `POST /uploads/parse`
+4. API가 파일을 다운로드하고 FIT/GPX를 파싱
+5. 현재 privacy hardening 단계에서는 raw source를 즉시 폐기하고 `Workout`과 redacted `WorkoutFile` 메타데이터를 생성
 
-### 한국 시장 상황
+즉, 현재 구현은 “업로드 후 사용자가 한번 더 확인/수정한 뒤 저장”보다 “parse 시점에 workout 생성”에 가깝다.
 
-- **2023년 8월부터 한국 시장 철수** (앱스토어 제거, 신규 다운로드 불가)
-- API 자체는 사용 가능
+## ConnectedPlatform / SyncLog
 
-### API 제약
+스키마에는 아래 엔티티가 존재한다.
 
-- Rate limit: 200 requests/15분, 2,000/일
-- FIT/GPX 직접 다운로드 불가 (Streams → 변환 필요)
-- 경쟁 앱 금지 조항 존재
-- AI 학습 데이터 사용 금지 (2024.11 정책)
+- `ConnectedPlatform`
+- `SyncLog`
 
-### 활용 방안
+현재 current truth 기준으로는 Garmin/Coros/Strava/Suunto 동기화 모듈이 제품 surface로 완성되어 있다고 보기 어렵다. 따라서:
 
-- 기존 Strava 사용자의 과거 데이터 마이그레이션 용도
-- 신규 연동보다는 선택적 지원
+- 플랫폼 연결 메타데이터용 스키마는 존재한다.
+- 하지만 실사용 OAuth 연결, 주기 동기화, 벤더별 import UX를 current product rule로 문서화하지 않는다.
 
-## ConnectedPlatform (연결 플랫폼)
+## 현재 truth에서 제외한 오래된 설명
 
-| 필드         | 타입     | 설명                    |
-| ------------ | -------- | ----------------------- |
-| userId       | UUID     | FK → User               |
-| platform     | enum     | GARMIN / COROS / STRAVA |
-| accessToken  | string   | 암호화 저장 필수        |
-| refreshToken | string   | 암호화 저장 필수        |
-| expiresAt    | datetime | 토큰 만료 시각          |
-| connectedAt  | datetime | 연결 시각               |
+- Garmin/Coros/Strava 우선순위가 이미 제품 roadmap으로 확정되었다는 표현
+- Garmin/Coros/Strava API 동기화가 현재 사용자 기능으로 제공된다는 설명
+- Strava 정책/시장 상황을 현재 구현 규칙처럼 다루는 설명
 
-> 토큰은 반드시 암호화하여 저장. 평문 저장 금지.
+이런 내용이 필요하면 `target` 설계나 product planning 문서에서 관리해야 한다.

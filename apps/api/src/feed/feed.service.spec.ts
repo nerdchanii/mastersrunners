@@ -34,6 +34,21 @@ describe("FeedService", () => {
   });
 
   describe("getPostFeed", () => {
+    it("should skip following and block lookups for anonymous post feed reads", async () => {
+      mockFeedRepo.getPostFeed.mockResolvedValue([]);
+
+      await service.getPostFeed(undefined, undefined, 10);
+
+      expect(mockFeedRepo.getFollowingIds).not.toHaveBeenCalled();
+      expect(mockBlockRepo.getBlockedUserIds).not.toHaveBeenCalled();
+      expect(mockFeedRepo.getPostFeed).toHaveBeenCalledWith({
+        userId: undefined,
+        followingIds: [],
+        cursor: undefined,
+        limit: 10,
+      });
+    });
+
     it("should fetch following IDs and return post feed with pagination", async () => {
       mockFeedRepo.getFollowingIds.mockResolvedValue(["user1", "user2"]);
       const posts = Array.from({ length: 11 }, (_, i) => ({ id: `p${i}` }));
@@ -105,9 +120,47 @@ describe("FeedService", () => {
         limit: 10,
       });
     });
+
+    it("should normalize post image fields for the web read contract", async () => {
+      mockFeedRepo.getFollowingIds.mockResolvedValue([]);
+      mockFeedRepo.getPostFeed.mockResolvedValue([
+        {
+          id: "post-1",
+          images: [{ id: "image-1", imageUrl: "https://example.com/feed.png", sortOrder: 3 }],
+          likes: [{ id: "like-1" }],
+        },
+      ]);
+
+      const result = await service.getPostFeed("me", undefined, 10);
+
+      expect(result.items[0].images).toEqual([
+        {
+          id: "image-1",
+          url: "https://example.com/feed.png",
+          order: 3,
+        },
+      ]);
+      expect(result.items[0].isLiked).toBe(true);
+    });
   });
 
   describe("getWorkoutFeed", () => {
+    it("should skip following and block lookups for anonymous workout feed reads", async () => {
+      mockFeedRepo.getWorkoutFeed.mockResolvedValue([]);
+
+      await service.getWorkoutFeed(undefined, undefined, 10);
+
+      expect(mockFeedRepo.getFollowingIds).not.toHaveBeenCalled();
+      expect(mockBlockRepo.getBlockedUserIds).not.toHaveBeenCalled();
+      expect(mockFeedRepo.getWorkoutFeed).toHaveBeenCalledWith({
+        userId: undefined,
+        followingIds: [],
+        cursor: undefined,
+        limit: 10,
+        excludeLinkedToPost: undefined,
+      });
+    });
+
     it("should fetch following IDs and return workout feed with pagination", async () => {
       mockFeedRepo.getFollowingIds.mockResolvedValue(["user1", "user2"]);
       const workouts = Array.from({ length: 11 }, (_, i) => ({
@@ -143,6 +196,30 @@ describe("FeedService", () => {
       expect(result.items).toHaveLength(1);
       expect(result.nextCursor).toBeNull();
       expect(result.items[0]._count).toEqual({ likes: 1, comments: 2 });
+    });
+
+    it("should omit internal detail blob fields from workout feed items", async () => {
+      mockFeedRepo.getFollowingIds.mockResolvedValue([]);
+      mockFeedRepo.getWorkoutFeed.mockResolvedValue([
+        {
+          id: "w1",
+          detailPath: "workout-details/user-1/run.detail.v1.json",
+          detailFormatVersion: 1,
+          encodedPolyline: "summary-polyline",
+          _count: { workoutLikes: 2, workoutComments: 1 },
+          workoutLikes: [],
+        },
+      ]);
+
+      const result = await service.getWorkoutFeed("me", undefined, 10);
+
+      expect(result.items[0]).toMatchObject({
+        id: "w1",
+        encodedPolyline: "summary-polyline",
+        _count: { likes: 2, comments: 1 },
+      });
+      expect(result.items[0]).not.toHaveProperty("detailPath");
+      expect(result.items[0]).not.toHaveProperty("detailFormatVersion");
     });
 
     it("should return empty result when no workouts", async () => {

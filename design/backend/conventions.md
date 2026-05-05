@@ -1,7 +1,7 @@
 ---
 doc_state: target
 owner: backend
-last_verified: 2026-03-12
+last_verified: 2026-03-30
 sources:
   - apps/api/package.json
   - apps/api/src/main.ts
@@ -19,11 +19,13 @@ This document defines the preferred backend coding style for `apps/api`. Some mo
 - Business rules belong in services.
 - Persistence access belongs behind repositories or explicit persistence boundaries.
 - Controllers must not call Prisma directly.
+- `DatabaseService` should live in repositories or explicit persistence services, not in feature services that also own product rules.
 
 ## DTO and Validation
 
 - Request DTOs use `class-validator` and `class-transformer`.
 - Validation stays at the transport boundary.
+- Controllers should accept DTOs or explicit transport contracts instead of inline `@Body("field")` extraction or ad hoc string query parsing.
 - Domain services should receive already-validated inputs or clear internal contracts.
 
 ## Service Shape
@@ -41,6 +43,7 @@ This document defines the preferred backend coding style for `apps/api`. Some mo
 
 - Reuse shared guards, filters, and decorators before inventing module-local variants.
 - Keep API contract, auth, validation, and failure handling consistent with NestJS module boundaries.
+- Runtime `console.*` calls are not an accepted API logging boundary. Use `StructuredLoggerService` and optional `MonitoringService` capture instead.
 
 ## Naming
 

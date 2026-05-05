@@ -6,7 +6,6 @@ import { UserAvatar } from "@/components/common/UserAvatar";
 import PostFeedCard from "@/components/feed/PostFeedCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,7 +30,7 @@ function PopularHashtags() {
   if (tags.length === 0) return null;
 
   return (
-    <div className="space-y-2">
+    <section className="space-y-3 border-t border-border/60 pt-4">
       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
         <TrendingUp className="size-4" />
         인기 해시태그
@@ -49,7 +48,7 @@ function PopularHashtags() {
           </Link>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -75,7 +74,7 @@ function UserResults({ query }: { query: string }) {
 
   if (users.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="py-12 text-center">
         <User className="size-8 mx-auto mb-3 text-muted-foreground" />
         <p className="text-muted-foreground">"{query}"에 대한 사용자가 없습니다.</p>
       </div>
@@ -83,16 +82,14 @@ function UserResults({ query }: { query: string }) {
   }
 
   return (
-    <div>
-      <p className="text-xs text-muted-foreground mb-3">{users.length}명의 사용자</p>
-      <div className="space-y-1">
+    <section className="space-y-3 border-t border-border/60 pt-4">
+      <p className="text-xs text-muted-foreground">{users.length}명의 사용자</p>
+      <div className="divide-y divide-border/60">
         {users.map((user: SearchUser) => (
           <Link
             key={user.id}
             to={`/profile/${user.id}`}
-            className={cn(
-              "flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-muted/50",
-            )}
+            className={cn("flex items-center gap-3 py-3 transition-colors hover:bg-accent/20")}
           >
             <UserAvatar user={user} />
             <div className="flex-1 min-w-0">
@@ -111,7 +108,7 @@ function UserResults({ query }: { query: string }) {
           </Link>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -124,9 +121,9 @@ function HashtagResults({ tag }: { tag: string }) {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 border-t border-border/60 pt-4">
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="p-4">
+          <div key={i} className="border-b border-border/60 pb-4 last:border-b-0">
             <div className="flex items-center gap-3 mb-3">
               <Skeleton className="size-10 rounded-full" />
               <div className="flex-1 space-y-1">
@@ -135,7 +132,7 @@ function HashtagResults({ tag }: { tag: string }) {
               </div>
             </div>
             <Skeleton className="h-16 w-full" />
-          </Card>
+          </div>
         ))}
       </div>
     );
@@ -159,9 +156,9 @@ function HashtagResults({ tag }: { tag: string }) {
   }
 
   return (
-    <div>
-      <p className="text-xs text-muted-foreground mb-3">#{tag} 태그 게시글</p>
-      <div className="space-y-0 divide-y rounded-xl border overflow-hidden">
+    <section className="space-y-3 border-t border-border/60 pt-4">
+      <p className="text-xs text-muted-foreground">#{tag} 태그 게시글</p>
+      <div className="space-y-0 divide-y border-y border-border/60">
         {posts.map((post) => (
           <PostFeedCard key={post.id} post={post} />
         ))}
@@ -180,7 +177,7 @@ function HashtagResults({ tag }: { tag: string }) {
           </Button>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -189,21 +186,29 @@ export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") === "hashtag" ? "hashtag" : "user";
   const initialHashtag = searchParams.get("hashtag") ?? "";
+  const initialQuery = initialTab === "user" ? (searchParams.get("q") ?? "") : "";
 
   const [activeTab, setActiveTab] = useState<"user" | "hashtag">(initialTab);
-  const [query, setQuery] = useState(initialTab === "user" ? (searchParams.get("q") ?? "") : "");
+  const [query, setQuery] = useState(initialQuery);
   const [hashtagQuery, setHashtagQuery] = useState(initialHashtag);
-  const [debouncedQuery, setDebouncedQuery] = useState(query);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [debouncedHashtag, setDebouncedHashtag] = useState(initialHashtag);
 
   // URL에서 hashtag param이 변경될 때 동기화
   useEffect(() => {
+    const nextQuery = searchParams.get("q") ?? "";
     const htag = searchParams.get("hashtag") ?? "";
     const tab = searchParams.get("tab");
+    setQuery(nextQuery);
+    setDebouncedQuery(nextQuery);
     if (htag) {
       setHashtagQuery(htag);
       setDebouncedHashtag(htag);
       setActiveTab("hashtag");
+    }
+    if (!htag) {
+      setHashtagQuery("");
+      setDebouncedHashtag("");
     }
     if (tab === "user") setActiveTab("user");
   }, [searchParams]);
@@ -237,15 +242,25 @@ export default function SearchPage() {
     setSearchParams(params, { replace: true });
   };
 
+  const handleUserInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setQuery(val);
+
+    const params = new URLSearchParams(searchParams);
+    params.set("tab", "user");
+    if (val.trim()) params.set("q", val);
+    else params.delete("q");
+    setSearchParams(params, { replace: true });
+  };
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold">검색</h1>
-        <p className="text-sm text-muted-foreground mt-1">러너와 해시태그를 검색하세요.</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList variant="line" className="grid w-full grid-cols-2">
           <TabsTrigger value="user" className="gap-2">
             <User className="size-4" />
             사용자
@@ -263,9 +278,9 @@ export default function SearchPage() {
             <Input
               type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="이름 또는 이메일로 검색..."
-              className="pl-9"
+              onChange={handleUserInputChange}
+              placeholder="러너 이름 또는 이메일로 검색..."
+              className="h-11 rounded-full border-border/70 pl-9"
               autoFocus={activeTab === "user"}
             />
           </div>
@@ -273,9 +288,10 @@ export default function SearchPage() {
           {debouncedQuery.trim().length > 0 ? (
             <UserResults query={debouncedQuery} />
           ) : (
-            <div className="text-center py-12">
-              <Search className="size-10 mx-auto mb-3 text-muted-foreground/50" />
-              <p className="text-muted-foreground text-sm">검색어를 입력하세요.</p>
+            <div className="border-t border-border/60 pt-4">
+              <p className="text-sm text-muted-foreground">
+                이름이나 이메일로 바로 찾을 수 있습니다.
+              </p>
             </div>
           )}
         </TabsContent>
@@ -291,7 +307,7 @@ export default function SearchPage() {
               value={hashtagQuery}
               onChange={handleHashtagInputChange}
               placeholder="태그 검색..."
-              className="pl-7"
+              className="h-11 rounded-full border-border/70 pl-7"
               autoFocus={activeTab === "hashtag"}
             />
           </div>

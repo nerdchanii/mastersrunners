@@ -2,7 +2,7 @@ import { Test } from "@nestjs/testing";
 
 import { UserRepository } from "../auth/repositories/user.repository";
 import { BlockRepository } from "../block/repositories/block.repository";
-import { DatabaseService } from "../database/database.service";
+import { CrewMemberRepository } from "../crews/repositories/crew-member.repository";
 import { FollowRepository } from "../follow/repositories/follow.repository";
 import { WorkoutRepository } from "../workouts/repositories/workout.repository";
 
@@ -13,6 +13,7 @@ const mockUserRepo = {
   findByIdBasicSelect: jest.fn(),
   update: jest.fn(),
   searchByName: jest.fn(),
+  countPostsByUser: jest.fn(),
   softDelete: jest.fn(),
 };
 
@@ -29,21 +30,11 @@ const mockFollowRepo = {
   countFollowers: jest.fn(),
   countFollowing: jest.fn(),
   findFollow: jest.fn(),
-  removeAllFollowsByUser: jest.fn(),
+  deleteAllForUser: jest.fn(),
 };
 
-const mockDb = {
-  prisma: {
-    post: {
-      count: jest.fn(),
-    },
-    follow: {
-      deleteMany: jest.fn(),
-    },
-    crewMember: {
-      deleteMany: jest.fn(),
-    },
-  },
+const mockCrewMemberRepo = {
+  deleteAllForUser: jest.fn(),
 };
 
 describe("ProfileService - deleteAccount", () => {
@@ -56,10 +47,9 @@ describe("ProfileService - deleteAccount", () => {
     mockFollowRepo.countFollowers.mockResolvedValue(0);
     mockFollowRepo.countFollowing.mockResolvedValue(0);
     mockFollowRepo.findFollow.mockResolvedValue(null);
-    mockFollowRepo.removeAllFollowsByUser.mockResolvedValue(undefined);
-    mockDb.prisma.post.count.mockResolvedValue(0);
-    mockDb.prisma.follow.deleteMany.mockResolvedValue({ count: 0 });
-    mockDb.prisma.crewMember.deleteMany.mockResolvedValue({ count: 0 });
+    mockFollowRepo.deleteAllForUser.mockResolvedValue(undefined);
+    mockUserRepo.countPostsByUser.mockResolvedValue(0);
+    mockCrewMemberRepo.deleteAllForUser.mockResolvedValue(undefined);
     mockUserRepo.softDelete.mockResolvedValue(undefined);
 
     const module = await Test.createTestingModule({
@@ -69,7 +59,7 @@ describe("ProfileService - deleteAccount", () => {
         { provide: WorkoutRepository, useValue: mockWorkoutRepo },
         { provide: BlockRepository, useValue: mockBlockRepository },
         { provide: FollowRepository, useValue: mockFollowRepo },
-        { provide: DatabaseService, useValue: mockDb },
+        { provide: CrewMemberRepository, useValue: mockCrewMemberRepo },
       ],
     }).compile();
 
@@ -96,11 +86,7 @@ describe("ProfileService - deleteAccount", () => {
 
       await service.deleteAccount(userId);
 
-      expect(mockDb.prisma.follow.deleteMany).toHaveBeenCalledWith({
-        where: {
-          OR: [{ followerId: userId }, { followingId: userId }],
-        },
-      });
+      expect(mockFollowRepo.deleteAllForUser).toHaveBeenCalledWith(userId);
     });
 
     it("should delete all crew memberships", async () => {
@@ -109,9 +95,7 @@ describe("ProfileService - deleteAccount", () => {
 
       await service.deleteAccount(userId);
 
-      expect(mockDb.prisma.crewMember.deleteMany).toHaveBeenCalledWith({
-        where: { userId },
-      });
+      expect(mockCrewMemberRepo.deleteAllForUser).toHaveBeenCalledWith(userId);
     });
 
     it("should return success message", async () => {

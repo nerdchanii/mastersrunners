@@ -1,3 +1,12 @@
+---
+doc_state: current
+owner: product
+last_verified: 2026-03-30
+sources:
+  - packages/database/prisma/schema.prisma
+  - apps/api/src
+---
+
 # 이벤트와 대회 (Event)
 
 ## 정의
@@ -62,3 +71,9 @@
 
 - 과거 설계 문서에는 현재 스키마와 맞지 않는 분리 모델 설명이 남아 있을 수 있다.
 - 현재 설계와 도메인 문서는 `Event + EventParticipant` 기준으로 읽어야 한다.
+
+## 삭제 규칙
+
+- `Event` 삭제는 현재 hard delete다.
+- 삭제 시 `EventParticipant`는 relation의 `onDelete: Cascade`를 따라 함께 제거된다.
+- `EventParticipant.workoutId`는 workout relation에서 `SetNull` 규칙을 갖지만, event 삭제가 workout 자체를 지우지는 않는다.

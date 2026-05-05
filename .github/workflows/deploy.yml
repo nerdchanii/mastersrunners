@@ -2,17 +2,31 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
-
-env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  SERVICE_NAME: masters-runners-api
-  REGION: asia-northeast3
+    branches: [dev, main]
+    paths-ignore:
+      - "**/*.md"
 
 jobs:
   deploy-api:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+    environment: ${{ github.ref_name == 'main' && 'production' || 'dev' }}
+
+    env:
+      DEPLOY_LANE: ${{ github.ref_name == 'main' && 'production' || 'dev' }}
+      PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      SERVICE_NAME: ${{ vars.CLOUD_RUN_SERVICE_NAME }}
+      RUNTIME_SERVICE_ACCOUNT: ${{ vars.CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT }}
+      REGION: asia-northeast3
+      FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+      OPS_FRONTEND_URL: ${{ vars.OPS_FRONTEND_URL }}
+      CF_ACCESS_TEAM_DOMAIN: ${{ vars.CF_ACCESS_TEAM_DOMAIN }}
+      CF_ACCESS_POLICY_AUD: ${{ vars.CF_ACCESS_POLICY_AUD }}
+      API_PUBLIC_URL: ${{ vars.API_PUBLIC_URL }}
+      JWT_ACCESS_TTL: ${{ vars.JWT_ACCESS_TTL }}
+      JWT_REFRESH_TTL: ${{ vars.JWT_REFRESH_TTL }}
+      R2_PUBLIC_URL: ${{ vars.R2_PUBLIC_URL }}
+      KAKAO_CALLBACK_URL: ${{ vars.KAKAO_CALLBACK_URL }}
 
     permissions:
       contents: read
@@ -31,6 +45,68 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate branch deploy env contract
+        run: |
+          if [ -z "${SERVICE_NAME}" ]; then
+            echo "::error::GitHub environment variable CLOUD_RUN_SERVICE_NAME must be set for ${DEPLOY_LANE} deploys."
+            exit 1
+          fi
+          if [ -z "${RUNTIME_SERVICE_ACCOUNT}" ]; then
+            echo "::error::GitHub environment variable CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT must be set for ${DEPLOY_LANE} Cloud Run deploys."
+            exit 1
+          fi
+          if [ -z "${FRONTEND_URL}" ]; then
+            echo "::error::GitHub environment variable FRONTEND_URL must be set for ${DEPLOY_LANE} Cloud Run deploys."
+            exit 1
+          fi
+          if [ -z "${KAKAO_CALLBACK_URL}" ]; then
+            echo "::error::GitHub environment variable KAKAO_CALLBACK_URL must be set while Kakao remains enabled in the repo runtime config."
+            exit 1
+          fi
+          if [ "${DEPLOY_LANE}" = "dev" ]; then
+            if [ -z "${JWT_ACCESS_TTL}" ]; then
+              echo "::error::GitHub environment variable JWT_ACCESS_TTL must be set for the dev Cloud Run deploy."
+              exit 1
+            fi
+            if [ -z "${JWT_REFRESH_TTL}" ]; then
+              echo "::error::GitHub environment variable JWT_REFRESH_TTL must be set for the dev Cloud Run deploy."
+              exit 1
+            fi
+            if [ -z "${R2_PUBLIC_URL}" ]; then
+              echo "::error::GitHub environment variable R2_PUBLIC_URL must be set for the dev Cloud Run deploy."
+              exit 1
+            fi
+            if [ -z "${OPS_FRONTEND_URL}" ]; then
+              echo "::error::GitHub environment variable OPS_FRONTEND_URL must be set for the dev deploy lane once the ops host is enabled."
+              exit 1
+            fi
+            if [ -z "${CF_ACCESS_TEAM_DOMAIN}" ]; then
+              echo "::error::GitHub environment variable CF_ACCESS_TEAM_DOMAIN must be set for the dev deploy lane once the ops host is enabled."
+              exit 1
+            fi
+            if [ -z "${CF_ACCESS_POLICY_AUD}" ]; then
+              echo "::error::GitHub environment variable CF_ACCESS_POLICY_AUD must be set for the dev deploy lane once the ops host is enabled."
+              exit 1
+            fi
+          fi
+
+      - name: Check automated migration safety
+        run: bash scripts/check-safe-production-migrations.sh "${{ github.event.before }}" "${{ github.sha }}"
+
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
@@ -40,21 +116,83 @@ jobs:
           docker build -t "$IMAGE" -f apps/api/Dockerfile .
           docker push "$IMAGE"
 
+      - name: Load migration URL from Secret Manager
+        run: |
+          DIRECT_URL=$(gcloud secrets versions access latest --secret=DIRECT_URL)
+          echo "::add-mask::$DIRECT_URL"
+          echo "DIRECT_URL=$DIRECT_URL" >> "$GITHUB_ENV"
+          if [ -z "${DIRECT_URL}" ]; then
+            echo "::error::Secret Manager secret DIRECT_URL must be set for automated ${DEPLOY_LANE} deploy migrations."
+            exit 1
+          fi
+
+      - name: Run automated branch migrations and seed
+        run: |
+          pnpm db:migrate:deploy
+          pnpm db:seed
+
       - name: Deploy to Cloud Run
         run: |
           IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/masters-runners/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+          env_vars=(
+            "NODE_ENV=production"
+            "FRONTEND_URL=${FRONTEND_URL}"
+          )
+          secret_mappings=(
+            "DATABASE_URL=DATABASE_URL:latest"
+            "JWT_SECRET=JWT_SECRET:latest"
+            "R2_ACCOUNT_ID=R2_ACCOUNT_ID:latest"
+            "R2_ACCESS_KEY_ID=R2_ACCESS_KEY_ID:latest"
+            "R2_SECRET_ACCESS_KEY=R2_SECRET_ACCESS_KEY:latest"
+            "R2_BUCKET_NAME=R2_BUCKET_NAME:latest"
+            "KAKAO_CLIENT_ID=KAKAO_CLIENT_ID:latest"
+            "KAKAO_CLIENT_SECRET=KAKAO_CLIENT_SECRET:latest"
+          )
+
+          if [ -n "${JWT_ACCESS_TTL}" ]; then
+            env_vars+=("JWT_ACCESS_TTL=${JWT_ACCESS_TTL}")
+          else
+            secret_mappings+=("JWT_ACCESS_TTL=JWT_ACCESS_TTL:latest")
+          fi
+          if [ -n "${JWT_REFRESH_TTL}" ]; then
+            env_vars+=("JWT_REFRESH_TTL=${JWT_REFRESH_TTL}")
+          else
+            secret_mappings+=("JWT_REFRESH_TTL=JWT_REFRESH_TTL:latest")
+          fi
+          if [ -n "${R2_PUBLIC_URL}" ]; then
+            env_vars+=("R2_PUBLIC_URL=${R2_PUBLIC_URL}")
+          else
+            secret_mappings+=("R2_PUBLIC_URL=R2_PUBLIC_URL:latest")
+          fi
+          if [ -n "${KAKAO_CALLBACK_URL}" ]; then
+            env_vars+=("KAKAO_CALLBACK_URL=${KAKAO_CALLBACK_URL}")
+          fi
+
+          if [ -n "${API_PUBLIC_URL}" ]; then
+            env_vars+=("API_PUBLIC_URL=${API_PUBLIC_URL}")
+          fi
+          if [ -n "${OPS_FRONTEND_URL}" ]; then
+            env_vars+=("OPS_FRONTEND_URL=${OPS_FRONTEND_URL}")
+          fi
+          if [ -n "${CF_ACCESS_TEAM_DOMAIN}" ]; then
+            env_vars+=("CF_ACCESS_TEAM_DOMAIN=${CF_ACCESS_TEAM_DOMAIN}")
+          fi
+          if [ -n "${CF_ACCESS_POLICY_AUD}" ]; then
+            env_vars+=("CF_ACCESS_POLICY_AUD=${CF_ACCESS_POLICY_AUD}")
+          fi
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --image "$IMAGE" \
             --region ${{ env.REGION }} \
             --platform managed \
             --allow-unauthenticated \
+            --service-account "${RUNTIME_SERVICE_ACCOUNT}" \
             --port 4000 \
             --memory 512Mi \
             --cpu 1 \
             --min-instances 0 \
-            --max-instances 3 \
-            --set-env-vars "NODE_ENV=production" \
-            --set-secrets "DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest,JWT_ACCESS_TTL=JWT_ACCESS_TTL:latest,JWT_REFRESH_TTL=JWT_REFRESH_TTL:latest,R2_ACCOUNT_ID=R2_ACCOUNT_ID:latest,R2_ACCESS_KEY_ID=R2_ACCESS_KEY_ID:latest,R2_SECRET_ACCESS_KEY=R2_SECRET_ACCESS_KEY:latest,R2_BUCKET_NAME=R2_BUCKET_NAME:latest,R2_PUBLIC_URL=R2_PUBLIC_URL:latest"
+            --max-instances 1 \
+            --set-env-vars "$(IFS=,; echo "${env_vars[*]}")" \
+            --set-secrets "$(IFS=,; echo "${secret_mappings[*]}")"
 
       - name: Verify deployment
         run: |

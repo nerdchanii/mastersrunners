@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -14,10 +15,15 @@ import {
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
-import { Public } from "../common/decorators/public.decorator.js";
-import { FollowRepository } from "../follow/repositories/follow.repository.js";
+import { PresignUploadDto } from "../uploads/dto/presign-upload.dto.js";
+import { UploadsService } from "../uploads/uploads.service.js";
+import {
+  isSupportedWorkoutSourceContentType,
+  isSupportedWorkoutSourceFilename,
+} from "../uploads/workout-source-upload.js";
 
 import { CreateWorkoutDto } from "./dto/create-workout.dto.js";
+import { ListWorkoutsQueryDto } from "./dto/list-workouts-query.dto.js";
 import { UpdateWorkoutDto } from "./dto/update-workout.dto.js";
 import { WorkoutsService } from "./workouts.service.js";
 
@@ -26,26 +32,21 @@ import { WorkoutsService } from "./workouts.service.js";
 export class WorkoutsController {
   constructor(
     private readonly workoutsService: WorkoutsService,
-    private readonly followRepo: FollowRepository,
+    private readonly uploadsService: UploadsService,
   ) {}
 
   @ApiOperation({ summary: "내 워크아웃 목록 조회 (cursor 페이지네이션)" })
   @ApiResponse({ status: 200, description: "성공" })
   @Get()
-  findAll(
-    @Req() req: Request,
-    @Query("userId") targetUserId?: string,
-    @Query("cursor") cursor?: string,
-    @Query("limit") limit?: string,
-  ) {
+  findAll(@Req() req: Request, @Query() query: ListWorkoutsQueryDto) {
     const { userId } = req.user as { userId: string };
     return this.workoutsService.findAll(
       userId,
       {
-        cursor,
-        limit: limit ? parseInt(limit, 10) : undefined,
+        cursor: query.cursor,
+        limit: query.resolveOptionalLimit(),
       },
-      targetUserId,
+      query.userId,
     );
   }
 
@@ -59,36 +60,40 @@ export class WorkoutsController {
 
   @ApiOperation({ summary: "워크아웃 상세 조회" })
   @ApiResponse({ status: 200, description: "성공" })
-  @Public()
   @Get(":id")
   async findOne(@Param("id") id: string, @Req() req: Request) {
-    const workout = await this.workoutsService.findOne(id);
-    if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
-
     const user = req.user as { userId: string } | undefined;
     const requesterId = user?.userId;
-
-    if (workout.visibility === "PRIVATE" && workout.userId !== requesterId) {
-      throw new ForbiddenException("접근 권한이 없습니다.");
-    }
-
-    if (workout.visibility === "FOLLOWERS" && workout.userId !== requesterId) {
-      if (!requesterId) {
-        throw new ForbiddenException("접근 권한이 없습니다.");
-      }
-      const follow = await this.followRepo.findFollow(requesterId, workout.userId);
-      if (!follow || follow.status !== "ACCEPTED") {
-        throw new ForbiddenException("접근 권한이 없습니다.");
-      }
-    }
-
+    const workout = await this.workoutsService.findOne(id, requesterId);
+    if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
     return workout;
+  }
+
+  @ApiOperation({ summary: "워크아웃 원본 파일 업로드 presign" })
+  @ApiResponse({ status: 200, description: "성공" })
+  @Post("source/presign")
+  async presignSource(@Req() req: Request, @Body() dto: PresignUploadDto) {
+    const { userId } = req.user as { userId: string };
+
+    if (!isSupportedWorkoutSourceFilename(dto.filename)) {
+      throw new BadRequestException("FIT 또는 GPX 파일만 업로드 가능합니다.");
+    }
+
+    if (!isSupportedWorkoutSourceContentType(dto.contentType)) {
+      throw new BadRequestException("Unsupported workout source type");
+    }
+
+    return this.uploadsService.createWorkoutSourceUploadTarget(
+      userId,
+      dto.filename,
+      dto.contentType,
+    );
   }
 
   @Patch(":id")
   async update(@Param("id") id: string, @Req() req: Request, @Body() dto: UpdateWorkoutDto) {
     const { userId } = req.user as { userId: string };
-    const workout = await this.workoutsService.findOne(id);
+    const workout = await this.workoutsService.findOne(id, userId);
     if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
     if (workout.userId !== userId)
       throw new ForbiddenException("본인의 기록만 수정할 수 있습니다.");
@@ -98,7 +103,7 @@ export class WorkoutsController {
   @Delete(":id")
   async remove(@Param("id") id: string, @Req() req: Request) {
     const { userId } = req.user as { userId: string };
-    const workout = await this.workoutsService.findOne(id);
+    const workout = await this.workoutsService.findOne(id, userId);
     if (!workout) throw new NotFoundException("워크아웃을 찾을 수 없습니다.");
     if (workout.userId !== userId)
       throw new ForbiddenException("본인의 기록만 삭제할 수 있습니다.");

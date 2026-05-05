@@ -34,6 +34,10 @@ Current docs:
 - `conventions.md`
 - `crew-experience.md`
 - `events-challenges.md`
+- `social-surface-patterns.md`
 - `social-profile.md`
 - `ui-system.md`
+- `ux-principles.md`
+- `visual-system-rules.md`
+- `writing-and-copy.md`
 - `workout-experience.md`

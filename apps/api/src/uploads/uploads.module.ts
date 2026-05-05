@@ -1,11 +1,13 @@
 import { Module } from "@nestjs/common";
 
+import { StructuredLoggerService } from "../common/logging/structured-logger.service.js";
 import { DatabaseModule } from "../database/database.module.js";
 
 import { FitParserService } from "./parsers/fit-parser.service.js";
 import { GpxParserService } from "./parsers/gpx-parser.service.js";
 import { WorkoutFileRepository } from "./repositories/workout-file.repository.js";
 import { DiskStorageAdapter } from "./storage/disk-storage.adapter.js";
+import { hasR2RuntimeConfig } from "./storage/r2-runtime.js";
 import { R2StorageAdapter } from "./storage/r2-storage.adapter.js";
 import { STORAGE_ADAPTER } from "./storage/storage-adapter.interface.js";
 import { DiskFilesController } from "./disk-files.controller.js";
@@ -17,9 +19,7 @@ import { UploadsService } from "./uploads.service.js";
 function isDisk(): boolean {
   const type = process.env.STORAGE_TYPE;
   if (type) return type === "disk";
-  const hasR2Config = Boolean(
-    process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_ENDPOINT,
-  );
+  const hasR2Config = hasR2RuntimeConfig(process.env);
   return process.env.NODE_ENV !== "production" || !hasR2Config;
 }
 
@@ -40,6 +40,7 @@ const controllers = isDisk()
     GpxParserService,
     WorkoutFileRepository,
     ImageOptimizationService,
+    StructuredLoggerService,
   ],
   exports: [
     UploadsService,
@@ -47,6 +48,7 @@ const controllers = isDisk()
     GpxParserService,
     WorkoutFileRepository,
     ImageOptimizationService,
+    StructuredLoggerService,
   ],
 })
 export class UploadsModule {}

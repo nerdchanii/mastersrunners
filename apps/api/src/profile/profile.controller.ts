@@ -13,6 +13,8 @@ import {
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
+import { Public } from "../common/decorators/public.decorator.js";
+
 import { UpdateProfileDto } from "./dto/update-profile.dto.js";
 import { ProfileService } from "./profile.service.js";
 
@@ -47,8 +49,9 @@ export class ProfileController {
   }
 
   @Get(":userId")
+  @Public()
   getUserProfile(@Param("userId") targetUserId: string, @Req() req: Request) {
-    const { userId } = req.user as { userId: string };
+    const userId = (req.user as { userId: string } | undefined)?.userId;
     return this.profileService.getProfile(targetUserId, userId);
   }
 }

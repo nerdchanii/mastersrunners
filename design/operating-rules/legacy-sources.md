@@ -1,10 +1,10 @@
 ---
 doc_state: current
 owner: harness
-last_verified: 2026-03-12
+last_verified: 2026-03-30
 sources:
-  - .gitignore
-  - docs/plans/README.md
+  - docs/reports/README.md
+  - docs/reports/history/README.md
 ---
 
 # Legacy Sources
@@ -17,11 +17,11 @@ Only facts copied into tracked `design/`, `docs/domain/`, `docs/runbooks/`, `doc
 
 Legacy source files are inputs, not outputs.
 
-## `docs/plans/`
+## `docs/reports/history/`
 
-- `docs/plans/archive/` holds preserved historical plans and completed backlog material.
-- `docs/plans/` root may temporarily contain migration-input documents that still need extraction.
-- No file under `docs/plans/` is the primary source of truth after the equivalent `design/` or `docs/domain/` doc exists.
+- `docs/reports/history/` holds preserved historical plans, legacy design inputs, and completed backlog material that remains worth keeping.
+- Files here are historical context, not current source of truth.
+- No file under `docs/reports/history/` is the primary source of truth after the equivalent `design/`, `docs/domain/`, or `docs/runbooks/` doc exists.
 
 ## `.omc`
 

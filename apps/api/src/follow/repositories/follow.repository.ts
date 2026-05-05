@@ -138,6 +138,14 @@ export class FollowRepository {
     ]);
   }
 
+  async deleteAllForUser(userId: string) {
+    return this.db.prisma.follow.deleteMany({
+      where: {
+        OR: [{ followerId: userId }, { followingId: userId }],
+      },
+    });
+  }
+
   async findUserIsPrivate(userId: string) {
     const user = await this.db.prisma.user.findUnique({
       where: { id: userId },

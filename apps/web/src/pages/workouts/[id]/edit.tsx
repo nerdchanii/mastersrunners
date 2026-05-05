@@ -7,6 +7,7 @@ import { LoadingPage } from "@/components/common/LoadingPage";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { DatePickerField } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -122,13 +123,7 @@ export default function EditWorkoutPage() {
               <Label htmlFor="date">
                 날짜 <span className="text-destructive">*</span>
               </Label>
-              <Input
-                type="date"
-                id="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
+              <DatePickerField id="date" value={date} onChange={setDate} />
             </div>
 
             <div className="space-y-2">

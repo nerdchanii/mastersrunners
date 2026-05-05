@@ -2,11 +2,17 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, Req } fr
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 
+import { FeatureGate } from "../common/decorators/feature-gate.decorator.js";
+
 import { CreateEventDto } from "./dto/create-event.dto.js";
+import { LinkEventWorkoutDto } from "./dto/link-event-workout.dto.js";
+import { ListEventsQueryDto } from "./dto/list-events-query.dto.js";
+import { SubmitEventResultDto } from "./dto/submit-event-result.dto.js";
 import { UpdateEventDto } from "./dto/update-event.dto.js";
 import { EventsService } from "./events.service.js";
 
 @ApiTags("Events")
+@FeatureGate("events")
 @Controller("events")
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
@@ -18,15 +24,11 @@ export class EventsController {
   }
 
   @Get()
-  findAll(
-    @Query("upcoming") upcoming?: string,
-    @Query("cursor") cursor?: string,
-    @Query("limit") limit?: string,
-  ) {
+  findAll(@Query() query: ListEventsQueryDto) {
     return this.eventsService.findAll({
-      upcoming: upcoming === "true",
-      cursor,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      upcoming: query.upcoming ?? false,
+      cursor: query.cursor,
+      limit: query.resolveOptionalLimit(),
     });
   }
 
@@ -66,19 +68,9 @@ export class EventsController {
   }
 
   @Put(":id/results")
-  submitResult(
-    @Param("id") id: string,
-    @Req() req: Request,
-    @Body()
-    body: {
-      resultTime: number;
-      resultRank?: number;
-      bibNumber?: string;
-      status: "COMPLETED" | "DNS" | "DNF";
-    },
-  ) {
+  submitResult(@Param("id") id: string, @Req() req: Request, @Body() dto: SubmitEventResultDto) {
     const { userId } = req.user as { userId: string };
-    return this.eventsService.submitResult(id, userId, body);
+    return this.eventsService.submitResult(id, userId, dto);
   }
 
   @Get(":id/results")
@@ -93,9 +85,9 @@ export class EventsController {
   }
 
   @Post(":id/link-workout")
-  linkWorkout(@Param("id") id: string, @Req() req: Request, @Body("workoutId") workoutId: string) {
+  linkWorkout(@Param("id") id: string, @Req() req: Request, @Body() dto: LinkEventWorkoutDto) {
     const { userId } = req.user as { userId: string };
-    return this.eventsService.linkWorkout(id, userId, workoutId);
+    return this.eventsService.linkWorkout(id, userId, dto.workoutId);
   }
 
   @Delete(":id/link-workout")

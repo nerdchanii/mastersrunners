@@ -1,8 +1,11 @@
+import "../config/load-env.js";
+
 import { Module, type Provider } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 
+import { isOAuthProviderEnabled } from "../config/feature-flags.js";
 import { DatabaseModule } from "../database/database.module.js";
 
 import { JwtSseGuard } from "./guards/jwt-sse.guard.js";
@@ -11,16 +14,15 @@ import { UserRepository } from "./repositories/user.repository.js";
 import { GoogleStrategy } from "./strategies/google.strategy.js";
 import { JwtStrategy } from "./strategies/jwt.strategy.js";
 import { KakaoStrategy } from "./strategies/kakao.strategy.js";
-import { NaverStrategy } from "./strategies/naver.strategy.js";
 import { AuthController } from "./auth.controller.js";
 import { AuthService } from "./auth.service.js";
+import { resolveJwtExpiresIn } from "./jwt-ttl.js";
 
 // Only register OAuth strategies when credentials are configured.
-// dotenv/config runs synchronously before module loading, so process.env is safe here.
+// load-env preloads repo-supported env files before this module evaluates.
 const oauthStrategies: Provider[] = [];
-if (process.env.KAKAO_CLIENT_ID) oauthStrategies.push(KakaoStrategy);
-if (process.env.GOOGLE_CLIENT_ID) oauthStrategies.push(GoogleStrategy);
-if (process.env.NAVER_CLIENT_ID) oauthStrategies.push(NaverStrategy);
+if (isOAuthProviderEnabled("kakao")) oauthStrategies.push(KakaoStrategy);
+if (isOAuthProviderEnabled("google")) oauthStrategies.push(GoogleStrategy);
 
 @Module({
   imports: [
@@ -32,7 +34,7 @@ if (process.env.NAVER_CLIENT_ID) oauthStrategies.push(NaverStrategy);
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>("JWT_SECRET"),
         signOptions: {
-          expiresIn: Number(config.get("JWT_ACCESS_TTL", 900)),
+          expiresIn: resolveJwtExpiresIn(config.get<string>("JWT_ACCESS_TTL"), 900),
         },
       }),
     }),

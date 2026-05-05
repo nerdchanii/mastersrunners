@@ -1,78 +1,61 @@
-import { Lock, LogOut, Settings, UserPlus, Users } from "lucide-react";
+import { LogOut, MoreHorizontal, Settings, Share2, UserPlus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
+import { AuthGateDialog } from "@/components/common/AuthGateDialog";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { TimeAgo } from "@/components/common/TimeAgo";
-import CrewActivityList from "@/components/crew/CrewActivityList";
-import CrewAttendanceStats from "@/components/crew/CrewAttendanceStats";
-import CrewBoardList from "@/components/crew/CrewBoardList";
-import CrewMemberList from "@/components/crew/CrewMemberList";
-import CrewPostList from "@/components/crew/CrewPostList";
-import CrewTagManager from "@/components/crew/CrewTagManager";
-import GroupChat from "@/components/crew/GroupChat";
-import PendingMemberList from "@/components/crew/PendingMemberList";
-import { Badge } from "@/components/ui/badge";
+import type { CrewHubDetail } from "@/components/crew/crew-hub-context";
+import {
+  crewActivityCreatePath,
+  crewBoardCreatePath,
+  crewHubPath,
+  type CrewHubTab,
+  resolveCrewHubRoute,
+} from "@/components/crew/crew-hub-routes";
+import CrewHubQuickActions from "@/components/crew/CrewHubQuickActions";
+import CrewIdentityHero from "@/components/crew/CrewIdentityHero";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { IconButton } from "@/components/ui/icon-button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCrewChat } from "@/hooks/useGroupChat";
-import { api } from "@/lib/api-client";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth-context";
+import { shareLink } from "@/lib/share-link";
 
-interface CrewMember {
-  id: string;
-  userId: string;
-  role: "OWNER" | "ADMIN" | "MEMBER";
-  status: "ACTIVE" | "PENDING";
-  joinedAt: string;
-  user: {
-    id: string;
-    name: string;
-    profileImage: string | null;
-  };
-}
+import { fetchCrewDetail, joinCrew, leaveCrew } from "./crew-detail-api";
 
-interface CrewDetail {
-  id: string;
-  name: string;
-  description: string | null;
-  imageUrl: string | null;
-  isPublic: boolean;
-  maxMembers: number | null;
-  createdAt: string;
-  creator: {
-    id: string;
-    name: string;
-    profileImage: string | null;
-  };
-  members: CrewMember[];
-  _count: {
-    members: number;
-  };
-}
+const crewHubTabTriggerClassName =
+  "h-full flex-none rounded-none border-x-0 border-t-0 border-b-[3px] border-transparent px-2.5 text-[17px] font-semibold leading-none text-foreground/55 transition-colors data-[state=active]:border-b-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none after:hidden sm:px-3 sm:text-lg";
 
 export default function CrewDetailClient() {
   const params = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const crewId = params.id as string;
 
-  const [crew, setCrew] = useState<CrewDetail | null>(null);
+  const [crew, setCrew] = useState<CrewHubDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
+  const [isSharingInvite, setIsSharingInvite] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState("members");
-  const { data: chatData, isLoading: chatLoading } = useCrewChat(crewId);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [authDialogTitle, setAuthDialogTitle] = useState("크루 참여");
+  const currentMember = crew?.members?.find((member) => member.userId === user?.id);
+  const isMember = !!currentMember && currentMember.status === "ACTIVE";
 
   const fetchCrew = useCallback(async () => {
     if (!crewId || crewId === "_") return;
     try {
       setIsLoading(true);
-      const data = await api.fetch<CrewDetail>(`/crews/${crewId}`);
+      const data = await fetchCrewDetail(crewId);
       setCrew(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "크루를 불러올 수 없습니다.");
@@ -85,16 +68,33 @@ export default function CrewDetailClient() {
     fetchCrew();
   }, [fetchCrew]);
 
-  const currentMember = crew?.members?.find((m) => m.userId === user?.id);
-  const isMember = !!currentMember && currentMember.status === "ACTIVE";
+  const canJoinCrew = !currentMember || currentMember.status === "LEFT";
   const currentUserRole = currentMember?.role ?? null;
   const isOwnerOrAdmin = currentUserRole === "OWNER" || currentUserRole === "ADMIN";
+  const canCreateActivity = isMember || isOwnerOrAdmin;
+  const routeState = resolveCrewHubRoute(location.pathname, crewId, isOwnerOrAdmin);
+  const activeTab = routeState.activeTab;
+  const shouldShowCrewHubActions =
+    !routeState.isActivityCreateRoute && !routeState.isBoardCreateRoute;
+
+  const handleTabChange = (tab: string) => {
+    navigate(crewHubPath(crewId, tab as CrewHubTab));
+  };
+  const authReturnPath =
+    typeof window === "undefined"
+      ? `/crews/${crewId}`
+      : `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
   const handleJoin = async () => {
     if (!crewId) return;
+    if (!user) {
+      setAuthDialogTitle("크루 참여");
+      setShowAuthDialog(true);
+      return;
+    }
     setIsJoining(true);
     try {
-      await api.fetch(`/crews/${crewId}/join`, { method: "POST" });
+      await joinCrew(crewId);
       await fetchCrew();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "가입에 실패했습니다.");
@@ -103,15 +103,53 @@ export default function CrewDetailClient() {
     }
   };
 
+  const handleShareInvite = async () => {
+    if (!crewId || !crew) {
+      return;
+    }
+
+    setIsSharingInvite(true);
+    try {
+      const result = await shareLink({
+        title: `${crew.name} 크루`,
+        text: `${crew.name} 크루 페이지를 확인해보세요.`,
+        url: typeof window === "undefined" ? `/crews/${crewId}` : window.location.href,
+      });
+
+      if (result === "shared") {
+        toast.success("크루 페이지 공유 창을 열었습니다.");
+      } else if (result === "copied") {
+        toast.success("크루 페이지를 복사했습니다.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "크루 페이지를 공유하지 못했습니다.");
+    } finally {
+      setIsSharingInvite(false);
+    }
+  };
+
   const handleLeave = async () => {
     if (!crewId) return;
     try {
-      await api.fetch(`/crews/${crewId}/leave`, { method: "DELETE" });
+      await leaveCrew(crewId);
       setShowLeaveDialog(false);
       navigate("/crews");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "탈퇴에 실패했습니다.");
     }
+  };
+
+  const openBoardComposer = () => {
+    navigate(crewBoardCreatePath(crewId));
+  };
+
+  const openActivityComposer = () => {
+    navigate(crewActivityCreatePath(crewId));
+  };
+
+  const openAuthGate = (title: string) => {
+    setAuthDialogTitle(title);
+    setShowAuthDialog(true);
   };
 
   if (!crewId || crewId === "_") {
@@ -128,18 +166,16 @@ export default function CrewDetailClient() {
   if (isLoading) {
     return (
       <div className="container max-w-4xl mx-auto py-6 space-y-6">
-        <Card>
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-start gap-4">
-              <Skeleton className="w-16 h-16 rounded-lg" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-8 w-1/3" />
-                <Skeleton className="h-4 w-1/4" />
-              </div>
+        <div className="rounded-3xl border border-border/60 bg-background/80 p-6">
+          <div className="flex items-start gap-4">
+            <Skeleton className="w-16 h-16 rounded-lg" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-8 w-1/3" />
+              <Skeleton className="h-4 w-1/4" />
             </div>
-            <Skeleton className="h-20 w-full" />
-          </CardContent>
-        </Card>
+          </div>
+          <Skeleton className="mt-4 h-20 w-full" />
+        </div>
       </div>
     );
   }
@@ -147,158 +183,154 @@ export default function CrewDetailClient() {
   if (error || !crew) {
     return (
       <div className="container max-w-2xl mx-auto py-6">
-        <Card className="border-destructive">
-          <CardContent className="p-6">
-            <h2 className="text-lg font-semibold text-destructive mb-2">오류</h2>
-            <p className="text-muted-foreground mb-4">{error || "크루를 찾을 수 없습니다."}</p>
-            <Button variant="outline" onClick={() => navigate("/crews")}>
-              크루 목록으로
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-3xl border border-destructive bg-background/80 p-6">
+          <h2 className="text-lg font-semibold text-destructive mb-2">오류</h2>
+          <p className="text-muted-foreground mb-4">{error || "크루를 찾을 수 없습니다."}</p>
+          <Button variant="outline" onClick={() => navigate("/crews")}>
+            크루 목록으로
+          </Button>
+        </div>
       </div>
     );
   }
 
   const activeMembers = crew.members.filter((m) => m.status === "ACTIVE");
+  const heroProfileImage = crew.profileImageUrl ?? crew.imageUrl ?? null;
+  const heroCoverImage = crew.coverImageUrl ?? null;
 
-  return (
-    <div className="container max-w-4xl mx-auto py-6 space-y-6">
-      {/* Crew Header */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4 mb-4">
-            <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              {crew.imageUrl ? (
-                <img
-                  src={crew.imageUrl}
-                  alt={crew.name}
-                  className="w-16 h-16 rounded-lg object-cover"
-                />
-              ) : (
-                <Users className="w-8 h-8 text-primary" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-2xl font-bold truncate">{crew.name}</h1>
-                {!crew.isPublic && <Lock className="w-5 h-5 text-muted-foreground" />}
-              </div>
-              <p className="text-sm text-muted-foreground">만든이: {crew.creator.name}</p>
-              <div className="flex items-center gap-3 mt-2">
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>
-                    {crew._count.members}명{crew.maxMembers && ` / ${crew.maxMembers}명`}
-                  </span>
-                </div>
-                <Badge variant={crew.isPublic ? "default" : "secondary"}>
-                  {crew.isPublic ? "공개" : "비공개"}
-                </Badge>
-              </div>
-            </div>
-          </div>
-
-          {crew.description && (
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-4">
-              {crew.description}
-            </p>
+  const homeHero = (
+    <CrewIdentityHero
+      crewId={crewId}
+      name={crew.name}
+      description={null}
+      creatorName={crew.creator.name}
+      createdAt={crew.createdAt}
+      memberCount={crew._count.members}
+      maxMembers={crew.maxMembers}
+      isPublic={crew.isPublic}
+      profileImageUrl={heroProfileImage}
+      coverImageUrl={heroCoverImage}
+      members={activeMembers}
+      currentUserId={user?.id}
+      currentUserRole={currentUserRole}
+      onMembersUpdate={fetchCrew}
+      chatHref={`/messages/crew/${crewId}`}
+      topActions={
+        isMember && currentUserRole !== "OWNER" ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                variant="ghost"
+                className="border border-background/35 bg-background/55 shadow-xs backdrop-blur-sm"
+                aria-label="크루 멤버 메뉴"
+              >
+                <MoreHorizontal className="size-4" />
+              </IconButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem variant="destructive" onClick={() => setShowLeaveDialog(true)}>
+                <LogOut className="size-4" />
+                크루 탈퇴
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null
+      }
+      actions={
+        <>
+          {canJoinCrew && (
+            <IconButton
+              variant="default"
+              onClick={handleJoin}
+              disabled={isJoining}
+              aria-label={isJoining ? "가입 중" : "크루 가입"}
+            >
+              <UserPlus className="size-4" />
+            </IconButton>
           )}
 
-          <div className="flex items-center justify-between">
-            <TimeAgo date={crew.createdAt} />
+          {isMember && (
+            <IconButton
+              variant="outline"
+              onClick={handleShareInvite}
+              disabled={isSharingInvite}
+              aria-label={isSharingInvite ? "공유 준비 중" : "크루 페이지 공유"}
+            >
+              <Share2 className="size-4" />
+            </IconButton>
+          )}
 
-            <div className="flex items-center gap-2">
-              {user && !isMember && (
-                <Button onClick={handleJoin} disabled={isJoining}>
-                  <UserPlus className="size-4 mr-2" />
-                  {isJoining ? "가입 중..." : "크루 가입"}
-                </Button>
-              )}
+          {isOwnerOrAdmin && (
+            <IconButton
+              variant="outline"
+              onClick={() => navigate(`/crews/${crewId}/settings`)}
+              aria-label="설정"
+            >
+              <Settings className="size-4" />
+            </IconButton>
+          )}
+        </>
+      }
+    />
+  );
 
-              {isMember && currentUserRole !== "OWNER" && (
-                <Button variant="destructive" onClick={() => setShowLeaveDialog(true)}>
-                  <LogOut className="size-4 mr-2" />
-                  크루 탈퇴
-                </Button>
-              )}
-
-              {isOwnerOrAdmin && (
-                <Button variant="outline" onClick={() => navigate(`/crews/${crewId}/settings`)}>
-                  <Settings className="size-4 mr-2" />
-                  설정
-                </Button>
-              )}
+  return (
+    <div className="mx-auto max-w-6xl">
+      <div className="px-0 lg:px-6">
+        <section>
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+            <div className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-md md:top-14">
+              <div className="flex items-center gap-3 overflow-x-auto px-4 lg:px-0">
+                <TabsList
+                  variant="line"
+                  className="h-12 min-w-0 flex-1 justify-start gap-0 overflow-x-auto rounded-none border-0 px-0"
+                >
+                  <TabsTrigger value="home" className={crewHubTabTriggerClassName}>
+                    홈
+                  </TabsTrigger>
+                  <TabsTrigger value="activities" className={crewHubTabTriggerClassName}>
+                    활동
+                  </TabsTrigger>
+                  <TabsTrigger value="board" className={crewHubTabTriggerClassName}>
+                    게시판
+                  </TabsTrigger>
+                  <TabsTrigger value="members" className={crewHubTabTriggerClassName}>
+                    멤버
+                  </TabsTrigger>
+                  {isOwnerOrAdmin && (
+                    <>
+                      <TabsTrigger value="manage" className={crewHubTabTriggerClassName}>
+                        관리
+                      </TabsTrigger>
+                      <TabsTrigger value="pending" className={crewHubTabTriggerClassName}>
+                        가입대기
+                      </TabsTrigger>
+                    </>
+                  )}
+                </TabsList>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="members">멤버</TabsTrigger>
-          <TabsTrigger value="activities">활동</TabsTrigger>
-          <TabsTrigger value="tags">태그</TabsTrigger>
-          <TabsTrigger value="stats">통계</TabsTrigger>
-          <TabsTrigger value="boards">게시판</TabsTrigger>
-          <TabsTrigger value="posts">게시물</TabsTrigger>
-          {isMember && <TabsTrigger value="chat">채팅</TabsTrigger>}
-          {isOwnerOrAdmin && <TabsTrigger value="pending">대기 멤버</TabsTrigger>}
-        </TabsList>
-
-        <TabsContent value="members" className="mt-6">
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="text-lg font-semibold mb-4">멤버 ({activeMembers.length}명)</h2>
-              <CrewMemberList
-                crewId={crewId}
-                members={activeMembers}
-                currentUserId={user?.id}
-                currentUserRole={currentUserRole}
-                onUpdate={fetchCrew}
+            <div className="pb-6 pt-0 sm:pb-8">
+              <Outlet
+                context={{
+                  activeMembers,
+                  crew,
+                  crewId,
+                  currentUserId: user?.id,
+                  currentUserRole,
+                  homeHero,
+                  isAuthenticated: !!user,
+                  isMember,
+                  isOwnerOrAdmin,
+                  onMembersUpdate: fetchCrew,
+                  openAuthGate,
+                }}
               />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="activities" className="mt-6">
-          <CrewActivityList crewId={crewId} isAdmin={isOwnerOrAdmin} isMember={isMember} />
-        </TabsContent>
-
-        <TabsContent value="tags" className="mt-6">
-          <CrewTagManager crewId={crewId} isAdmin={isOwnerOrAdmin} members={activeMembers} />
-        </TabsContent>
-
-        <TabsContent value="stats" className="mt-6">
-          <CrewAttendanceStats crewId={crewId} />
-        </TabsContent>
-
-        <TabsContent value="boards" className="mt-6">
-          <CrewBoardList crewId={crewId} isMember={isMember} isAdmin={isOwnerOrAdmin} />
-        </TabsContent>
-
-        <TabsContent value="posts" className="mt-6">
-          <CrewPostList crewId={crewId} isOwner={currentUserRole === "OWNER"} />
-        </TabsContent>
-
-        {isMember && (
-          <TabsContent value="chat" className="mt-6">
-            <GroupChat data={chatData} isLoading={chatLoading} crewId={crewId} />
-          </TabsContent>
-        )}
-
-        {isOwnerOrAdmin && (
-          <TabsContent value="pending" className="mt-6">
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-lg font-semibold mb-4">대기 멤버</h2>
-                <PendingMemberList crewId={crewId} onUpdate={fetchCrew} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
-      </Tabs>
+            </div>
+          </Tabs>
+        </section>
+      </div>
 
       {/* Leave Confirmation Dialog */}
       <ConfirmDialog
@@ -310,6 +342,23 @@ export default function CrewDetailClient() {
         confirmLabel="탈퇴"
         variant="destructive"
       />
+
+      <AuthGateDialog
+        open={showAuthDialog}
+        onOpenChange={setShowAuthDialog}
+        nextPath={authReturnPath}
+        title={authDialogTitle}
+      />
+
+      {shouldShowCrewHubActions ? (
+        <CrewHubQuickActions
+          dismissKey={activeTab}
+          canWritePost={isMember}
+          canCreateActivity={canCreateActivity}
+          onWritePost={openBoardComposer}
+          onCreateActivity={openActivityComposer}
+        />
+      ) : null}
     </div>
   );
 }

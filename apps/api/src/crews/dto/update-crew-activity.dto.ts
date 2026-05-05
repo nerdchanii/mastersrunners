@@ -40,6 +40,11 @@ export class UpdateCrewActivityDto {
   @IsString()
   activityType?: string; // OFFICIAL | POP_UP
 
+  @ApiProperty({ description: "활동 아이콘", required: false })
+  @IsOptional()
+  @IsString()
+  activityIcon?: string;
+
   @ApiProperty({ description: "워크아웃 타입 ID", required: false })
   @IsOptional()
   @IsString()

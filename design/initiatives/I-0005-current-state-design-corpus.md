@@ -31,7 +31,7 @@ Most durable design knowledge still lives in transitional phase plans, `.omc` no
 ## Design References
 
 - `design/operating-rules/document-states.md`
-- `docs/plans/archive/`
+- `docs/reports/history/`
 - `.omc/` legacy sources (salvage-only)
 
 ## Review Plan
@@ -43,20 +43,20 @@ Most durable design knowledge still lives in transitional phase plans, `.omc` no
 
 ## Task Breakdown
 
-- `tasks/I-0005-current-state-design-corpus/archive/I-0005-010-architecture-repo-runtime-foundation.md`
-- `tasks/I-0005-current-state-design-corpus/archive/I-0005-020-web-frontend-foundation.md`
-- `tasks/I-0005-current-state-design-corpus/archive/I-0005-030-web-social-workout-design.md`
-- `tasks/I-0005-current-state-design-corpus/archive/I-0005-040-web-crew-events-design.md`
-- `tasks/I-0005-current-state-design-corpus/archive/I-0005-050-api-backend-foundation.md`
-- `tasks/I-0005-current-state-design-corpus/archive/I-0005-060-api-domain-feature-design.md`
-- `tasks/I-0005-current-state-design-corpus/archive/I-0005-070-docs-domain-sync-pack.md`
-- `tasks/I-0005-current-state-design-corpus/archive/I-0005-080-meta-adr-seed-pack.md`
+- `tasks/archive/I-0005-010-architecture-repo-runtime-foundation.md`
+- `tasks/archive/I-0005-020-web-frontend-foundation.md`
+- `tasks/archive/I-0005-030-web-social-workout-design.md`
+- `tasks/archive/I-0005-040-web-crew-events-design.md`
+- `tasks/archive/I-0005-050-api-backend-foundation.md`
+- `tasks/archive/I-0005-060-api-domain-feature-design.md`
+- `tasks/archive/I-0005-070-docs-domain-sync-pack.md`
+- `tasks/archive/I-0005-080-meta-adr-seed-pack.md`
 
 ## Success Criteria
 
 - the required frontend/backend/architecture docs exist with current-state frontmatter
 - domain docs no longer contradict code/schema on the known stale concepts
-- `docs/plans/` and `.omc` stop being needed to understand current implementation shape
+- historical planning material and `.omc` stop being needed to understand current implementation shape
 
 ## Progress Notes
 

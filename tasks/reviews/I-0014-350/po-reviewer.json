@@ -1,0 +1,22 @@
+{
+  "task_id": "I-0014-350",
+  "reviewer": "po-reviewer",
+  "decision": "approved",
+  "tool": "codex-manual-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/po-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/po-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/po-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/po-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-04-04T21:15:00+09:00",
+  "findings": [],
+  "residual_risks": [
+    "이번 task는 desktop workout detail hero에 집중했으므로, 모바일 detail 레이아웃 밀도는 후속 피드백이 있으면 별도로 판단해야 한다."
+  ]
+}

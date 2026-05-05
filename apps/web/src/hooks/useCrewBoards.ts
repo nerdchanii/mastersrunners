@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
 
@@ -44,6 +44,8 @@ export interface Board {
   _count: { posts: number };
 }
 
+export type BoardPostWithBoard = BoardPost & { board: Board };
+
 export const boardKeys = {
   boards: (crewId: string) => ["crews", crewId, "boards"] as const,
   posts: (crewId: string, boardId: string) =>
@@ -69,6 +71,40 @@ export function useBoardPosts(crewId: string, boardId: string) {
       ),
     enabled: !!crewId && !!boardId,
   });
+}
+
+export function useBoardPostFeeds(crewId: string, boards: Board[] | undefined) {
+  const boardList = boards ?? [];
+  const queries = useQueries({
+    queries: boardList.map((board) => ({
+      queryKey: boardKeys.posts(crewId, board.id),
+      queryFn: () =>
+        api.fetch<{ items: BoardPost[]; nextCursor: string | null }>(
+          `/crews/${crewId}/boards/${board.id}/posts`,
+        ),
+      enabled: !!crewId && !!board.id,
+    })),
+  });
+
+  const items = queries
+    .flatMap((query, index) => {
+      const board = boardList[index];
+      return (query.data?.items ?? []).map((post) => ({ ...post, board }));
+    })
+    .sort((left, right) => {
+      if (left.board.type === "ANNOUNCEMENT" && right.board.type !== "ANNOUNCEMENT") {
+        return -1;
+      }
+      if (left.board.type !== "ANNOUNCEMENT" && right.board.type === "ANNOUNCEMENT") {
+        return 1;
+      }
+      return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+    });
+
+  return {
+    items,
+    isLoading: queries.some((query) => query.isLoading),
+  };
 }
 
 export function useBoardPost(crewId: string, boardId: string, postId: string) {
@@ -113,6 +149,7 @@ export function useCreatePost() {
       }),
     onSuccess: (_r, { crewId, boardId }) => {
       qc.invalidateQueries({ queryKey: boardKeys.posts(crewId, boardId) });
+      qc.invalidateQueries({ queryKey: boardKeys.boards(crewId) });
     },
   });
 }

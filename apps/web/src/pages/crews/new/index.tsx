@@ -2,11 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import CrewForm from "@/components/crew/CrewForm";
-import { api } from "@/lib/api-client";
 
-interface CreatedCrew {
-  id: string;
-}
+import { createCrew } from "./crew-create-api";
 
 export default function NewCrewPage() {
   const navigate = useNavigate();
@@ -15,6 +12,8 @@ export default function NewCrewPage() {
   const handleSubmit = async (data: {
     name: string;
     description?: string;
+    profileImageUrl?: string | null;
+    coverImageUrl?: string | null;
     isPublic: boolean;
     maxMembers?: number;
     location?: string;
@@ -23,10 +22,7 @@ export default function NewCrewPage() {
   }) => {
     setIsSubmitting(true);
     try {
-      const crew = await api.fetch<CreatedCrew>("/crews", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const crew = await createCrew(data);
       navigate(`/crews/${crew.id}`);
     } catch (err) {
       setIsSubmitting(false);
@@ -39,10 +35,10 @@ export default function NewCrewPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">새 크루 만들기</h1>
-        <p className="mt-2 text-sm text-gray-600">함께 달릴 크루를 만들어보세요.</p>
+    <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+      <div className="w-full shrink-0 px-5 pb-5 pt-6 sm:px-8 md:px-10 lg:mx-auto lg:max-w-4xl lg:px-12">
+        <h1 className="text-3xl font-bold text-foreground">새 크루 만들기</h1>
+        <p className="mt-2 text-sm text-muted-foreground">함께 달릴 크루를 만들어보세요.</p>
       </div>
 
       <CrewForm

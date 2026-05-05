@@ -1,0 +1,22 @@
+{
+  "task_id": "I-0016-050",
+  "reviewer": "ui-ux-reviewer",
+  "decision": "approved",
+  "tool": "codex-subagent-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/ui-ux-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/ui-ux-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/ui-ux-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/ui-ux-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-04-04T20:00:12+09:00",
+  "findings": [],
+  "residual_risks": [
+    "비공개 프로필 잠금 셸과 공개 크루 목록 전용 읽기 계약은 충분히 일관되지만, 향후 공개 workout 재노출 여부를 정할 때 현재의 간결한 auth gate 톤을 유지해야 한다."
+  ]
+}

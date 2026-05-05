@@ -11,6 +11,7 @@ interface EmptyStateProps {
   onAction?: () => void;
   actionHref?: string;
   className?: string;
+  align?: "center" | "left";
 }
 
 export function EmptyState({
@@ -20,17 +21,31 @@ export function EmptyState({
   actionLabel,
   onAction,
   className,
+  align = "center",
 }: EmptyStateProps) {
   return (
-    <div className={cn("flex flex-col items-center justify-center py-16 px-4", className)}>
+    <div
+      className={cn(
+        "flex flex-col justify-center px-4 py-16",
+        align === "center" ? "items-center text-center" : "items-start text-left",
+        className,
+      )}
+    >
       {Icon && (
-        <div className="rounded-full bg-muted p-4 mb-4">
+        <div className="mb-4 rounded-full bg-muted p-4">
           <Icon className="size-8 text-muted-foreground" />
         </div>
       )}
       <h3 className="text-lg font-semibold text-foreground">{title}</h3>
       {description && (
-        <p className="mt-1.5 text-sm text-muted-foreground text-center max-w-sm">{description}</p>
+        <p
+          className={cn(
+            "mt-1.5 max-w-sm text-sm text-muted-foreground",
+            align === "center" ? "text-center" : "text-left",
+          )}
+        >
+          {description}
+        </p>
       )}
       {actionLabel && onAction && (
         <Button onClick={onAction} className="mt-4" size="sm">

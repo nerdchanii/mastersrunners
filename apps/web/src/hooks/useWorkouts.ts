@@ -10,6 +10,9 @@ interface Workout {
   date: string;
   memo: string | null;
   visibility: "PRIVATE" | "FOLLOWERS" | "PUBLIC";
+  liked?: boolean;
+  likeCount?: number;
+  commentCount?: number;
   workoutType?: { id: string; name: string };
   shoe?: { id: string; name: string };
 }
@@ -63,7 +66,7 @@ export function useWorkout(id: string) {
   });
 }
 
-export function useWorkoutFeed() {
+export function useWorkoutFeed(enabled = true) {
   return useInfiniteQuery({
     queryKey: workoutKeys.feed(),
     queryFn: ({ pageParam }) => {
@@ -71,6 +74,7 @@ export function useWorkoutFeed() {
       if (pageParam) path += `&cursor=${encodeURIComponent(pageParam as string)}`;
       return api.fetch<FeedResponse<WorkoutFeedItem>>(path);
     },
+    enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => (lastPage?.hasMore ? lastPage.nextCursor : undefined),
   });

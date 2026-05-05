@@ -17,13 +17,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useDeleteAccount } from "@/hooks/useAccount";
-import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
 
 import { useProfileEditForm } from "./use-profile-edit-form";
 
 export default function EditProfilePage() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const deleteAccount = useDeleteAccount();
   const [deleteStep, setDeleteStep] = useState<0 | 1 | 2>(0); // 0=closed, 1=경고, 2=최종확인
@@ -49,8 +50,7 @@ export default function EditProfilePage() {
     try {
       await deleteAccount.mutateAsync();
       toast.success("계정이 삭제되었습니다.");
-      api.clearTokens();
-      window.location.href = "/login";
+      logout();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "계정 삭제에 실패했습니다.");
       setDeleteStep(0);
@@ -176,6 +176,105 @@ export default function EditProfilePage() {
             <div className="flex justify-between">
               {errors.bio ? <p className="text-xs text-destructive">{errors.bio}</p> : <span />}
               <p className="text-xs text-muted-foreground">{form.bio.length}/300</p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="region">거점 지역</Label>
+              <Input
+                id="region"
+                value={form.region}
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, region: e.target.value }));
+                  if (errors.region) setErrors((prev) => ({ ...prev, region: "" }));
+                }}
+                placeholder="예: 서울특별시"
+                maxLength={100}
+              />
+              {errors.region && <p className="text-xs text-destructive">{errors.region}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="subRegion">세부 지역</Label>
+              <Input
+                id="subRegion"
+                value={form.subRegion}
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, subRegion: e.target.value }));
+                  if (errors.subRegion) setErrors((prev) => ({ ...prev, subRegion: "" }));
+                }}
+                placeholder="예: 마포구"
+                maxLength={100}
+              />
+              {errors.subRegion && <p className="text-xs text-destructive">{errors.subRegion}</p>}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <h2 className="text-sm font-semibold">PB 기록</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                선택 입력입니다. `mm:ss` 또는 `hh:mm:ss` 형식으로 적어주세요.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="pb5k">5K</Label>
+                <Input
+                  id="pb5k"
+                  value={form.pb5k}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, pb5k: e.target.value }));
+                    if (errors.pb5k) setErrors((prev) => ({ ...prev, pb5k: "" }));
+                  }}
+                  placeholder="21:30"
+                />
+                {errors.pb5k && <p className="text-xs text-destructive">{errors.pb5k}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pb10k">10K</Label>
+                <Input
+                  id="pb10k"
+                  value={form.pb10k}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, pb10k: e.target.value }));
+                    if (errors.pb10k) setErrors((prev) => ({ ...prev, pb10k: "" }));
+                  }}
+                  placeholder="45:00"
+                />
+                {errors.pb10k && <p className="text-xs text-destructive">{errors.pb10k}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pbHalf">HM</Label>
+                <Input
+                  id="pbHalf"
+                  value={form.pbHalf}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, pbHalf: e.target.value }));
+                    if (errors.pbHalf) setErrors((prev) => ({ ...prev, pbHalf: "" }));
+                  }}
+                  placeholder="1:40:00"
+                />
+                {errors.pbHalf && <p className="text-xs text-destructive">{errors.pbHalf}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pbFull">FM</Label>
+                <Input
+                  id="pbFull"
+                  value={form.pbFull}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, pbFull: e.target.value }));
+                    if (errors.pbFull) setErrors((prev) => ({ ...prev, pbFull: "" }));
+                  }}
+                  placeholder="3:30:00"
+                />
+                {errors.pbFull && <p className="text-xs text-destructive">{errors.pbFull}</p>}
+              </div>
             </div>
           </div>
         </div>

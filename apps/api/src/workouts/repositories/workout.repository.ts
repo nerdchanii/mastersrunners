@@ -62,15 +62,26 @@ export class WorkoutRepository {
     return { data, nextCursor, hasMore };
   }
 
-  async findByIdWithUser(id: string) {
+  async findByIdWithUser(id: string, requesterUserId?: string) {
     return this.db.prisma.workout.findFirst({
       where: { id, deletedAt: null },
       include: {
         user: { select: { id: true, name: true, profileImage: true } },
         workoutType: { select: { id: true, category: true, name: true } },
         file: true,
-        route: true,
-        laps: { orderBy: { lapNumber: "asc" } },
+        _count: {
+          select: {
+            workoutLikes: true,
+            workoutComments: { where: { deletedAt: null } },
+          },
+        },
+        workoutLikes: requesterUserId
+          ? {
+              where: { userId: requesterUserId },
+              select: { id: true },
+              take: 1,
+            }
+          : false,
       },
     });
   }

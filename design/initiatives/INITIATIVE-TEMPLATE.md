@@ -35,7 +35,7 @@ What problem are we solving?
 
 ## Task Breakdown
 
-- `tasks/<initiative>/todo/...`
+- `tasks/todo/I-XXXX-010-...`
 
 ## Success Criteria
 

@@ -6,6 +6,7 @@ interface CreateCrewData {
   name: string;
   description?: string | null;
   imageUrl?: string | null;
+  coverImageUrl?: string | null;
   creatorId: string;
   isPublic?: boolean;
   maxMembers?: number | null;
@@ -18,6 +19,7 @@ interface UpdateCrewData {
   name?: string;
   description?: string | null;
   imageUrl?: string | null;
+  coverImageUrl?: string | null;
   isPublic?: boolean;
   maxMembers?: number | null;
   location?: string | null;
@@ -111,6 +113,33 @@ export class CrewRepository {
     return this.db.prisma.crew.findMany({
       where: {
         deletedAt: null,
+        members: {
+          some: { userId, status: "ACTIVE" },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: {
+          select: {
+            members: { where: { status: "ACTIVE" } },
+          },
+        },
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            profileImage: true,
+          },
+        },
+      },
+    });
+  }
+
+  async findPublicByUser(userId: string) {
+    return this.db.prisma.crew.findMany({
+      where: {
+        deletedAt: null,
+        isPublic: true,
         members: {
           some: { userId, status: "ACTIVE" },
         },

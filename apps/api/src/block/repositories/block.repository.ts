@@ -1,3 +1,4 @@
+import type { TransactionClient } from "@masters/database";
 import { Injectable } from "@nestjs/common";
 
 import { DatabaseService } from "../../database/database.service.js";
@@ -9,6 +10,25 @@ export class BlockRepository {
   async block(blockerId: string, blockedId: string) {
     return this.db.prisma.block.create({
       data: { blockerId, blockedId },
+    });
+  }
+
+  async blockAndRemoveFollows(blockerId: string, blockedId: string) {
+    return this.db.prisma.$transaction(async (tx: TransactionClient) => {
+      const block = await tx.block.create({
+        data: { blockerId, blockedId },
+      });
+
+      await tx.follow.deleteMany({
+        where: {
+          OR: [
+            { followerId: blockerId, followingId: blockedId },
+            { followerId: blockedId, followingId: blockerId },
+          ],
+        },
+      });
+
+      return block;
     });
   }
 

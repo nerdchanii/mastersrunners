@@ -13,6 +13,10 @@ jest.mock("@aws-sdk/s3-request-presigner", () => ({
   getSignedUrl: jest.fn().mockResolvedValue("https://signed-url.example.com"),
 }));
 
+const { S3Client } = jest.requireMock("@aws-sdk/client-s3") as {
+  S3Client: jest.Mock;
+};
+
 describe("R2StorageAdapter", () => {
   let adapter: R2StorageAdapter;
 
@@ -25,6 +29,19 @@ describe("R2StorageAdapter", () => {
     process.env.R2_SECRET_ACCESS_KEY = "test-secret";
 
     adapter = new R2StorageAdapter();
+  });
+
+  it("derives the standard Cloudflare endpoint from R2_ACCOUNT_ID when R2_ENDPOINT is missing", () => {
+    delete process.env.R2_ENDPOINT;
+    process.env.R2_ACCOUNT_ID = "4c06e7b26178217eaee38b57bbcbd2d1";
+
+    new R2StorageAdapter();
+
+    expect(S3Client).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        endpoint: "https://4c06e7b26178217eaee38b57bbcbd2d1.r2.cloudflarestorage.com",
+      }),
+    );
   });
 
   describe("getUploadUrl", () => {

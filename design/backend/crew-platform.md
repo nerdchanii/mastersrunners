@@ -37,6 +37,7 @@ The crew backend is a thin orchestration facade over membership, tags, activitie
   - crew tag CRUD and member-tag assignments
 - `CrewActivitiesService`
   - official/pop-up activity lifecycle, RSVP, check-in, and completion status
+  - enforces that ordinary members use QR/self-service attendance while operator-style manual check-in stays behind crew management permissions
 - `CrewReadService`
   - crew detail reads, activity read models, and aggregated lookups
 - `CrewsService`
