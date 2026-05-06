@@ -10,7 +10,8 @@ set -euo pipefail
 #   `pnpm install --frozen-lockfile` first.
 # - PostgreSQL for API tests is reachable at DATABASE_URL.
 # - Redis is reachable at REDIS_URL if the API test suite requires it.
-# - Playwright browser binaries can be downloaded locally when web UX tests run.
+# - Playwright browser binaries are already installed, or set
+#   CI_LOCAL_INSTALL_PLAYWRIGHT=1 to install Chromium before web UX tests.
 # - Generated/build artifacts must not be tracked in git.
 # - This script intentionally omits the separate Docker image build job from CI.
 
@@ -18,6 +19,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 CI_LOCAL_INSTALL="${CI_LOCAL_INSTALL:-0}"
+CI_LOCAL_INSTALL_PLAYWRIGHT="${CI_LOCAL_INSTALL_PLAYWRIGHT:-0}"
 
 DATABASE_URL="${DATABASE_URL:-postgresql://masters:masters@localhost:5432/masters_runners_test}"
 JWT_SECRET="${JWT_SECRET:-test-secret}"
@@ -58,15 +60,7 @@ run_step "Check first-wave UX copy guardrails" pnpm check:ux-copy
 
 run_step "Run explicit typecheck" bash scripts/run-typecheck.sh
 
-run_step "Check reviewer protocols" bash scripts/check-reviewer-protocols.sh
-
-run_step "Check reviewer protocol wiring" bash scripts/check-reviewer-protocol-wiring.sh
-
-run_step "Check task review metadata for active and todo tasks" bash scripts/check-task-review-metadata.sh
-
 run_step "Check deterministic active-task closeout state" bash scripts/check-active-task-closeout.sh
-
-run_step "Check Codex Stop review hook smoke scenarios" bash scripts/check-codex-stop-review-hook.sh
 
 run_step "Check dependency boundaries and cycles" pnpm depcruise
 
@@ -86,8 +80,12 @@ run_step "Build web" env \
   VITE_API_URL="$VITE_API_URL" \
   pnpm --filter @masters/web build
 
-run_step "Install Playwright browser" \
-  pnpm --filter @masters/web exec playwright install chromium
+if [ "$CI_LOCAL_INSTALL_PLAYWRIGHT" = "1" ]; then
+  run_step "Install Playwright browser" \
+    pnpm --filter @masters/web exec playwright install chromium
+else
+  printf 'Skipping Playwright browser install. Set CI_LOCAL_INSTALL_PLAYWRIGHT=1 to include it.\n'
+fi
 
 run_step "Run public web UX contracts" env \
   VITE_API_URL="$VITE_API_URL" \

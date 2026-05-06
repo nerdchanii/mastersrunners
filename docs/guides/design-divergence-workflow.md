@@ -16,7 +16,7 @@ design/docs
 implementation(code)
    │
    ├─ matches design
-   │    └─ verify -> review -> archive -> commit
+   │    └─ verify -> optional review -> archive -> commit
    │
    └─ diverges from design
         ├─ keep design/docs intact
@@ -37,9 +37,7 @@ implementation(code)
    │   ↓
    │ [run verify]
    │   ↓
-   │ [specialist review]
-   │   ↓
-   │ [PO review]
+   │ [optional task-specific review]
    │   ↓
    │ [archive task]
    │   ↓
@@ -59,9 +57,7 @@ implementation(code)
        ↓
    [run verify]
        ↓
-   [specialist review]
-       ↓
-   [PO review]
+   [optional task-specific review]
        ↓
    [archive task]
        ↓

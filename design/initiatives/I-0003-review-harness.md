@@ -2,7 +2,7 @@
 
 ## Summary
 
-This initiative is now historical. The repository no longer operates a PR-specific harness, AI review lane, or merge-readiness state machine. Task review remains the live harness; the PR-specific surfaces that once lived under `I-0003` were retired by `I-0003-210`.
+This initiative is now historical. The repository no longer operates a PR-specific harness, AI review lane, merge-readiness state machine, mandatory task review gate, or Codex Stop-hook review automation. The PR-specific surfaces that once lived under `I-0003` were retired by `I-0003-210`; the mandatory task review gate was retired by `I-0003-220`.
 
 ## Problem
 
@@ -11,12 +11,13 @@ The earlier PR lane added a second workflow truth on top of the task-centric har
 ## Goals
 
 - retire the PR-specific automation and documentation cleanly
-- keep the task-centric review harness intact
+- keep mechanical verification gates intact while making review task-specific and optional
 - preserve historical context without leaving `I-0003` as a live operating lane
 
 ## Non-Goals
 
-- removing the repository's task review rules
+- removing reviewer protocol reference files
+- removing mechanical verification gates such as lint, format, typecheck, build, and test
 - redefining the repo-native task/supervisor/intake semantics already documented in the live runbooks
 - treating pull requests as canonical execution truth
 
@@ -33,22 +34,25 @@ The earlier PR lane added a second workflow truth on top of the task-centric har
 
 ## Review Plan
 
-- Harness and process changes should be reviewed by `harness-reviewer`
-- PO review checks whether the workflow remains aligned with the intended product and delivery model
+- Harness and process changes may request `harness-reviewer` when independent advice would reduce risk.
+- PO review is optional and useful when workflow changes affect product delivery expectations.
 
 ## Task Breakdown
 
 - Historical record: archived tasks under `tasks/archive/`
-- Retirement cleanup: `tasks/active/I-0003-210-meta-retire-pr-harness.md`
+- PR harness retirement cleanup: `tasks/archive/I-0003-210-meta-retire-pr-harness.md`
+- Mandatory task review gate retirement: `tasks/archive/I-0003-220-meta-review-gate-harness-removal.md`
 
 ## Success Criteria
 
 - no live documentation, workflow, or script claims that a PR-specific harness is part of the repo operating model
-- task review remains the only formal completion gate
+- mandatory task review no longer appears as a formal completion gate
+- mechanical verification remains active in local and GitHub CI
 - `I-0003` is preserved as historical context rather than a live initiative lane
 
 ## Progress Notes
 
 - `I-0003-010` through `I-0003-160` remain as historical evidence of the earlier PR-specific harness work.
 - On 2026-03-24, the repository retired the live PR lane and archived the remaining open `I-0003` tasks as superseded by `I-0003-210`.
-- Further workflow changes should keep tasks as the only execution truth and avoid rebuilding a PR-specific control surface under `I-0003`.
+- On 2026-05-06, `I-0003-220` disabled Codex Stop-hook review automation and removed review-only checks from CI/local CI while preserving reviewer protocols as optional advisory references.
+- Further workflow changes should keep tasks as execution truth and avoid rebuilding mandatory PR or review control surfaces under `I-0003`.

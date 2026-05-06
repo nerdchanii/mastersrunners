@@ -20,10 +20,10 @@
 - [ ] approved design was not downgraded to match weak implementation
 - [ ] any remaining divergence is linked to a follow-up task
 
-## Review Routing
+## Optional Review
 
-- Specialist reviewers:
-- [ ] PO review required
+- Requested reviewers, if any:
+- [ ] PO review requested for product or rollout judgment
 
 ## Risk
 

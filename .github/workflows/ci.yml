@@ -68,20 +68,8 @@ jobs:
       - name: Run explicit typecheck
         run: pnpm typecheck
 
-      - name: Check reviewer protocols
-        run: bash scripts/check-reviewer-protocols.sh
-
-      - name: Check reviewer protocol wiring
-        run: bash scripts/check-reviewer-protocol-wiring.sh
-
-      - name: Check task review metadata for active and todo tasks
-        run: bash scripts/check-task-review-metadata.sh
-
       - name: Check deterministic active-task closeout state
         run: bash scripts/check-active-task-closeout.sh
-
-      - name: Check Codex Stop review hook smoke scenarios
-        run: bash scripts/check-codex-stop-review-hook.sh
 
       - name: Check dependency boundaries and cycles
         run: pnpm depcruise

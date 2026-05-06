@@ -4,16 +4,10 @@ title: Cloudflare private workout storage cutover와 backfill을 정리한다
 parent: I-0018-workout-detail-blob-and-source-privacy
 scope: repo
 owner: unassigned
-reviewers:
-  - backend-reviewer
-  - harness-reviewer
-  - docs-reviewer
-po_review: required
 depends_on:
   - tasks/archive/I-0018-030-api-workout-detail-read-cutover.md
 blocked_by: []
 execution_status: in_progress
-review_status: pending
 verification_status: pending
 closeout_blocker:
 verify:
@@ -50,12 +44,12 @@ Cloudflare R2의 public asset / private workout storage 경계를 실제 외부 
 - source of truth:
 - 설계 divergence:
 - 검증:
-- 리뷰 라우팅:
+- 리뷰: 필요하면 `backend-reviewer`, `harness-reviewer`, `docs-reviewer`, PO 관점으로 opt-in 한다.
 
-## 리뷰 초점
+## 리뷰 계획
 
-- Specialist reviewer가 확인할 내용: storage cutover, backfill safety, script/runbook 정합성을 본다.
-- PO reviewer가 확인할 내용: privacy 강화와 운영 복잡도 tradeoff가 납득 가능한지 본다.
+- `backend-reviewer`, `harness-reviewer`, `docs-reviewer`: storage cutover, backfill safety, script/runbook 정합성을 본다.
+- PO 관점: privacy 강화와 운영 복잡도 tradeoff가 납득 가능한지 본다.
 
 ## 핸드오프
 
@@ -71,16 +65,8 @@ Cloudflare R2의 public asset / private workout storage 경계를 실제 외부 
 
 ## 리뷰 노트
 
-- Specialist review:
+- Optional review:
   - reviewer:
-  - reviewer protocol:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:
-- PO review:
-  - reviewer:
-  - reviewer protocol:
   - artifact:
   - decision:
   - findings:

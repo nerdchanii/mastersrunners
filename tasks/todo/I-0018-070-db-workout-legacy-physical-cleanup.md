@@ -4,17 +4,11 @@ title: backfill 완료 후 workout legacy physical schema를 제거한다
 parent: I-0018-workout-detail-blob-and-source-privacy
 scope: db
 owner: unassigned
-reviewers:
-  - backend-reviewer
-  - harness-reviewer
-  - docs-reviewer
-po_review: required
 depends_on:
   - tasks/todo/I-0018-040-repo-cloudflare-workout-private-storage-backfill.md
   - tasks/archive/I-0018-060-db-deploy-migration-backfill-compat.md
 blocked_by: []
 execution_status: in_progress
-review_status: pending
 verification_status: pending
 closeout_blocker:
 verify:
@@ -48,12 +42,12 @@ artifacts:
 - source of truth:
 - 설계 divergence:
 - 검증:
-- 리뷰 라우팅:
+- 리뷰: 필요하면 `backend-reviewer`, `harness-reviewer`, `docs-reviewer`, PO 관점으로 opt-in 한다.
 
-## 리뷰 초점
+## 리뷰 계획
 
-- Specialist reviewer가 확인할 내용: backfill proof, data-loss guard, migration order, deploy safety.
-- PO reviewer가 확인할 내용: legacy storage retention 종료와 운영 리스크가 납득 가능한지 본다.
+- `backend-reviewer`, `harness-reviewer`, `docs-reviewer`: backfill proof, data-loss guard, migration order, deploy safety.
+- PO 관점: legacy storage retention 종료와 운영 리스크가 납득 가능한지 본다.
 
 ## 핸드오프
 
@@ -69,16 +63,8 @@ artifacts:
 
 ## 리뷰 노트
 
-- Specialist review:
+- Optional review:
   - reviewer:
-  - reviewer protocol:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:
-- PO review:
-  - reviewer:
-  - reviewer protocol:
   - artifact:
   - decision:
   - findings:

@@ -1,17 +1,15 @@
 # 리뷰 하네스
 
-완료된 태스크를 커밋하기 전에 이 가이드를 사용한다.
+이 문서는 reviewer 체계를 참고 자료로 남기되, 저장소가 모든 task에 review를 강제하지 않는 기준을 설명한다.
 
-## 규칙
+## 원칙
 
-- 모든 태스크는 specialist review 전에 self-review가 필요하다.
-- 모든 태스크는 최소 한 명의 specialist review가 필요하다.
-- 모든 태스크는 PO review가 필요하다.
-- 문서 전용 태스크도 예외가 아니다.
-- 여러 scope를 건드리는 태스크는 여러 specialist reviewer가 필요하다.
-- GitHub PR 댓글, 승인, AI 피드백은 협업에 도움이 될 수 있지만, 태스크 완료 기준에서 specialist review나 PO review를 대체하지는 못한다.
-- 공식 reviewer 경로와 저장소 reviewer overlay 계약이 있다면 specialist review와 PO review는 그 계약을 기준으로 수행한다.
-- Codex Stop-hook review automation을 쓰는 dirty worktree는 `tasks/active/`에 정확히 하나의 active task만 둘 수 있다.
+- 리뷰는 기본 게이트가 아니라 task별 판단 사항이다.
+- task가 review를 필요로 하면 task 본문 `리뷰 계획`에 reviewer 역할과 확인할 내용을 명시한다.
+- reviewer는 read-only 조언자다. 리뷰어는 변경을 제안할 수 있지만, 자동으로 구현을 롤백하거나 구조를 갈아엎는 권한을 갖지 않는다.
+- PO review도 기본 필수 게이트가 아니다. 사용자 가치, acceptance criteria, rollout risk, prioritization 판단이 필요할 때 opt-in 한다.
+- GitHub PR 댓글, 승인, AI 피드백은 협업에 도움이 될 수 있지만 repository completion truth가 아니다.
+- lint, format, typecheck, build, test, generated-artifact check 같은 기계적 검증은 계속 필수다.
 
 ## 리뷰어 역할
 
@@ -31,63 +29,40 @@
 - `po-reviewer`
   - 사용자 가치, acceptance criteria, 범위 적합성, 배포 리스크, 태스크가 의도한 문제를 해결하는지 점검한다
 
-## 라우팅 매트릭스
+## 선택적 라우팅
 
-아래 매트릭스가 기본 규칙이다. 예시나 후속 가이드는 이 baseline을 덮어쓰는 것이 아니라, task가 추가 concern을 함께 건드릴 때 reviewer를 더하는 방식으로 해석한다.
+아래 매트릭스는 review가 필요한 task에서 역할을 고르는 참고 기준이다.
 
 - `docs` scope
-  - `docs-reviewer` + `po-reviewer`
+  - consider `docs-reviewer`
 - `web` scope with visible UX impact
-  - `frontend-reviewer` + `ui-ux-reviewer` + `po-reviewer`
+  - consider `frontend-reviewer` and `ui-ux-reviewer`
 - `web` scope without meaningful UX change
-  - `frontend-reviewer` + `po-reviewer`
+  - consider `frontend-reviewer`
 - `api` or `db` scope
-  - `backend-reviewer` + `po-reviewer`
+  - consider `backend-reviewer`
 - `ci`, `repo`, `meta`, deploy, or harness scope
-  - `harness-reviewer` + `po-reviewer`
+  - consider `harness-reviewer`
 - cross-cutting tasks
-  - union of all relevant specialist reviewers + `po-reviewer`
+  - consider the union of relevant specialist reviewers
+- PO-sensitive work
+  - consider `po-reviewer`
 
-## 커밋 게이트
+## 완료 게이트
 
-커밋 전에 태스크는 아래 조건을 모두 만족해야 한다.
+커밋 전에 task는 아래 조건을 만족해야 한다.
 
 1. Implementation is complete for the task scope.
-2. The agent self-review checklist has been completed.
-3. The task `verify` commands have been run.
-4. Required specialist review has been completed.
-5. PO review has been completed.
-6. The task file has been updated with review notes.
-7. The task is moved from `tasks/active/` to `tasks/archive/` in the same changeset that finalizes the work.
-
-## 리뷰 실행 순서
-
-1. implement
-2. verify
-3. self-review 기록
-4. specialist review
-5. PO review
-6. archive/commit
-
-이 순서는 문서상의 권고가 아니라 task file, reviewer protocol, metadata gate가 함께 지켜야 하는 저장소 계약이다.
-
-Codex Stop hook은 이 순서를 건너뛰지 않는다. verify와 self-review가 끝난 단일 active task만 같은 세션에서 specialist review -> PO review로 이어지게 만들 뿐이다.
-
-## UX 가드레일 안내
-
-- 사용자용 소비자 웹 태스크가 공개 소셜 라우트, 인증 게이트, 제품 카피, 비주얼 시스템 사용에 영향을 준다면 `design/frontend/` 아래 관련 문서를 참조해야 한다
-- 우선 아래 문서부터 본다:
-  - `design/frontend/ux-principles.md`
-  - `design/frontend/social-surface-patterns.md`
-  - `design/frontend/writing-and-copy.md`
-  - `design/frontend/visual-system-rules.md`
+2. The agent self-review checklist has been completed when useful for the task.
+3. The task `verify` commands have been run or the skipped verification is explained.
+4. Any task-specific opt-in review has been completed or explicitly deferred in the task notes.
+5. The task is moved from `tasks/active/` to `tasks/archive/` in the same changeset that finalizes the work.
 
 ## 결정적 active-state 게이트
 
-이제 active 태스크는 frontmatter에 machine-readable closeout 필드를 가져야 한다.
+Active 태스크는 frontmatter에 machine-readable closeout 필드를 가진다.
 
 - `execution_status`: `in_progress`, `blocked`, or `ready_for_archive`
-- `review_status`: `pending` or `approved`
 - `verification_status`: `pending`, `partial`, or `passed`
 - `closeout_blocker`: required when `execution_status: blocked`
 
@@ -96,51 +71,29 @@ Codex Stop hook은 이 순서를 건너뛰지 않는다. verify와 self-review�
 - `tasks/active/` 아래의 모든 태스크는 위 필드를 선언해야 한다
 - blocked 태스크는 `closeout_blocker`에 차단 이유를 설명해야 한다
 - `execution_status: ready_for_archive`는 `tasks/active/`에 남아 있을 수 없다
-- `review_status: approved`와 `verification_status: passed` 조합은 `execution_status: in_progress` 상태로 남아 있을 수 없다
 
-이 규칙은 “끝난 태스크를 archive로 옮기지 않음”을 문서 위생 제안이 아니라, CI/pre-push 실패 신호로 바꾼다.
+이 규칙은 “끝난 태스크를 archive로 옮기지 않음”을 문서 위생 제안이 아니라 CI/pre-push 실패 신호로 바꾼다. 리뷰 artifact나 reviewer metadata는 이 체크의 입력이 아니다.
 
 ## 수동 PR 사용
 
 - Pull request는 선택적 협업 산출물이지, 두 번째 완료 워크플로우가 아니다.
 - PR을 연다면 가볍게 유지한다. 태스크와 initiative를 링크하고, 검증 결과와 리스크 또는 롤백 맥락만 요약한다.
-- 리뷰 코멘트 처리는 GitHub에서 수동으로 한다. 저장소는 더 이상 별도의 AI 리뷰 레인, 스레드 해결 루프, merge-ready 상태 머신을 정의하지 않는다.
+- 리뷰 코멘트 처리는 GitHub에서 수동으로 한다.
 - 머지 시점은 저장소 전용 PR 하네스가 아니라, 사람의 판단과 일반적인 브랜치 보호 규칙이 결정한다.
-
-## 커밋 의도 규칙
-
-- 커밋 제목은 `feat`, `fix`, `refactor`, `docs`, `ci`, `test` 같은 일반 타입으로 의도를 설명해야 한다.
-- Task ID는 commit type이 아니라 trailer에 둔다.
-- 커밋 제목 검증은 `pre-commit`이 아니라 `commit-msg` 훅에서 commitlint로 수행된다.
-- 작업 중 구현/설계 divergence가 드러나면, 설계를 낮추지 말고 후속 태스크를 만든 뒤 변경을 완료로 처리한다.
-- 이미 push되었거나 merge된 변경이 잘못되었다면, 공유 히스토리를 조용히 덮어쓰지 말고 전용 `fix` 또는 `revert` 태스크와 커밋으로 복구한다.
-- 복구가 전진 `fix`여야 하는지 운영 `revert`여야 하는지는 `docs/runbooks/correction-commit-flow.md`를 참고해 결정한다.
 
 ## 리뷰 노트 규칙
 
-리뷰 결과는 태스크 파일에 기록한다.
+리뷰를 opt-in 했다면 task 파일에 결과를 기록한다.
 
-- specialist review는 리뷰어 역할과 핵심 점검 항목을 남겨야 한다
-- PO review는 acceptance criteria와 범위가 충족됐는지 남겨야 한다
-- 리뷰에서 이슈가 발견되면 archive로 넘기지 말고, 태스크를 다시 열거나 `tasks/active/`에 유지한다
-- `review_status: approved`로 올릴 때는 task의 `Specialist review`와 `PO review`가 빈 placeholder가 아니어야 하고, `tasks/reviews/<task-id>/` 아래 structured review artifact가 있어야 한다
-- `changes_requested` review를 task note에 남겼다면, `review_status`가 아직 `pending`이어도 같은 위치에 artifact가 있어야 한다
-- review note는 reviewer 이름, artifact 경로, decision을 함께 적어 reviewer identity와 artifact가 직접 매핑되게 남긴다
-
-structured review artifact의 필수 필드와 위치 규약은 `docs/runbooks/reviewer-capabilities.md`를 canonical truth로 본다.
+- reviewer 역할과 핵심 점검 항목을 남긴다
+- artifact를 남겼다면 `tasks/reviews/<task-id>/` 아래에 둔다
+- `changes_requested`가 있으면 필요한 수정과 재검증 결과를 task note에 남긴다
+- structured artifact의 필드와 위치 규약은 `docs/runbooks/reviewer-capabilities.md`를 참고한다
 
 ## Codex Stop-hook 자동화
 
-- 공식 Codex hook 경로는 `.codex/hooks.json`이다.
-- 저장소는 `Stop` hook을 authoritative review trigger로 사용한다.
-- `Stop` hook은 nested Codex subprocess를 띄우지 않고, 같은 Codex session을 계속 이어서 reviewer subagent를 수행하게 해야 한다.
-- 이 저장소는 single-active-task invariant를 단계적 경고가 아니라 immediate hard stop으로 채택한다. 따라서 기존 backlog가 아직 여러 active task를 갖고 있으면 session 종료 시 invariant block이 발생하는 것이 의도된 동작이다.
-- trigger 조건:
-  - dirty worktree
-  - `tasks/active/`에 active task 정확히 1개
-  - 해당 task가 `execution_status: in_progress`
-  - `review_status: pending`
-  - `verification_status: passed`
-  - `## 셀프 리뷰` 항목이 placeholder 없이 채워짐
-- 위 조건을 만족하지 않으면 Stop hook은 review를 시작하지 않거나 invariant failure로 block한다.
-- Git `pre-push`는 review automation owner가 아니라 fallback closeout gate다.
+Codex Stop-hook review automation은 비활성화되어 있다.
+
+- `.codex/hooks.json`에는 Stop hook command를 두지 않는다.
+- `.codex/config.toml`은 `codex_hooks = false`로 둔다.
+- Git `pre-push`는 review owner가 아니라 `pnpm ci:local` 기반 mechanical verification gate다.

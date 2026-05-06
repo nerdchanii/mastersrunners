@@ -4,14 +4,9 @@ title: 디자인 시스템 프리미티브를 재사용 단위로 정리한다
 parent: I-0016-design-system-and-ux-guardrails
 scope: web
 owner: unassigned
-reviewers:
-  - frontend-reviewer
-  - ui-ux-reviewer
-po_review: required
 depends_on: []
 blocked_by: []
 execution_status: in_progress
-review_status: pending
 verification_status: pending
 closeout_blocker:
 verify:
@@ -49,14 +44,12 @@ artifacts:
 - source of truth: `design/initiatives/I-0016-design-system-and-ux-guardrails.md`, `design/frontend/ui-system.md`, `design/frontend/conventions.md`, `design/frontend/visual-system-rules.md`
 - 설계 divergence: 없음.
 - 검증: not run; seed task only.
-- 리뷰 라우팅: `frontend-reviewer`, `ui-ux-reviewer`, `po-reviewer`
+- 리뷰: 필요하면 `frontend-reviewer`, `ui-ux-reviewer`, PO 관점으로 opt-in 한다.
 
-Codex Stop-hook review automation을 쓰려면 위 다섯 항목을 placeholder 없이 채운다.
+## 리뷰 계획
 
-## 리뷰 초점
-
-- Specialist reviewer가 확인할 내용: 프리미티브 통합 범위가 surface language 재사용 문제에 맞게 잘 잘려 있는지 본다.
-- PO reviewer가 확인할 내용: 후속 task가 UX 일관성 문제를 실제 사용자 가치에 맞게 설명하는지 본다.
+- `frontend-reviewer`, `ui-ux-reviewer`: 프리미티브 통합 범위가 surface language 재사용 문제에 맞게 잘 잘려 있는지 본다.
+- PO 관점: 후속 task가 UX 일관성 문제를 실제 사용자 가치에 맞게 설명하는지 본다.
 
 ## 핸드오프
 
@@ -72,16 +65,8 @@ Codex Stop-hook review automation을 쓰려면 위 다섯 항목을 placeholder 
 
 ## 리뷰 노트
 
-- Specialist review:
+- Optional review:
   - reviewer:
-  - reviewer protocol:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:
-- PO review:
-  - reviewer:
-  - reviewer protocol:
   - artifact:
   - decision:
   - findings:

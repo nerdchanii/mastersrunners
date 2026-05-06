@@ -1,8 +1,8 @@
 # Agent Self-Review Checklist
 
-Run this checklist after implementation and before specialist review.
+Run this checklist after implementation and before final verification or optional review.
 
-Codex Stop-hook review automation only triggers once this checklist has been recorded in the task's `## 셀프 리뷰` section with non-placeholder answers.
+Codex Stop-hook review automation is disabled. The checklist is a quality aid, not a review trigger.
 
 ## 1. Scope and Intent
 
@@ -36,9 +36,9 @@ Codex Stop-hook review automation only triggers once this checklist has been rec
 
 ## 6. Review Routing
 
-- Did I request every required specialist reviewer for the scopes I touched?
-- If the change affects user-visible flow, did I include UI/UX review where needed?
-- If the change affects boundaries, performance, or major refactoring, should I escalate to an additional reviewer role?
+- Does this task need opt-in specialist or PO review?
+- If the change affects user-visible flow, would UI/UX review materially reduce risk?
+- If the change affects boundaries, performance, or major refactoring, should I request an additional reviewer role?
 
 ## 7. Commit Readiness
 
@@ -53,5 +53,5 @@ Capture any important self-review outcome in the task file, especially:
 
 - unresolved divergence
 - verify limitations
-- reasons for extra reviewer routing
-- whether the task is now a closeout candidate for Stop-hook review automation
+- reasons for opt-in reviewer routing
+- whether any review was deferred and why

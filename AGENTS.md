@@ -48,10 +48,9 @@ Read in this order:
 - One initiative file should represent one large change, not one commit.
 - When changing technical behavior, update the relevant design or domain document in the same task.
 - When changing workflows or scripts, update the matching runbook in the same task.
-- Every task needs at least one specialist review before commit.
-- Every task also needs a PO review before commit, including docs-only work.
-- Multi-scope changes need the union of the relevant specialist reviewers, not just one reviewer.
-- Review requirements live in the task file. Do not treat a task as done until review and verify are both complete.
+- Reviews are task-by-task judgment calls, not a default repository gate.
+- If a task needs review, record the requested roles and review focus in the task file.
+- Reviewers are read-only advisors. They can recommend changes, but they do not own implementation rollback or broad restructuring authority.
 - Pull requests are optional collaboration artifacts. Do not treat PR state, comments, or approvals as the repository's completion truth.
 - Do not commit free-floating `TODO` or `FIXME` markers. Link them to a task as described in `docs/guides/todo-fixme-policy.md`.
 
@@ -65,7 +64,7 @@ Read in this order:
 - Reviewer-role guidance lives in `docs/guides/reviewer-taxonomy.md`.
 - Commit message subjects are validated in the `commit-msg` hook, not the `pre-commit` hook.
 - Parallel split and merge workflow lives in `design/operating-rules/parallel-worktree-lifecycle.md` and `docs/guides/parallel-worktree-workflow.md`.
-- Codex hook automation guidance lives in `docs/runbooks/codex-hook-review-automation.md`.
+- Codex hook automation history and current disabled state live in `docs/runbooks/codex-hook-review-automation.md`.
 
 ## Design Divergence Handling
 
@@ -75,7 +74,7 @@ Read in this order:
 - A commit message should describe change intent, not replace intent with a task ID. Put task tracking in trailers.
 - If a bad change has already been pushed or merged, preserve that signal with a follow-up `fix` or `revert` commit plus a linked task instead of silently replacing shared history.
 - If the current worktree already has unrelated dirty changes, preserve them and run new parallel work in dedicated git worktrees.
-- Dirty Codex worktrees should keep exactly one task under `tasks/active/` so Stop-hook review automation can deterministically decide ownership. This repository currently adopts that rule as an immediate hard stop, even if older active-task backlog has not yet been normalized.
+- Dirty Codex worktrees should keep task ownership clear, but the repository no longer uses a Stop-hook review gate.
 
 ## Task Workflow
 
@@ -99,21 +98,19 @@ Lifecycle:
 4. Update the task notes while working
 5. Run the self-review checklist in `docs/guides/agent-self-review.md`
 6. Run the task's `verify` commands
-7. Get the required specialist review
-8. Get PO review
-9. Move the task from `tasks/active/` to `tasks/archive/` in the same changeset that finalizes the work
-10. Commit only after review and verify gates are satisfied
+7. Run optional task-specific review if the task file calls for it
+8. Move the task from `tasks/active/` to `tasks/archive/` in the same changeset that finalizes the work
+9. Commit only after implementation and mechanical verification gates are satisfied
 
 Active tasks also need machine-readable closeout state in frontmatter:
 
 - `execution_status`: `in_progress`, `blocked`, or `ready_for_archive`
-- `review_status`: `pending` or `approved`
 - `verification_status`: `pending`, `partial`, or `passed`
 - `closeout_blocker`: required when `execution_status: blocked`
 
 `bash scripts/check-active-task-closeout.sh` is the deterministic gate for this state. A task that is ready to archive must not remain in `tasks/active/`.
 
-For Codex-driven work, the repository expects review automation to kick in only when a dirty worktree has exactly one active task, and that task has `verification_status: passed`, `review_status: pending`, and a fully written `## 셀프 리뷰` section. Dirty worktrees with zero active tasks may exit normally; dirty worktrees with more than one active task are blocked by the repo-local Codex `Stop` hook under `.codex/hooks.json`.
+For Codex-driven work, a dirty worktree with zero active tasks may exit normally. Review automation is no longer triggered by the repo-local Codex `Stop` hook.
 
 Initiative and ADR order:
 
@@ -123,18 +120,21 @@ Initiative and ADR order:
 4. Update `docs/domain/` or `docs/runbooks/` when business or operational truth changes
 5. Add an ADR in `design/adr/` only when a technical choice needs a durable decision record
 
-## Review Routing
+## Optional Review Routing
 
-- `docs` scope: `docs-reviewer` + `po-reviewer`
-- `web` scope: `frontend-reviewer` + `po-reviewer`
-- user-facing UI changes: `frontend-reviewer` + `ui-ux-reviewer` + `po-reviewer`
-- `api` or `db` scope: `backend-reviewer` + `po-reviewer`
-- `ci`, `repo`, `meta`, or deployment workflow changes: `harness-reviewer` + `po-reviewer`
-- cross-cutting changes: include every matching specialist reviewer plus `po-reviewer`
+Use this routing only when a task explicitly opts into review.
 
-Reviewer protocol files adopted by this repository live under `.codex/agents/`, `.agents/skills/`, `.claude/agents/`, and `.claude/skills/`. Reviewer routing and artifact truth lives in `reviewers/protocols.json`. The official OpenAI/Claude docs define the protocol locations; this repository adds an overlay contract for routing and review artifacts. When these protocol files exist, specialist review and PO review should use that overlay contract instead of ad hoc reviewer prompts.
+- `docs` scope: consider `docs-reviewer`
+- `web` scope: consider `frontend-reviewer`
+- user-facing UI changes: consider `frontend-reviewer` and `ui-ux-reviewer`
+- `api` or `db` scope: consider `backend-reviewer`
+- `ci`, `repo`, `meta`, or deployment workflow changes: consider `harness-reviewer`
+- cross-cutting changes: consider every matching specialist reviewer
+- PO review is optional and should be requested when product value, acceptance criteria, rollout risk, or prioritization needs independent judgment
 
-Codex Stop-hook review automation is configured through `.codex/config.toml` and `.codex/hooks.json`. The hook should continue the same Codex session into reviewer subagents; Git `pre-push` remains a fallback closeout gate, not the primary review trigger.
+Reviewer protocol files adopted by this repository live under `.codex/agents/`, `.agents/skills/`, `.claude/agents/`, and `.claude/skills/`. Reviewer routing reference data lives in `reviewers/protocols.json`. The official OpenAI/Claude docs define the protocol locations; this repository keeps an overlay contract for optional reviewer prompts and artifacts.
+
+Codex Stop-hook review automation is disabled. Git `pre-push` remains a mechanical verification gate through `pnpm ci:local`.
 
 ## Common Commands
 

@@ -4,13 +4,9 @@ title: Roll GitHub Actions deploy workflow off Node 20 actions
 parent: I-0006-guardrail-hardening
 scope: ci
 owner: unassigned
-reviewers:
-  - harness-reviewer
-po_review: required
 depends_on: []
 blocked_by: []
 execution_status: in_progress
-review_status: pending
 verification_status: pending
 closeout_blocker:
 verify:
@@ -44,14 +40,12 @@ GitHub Actions의 Node.js 20 action deprecation 경고를 제거하고, 2026-06-
 - source of truth:
 - 설계 divergence:
 - 검증:
-- 리뷰 라우팅:
+- 리뷰: 필요하면 `harness-reviewer`와 PO 관점으로 opt-in 한다.
 
-Codex Stop-hook review automation을 쓰려면 위 다섯 항목을 placeholder 없이 채운다.
+## 리뷰 계획
 
-## 리뷰 초점
-
-- Specialist reviewer가 확인할 내용: deploy workflow action version/runtime 전환이 dev/main lane 모두에 안전하며, GitHub Actions deprecation 경고를 실제로 제거하는지 확인한다.
-- PO reviewer가 확인할 내용: 현재 배포 성공 상태를 흔들지 않으면서 2026-06-02 runtime 전환 리스크를 적절한 시점에 줄이는지 확인한다.
+- `harness-reviewer`: deploy workflow action version/runtime 전환이 dev/main lane 모두에 안전하며, GitHub Actions deprecation 경고를 실제로 제거하는지 확인한다.
+- PO 관점: 현재 배포 성공 상태를 흔들지 않으면서 2026-06-02 runtime 전환 리스크를 적절한 시점에 줄이는지 확인한다.
 
 ## 핸드오프
 
@@ -67,16 +61,8 @@ Codex Stop-hook review automation을 쓰려면 위 다섯 항목을 placeholder 
 
 ## 리뷰 노트
 
-- Specialist review:
+- Optional review:
   - reviewer:
-  - reviewer protocol:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:
-- PO review:
-  - reviewer:
-  - reviewer protocol:
   - artifact:
   - decision:
   - findings:

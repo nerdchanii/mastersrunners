@@ -18,8 +18,7 @@ tasks/
 - Do not duplicate task status inside file metadata.
 - One Markdown file equals one executable task.
 - A task should usually have one clear scope such as `api`, `web`, `db`, `docs`, `ci`, or `meta`.
-- Every task must declare its required specialist reviewers.
-- Every task requires PO review before commit.
+- Review is optional and task-specific. When needed, record requested reviewer roles and focus in the task body.
 - If a task discovers design divergence it cannot close, it must create a follow-up task instead of weakening design/docs.
 - Initiative grouping is handled by the task filename prefix and the matching initiative document's `Task Breakdown`, not by per-initiative directories.
 
@@ -42,10 +41,9 @@ I-0002-010-meta-eslint-repair.md
 3. Implement and update notes
 4. Run self-review
 5. Run `verify`
-6. Complete specialist review
-7. Complete PO review
-8. Move it to `tasks/archive/` in the same changeset that finalizes the task
-9. Commit after review and verify are both satisfied
+6. Run optional task-specific review if the task definition calls for it
+7. Move it to `tasks/archive/` in the same changeset that finalizes the task
+8. Commit after implementation and mechanical verification are both satisfied
 
 ## Relationship to Initiatives
 

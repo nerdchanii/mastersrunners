@@ -18,10 +18,10 @@ task
 3. Create a new worktree from a clean commit for the task.
 4. Prefer `pnpm worktree:bootstrap -- --path <path> --task-file tasks/todo/<task>.md` so the worktree also gets isolated ports, scoped env files, optional dependency install, and task activation in one step.
 5. If you did not use the bootstrap command, move the task from `tasks/todo/` to `tasks/active/` inside that worktree manually.
-6. Implement, self-review, verify, and complete specialist plus PO review.
+6. Implement, self-review, verify, and complete any task-specific optional review.
 7. Move the task to `tasks/archive/` in the same changeset.
 8. Commit in the task worktree.
-9. Integrate the reviewed commit back by merge or cherry-pick.
+9. Integrate the verified commit back by merge or cherry-pick.
 10. Remove the worktree when the task is fully integrated.
 
 ## Bootstrap Command

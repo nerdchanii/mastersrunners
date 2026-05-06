@@ -1,6 +1,6 @@
 # Reviewer Taxonomy
 
-Use this guide to decide which reviewer roles to request for a task.
+Use this guide to decide which reviewer roles to request when a task opts into review.
 
 ## Baseline Reviewers
 
@@ -25,9 +25,9 @@ baseline reviewer와 `po-reviewer`는 아래 공식 protocol artifact로 정의�
 - OpenAI Codex skills: `.agents/skills/<skill>/SKILL.md`
 - Claude Code subagents: `.claude/agents/<reviewer>.md`
 - Claude Code skills: `.claude/skills/<skill>/SKILL.md`
-- repo-level routing and artifact truth: `reviewers/protocols.json`
+- repo-level routing reference and artifact conventions: `reviewers/protocols.json`
 
-task frontmatter의 reviewer 이름은 `reviewers/protocols.json`의 reviewer key와 맞아야 한다. 이 파일은 공식 경로 자체를 대체하는 규격이 아니라, 저장소가 채택한 reviewer routing과 artifact overlay 계약이다.
+Opt-in reviewer 이름은 `reviewers/protocols.json`의 reviewer key와 맞아야 한다. 이 파일은 공식 경로 자체를 대체하는 규격이 아니라, 저장소가 채택한 reviewer routing과 artifact overlay 계약이다.
 
 ## Escalation Reviewers
 
@@ -42,9 +42,10 @@ task frontmatter의 reviewer 이름은 `reviewers/protocols.json`의 reviewer ke
 
 ## Routing Advice
 
-- Start with the baseline reviewer set required by the task scope.
+- Start with the smallest reviewer set that materially reduces task risk.
 - Add escalation reviewers only when the change clearly triggers that concern.
 - Do not request every reviewer by default; over-routing reduces signal quality.
+- PO review is optional; request it when product value, acceptance criteria, rollout risk, or prioritization needs independent judgment.
 
 ## Examples
 
@@ -59,5 +60,5 @@ task frontmatter의 reviewer 이름은 `reviewers/protocols.json`의 reviewer ke
 
 ## Current Default
 
-The repository should treat self-review as mandatory before specialist review.
+The repository should treat self-review as the default first review layer before any opt-in specialist review.
 Naming concerns should be checked in self-review first and escalated to `naming-reviewer` only when the naming surface is a major part of the task.

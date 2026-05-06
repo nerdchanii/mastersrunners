@@ -4,13 +4,9 @@ title: 짧은 작업 제목
 parent: I-XXXX-short-name
 scope: api
 owner: unassigned
-reviewers:
-  - backend-reviewer
-po_review: required
 depends_on: []
 blocked_by: []
 execution_status: in_progress
-review_status: pending
 verification_status: pending
 closeout_blocker:
 verify:
@@ -40,14 +36,11 @@ artifacts:
 - source of truth:
 - 설계 divergence:
 - 검증:
-- 리뷰 라우팅:
 
-Codex Stop-hook review automation을 쓰려면 위 다섯 항목을 placeholder 없이 채운다.
+## 리뷰 계획
 
-## 리뷰 초점
-
-- Specialist reviewer가 확인할 내용:
-- PO reviewer가 확인할 내용:
+- 필요한 경우 reviewer 역할과 확인할 내용을 기록한다.
+- 리뷰는 기본 게이트가 아니며 task별 판단으로 opt-in 한다.
 
 ## 핸드오프
 
@@ -65,16 +58,8 @@ Codex Stop-hook review automation을 쓰려면 위 다섯 항목을 placeholder 
 
 ## 리뷰 노트
 
-- Specialist review:
+- Optional review:
   - reviewer:
-  - reviewer protocol:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:
-- PO review:
-  - reviewer:
-  - reviewer protocol:
   - artifact:
   - decision:
   - findings:
