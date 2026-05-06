@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "NODE_ENV=development CHOKIDAR_USEPOLLING=${CHOKIDAR_USEPOLLING:-1} nest start --watch",
     "build": "nest build",
-    "start": "node dist/main.js",
-    "start:prod": "node dist/main.js",
+    "start": "node dist/src/main.js",
+    "start:prod": "node dist/src/main.js",
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",

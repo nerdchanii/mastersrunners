@@ -22,6 +22,7 @@ This runbook explains how deployment works in this repository, what to verify be
 - Trigger: push to `dev` and `main`
 - Markdown-only pushes are ignored by the deploy workflow; at least one non-`*.md` file change is required to trigger rollout.
 - Artifact: Docker image built from `apps/api/Dockerfile`
+- CI Docker guard: `.github/workflows/ci.yml` builds the API image, starts it with production-like placeholder env, and checks `GET /api/v1/health` before deploy workflows can ship the same entrypoint to Cloud Run.
 - Branch-to-service mapping:
   - `dev` -> `masters-runners-api-dev`
   - `main` -> `masters-runners-api`

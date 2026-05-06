@@ -1,0 +1,23 @@
+{
+  "task_id": "I-0021-020",
+  "reviewer": "harness-reviewer",
+  "decision": "approved",
+  "tool": "codex-manual-review",
+  "review_contract": "repo-reviewer-artifact-v1",
+  "executed_protocol_paths": [
+    ".codex/agents/harness-reviewer.toml",
+    ".agents/skills/review-output-contract/SKILL.md",
+    ".agents/skills/harness-review-checklist/SKILL.md"
+  ],
+  "compatible_protocol_paths": [
+    ".claude/agents/harness-reviewer.md",
+    ".claude/skills/review-output-contract/SKILL.md",
+    ".claude/skills/harness-review-checklist/SKILL.md"
+  ],
+  "reviewed_at": "2026-05-06T02:49:42Z",
+  "findings": [],
+  "residual_risks": [
+    "The CI Docker smoke guard is intentionally narrower than the deploy workflow and does not validate Cloud Run-specific env and Secret Manager wiring from .github/workflows/deploy.yml.",
+    "The runtime smoke only proves container boot plus GET /api/v1/health and will not catch failures that appear only after the first database-backed request."
+  ]
+}

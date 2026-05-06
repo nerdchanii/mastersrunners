@@ -43,6 +43,7 @@ Dependabot can open multiple small platform updates plus a large dependency batc
 ## Task Breakdown
 
 - `tasks/archive/I-0021-010-repo-dependabot-pr-cleanup.md`
+- `tasks/archive/I-0021-020-ci-api-docker-runtime-smoke.md`
 
 ## Success Criteria
 
@@ -58,3 +59,4 @@ Dependabot can open multiple small platform updates plus a large dependency batc
 - 2026-05-05: Added compatibility fixes to the npm workspace batch PR `#39`, revalidated it against the updated `dev`, and merged it only after CI plus Cloudflare Pages checks were green.
 - 2026-05-05: Follow-up PO review found `#34` was merged before its Cloudflare Pages checks completed. The process exception is tracked as `EX-0008`.
 - 2026-05-06: User confirmed `#34` ultimately finished correctly because all checks passed after merge, and approved archiving the task with the timing issue preserved in `EX-0008`.
+- 2026-05-06: Opened follow-up task after `#39` merge commit passed CI but failed the dev Deploy workflow because the API Docker runtime still executed `dist/main.js` while the Nest SWC build emitted `dist/src/main.js`.

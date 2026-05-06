@@ -126,6 +126,33 @@ jobs:
           context: .
           file: apps/api/Dockerfile
           push: false
+          load: true
           tags: masters-runners-api:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Smoke test Docker runtime
+        run: |
+          docker run --rm -d \
+            --name masters-runners-api-smoke \
+            -p 4000:4000 \
+            -e NODE_ENV=production \
+            -e FRONTEND_URL=http://localhost:3000 \
+            -e KAKAO_CLIENT_ID=ci-kakao-client \
+            -e KAKAO_CLIENT_SECRET=ci-kakao-secret \
+            -e KAKAO_CALLBACK_URL=http://localhost:4000/api/v1/auth/kakao/callback \
+            -e JWT_SECRET=ci-jwt-secret \
+            -e DATABASE_URL=postgresql://masters:masters@localhost:5432/masters_runners_test \
+            masters-runners-api:test
+          trap 'docker logs masters-runners-api-smoke || true; docker stop masters-runners-api-smoke || true' EXIT
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:4000/api/v1/health > /tmp/api-health.json; then
+              cat /tmp/api-health.json
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "API Docker runtime did not become healthy."
+          exit 1
