@@ -97,3 +97,14 @@ Exceptions are only for repository controls that cannot be fully proven or close
 - `latest_observed_external_state`: 2026-04-22 checks confirmed the dev lane serves `masters-runners-api-dev` revision `masters-runners-api-dev-00059-zct` under `cloud-run-runtime@mastersrunners-dev-20260331.iam.gserviceaccount.com`, the dev GitHub environment now includes `JWT_ACCESS_TTL`, `JWT_REFRESH_TTL`, and `R2_PUBLIC_URL`, the dev Secret Manager inventory was pruned to nine secrets with one enabled version each, and `/api/v1/health` plus `/api/v1/auth/providers` still report healthy Kakao-only runtime state. The production GitHub environment still exposes `KAKAO_CALLBACK_URL=https://mastersrunners.com/api/v1/auth/kakao/callback` while its JWT/R2 env migration remains intentionally deferred.
 - `revisit_date`: 2026-05-06
 - `unblock_condition`: branch-aware GitHub/GCP deploy environments are externally verified end-to-end and no longer depend on undocumented dashboard or credential state
+
+### EX-0008
+
+- `related_principles`: `P3`, `P10`
+- `repo_control`: `dependabot-cloudflare-pages-required-check-gate`
+- `reason_not_repo_controllable`: GitHub branch protection and required status check configuration are repository-host settings, not files in the repo. PR `#34` was merged before Cloudflare Pages public and ops checks completed, even though those checks later succeeded.
+- `external_owner`: repository admin
+- `required_external_proof`: evidence that Dependabot PRs targeting `dev` require the intended GitHub Actions and Cloudflare Pages checks before merge, or an explicit admin decision accepting manual operator sequencing for Cloudflare Pages checks.
+- `latest_observed_external_state`: 2026-05-05 PR `#34` merged at `2026-05-05T15:35:27Z`; Cloudflare Pages `mastersrunners-ops` completed successfully at `15:35:56Z`, and Cloudflare Pages `mastersrunners` completed successfully at `15:36:55Z`.
+- `revisit_date`: 2026-06-05
+- `unblock_condition`: required-check configuration or documented operator policy prevents a Dependabot PR from being considered closeout-approved before visible Cloudflare Pages checks complete
