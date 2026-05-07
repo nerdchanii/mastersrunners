@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useFunnel } from "@/components/ui/funnel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +21,16 @@ const STEPS = [
   { key: "runner", title: "러너 정보" },
   { key: "privacy", title: "공개 설정" },
 ] as const;
+
+const ONBOARDING_STEPS = STEPS.map((step) => step.key);
+
+type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
+
+type OnboardingFunnel = {
+  [Step in OnboardingStep]: Record<string, never>;
+};
+
+const EMPTY_ONBOARDING_CONTEXT = {};
 
 function FieldSummary({ label, value }: { label: string; value: string }) {
   return (
@@ -36,7 +47,15 @@ export default function OnboardingPage() {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
 
-  const [step, setStep] = useState(0);
+  const funnel = useFunnel<OnboardingFunnel>({
+    id: "onboarding",
+    initialStep: "profile",
+    initialContext: EMPTY_ONBOARDING_CONTEXT,
+    steps: ONBOARDING_STEPS,
+    sync: "history",
+  });
+  const step = funnel.step;
+  const stepIndex = STEPS.findIndex((item) => item.key === step);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [name, setName] = useState(user?.name ?? "");
@@ -54,18 +73,25 @@ export default function OnboardingPage() {
   };
 
   const handleNext = () => {
-    if (step === 0 && !name.trim()) {
+    if (step === "profile" && !name.trim()) {
       toast.error("닉네임을 입력해주세요.");
       return;
     }
 
-    if (step < STEPS.length - 1) {
-      setStep((current) => current + 1);
+    if (step === "profile") {
+      funnel.history.push("runner", EMPTY_ONBOARDING_CONTEXT);
+      return;
+    }
+
+    if (step === "runner") {
+      funnel.history.push("privacy", EMPTY_ONBOARDING_CONTEXT);
     }
   };
 
   const handleBack = () => {
-    if (step > 0) setStep((current) => current - 1);
+    if (step !== "profile") {
+      funnel.history.back();
+    }
   };
 
   const handleFinish = async () => {
@@ -138,8 +164,8 @@ export default function OnboardingPage() {
             <CardContent className="space-y-6 p-6 sm:p-8">
               <div className="flex flex-wrap gap-2">
                 {STEPS.map((item, index) => {
-                  const active = index === step;
-                  const done = index < step;
+                  const active = item.key === step;
+                  const done = index < stepIndex;
 
                   return (
                     <div
@@ -171,7 +197,7 @@ export default function OnboardingPage() {
                 })}
               </div>
 
-              {step === 0 && (
+              {step === "profile" && (
                 <div className="space-y-5">
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-primary">프로필</p>
@@ -215,7 +241,7 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {step === 1 && (
+              {step === "runner" && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-primary">러너 정보</p>
@@ -317,7 +343,7 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {step === 2 && (
+              {step === "privacy" && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-primary">공개 설정</p>
@@ -411,7 +437,7 @@ export default function OnboardingPage() {
               )}
 
               <div className="flex flex-col gap-3 border-t border-border/60 pt-5 sm:flex-row">
-                {step > 0 ? (
+                {step !== "profile" ? (
                   <Button variant="outline" onClick={handleBack} className="sm:w-auto">
                     <ChevronLeft className="size-4" />
                     이전
@@ -424,7 +450,7 @@ export default function OnboardingPage() {
 
                 <div className="flex-1" />
 
-                {step < STEPS.length - 1 ? (
+                {step !== "privacy" ? (
                   <Button onClick={handleNext} className="sm:w-auto">
                     다음
                     <ArrowRight className="size-4" />
