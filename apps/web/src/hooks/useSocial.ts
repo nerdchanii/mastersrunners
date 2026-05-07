@@ -1,6 +1,8 @@
 import { type QueryKey, useMutation, useQueryClient } from "@tanstack/react-query";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 
 import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 
 import { invalidateQueryKeys } from "./query-key-utils";
 import { postKeys } from "./usePosts";
@@ -17,6 +19,15 @@ interface ToggleLikeInput {
   entityId: string;
   entityType: SocialEntityType;
   isLiked: boolean;
+}
+
+interface UseSocialLikeInteractionInput {
+  entityId: string;
+  entityType: SocialEntityType;
+  initialCount?: number;
+  initialLiked?: boolean;
+  onError?: (error: unknown) => void;
+  pending?: boolean;
 }
 
 interface LikeableCacheValue {
@@ -170,4 +181,80 @@ export function useToggleSocialLike() {
         }),
       ),
   });
+}
+
+export function useSocialLikeInteraction({
+  entityId,
+  entityType,
+  initialCount = 0,
+  initialLiked = false,
+  onError,
+  pending = false,
+}: UseSocialLikeInteractionInput) {
+  const { user } = useAuth();
+  const toggleLike = useToggleSocialLike();
+  const [displayLiked, setDisplayLiked] = useState(initialLiked);
+  const [displayCount, setDisplayCount] = useState(initialCount);
+  const [animating, setAnimating] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const currentEntityRef = useRef({ entityId, entityType });
+  currentEntityRef.current = { entityId, entityType };
+  const isPending = pending || toggleLike.isPending;
+
+  useEffect(() => {
+    setDisplayLiked(initialLiked);
+    setDisplayCount(initialCount);
+    setAnimating(false);
+    setShowAuthDialog(false);
+  }, [entityId, entityType, initialCount, initialLiked]);
+
+  const toggle = async (event?: MouseEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    if (isPending) return;
+    if (!user) {
+      setShowAuthDialog(true);
+      return;
+    }
+
+    const previousLiked = displayLiked;
+    const previousCount = displayCount;
+    const nextLiked = !displayLiked;
+    const nextCount = Math.max(0, displayCount + (displayLiked ? -1 : 1));
+    const requestEntity = { entityId, entityType };
+
+    setDisplayLiked(nextLiked);
+    setDisplayCount(nextCount);
+
+    if (!displayLiked) {
+      setAnimating(true);
+      setTimeout(() => setAnimating(false), 400);
+    }
+
+    try {
+      await toggleLike.mutateAsync({ entityId, entityType, isLiked: previousLiked });
+    } catch (err) {
+      if (
+        currentEntityRef.current.entityId !== requestEntity.entityId ||
+        currentEntityRef.current.entityType !== requestEntity.entityType
+      ) {
+        return;
+      }
+
+      setDisplayLiked(previousLiked);
+      setDisplayCount(previousCount);
+      onError?.(err);
+    }
+  };
+
+  return {
+    animating,
+    displayCount,
+    displayLiked,
+    isPending,
+    showAuthDialog,
+    setShowAuthDialog,
+    toggle,
+  };
 }

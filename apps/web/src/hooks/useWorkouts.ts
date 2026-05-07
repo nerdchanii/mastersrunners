@@ -1,4 +1,12 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type QueryClient,
+  type QueryKey,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 
 import { api } from "@/lib/api-client";
 
@@ -153,9 +161,166 @@ export function useUpdateWorkoutVisibility() {
         method: "PATCH",
         body: JSON.stringify({ visibility }),
       }),
+    onMutate: async ({ visibility, workoutId }) => {
+      const detailKey = workoutKeys.detail(workoutId);
+      const listKey = workoutKeys.listFamily();
+      const feedKey = workoutKeys.feedFamily();
+
+      await queryClient.cancelQueries({ queryKey: detailKey });
+      await queryClient.cancelQueries({ queryKey: listKey });
+      await queryClient.cancelQueries({ queryKey: feedKey });
+
+      const previousDetail = queryClient.getQueryData(detailKey);
+      const previousLists = queryClient.getQueriesData({ queryKey: listKey });
+      const previousFeeds = queryClient.getQueriesData({ queryKey: feedKey });
+
+      queryClient.setQueryData(detailKey, (current) =>
+        updateWorkoutVisibilityInCache(current, workoutId, visibility),
+      );
+      queryClient.setQueriesData({ queryKey: listKey }, (current) =>
+        updateWorkoutVisibilityInCache(current, workoutId, visibility),
+      );
+      queryClient.setQueriesData({ queryKey: feedKey }, (current) =>
+        updateWorkoutVisibilityInCache(current, workoutId, visibility),
+      );
+
+      return { detailKey, previousDetail, previousFeeds, previousLists };
+    },
+    onError: (_error, _variables, context) => {
+      if (!context) {
+        return;
+      }
+
+      queryClient.setQueryData(context.detailKey, context.previousDetail);
+      restoreQuerySnapshots(queryClient, context.previousLists);
+      restoreQuerySnapshots(queryClient, context.previousFeeds);
+    },
     onSuccess: (_result, { workoutId }) =>
       invalidateQueryKeys(queryClient, workoutInvalidationTargets.updateVisibility(workoutId)),
   });
+}
+
+export function useWorkoutVisibilityInteraction({
+  initialVisibility,
+  onError,
+  workoutId,
+}: {
+  initialVisibility: WorkoutVisibility;
+  onError?: (error: unknown) => void;
+  workoutId: string;
+}) {
+  const updateVisibility = useUpdateWorkoutVisibility();
+  const [visibility, setVisibility] = useState<WorkoutVisibility>(initialVisibility);
+  const currentWorkoutIdRef = useRef(workoutId);
+  currentWorkoutIdRef.current = workoutId;
+
+  useEffect(() => {
+    setVisibility(initialVisibility);
+  }, [initialVisibility, workoutId]);
+
+  const changeVisibility = async (newVisibility: WorkoutVisibility) => {
+    if (newVisibility === visibility) return;
+
+    const previousVisibility = visibility;
+    const requestWorkoutId = workoutId;
+    setVisibility(newVisibility);
+
+    try {
+      const updatedWorkout = await updateVisibility.mutateAsync({
+        visibility: newVisibility,
+        workoutId,
+      });
+      if (currentWorkoutIdRef.current === requestWorkoutId) {
+        setVisibility(updatedWorkout.visibility);
+      }
+    } catch (err) {
+      if (currentWorkoutIdRef.current === requestWorkoutId) {
+        setVisibility(previousVisibility);
+        onError?.(err);
+      }
+      throw err;
+    }
+  };
+
+  return {
+    changeVisibility,
+    isPending: updateVisibility.isPending,
+    visibility,
+  };
+}
+
+function restoreQuerySnapshots(queryClient: QueryClient, snapshots: [QueryKey, unknown][]) {
+  snapshots.forEach(([queryKey, value]) => {
+    queryClient.setQueryData(queryKey, value);
+  });
+}
+
+function updateWorkoutVisibilityInCache(
+  current: unknown,
+  workoutId: string,
+  visibility: WorkoutVisibility,
+): unknown {
+  if (!current) {
+    return current;
+  }
+
+  if (Array.isArray(current)) {
+    return current.map((item) => updateWorkoutVisibilityInCache(item, workoutId, visibility));
+  }
+
+  if (!isRecord(current)) {
+    return current;
+  }
+
+  if (hasPages(current)) {
+    return {
+      ...current,
+      pages: current.pages.map((page) =>
+        updateWorkoutVisibilityInCache(page, workoutId, visibility),
+      ),
+    };
+  }
+
+  if (hasItems(current)) {
+    return {
+      ...current,
+      items: current.items.map((item) =>
+        updateWorkoutVisibilityInCache(item, workoutId, visibility),
+      ),
+    };
+  }
+
+  if (isMatchingEntity(current, workoutId)) {
+    return {
+      ...current,
+      visibility,
+    };
+  }
+
+  return current;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function hasPages(value: Record<string, unknown>): value is Record<string, unknown> & {
+  pages: unknown[];
+} {
+  return Array.isArray(value.pages);
+}
+
+function hasItems(value: Record<string, unknown>): value is Record<string, unknown> & {
+  items: unknown[];
+} {
+  return Array.isArray(value.items);
+}
+
+function isMatchingEntity(
+  value: Record<string, unknown>,
+  workoutId: string,
+): value is Record<string, unknown> & { id: string } {
+  return value.id === workoutId;
 }
 
 export function useDeleteWorkout() {
