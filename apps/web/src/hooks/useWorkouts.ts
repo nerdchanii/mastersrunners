@@ -2,6 +2,16 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 
 import { api } from "@/lib/api-client";
 
+import {
+  cleanQueryParams,
+  cursorlessQueryParams,
+  invalidateQueryKeys,
+  type QueryParams,
+  toQueryString,
+} from "./query-key-utils";
+
+export type WorkoutVisibility = "PRIVATE" | "FOLLOWERS" | "PUBLIC";
+
 interface Workout {
   id: string;
   distance: number;
@@ -9,7 +19,7 @@ interface Workout {
   pace: number;
   date: string;
   memo: string | null;
-  visibility: "PRIVATE" | "FOLLOWERS" | "PUBLIC";
+  visibility: WorkoutVisibility;
   liked?: boolean;
   likeCount?: number;
   commentCount?: number;
@@ -43,17 +53,44 @@ interface FeedResponse<T> {
   hasMore: boolean;
 }
 
-export const workoutKeys = {
-  all: ["workouts"] as const,
-  list: () => [...workoutKeys.all, "list"] as const,
-  detail: (id: string) => [...workoutKeys.all, "detail", id] as const,
-  feed: () => [...workoutKeys.all, "feed"] as const,
+export type WorkoutListParams = QueryParams;
+export type WorkoutFeedParams = QueryParams & {
+  cursor?: string | null;
+  excludeLinked?: boolean;
+  limit?: number;
 };
 
-export function useWorkouts() {
+export const workoutKeys = {
+  all: ["workouts"] as const,
+  listFamily: () => [...workoutKeys.all, "list"] as const,
+  list: (params?: WorkoutListParams) =>
+    [...workoutKeys.listFamily(), cleanQueryParams(params)] as const,
+  detail: (id: string) => [...workoutKeys.all, "detail", id] as const,
+  feedFamily: () => [...workoutKeys.all, "feed"] as const,
+  feed: (params?: WorkoutFeedParams) =>
+    params
+      ? ([...workoutKeys.feedFamily(), cursorlessQueryParams(params)] as const)
+      : workoutKeys.feedFamily(),
+};
+
+export const workoutInvalidationTargets = {
+  updateVisibility: (workoutId: string) => [
+    workoutKeys.detail(workoutId),
+    workoutKeys.listFamily(),
+    workoutKeys.feedFamily(),
+  ],
+  update: (workoutId: string) => [
+    workoutKeys.detail(workoutId),
+    workoutKeys.listFamily(),
+    workoutKeys.feedFamily(),
+  ],
+  delete: () => [workoutKeys.all],
+};
+
+export function useWorkouts(params?: WorkoutListParams) {
   return useQuery({
-    queryKey: workoutKeys.list(),
-    queryFn: () => api.fetch<Workout[]>("/workouts"),
+    queryKey: workoutKeys.list(params),
+    queryFn: () => api.fetch<Workout[]>(`/workouts${toQueryString(params)}`),
     select: (data) => (Array.isArray(data) ? data : []),
   });
 }
@@ -67,10 +104,12 @@ export function useWorkout(id: string) {
 }
 
 export function useWorkoutFeed(enabled = true) {
+  const baseParams = { excludeLinked: true, limit: 10 };
+
   return useInfiniteQuery({
-    queryKey: workoutKeys.feed(),
+    queryKey: workoutKeys.feed(baseParams),
     queryFn: ({ pageParam }) => {
-      let path = "/feed/workouts?limit=10&excludeLinked=true";
+      let path = `/feed/workouts${toQueryString(baseParams)}`;
       if (pageParam) path += `&cursor=${encodeURIComponent(pageParam as string)}`;
       return api.fetch<FeedResponse<WorkoutFeedItem>>(path);
     },
@@ -102,9 +141,20 @@ export function useUpdateWorkout(id: string) {
         method: "PATCH",
         body: JSON.stringify(dto),
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: workoutKeys.all });
-    },
+    onSuccess: () => invalidateQueryKeys(queryClient, workoutInvalidationTargets.update(id)),
+  });
+}
+
+export function useUpdateWorkoutVisibility() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ visibility, workoutId }: { visibility: WorkoutVisibility; workoutId: string }) =>
+      api.fetch<Workout>(`/workouts/${workoutId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ visibility }),
+      }),
+    onSuccess: (_result, { workoutId }) =>
+      invalidateQueryKeys(queryClient, workoutInvalidationTargets.updateVisibility(workoutId)),
   });
 }
 

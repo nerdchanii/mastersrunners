@@ -2,6 +2,13 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 
 import { api } from "@/lib/api-client";
 
+import {
+  cleanQueryParams,
+  cursorlessQueryParams,
+  type QueryParams,
+  toQueryString,
+} from "./query-key-utils";
+
 interface PostImage {
   id: string;
   url: string;
@@ -49,11 +56,21 @@ interface CreatePostDto {
   imageUrls?: string[];
 }
 
+export type PostListParams = QueryParams;
+export type PostFeedParams = QueryParams & {
+  cursor?: string | null;
+  limit?: number;
+};
+
 export const postKeys = {
   all: ["posts"] as const,
-  list: (params?: Record<string, string>) => [...postKeys.all, "list", params] as const,
+  list: (params?: PostListParams) => [...postKeys.all, "list", cleanQueryParams(params)] as const,
   detail: (id: string) => [...postKeys.all, "detail", id] as const,
-  feed: () => [...postKeys.all, "feed"] as const,
+  feedFamily: () => [...postKeys.all, "feed"] as const,
+  feed: (params?: PostFeedParams) =>
+    params
+      ? ([...postKeys.feedFamily(), cursorlessQueryParams(params)] as const)
+      : postKeys.feedFamily(),
 };
 
 export function usePost(id: string) {
@@ -64,22 +81,21 @@ export function usePost(id: string) {
   });
 }
 
-export function usePosts(params?: Record<string, string>) {
+export function usePosts(params?: PostListParams) {
   return useQuery({
     queryKey: postKeys.list(params),
-    queryFn: () => {
-      const qs = params ? "?" + new URLSearchParams(params).toString() : "";
-      return api.fetch<Post[]>(`/posts${qs}`);
-    },
+    queryFn: () => api.fetch<Post[]>(`/posts${toQueryString(params)}`),
     select: (data) => (Array.isArray(data) ? data : []),
   });
 }
 
 export function usePostFeed(enabled = true) {
+  const baseParams = { limit: 10 };
+
   return useInfiniteQuery({
-    queryKey: postKeys.feed(),
+    queryKey: postKeys.feed(baseParams),
     queryFn: ({ pageParam }) => {
-      let path = "/feed/posts?limit=10";
+      let path = `/feed/posts${toQueryString(baseParams)}`;
       if (pageParam) path += `&cursor=${encodeURIComponent(pageParam as string)}`;
       return api.fetch<FeedResponse<Post>>(path);
     },

@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
 
+import { cleanQueryParams, invalidateQueryKeys, type QueryParams } from "./query-key-utils";
+
 interface ProfileApiResponse {
   user: {
     id: string;
@@ -46,10 +48,32 @@ interface UpdateProfileDto {
   pbMarathonSeconds?: number | null;
 }
 
+export type ProfileTab = "posts" | "workouts" | "crews" | "followers" | "following";
+export type ProfileTabParams = QueryParams;
+
 export const profileKeys = {
   all: ["profile"] as const,
   mine: () => [...profileKeys.all, "mine"] as const,
-  user: (id: string) => [...profileKeys.all, "user", id] as const,
+  detail: (id: string) => [...profileKeys.all, "detail", id] as const,
+  stats: (id: string) => [...profileKeys.detail(id), "stats"] as const,
+  tabFamily: (id: string) => [...profileKeys.detail(id), "tab"] as const,
+  tab: (id: string, tab: ProfileTab, params?: ProfileTabParams) =>
+    [...profileKeys.tabFamily(id), tab, cleanQueryParams(params)] as const,
+  user: (id: string) => profileKeys.detail(id),
+};
+
+export const profileInvalidationTargets = {
+  edit: (userId: string) => [
+    profileKeys.mine(),
+    profileKeys.detail(userId),
+    profileKeys.stats(userId),
+    profileKeys.tabFamily(userId),
+  ],
+  follow: (userId: string) => [
+    profileKeys.detail(userId),
+    profileKeys.stats(userId),
+    profileKeys.tabFamily(userId),
+  ],
 };
 
 export function useProfile() {
@@ -61,7 +85,7 @@ export function useProfile() {
 
 export function useUserProfile(id: string) {
   return useQuery({
-    queryKey: profileKeys.user(id),
+    queryKey: profileKeys.detail(id),
     queryFn: () => api.fetch<ProfileApiResponse>(`/profile/${id}`),
     enabled: !!id,
   });
@@ -75,9 +99,8 @@ export function useUpdateProfile() {
         method: "PATCH",
         body: JSON.stringify(dto),
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: profileKeys.all });
-    },
+    onSuccess: (profile) =>
+      invalidateQueryKeys(queryClient, profileInvalidationTargets.edit(profile.user.id)),
   });
 }
 
@@ -88,8 +111,7 @@ export function useFollowUser() {
       api.fetch(`/follow/${userId}`, {
         method: isFollowing ? "DELETE" : "POST",
       }),
-    onSuccess: (_data, { userId }) => {
-      queryClient.invalidateQueries({ queryKey: profileKeys.user(userId) });
-    },
+    onSuccess: (_data, { userId }) =>
+      invalidateQueryKeys(queryClient, profileInvalidationTargets.follow(userId)),
   });
 }

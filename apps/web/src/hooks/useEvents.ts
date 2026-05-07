@@ -2,6 +2,14 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 
 import { api } from "@/lib/api-client";
 
+import {
+  cleanQueryParams,
+  cursorlessQueryParams,
+  invalidateQueryKeys,
+  type QueryParams,
+  toQueryString,
+} from "./query-key-utils";
+
 export interface Event {
   id: string;
   title: string;
@@ -32,35 +40,74 @@ interface EventListResponse {
 }
 
 type EventTab = "upcoming" | "past" | "my";
+export type EventListParams = QueryParams;
+export type EventInfiniteListParams = QueryParams & {
+  cursor?: string | null;
+  limit?: number;
+  tab: EventTab;
+};
 
 export const eventKeys = {
   all: ["events"] as const,
-  list: (params?: Record<string, string>) => [...eventKeys.all, "list", params] as const,
+  listFamily: () => [...eventKeys.all, "list"] as const,
+  list: (params?: EventListParams) =>
+    [...eventKeys.listFamily(), cleanQueryParams(params)] as const,
+  infiniteListFamily: () => [...eventKeys.all, "infinite-list"] as const,
+  infiniteList: (params: EventInfiniteListParams) =>
+    [...eventKeys.infiniteListFamily(), cursorlessQueryParams(params)] as const,
   detail: (id: string) => [...eventKeys.all, "detail", id] as const,
+  myResult: (id: string) => [...eventKeys.detail(id), "my-result"] as const,
+  results: (id: string) => [...eventKeys.detail(id), "results"] as const,
   my: () => [...eventKeys.all, "my"] as const,
-  tab: (tab: EventTab) => [...eventKeys.all, "tab", tab] as const,
+  tab: (tab: EventTab, params?: Omit<EventInfiniteListParams, "tab">) =>
+    eventKeys.infiniteList({ limit: 12, ...params, tab }),
 };
 
-export function useEvents(params?: Record<string, string>) {
+export const eventInvalidationTargets = {
+  register: (eventId: string) => [
+    eventKeys.detail(eventId),
+    eventKeys.myResult(eventId),
+    eventKeys.listFamily(),
+    eventKeys.infiniteListFamily(),
+  ],
+  cancel: (eventId: string) => [
+    eventKeys.detail(eventId),
+    eventKeys.myResult(eventId),
+    eventKeys.listFamily(),
+    eventKeys.infiniteListFamily(),
+  ],
+  submitResult: (eventId: string) => [
+    eventKeys.detail(eventId),
+    eventKeys.myResult(eventId),
+    eventKeys.results(eventId),
+  ],
+  linkWorkout: (eventId: string) => [eventKeys.detail(eventId), eventKeys.myResult(eventId)],
+  unlinkWorkout: (eventId: string) => [eventKeys.detail(eventId), eventKeys.myResult(eventId)],
+  delete: () => [eventKeys.all],
+};
+
+export function useEvents(params?: EventListParams) {
   return useQuery({
     queryKey: eventKeys.list(params),
-    queryFn: () => {
-      const qs = params ? "?" + new URLSearchParams(params).toString() : "";
-      return api.fetch<Event[]>(`/events${qs}`);
-    },
+    queryFn: () => api.fetch<Event[]>(`/events${toQueryString(params)}`),
     select: (data) => (Array.isArray(data) ? data : []),
   });
 }
 
 export function useInfiniteEvents(tab: EventTab = "upcoming") {
+  const baseParams = { limit: 12, tab };
+
   return useInfiniteQuery({
-    queryKey: eventKeys.tab(tab),
+    queryKey: eventKeys.infiniteList(baseParams),
     queryFn: ({ pageParam }) => {
       let base: string;
       if (tab === "my") {
-        base = "/events/my?limit=12";
+        base = `/events/my${toQueryString({ limit: baseParams.limit })}`;
       } else {
-        base = `/events?limit=12&upcoming=${tab === "upcoming"}`;
+        base = `/events${toQueryString({
+          limit: baseParams.limit,
+          upcoming: tab === "upcoming",
+        })}`;
       }
       const path = pageParam ? `${base}&cursor=${encodeURIComponent(pageParam as string)}` : base;
       return api.fetch<EventListResponse>(path);
@@ -82,9 +129,8 @@ export function useJoinEvent() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (eventId: string) => api.fetch(`/events/${eventId}/register`, { method: "POST" }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: eventKeys.all });
-    },
+    onSuccess: (_result, eventId) =>
+      invalidateQueryKeys(queryClient, eventInvalidationTargets.register(eventId)),
   });
 }
 
@@ -92,8 +138,7 @@ export function useLeaveEvent() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (eventId: string) => api.fetch(`/events/${eventId}/cancel`, { method: "DELETE" }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: eventKeys.all });
-    },
+    onSuccess: (_result, eventId) =>
+      invalidateQueryKeys(queryClient, eventInvalidationTargets.cancel(eventId)),
   });
 }

@@ -2,6 +2,14 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 
 import { api } from "@/lib/api-client";
 
+import {
+  cleanQueryParams,
+  cursorlessQueryParams,
+  invalidateQueryKeys,
+  type QueryParams,
+  toQueryString,
+} from "./query-key-utils";
+
 export interface Challenge {
   id: string;
   title: string;
@@ -35,29 +43,63 @@ interface ChallengeListResponse {
   hasMore: boolean;
 }
 
+export type ChallengeListParams = QueryParams;
+export type ChallengeInfiniteListParams = QueryParams & {
+  cursor?: string | null;
+  joined: boolean;
+  limit?: number;
+};
+export type ChallengeLeaderboardParams = QueryParams & { limit?: number };
+
 export const challengeKeys = {
   all: ["challenges"] as const,
-  list: (params?: Record<string, string>) => [...challengeKeys.all, "list", params] as const,
+  listFamily: () => [...challengeKeys.all, "list"] as const,
+  list: (params?: ChallengeListParams) =>
+    [...challengeKeys.listFamily(), cleanQueryParams(params)] as const,
+  infiniteListFamily: () => [...challengeKeys.all, "infinite-list"] as const,
+  infiniteList: (params: ChallengeInfiniteListParams) =>
+    [...challengeKeys.infiniteListFamily(), cursorlessQueryParams(params)] as const,
   detail: (id: string) => [...challengeKeys.all, "detail", id] as const,
+  leaderboard: (id: string, params?: ChallengeLeaderboardParams) =>
+    [...challengeKeys.detail(id), "leaderboard", cleanQueryParams(params)] as const,
   my: () => [...challengeKeys.all, "my"] as const,
 };
 
-export function useChallenges(params?: Record<string, string>) {
+export const challengeInvalidationTargets = {
+  join: (challengeId: string) => [
+    challengeKeys.detail(challengeId),
+    challengeKeys.listFamily(),
+    challengeKeys.infiniteListFamily(),
+  ],
+  leave: (challengeId: string) => [
+    challengeKeys.detail(challengeId),
+    challengeKeys.listFamily(),
+    challengeKeys.infiniteListFamily(),
+  ],
+  updateProgress: (challengeId: string, leaderboardParams?: ChallengeLeaderboardParams) => [
+    challengeKeys.detail(challengeId),
+    challengeKeys.leaderboard(challengeId, leaderboardParams),
+  ],
+  delete: () => [challengeKeys.all],
+};
+
+export function useChallenges(params?: ChallengeListParams) {
   return useQuery({
     queryKey: challengeKeys.list(params),
-    queryFn: () => {
-      const qs = params ? "?" + new URLSearchParams(params).toString() : "";
-      return api.fetch<Challenge[]>(`/challenges${qs}`);
-    },
+    queryFn: () => api.fetch<Challenge[]>(`/challenges${toQueryString(params)}`),
     select: (data) => (Array.isArray(data) ? data : []),
   });
 }
 
 export function useInfiniteChallenges(joined = false) {
+  const baseParams = { joined, limit: 12 };
+
   return useInfiniteQuery({
-    queryKey: joined ? challengeKeys.my() : challengeKeys.list(),
+    queryKey: challengeKeys.infiniteList(baseParams),
     queryFn: ({ pageParam }) => {
-      const base = joined ? "/challenges/my?limit=12" : "/challenges?limit=12";
+      const base = joined
+        ? `/challenges/my${toQueryString({ limit: baseParams.limit })}`
+        : `/challenges${toQueryString({ limit: baseParams.limit })}`;
       const path = pageParam ? `${base}&cursor=${encodeURIComponent(pageParam as string)}` : base;
       return api.fetch<ChallengeListResponse>(path);
     },
@@ -79,9 +121,8 @@ export function useJoinChallenge() {
   return useMutation({
     mutationFn: (challengeId: string) =>
       api.fetch(`/challenges/${challengeId}/join`, { method: "POST" }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: challengeKeys.all });
-    },
+    onSuccess: (_result, challengeId) =>
+      invalidateQueryKeys(queryClient, challengeInvalidationTargets.join(challengeId)),
   });
 }
 
@@ -90,8 +131,7 @@ export function useLeaveChallenge() {
   return useMutation({
     mutationFn: (challengeId: string) =>
       api.fetch(`/challenges/${challengeId}/leave`, { method: "DELETE" }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: challengeKeys.all });
-    },
+    onSuccess: (_result, challengeId) =>
+      invalidateQueryKeys(queryClient, challengeInvalidationTargets.leave(challengeId)),
   });
 }
