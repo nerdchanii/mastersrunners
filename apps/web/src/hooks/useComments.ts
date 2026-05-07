@@ -1,13 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
 
-import {
-  cleanQueryParams,
-  invalidateQueryKeys,
-  type QueryParams,
-  toQueryString,
-} from "./query-key-utils";
+import { cleanQueryParams, type QueryParams, toQueryString } from "./query-key-utils";
 
 export type CommentEntityType = "post" | "workout";
 export type CommentListParams = QueryParams & { limit?: number };
@@ -32,18 +27,20 @@ interface CommentsResponse {
   hasMore: boolean;
 }
 
-interface CreateCommentInput {
-  content: string;
+interface CommentMutationScope {
   entityId: string;
   entityType: CommentEntityType;
+  params?: CommentListParams;
+}
+
+interface CreateCommentInput {
+  content: string;
   mentionedUserIds?: string[];
   parentId?: string;
 }
 
 interface DeleteCommentInput {
   commentId: string;
-  entityId: string;
-  entityType: CommentEntityType;
 }
 
 const DEFAULT_COMMENT_LIST_PARAMS = { limit: 50 };
@@ -61,12 +58,16 @@ export const commentKeys = {
 };
 
 export const commentInvalidationTargets = {
-  create: (entityType: CommentEntityType, entityId: string) => [
-    commentKeys.listFamily(entityType, entityId),
-  ],
-  delete: (entityType: CommentEntityType, entityId: string) => [
-    commentKeys.listFamily(entityType, entityId),
-  ],
+  create: (
+    entityType: CommentEntityType,
+    entityId: string,
+    params: CommentListParams = DEFAULT_COMMENT_LIST_PARAMS,
+  ) => [commentKeys.list(entityType, entityId, params)],
+  delete: (
+    entityType: CommentEntityType,
+    entityId: string,
+    params: CommentListParams = DEFAULT_COMMENT_LIST_PARAMS,
+  ) => [commentKeys.list(entityType, entityId, params)],
 };
 
 function commentCollectionEndpoint(entityType: CommentEntityType, entityId: string) {
@@ -77,6 +78,16 @@ function commentCollectionEndpoint(entityType: CommentEntityType, entityId: stri
 
 function normalizeComments(data: CommentsResponse | Comment[]) {
   return Array.isArray(data) ? data : data.data;
+}
+
+function invalidateCommentList(
+  queryClient: QueryClient,
+  { entityId, entityType, params = DEFAULT_COMMENT_LIST_PARAMS }: CommentMutationScope,
+) {
+  return queryClient.invalidateQueries({
+    exact: true,
+    queryKey: commentKeys.list(entityType, entityId, params),
+  });
 }
 
 export function useComments(
@@ -96,17 +107,12 @@ export function useComments(
   });
 }
 
-export function useCreateComment() {
+export function useCreateComment(scope: CommentMutationScope) {
   const queryClient = useQueryClient();
+  const { entityId, entityType } = scope;
 
   return useMutation({
-    mutationFn: ({
-      content,
-      entityId,
-      entityType,
-      mentionedUserIds,
-      parentId,
-    }: CreateCommentInput) => {
+    mutationFn: ({ content, mentionedUserIds, parentId }: CreateCommentInput) => {
       const body: Record<string, unknown> = { content };
       if (parentId) {
         body.parentId = parentId;
@@ -124,20 +130,19 @@ export function useCreateComment() {
         body: JSON.stringify(body),
       });
     },
-    onSuccess: (_result, { entityId, entityType }) =>
-      invalidateQueryKeys(queryClient, commentInvalidationTargets.create(entityType, entityId)),
+    onSuccess: () => invalidateCommentList(queryClient, scope),
   });
 }
 
-export function useDeleteComment() {
+export function useDeleteComment(scope: CommentMutationScope) {
   const queryClient = useQueryClient();
+  const { entityId, entityType } = scope;
 
   return useMutation({
-    mutationFn: ({ commentId, entityId, entityType }: DeleteCommentInput) =>
+    mutationFn: ({ commentId }: DeleteCommentInput) =>
       api.fetch(`${commentCollectionEndpoint(entityType, entityId)}/${commentId}`, {
         method: "DELETE",
       }),
-    onSuccess: (_result, { entityId, entityType }) =>
-      invalidateQueryKeys(queryClient, commentInvalidationTargets.delete(entityType, entityId)),
+    onSuccess: () => invalidateCommentList(queryClient, scope),
   });
 }

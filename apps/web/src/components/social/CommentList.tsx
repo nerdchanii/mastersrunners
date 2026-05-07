@@ -7,40 +7,36 @@ import { TimeAgo } from "@/components/common/TimeAgo";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { CommentContent } from "@/components/social/MentionLink";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api-client";
+import {
+  type Comment,
+  type CommentEntityType,
+  useComments,
+  useCreateComment,
+  useDeleteComment,
+} from "@/hooks/useComments";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
-interface Comment {
-  id: string;
-  content: string;
-  createdAt: string;
-  parentId?: string | null;
-  mentionedUserId?: string | null;
-  user: {
-    id: string;
-    name: string;
-    profileImage: string | null;
-  };
-  replies?: Comment[];
-}
-
 interface CommentListProps {
-  entityType: "post" | "workout";
+  entityType: CommentEntityType;
   entityId: string;
 }
 
+const COMMENT_LIST_PARAMS = { limit: 50 };
+
 export function CommentList({ entityType, entityId }: CommentListProps) {
   const { user } = useAuth();
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const commentsQuery = useComments(entityType, entityId, COMMENT_LIST_PARAMS);
+  const createComment = useCreateComment({ entityType, entityId, params: COMMENT_LIST_PARAMS });
+  const deleteComment = useDeleteComment({ entityType, entityId, params: COMMENT_LIST_PARAMS });
   const [newComment, setNewComment] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const comments = commentsQuery.data ?? [];
   const nextPath =
     typeof window === "undefined"
       ? entityType === "workout"
@@ -48,8 +44,6 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
         : `/posts/${entityId}`
       : `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
-  const endpoint =
-    entityType === "workout" ? `/workouts/${entityId}/comments` : `/posts/${entityId}/comments`;
   const authGateTitle = "댓글 남기기";
   const guestEntryDescription =
     entityType === "workout"
@@ -60,59 +54,27 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
       ? "현재 보고 있는 기록 위치를 그대로 유지한 채 바로 이어서 작성할 수 있습니다."
       : "현재 보고 있는 글 위치를 그대로 유지한 채 바로 이어서 작성할 수 있습니다.";
 
-  const fetchComments = async () => {
-    try {
-      setIsLoading(true);
-      const data = await api.fetchSession<
-        { data: Comment[]; cursor: string | null; hasMore: boolean } | Comment[]
-      >(`${endpoint}?limit=50`);
-
-      const items = Array.isArray(data) ? data : (data?.data ?? []);
-
-      // Backend already returns top-level comments with nested replies
-      setComments(items);
-      setLoadError(null);
-    } catch {
-      setComments([]);
-      setLoadError("댓글을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchComments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setCreateError(null);
+    setDeleteError(null);
   }, [entityType, entityId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || isSubmitting) return;
+    if (!newComment.trim() || createComment.isPending) return;
 
-    setIsSubmitting(true);
+    setCreateError(null);
     try {
-      const body: Record<string, unknown> = { content: newComment.trim() };
-      if (replyingTo) {
-        body.parentId = replyingTo.id;
-        if (entityType === "workout") {
-          body.mentionedUserIds = [replyingTo.user.id];
-        } else {
-          body.mentionedUserId = replyingTo.user.id;
-        }
-      }
-
-      await api.fetch(endpoint, {
-        method: "POST",
-        body: JSON.stringify(body),
+      await createComment.mutateAsync({
+        content: newComment.trim(),
+        mentionedUserIds: replyingTo ? [replyingTo.user.id] : undefined,
+        parentId: replyingTo?.id,
       });
 
       setNewComment("");
       setReplyingTo(null);
-      await fetchComments();
     } catch {
-      // silent
-    } finally {
-      setIsSubmitting(false);
+      setCreateError("댓글을 등록하지 못했습니다. 입력 내용을 확인하고 다시 시도해 주세요.");
     }
   };
 
@@ -124,22 +86,24 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
 
     setReplyingTo(comment);
     setNewComment(`@${comment.user.name} `);
+    setCreateError(null);
     inputRef.current?.focus();
   };
 
   const handleCancelReply = () => {
     setReplyingTo(null);
     setNewComment("");
+    setCreateError(null);
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+    setDeleteError(null);
     try {
-      await api.fetch(`${endpoint}/${deleteTarget}`, { method: "DELETE" });
+      await deleteComment.mutateAsync({ commentId: deleteTarget });
       setDeleteTarget(null);
-      await fetchComments();
     } catch {
-      // silent
+      setDeleteError("댓글을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
     }
   };
 
@@ -184,10 +148,23 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
   return (
     <div className="space-y-4">
       {/* Comment list */}
-      {isLoading ? (
+      {commentsQuery.isLoading ? (
         <p className="text-sm text-muted-foreground text-center py-4">로딩 중...</p>
-      ) : loadError ? (
-        <p className="text-sm text-muted-foreground text-center py-6">{loadError}</p>
+      ) : commentsQuery.isError ? (
+        <div className="flex flex-col items-center gap-3 py-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            댓글을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void commentsQuery.refetch()}
+            disabled={commentsQuery.isFetching}
+          >
+            다시 시도
+          </Button>
+        </div>
       ) : comments.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-6">첫 댓글을 작성해보세요</p>
       ) : (
@@ -221,7 +198,10 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
             <input
               ref={inputRef}
               value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
+              onChange={(e) => {
+                setNewComment(e.target.value);
+                setCreateError(null);
+              }}
               placeholder="댓글 달기..."
               className="h-10 flex-1 bg-transparent py-2 text-sm leading-5 outline-none placeholder:text-muted-foreground"
             />
@@ -229,12 +209,13 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
               type="submit"
               size="sm"
               variant="ghost"
-              disabled={!newComment.trim() || isSubmitting}
+              disabled={!newComment.trim() || createComment.isPending}
               className="shrink-0"
             >
               <Send className="size-4" />
             </Button>
           </div>
+          {createError && <p className="mt-2 text-xs text-destructive">{createError}</p>}
         </form>
       ) : (
         <div className="border-t pt-3">
@@ -264,7 +245,9 @@ export function CommentList({ entityType, entityId }: CommentListProps) {
         confirmLabel="삭제"
         variant="destructive"
         onConfirm={handleDelete}
+        loading={deleteComment.isPending}
       />
+      {deleteError && <p className="text-xs text-destructive">{deleteError}</p>}
 
       <AuthGateDialog
         open={showAuthDialog}

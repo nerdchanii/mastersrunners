@@ -160,10 +160,13 @@ describe("mutation invalidation conventions", () => {
 
   it("returns exact comment and social mutation targets", () => {
     expect(commentInvalidationTargets.create("post", "post-1")).toEqual([
-      commentKeys.listFamily("post", "post-1"),
+      commentKeys.list("post", "post-1", { limit: 50 }),
     ]);
     expect(commentInvalidationTargets.delete("workout", "workout-1")).toEqual([
-      commentKeys.listFamily("workout", "workout-1"),
+      commentKeys.list("workout", "workout-1", { limit: 50 }),
+    ]);
+    expect(commentInvalidationTargets.create("post", "post-1", { limit: 25 })).toEqual([
+      commentKeys.list("post", "post-1", { limit: 25 }),
     ]);
 
     expect(
