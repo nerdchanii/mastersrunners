@@ -32,17 +32,18 @@ export default function NewPostPage() {
     setContent,
     setVisibility,
     step,
+    stepIndex,
     toggleWorkout,
     visibility,
   } = usePostComposer();
   const { data: workouts = [] } = useWorkouts();
-  const progress = ((step + 1) / POST_COMPOSER_STEPS.length) * 100;
+  const progress = ((stepIndex + 1) / POST_COMPOSER_STEPS.length) * 100;
   const hasUploadingImage = images.some((image) => image.uploading);
   const hasImageError = images.some((image) => image.error);
   const canSubmit = content.trim() || images.length > 0 || selectedWorkoutIds.length > 0;
 
   const primaryAction = (() => {
-    if (step === 0) {
+    if (step === "workout") {
       return {
         label: "다음",
         onClick: goNext,
@@ -51,7 +52,7 @@ export default function NewPostPage() {
       };
     }
 
-    if (step === 1) {
+    if (step === "photos") {
       return {
         label: hasUploadingImage ? "업로드 중..." : "다음",
         onClick: goNext,
@@ -60,7 +61,7 @@ export default function NewPostPage() {
       };
     }
 
-    if (step === 2) {
+    if (step === "text") {
       return {
         label: "미리보기",
         onClick: goNext,
@@ -78,11 +79,11 @@ export default function NewPostPage() {
   })();
 
   const secondaryAction = (() => {
-    if (step === 0) {
+    if (step === "workout") {
       return { label: "워크아웃 없이 진행", onClick: goNext, disabled: false };
     }
 
-    if (step === 1) {
+    if (step === "photos") {
       return {
         label: "사진 없이 진행",
         onClick: goNext,
@@ -90,7 +91,7 @@ export default function NewPostPage() {
       };
     }
 
-    if (step === 3) {
+    if (step === "preview") {
       return { label: "수정하기", onClick: goBack, disabled: isSubmitting };
     }
 
@@ -129,11 +130,11 @@ export default function NewPostPage() {
 
         <div
           className="h-1 overflow-hidden rounded-full bg-muted"
-          aria-label={`게시글 작성 진행률 ${step + 1}/${POST_COMPOSER_STEPS.length}`}
+          aria-label={`게시글 작성 진행률 ${stepIndex + 1}/${POST_COMPOSER_STEPS.length}`}
           role="progressbar"
           aria-valuemin={1}
           aria-valuemax={POST_COMPOSER_STEPS.length}
-          aria-valuenow={step + 1}
+          aria-valuenow={stepIndex + 1}
         >
           <div
             className="h-full rounded-full bg-foreground transition-[width] duration-300"
@@ -142,11 +143,11 @@ export default function NewPostPage() {
         </div>
       </div>
 
-      {step === 0 && (
+      {step === "workout" && (
         <PostComposerWorkoutStep selectedIds={selectedWorkoutIds} onToggle={toggleWorkout} />
       )}
 
-      {step === 1 && (
+      {step === "photos" && (
         <PostComposerPhotosStep
           images={images}
           maxImages={maxImages}
@@ -155,7 +156,7 @@ export default function NewPostPage() {
         />
       )}
 
-      {step === 2 && (
+      {step === "text" && (
         <PostComposerTextStep
           content={content}
           hashtags={hashtags}
@@ -167,7 +168,7 @@ export default function NewPostPage() {
         />
       )}
 
-      {step === 3 && (
+      {step === "preview" && (
         <PostComposerPreviewStep
           content={content}
           hashtags={hashtags}
@@ -199,8 +200,10 @@ export default function NewPostPage() {
             disabled={primaryAction.disabled}
             className={cn("min-w-0", secondaryAction ? "flex-1" : "w-full")}
           >
-            {isSubmitting && step === 3 ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-            {step === 2 ? <Eye className="mr-2 size-4" /> : null}
+            {isSubmitting && step === "preview" ? (
+              <Loader2 className="mr-2 size-4 animate-spin" />
+            ) : null}
+            {step === "text" ? <Eye className="mr-2 size-4" /> : null}
             {primaryAction.label}
             {primaryAction.badge ? (
               <Badge variant="secondary" className="ml-2">

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
+import { type FunnelHistory, useFunnel } from "@/components/ui/funnel";
 import { useCreatePost } from "@/hooks/usePosts";
 import { api } from "@/lib/api-client";
 
@@ -14,9 +15,27 @@ export interface ImageUpload {
 }
 
 export type Visibility = "PRIVATE" | "FOLLOWERS" | "PUBLIC";
-export type Step = 0 | 1 | 2 | 3;
+export type PostComposerStep = (typeof POST_COMPOSER_FUNNEL_STEPS)[number];
+
+type PostComposerFunnel = {
+  workout: { selectedWorkoutIds: string[] };
+  photos: { selectedWorkoutIds: string[]; images: ImageUpload[] };
+  text: {
+    selectedWorkoutIds: string[];
+    images: ImageUpload[];
+    content: string;
+    visibility: Visibility;
+  };
+  preview: {
+    selectedWorkoutIds: string[];
+    images: ImageUpload[];
+    content: string;
+    visibility: Visibility;
+  };
+};
 
 const MAX_IMAGES = 5;
+const POST_COMPOSER_FUNNEL_STEPS = ["workout", "photos", "text", "preview"] as const;
 const HASHTAG_PATTERN = /(^|\s)#([\w가-힣]+)/g;
 const MENTION_PATTERN = /(^|\s)@([\w가-힣._]+)/g;
 
@@ -28,54 +47,171 @@ function extractUniqueMatches(content: string, pattern: RegExp, prefix: string) 
   return Array.from(new Set(matches)).map((value) => `${prefix}${value}`);
 }
 
+function replaceStepContext(
+  history: FunnelHistory<PostComposerFunnel>,
+  step: PostComposerStep,
+  state: {
+    selectedWorkoutIds: string[];
+    images: ImageUpload[];
+    content: string;
+    visibility: Visibility;
+  },
+): void {
+  if (step === "workout") {
+    history.replace("workout", { selectedWorkoutIds: state.selectedWorkoutIds });
+    return;
+  }
+
+  if (step === "photos") {
+    history.replace("photos", {
+      selectedWorkoutIds: state.selectedWorkoutIds,
+      images: state.images,
+    });
+    return;
+  }
+
+  if (step === "text") {
+    history.replace("text", {
+      selectedWorkoutIds: state.selectedWorkoutIds,
+      images: state.images,
+      content: state.content,
+      visibility: state.visibility,
+    });
+    return;
+  }
+
+  history.replace("preview", {
+    selectedWorkoutIds: state.selectedWorkoutIds,
+    images: state.images,
+    content: state.content,
+    visibility: state.visibility,
+  });
+}
+
 export function usePostComposer() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const createPost = useCreatePost();
   const preselectedWorkoutId = searchParams.get("workoutId");
+  const initialSelectedWorkoutIds = preselectedWorkoutId ? [preselectedWorkoutId] : [];
 
-  const [step, setStep] = useState<Step>(0);
+  const funnel = useFunnel<PostComposerFunnel>({
+    id: "post-composer",
+    initialStep: "workout",
+    initialContext: { selectedWorkoutIds: initialSelectedWorkoutIds },
+    steps: POST_COMPOSER_FUNNEL_STEPS,
+    sync: "history",
+  });
+
+  const initialContext = funnel.context as Partial<
+    PostComposerFunnel["workout"] &
+      PostComposerFunnel["photos"] &
+      PostComposerFunnel["text"] &
+      PostComposerFunnel["preview"]
+  >;
   const [selectedWorkoutIds, setSelectedWorkoutIds] = useState<string[]>(
-    preselectedWorkoutId ? [preselectedWorkoutId] : [],
+    Array.isArray(initialContext.selectedWorkoutIds)
+      ? initialContext.selectedWorkoutIds
+      : initialSelectedWorkoutIds,
   );
-  const [images, setImages] = useState<ImageUpload[]>([]);
-  const [content, setContent] = useState("");
-  const [visibility, setVisibility] = useState<Visibility>("PUBLIC");
+  const [images, setImages] = useState<ImageUpload[]>(
+    Array.isArray(initialContext.images) ? initialContext.images : [],
+  );
+  const [content, setContent] = useState(
+    typeof initialContext.content === "string" ? initialContext.content : "",
+  );
+  const [visibility, setVisibility] = useState<Visibility>(
+    initialContext.visibility === "PRIVATE" ||
+      initialContext.visibility === "FOLLOWERS" ||
+      initialContext.visibility === "PUBLIC"
+      ? initialContext.visibility
+      : "PUBLIC",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const hashtags = extractUniqueMatches(content, HASHTAG_PATTERN, "#");
   const mentions = extractUniqueMatches(content, MENTION_PATTERN, "@");
 
-  const stepRef = useRef(step);
+  const step = funnel.step;
+  const stepIndex = POST_COMPOSER_FUNNEL_STEPS.indexOf(step);
+  const stepRef = useRef<PostComposerStep>(step);
   stepRef.current = step;
 
   useEffect(() => {
-    const handlePopState = () => {
-      if (stepRef.current > 0) {
-        setStep((prev) => (prev - 1) as Step);
-        window.history.pushState(null, "", "/posts/new");
-      }
-    };
+    const context = funnel.context as Partial<
+      PostComposerFunnel["workout"] &
+        PostComposerFunnel["photos"] &
+        PostComposerFunnel["text"] &
+        PostComposerFunnel["preview"]
+    >;
 
-    window.history.pushState(null, "", "/posts/new");
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
+    if (Array.isArray(context.selectedWorkoutIds)) {
+      setSelectedWorkoutIds(context.selectedWorkoutIds);
+    }
+
+    if ("images" in context && Array.isArray(context.images)) {
+      setImages(context.images);
+    }
+
+    if ("content" in context && typeof context.content === "string") {
+      setContent(context.content);
+    }
+
+    if (
+      context.visibility === "PRIVATE" ||
+      context.visibility === "FOLLOWERS" ||
+      context.visibility === "PUBLIC"
+    ) {
+      setVisibility(context.visibility);
+    }
+  }, [funnel.context, step]);
+
+  useEffect(() => {
+    replaceStepContext(funnel.history, step, {
+      selectedWorkoutIds,
+      images,
+      content,
+      visibility,
+    });
+  }, [content, funnel.history, images, selectedWorkoutIds, step, visibility]);
 
   const goNext = useCallback(() => {
-    window.history.pushState(null, "", "/posts/new");
-    setStep((prev) => (prev + 1) as Step);
-  }, []);
+    if (stepRef.current === "workout") {
+      funnel.history.push("photos", {
+        selectedWorkoutIds,
+        images,
+      });
+      return;
+    }
+
+    if (stepRef.current === "photos") {
+      funnel.history.push("text", {
+        selectedWorkoutIds,
+        images,
+        content,
+        visibility,
+      });
+      return;
+    }
+
+    if (stepRef.current === "text") {
+      funnel.history.push("preview", {
+        selectedWorkoutIds,
+        images,
+        content,
+        visibility,
+      });
+    }
+  }, [content, funnel.history, images, selectedWorkoutIds, visibility]);
 
   const goBack = useCallback(() => {
-    if (stepRef.current === 0) {
+    if (stepRef.current === "workout") {
       navigate(-1);
       return;
     }
 
-    setStep((prev) => (prev - 1) as Step);
-    window.history.pushState(null, "", "/posts/new");
-  }, [navigate]);
+    funnel.history.back();
+  }, [funnel.history, navigate]);
 
   const toggleWorkout = useCallback((id: string) => {
     setSelectedWorkoutIds((prev) =>
@@ -171,6 +307,7 @@ export function usePostComposer() {
   return {
     maxImages: MAX_IMAGES,
     step,
+    stepIndex,
     selectedWorkoutIds,
     images,
     content,
