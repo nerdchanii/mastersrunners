@@ -51,6 +51,12 @@ Read in this order:
 - Reviews are task-by-task judgment calls, not a default repository gate.
 - If a task needs review, record the requested roles and review focus in the task file.
 - Reviewers are read-only advisors. They can recommend changes, but they do not own implementation rollback or broad restructuring authority.
+- This repository uses project-scoped Codex agents under `.codex/agents/` and project-scoped skills under `.agents/skills/`.
+- Non-trivial coding tasks should follow `.agents/skills/task-orchestration-tdd-lifecycle-contract/SKILL.md`.
+- Initiative-level coordination should follow `.agents/skills/initiative-orchestration-contract/SKILL.md`.
+- Existing reviewer and agent files must be preserved; add new repo-scoped protocols alongside them instead of overwriting them.
+- Only `task-orchestrator` may stage or commit in this harness. `task-coder` must not stage or commit. `task-critic` and `task-arbiter` are read-only.
+- When the work is harness setup or maintenance, keep changes repo-scoped and do not modify production code.
 - Pull requests are optional collaboration artifacts. Do not treat PR state, comments, or approvals as the repository's completion truth.
 - Do not commit free-floating `TODO` or `FIXME` markers. Link them to a task as described in `docs/guides/todo-fixme-policy.md`.
 
