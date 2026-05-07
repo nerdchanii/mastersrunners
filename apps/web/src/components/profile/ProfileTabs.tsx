@@ -2,6 +2,7 @@ import { Activity, Grid3x3, MessageCircle, Users } from "lucide-react";
 import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type RefObject,
   useEffect,
   useEffectEvent,
   useMemo,
@@ -128,17 +129,40 @@ interface ProfileTabsProps {
   mobileStickyTopOffset?: number;
 }
 
-function useStickyTabsVisibility({
-  desktopStickyTopOffset,
-  mobileStickyTopOffset,
-}: {
+interface ProfileTabsInteractionOptions {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  showWorkoutsTab: boolean;
   desktopStickyTopOffset: number;
   mobileStickyTopOffset: number;
-}) {
+}
+
+export function useProfileTabsInteraction({
+  activeTab,
+  onTabChange,
+  showWorkoutsTab,
+  desktopStickyTopOffset,
+  mobileStickyTopOffset,
+}: ProfileTabsInteractionOptions) {
   const stickyTabsRef = useRef<HTMLDivElement | null>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
   const lastScrollYRef = useRef(0);
   const stickyStartYRef = useRef(0);
+  const touchStateRef = useRef<{
+    startX: number;
+    startY: number;
+    isHorizontalSwipe: boolean;
+    pointerId: number;
+  } | null>(null);
   const [isStickyTabsVisible, setIsStickyTabsVisible] = useState(true);
+  const [dragOffset, setDragOffset] = useState(0);
+  const visibleTabs = useMemo(
+    () => (showWorkoutsTab ? ["posts", "workouts", "crews"] : ["posts", "crews"]),
+    [showWorkoutsTab],
+  );
+  const visibleTabCount = visibleTabs.length;
+  const resolvedActiveTab = visibleTabs.includes(activeTab) ? activeTab : "posts";
+  const activeTabIndex = Math.max(visibleTabs.indexOf(resolvedActiveTab), 0);
 
   const getStickyTopOffset = () =>
     window.matchMedia("(min-width: 768px)").matches
@@ -220,49 +244,11 @@ function useStickyTabsVisibility({
     };
   }, [desktopStickyTopOffset, mobileStickyTopOffset]);
 
-  return { isStickyTabsVisible, stickyTabsRef };
-}
-
-export function ProfileTabs({
-  posts,
-  workouts,
-  crews,
-  crewPosts,
-  isLoading,
-  activeTab,
-  onTabChange,
-  showWorkoutsTab = true,
-  postsEmptyDescription = "게시글이 없습니다.",
-  crewsEmptyTitle = "크루가 없습니다",
-  crewsEmptyDescription = "참여 중인 크루가 없습니다.",
-  desktopStickyTopOffset = 0,
-  mobileStickyTopOffset = 0,
-}: ProfileTabsProps) {
-  const visibleTabs = useMemo(
-    () => (showWorkoutsTab ? ["posts", "workouts", "crews"] : ["posts", "crews"]),
-    [showWorkoutsTab],
-  );
-  const visibleTabCount = visibleTabs.length;
-  const resolvedActiveTab = !showWorkoutsTab && activeTab === "workouts" ? "posts" : activeTab;
-  const activeTabIndex = Math.max(visibleTabs.indexOf(resolvedActiveTab), 0);
-  const viewportRef = useRef<HTMLDivElement | null>(null);
-  const touchStateRef = useRef<{
-    startX: number;
-    startY: number;
-    isHorizontalSwipe: boolean;
-    pointerId: number;
-  } | null>(null);
-  const [dragOffset, setDragOffset] = useState(0);
-  const { isStickyTabsVisible, stickyTabsRef } = useStickyTabsVisibility({
-    desktopStickyTopOffset,
-    mobileStickyTopOffset,
-  });
-
   useEffect(() => {
-    if (!showWorkoutsTab && activeTab === "workouts") {
-      onTabChange("posts");
+    if (resolvedActiveTab !== activeTab) {
+      onTabChange(resolvedActiveTab);
     }
-  }, [activeTab, onTabChange, showWorkoutsTab]);
+  }, [activeTab, onTabChange, resolvedActiveTab]);
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== "touch") {
@@ -346,39 +332,66 @@ export function ProfileTabs({
     setDragOffset(0);
   };
 
+  return {
+    activeTabIndex,
+    dragOffset,
+    handlePointerCancel,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    isStickyTabsVisible,
+    resolvedActiveTab,
+    stickyTabsRef,
+    viewportRef,
+    visibleTabCount,
+  };
+}
+
+export function ProfileTabs({
+  posts,
+  workouts,
+  crews,
+  crewPosts,
+  isLoading,
+  activeTab,
+  onTabChange,
+  showWorkoutsTab = true,
+  postsEmptyDescription = "게시글이 없습니다.",
+  crewsEmptyTitle = "크루가 없습니다",
+  crewsEmptyDescription = "참여 중인 크루가 없습니다.",
+  desktopStickyTopOffset = 0,
+  mobileStickyTopOffset = 0,
+}: ProfileTabsProps) {
+  const {
+    activeTabIndex,
+    dragOffset,
+    handlePointerCancel,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    isStickyTabsVisible,
+    resolvedActiveTab,
+    stickyTabsRef,
+    viewportRef,
+    visibleTabCount,
+  } = useProfileTabsInteraction({
+    activeTab,
+    onTabChange,
+    showWorkoutsTab,
+    desktopStickyTopOffset,
+    mobileStickyTopOffset,
+  });
+
   return (
     <Tabs value={resolvedActiveTab} onValueChange={onTabChange} className="w-full">
-      <div
-        ref={stickyTabsRef}
-        className={`sticky top-[var(--profile-tabs-mobile-top)] z-30 border-b border-border/60 bg-background/95 backdrop-blur-lg transition-transform duration-300 ease-out md:top-[var(--profile-tabs-desktop-top)] ${
-          isStickyTabsVisible ? "translate-y-0" : "-translate-y-full"
-        }`}
-        style={{
-          ["--profile-tabs-mobile-top" as string]: `${mobileStickyTopOffset}px`,
-          ["--profile-tabs-desktop-top" as string]: `${desktopStickyTopOffset}px`,
-        }}
-      >
-        <TabsList
-          variant="line"
-          className="w-full justify-around border-b-0 px-4 sm:px-6"
-          style={{ gridTemplateColumns: `repeat(${visibleTabCount}, minmax(0, 1fr))` }}
-        >
-          <TabsTrigger value="posts" className="flex-1 gap-2 py-3">
-            <Grid3x3 className="size-4" />
-            <span>게시글</span>
-          </TabsTrigger>
-          {showWorkoutsTab ? (
-            <TabsTrigger value="workouts" className="flex-1 gap-2 py-3">
-              <Activity className="size-4" />
-              <span>워크아웃</span>
-            </TabsTrigger>
-          ) : null}
-          <TabsTrigger value="crews" className="flex-1 gap-2 py-3">
-            <Users className="size-4" />
-            <span>크루</span>
-          </TabsTrigger>
-        </TabsList>
-      </div>
+      <ProfileTabBar
+        showWorkoutsTab={showWorkoutsTab}
+        visibleTabCount={visibleTabCount}
+        isStickyTabsVisible={isStickyTabsVisible}
+        stickyTabsRef={stickyTabsRef}
+        desktopStickyTopOffset={desktopStickyTopOffset}
+        mobileStickyTopOffset={mobileStickyTopOffset}
+      />
 
       <div
         ref={viewportRef}
@@ -399,92 +412,216 @@ export function ProfileTabs({
             transform: `translate3d(calc(-${activeTabIndex * (100 / visibleTabCount)}% + ${dragOffset}px), 0, 0)`,
           }}
         >
-          <ProfileTabPanel visibleTabCount={visibleTabCount}>
-            {isLoading ? (
-              <ProfileStatePanel>
-                <ProfileFeedStack>
-                  {Array.from({ length: 3 }, (_, index) => (
-                    <PostPreviewSkeleton key={`posts-skeleton-${index}`} />
-                  ))}
-                </ProfileFeedStack>
-              </ProfileStatePanel>
-            ) : posts.length === 0 ? (
-              <ProfileStatePanel>
-                <ProfileEmptyState
-                  icon={Grid3x3}
-                  title="게시글이 없습니다"
-                  description={postsEmptyDescription}
-                />
-              </ProfileStatePanel>
-            ) : (
-              <ProfileFeedStack>
-                {posts.map((post) => (
-                  <PostFeedCard key={post.id} post={normalizePost(post)} />
-                ))}
-              </ProfileFeedStack>
-            )}
-          </ProfileTabPanel>
+          <ProfilePostsPane
+            posts={posts}
+            isLoading={isLoading}
+            postsEmptyDescription={postsEmptyDescription}
+            visibleTabCount={visibleTabCount}
+          />
 
           {showWorkoutsTab ? (
-            <ProfileTabPanel visibleTabCount={visibleTabCount}>
-              {isLoading ? (
-                <ProfileStatePanel>
-                  <ProfileFeedStack>
-                    {Array.from({ length: 2 }, (_, index) => (
-                      <WorkoutPreviewSkeleton key={`workouts-skeleton-${index}`} />
-                    ))}
-                  </ProfileFeedStack>
-                </ProfileStatePanel>
-              ) : workouts.length === 0 ? (
-                <ProfileStatePanel>
-                  <ProfileEmptyState
-                    icon={Activity}
-                    title="워크아웃이 없습니다"
-                    description="아직 기록한 러닝 활동이 없습니다."
-                  />
-                </ProfileStatePanel>
-              ) : (
-                <ProfileFeedStack>
-                  {workouts.map((workout) => (
-                    <FeedCard key={workout.id} workout={normalizeWorkout(workout)} />
-                  ))}
-                </ProfileFeedStack>
-              )}
-            </ProfileTabPanel>
+            <ProfileWorkoutsPane
+              workouts={workouts}
+              isLoading={isLoading}
+              visibleTabCount={visibleTabCount}
+            />
           ) : null}
 
-          <ProfileTabPanel visibleTabCount={visibleTabCount}>
-            {isLoading ? (
-              <ProfileStatePanel>
-                <ProfileFeedStack>
-                  {Array.from({ length: 2 }, (_, index) => (
-                    <CrewPostPreviewSkeleton key={`crews-skeleton-${index}`} />
-                  ))}
-                </ProfileFeedStack>
-              </ProfileStatePanel>
-            ) : crewPosts.length === 0 ? (
-              <ProfileStatePanel>
-                <ProfileEmptyState
-                  icon={Users}
-                  title={crews.length === 0 ? crewsEmptyTitle : "크루 게시글이 없습니다"}
-                  description={
-                    crews.length === 0
-                      ? crewsEmptyDescription
-                      : "참여 중인 크루의 최근 소식이 아직 없습니다."
-                  }
-                />
-              </ProfileStatePanel>
-            ) : (
-              <ProfileFeedStack>
-                {crewPosts.map((post) => (
-                  <ProfileCrewPostCard key={post.id} post={post} />
-                ))}
-              </ProfileFeedStack>
-            )}
-          </ProfileTabPanel>
+          <ProfileCrewsPane
+            crews={crews}
+            crewPosts={crewPosts}
+            isLoading={isLoading}
+            crewsEmptyTitle={crewsEmptyTitle}
+            crewsEmptyDescription={crewsEmptyDescription}
+            visibleTabCount={visibleTabCount}
+          />
         </div>
       </div>
     </Tabs>
+  );
+}
+
+interface ProfileTabBarProps {
+  showWorkoutsTab: boolean;
+  visibleTabCount: number;
+  isStickyTabsVisible: boolean;
+  stickyTabsRef: RefObject<HTMLDivElement | null>;
+  desktopStickyTopOffset: number;
+  mobileStickyTopOffset: number;
+}
+
+export function ProfileTabBar({
+  showWorkoutsTab,
+  visibleTabCount,
+  isStickyTabsVisible,
+  stickyTabsRef,
+  desktopStickyTopOffset,
+  mobileStickyTopOffset,
+}: ProfileTabBarProps) {
+  return (
+    <div
+      ref={stickyTabsRef}
+      className={`sticky top-[var(--profile-tabs-mobile-top)] z-30 border-b border-border/60 bg-background/95 backdrop-blur-lg transition-transform duration-300 ease-out md:top-[var(--profile-tabs-desktop-top)] ${
+        isStickyTabsVisible ? "translate-y-0" : "-translate-y-full"
+      }`}
+      style={{
+        ["--profile-tabs-mobile-top" as string]: `${mobileStickyTopOffset}px`,
+        ["--profile-tabs-desktop-top" as string]: `${desktopStickyTopOffset}px`,
+      }}
+    >
+      <TabsList
+        variant="line"
+        className="w-full justify-around border-b-0 px-4 sm:px-6"
+        style={{ gridTemplateColumns: `repeat(${visibleTabCount}, minmax(0, 1fr))` }}
+      >
+        <TabsTrigger value="posts" className="flex-1 gap-2 py-3">
+          <Grid3x3 className="size-4" />
+          <span>게시글</span>
+        </TabsTrigger>
+        {showWorkoutsTab ? (
+          <TabsTrigger value="workouts" className="flex-1 gap-2 py-3">
+            <Activity className="size-4" />
+            <span>워크아웃</span>
+          </TabsTrigger>
+        ) : null}
+        <TabsTrigger value="crews" className="flex-1 gap-2 py-3">
+          <Users className="size-4" />
+          <span>크루</span>
+        </TabsTrigger>
+      </TabsList>
+    </div>
+  );
+}
+
+interface ProfilePostsPaneProps {
+  posts: Post[];
+  isLoading: boolean;
+  postsEmptyDescription: string;
+  visibleTabCount: number;
+}
+
+export function ProfilePostsPane({
+  posts,
+  isLoading,
+  postsEmptyDescription,
+  visibleTabCount,
+}: ProfilePostsPaneProps) {
+  return (
+    <ProfileTabPanel visibleTabCount={visibleTabCount}>
+      {isLoading ? (
+        <ProfileStatePanel>
+          <ProfileFeedStack>
+            {Array.from({ length: 3 }, (_, index) => (
+              <PostPreviewSkeleton key={`posts-skeleton-${index}`} />
+            ))}
+          </ProfileFeedStack>
+        </ProfileStatePanel>
+      ) : posts.length === 0 ? (
+        <ProfileStatePanel>
+          <ProfileEmptyState
+            icon={Grid3x3}
+            title="게시글이 없습니다"
+            description={postsEmptyDescription}
+          />
+        </ProfileStatePanel>
+      ) : (
+        <ProfileFeedStack>
+          {posts.map((post) => (
+            <PostFeedCard key={post.id} post={normalizePost(post)} />
+          ))}
+        </ProfileFeedStack>
+      )}
+    </ProfileTabPanel>
+  );
+}
+
+interface ProfileWorkoutsPaneProps {
+  workouts: Workout[];
+  isLoading: boolean;
+  visibleTabCount: number;
+}
+
+export function ProfileWorkoutsPane({
+  workouts,
+  isLoading,
+  visibleTabCount,
+}: ProfileWorkoutsPaneProps) {
+  return (
+    <ProfileTabPanel visibleTabCount={visibleTabCount}>
+      {isLoading ? (
+        <ProfileStatePanel>
+          <ProfileFeedStack>
+            {Array.from({ length: 2 }, (_, index) => (
+              <WorkoutPreviewSkeleton key={`workouts-skeleton-${index}`} />
+            ))}
+          </ProfileFeedStack>
+        </ProfileStatePanel>
+      ) : workouts.length === 0 ? (
+        <ProfileStatePanel>
+          <ProfileEmptyState
+            icon={Activity}
+            title="워크아웃이 없습니다"
+            description="아직 기록한 러닝 활동이 없습니다."
+          />
+        </ProfileStatePanel>
+      ) : (
+        <ProfileFeedStack>
+          {workouts.map((workout) => (
+            <FeedCard key={workout.id} workout={normalizeWorkout(workout)} />
+          ))}
+        </ProfileFeedStack>
+      )}
+    </ProfileTabPanel>
+  );
+}
+
+interface ProfileCrewsPaneProps {
+  crews: Crew[];
+  crewPosts: CrewPost[];
+  isLoading: boolean;
+  crewsEmptyTitle: string;
+  crewsEmptyDescription: string;
+  visibleTabCount: number;
+}
+
+export function ProfileCrewsPane({
+  crews,
+  crewPosts,
+  isLoading,
+  crewsEmptyTitle,
+  crewsEmptyDescription,
+  visibleTabCount,
+}: ProfileCrewsPaneProps) {
+  return (
+    <ProfileTabPanel visibleTabCount={visibleTabCount}>
+      {isLoading ? (
+        <ProfileStatePanel>
+          <ProfileFeedStack>
+            {Array.from({ length: 2 }, (_, index) => (
+              <CrewPostPreviewSkeleton key={`crews-skeleton-${index}`} />
+            ))}
+          </ProfileFeedStack>
+        </ProfileStatePanel>
+      ) : crewPosts.length === 0 ? (
+        <ProfileStatePanel>
+          <ProfileEmptyState
+            icon={Users}
+            title={crews.length === 0 ? crewsEmptyTitle : "크루 게시글이 없습니다"}
+            description={
+              crews.length === 0
+                ? crewsEmptyDescription
+                : "참여 중인 크루의 최근 소식이 아직 없습니다."
+            }
+          />
+        </ProfileStatePanel>
+      ) : (
+        <ProfileFeedStack>
+          {crewPosts.map((post) => (
+            <ProfileCrewPostCard key={post.id} post={post} />
+          ))}
+        </ProfileFeedStack>
+      )}
+    </ProfileTabPanel>
   );
 }
 
