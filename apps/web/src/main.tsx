@@ -6,13 +6,14 @@ import { AppProviders } from "@/app/app-providers";
 import { createAppQueryClient } from "@/app/query-client";
 import { ensureCloudflareAnalytics } from "@/lib/cloudflare-analytics";
 
-import { router } from "./router";
+import { createAppRouter } from "./router";
 
 import "./globals.css";
 
 ensureCloudflareAnalytics();
 
 const queryClient = createAppQueryClient();
+const router = createAppRouter(queryClient);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

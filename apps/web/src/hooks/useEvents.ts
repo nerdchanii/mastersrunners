@@ -1,4 +1,10 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import { api } from "@/lib/api-client";
 
@@ -20,8 +26,14 @@ export interface Event {
   _count?: { participants: number };
   // 확장 필드 (detail용)
   isPublic?: boolean;
+  eventType?: string | null;
+  distance?: number | null;
+  registrationDeadline?: string | null;
+  externalUrl?: string | null;
+  organizerId?: string;
   createdAt?: string;
   creator?: { id: string; name: string; profileImage: string | null };
+  isRegistered?: boolean;
   isParticipating?: boolean;
 }
 
@@ -86,6 +98,14 @@ export const eventInvalidationTargets = {
   delete: () => [eventKeys.all],
 };
 
+export const eventQueries = {
+  detail: (id: string) =>
+    queryOptions({
+      queryKey: eventKeys.detail(id),
+      queryFn: () => api.fetch<EventDetail>(`/events/${id}`),
+    }),
+};
+
 export function useEvents(params?: EventListParams) {
   return useQuery({
     queryKey: eventKeys.list(params),
@@ -119,9 +139,8 @@ export function useInfiniteEvents(tab: EventTab = "upcoming") {
 
 export function useEvent(id: string) {
   return useQuery({
-    queryKey: eventKeys.detail(id),
-    queryFn: () => api.fetch<EventDetail>(`/events/${id}`),
-    enabled: !!id,
+    ...eventQueries.detail(id),
+    enabled: !!id && id !== "_",
   });
 }
 

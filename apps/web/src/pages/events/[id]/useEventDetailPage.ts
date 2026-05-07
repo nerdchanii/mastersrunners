@@ -1,29 +1,15 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { type AppQueryKey, invalidateQueryKeys } from "@/hooks/query-key-utils";
+import { eventInvalidationTargets, useEvent } from "@/hooks/useEvents";
 import { api } from "@/lib/api-client";
 
 interface EventUser {
   id: string;
   name: string;
   profileImage: string | null;
-}
-
-export interface EventDetail {
-  id: string;
-  title: string;
-  description: string | null;
-  date: string;
-  location: string | null;
-  eventType: string | null;
-  distance: number | null;
-  maxParticipants: number | null;
-  registrationDeadline: string | null;
-  externalUrl: string | null;
-  organizerId: string;
-  creator?: EventUser;
-  _count?: { participants: number };
-  isRegistered?: boolean;
 }
 
 export interface EventResult {
@@ -51,33 +37,35 @@ export function useEventDetailPage(
   activeTab: DetailTab,
   onDeleteSuccess: () => void,
 ) {
-  const [event, setEvent] = useState<EventDetail | null>(null);
+  const queryClient = useQueryClient();
+  const eventQuery = useEvent(eventId);
   const [results, setResults] = useState<EventResult[]>([]);
   const [myResult, setMyResult] = useState<MyResult | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [resultsLoading, setResultsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const event = eventQuery.data ?? null;
+  const error = eventQuery.error
+    ? eventQuery.error instanceof Error
+      ? eventQuery.error.message
+      : "대회 정보를 불러올 수 없습니다."
+    : null;
 
-  const fetchEvent = useCallback(async () => {
+  const fetchMyResult = useCallback(async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-      const data = await api.fetch<EventDetail>(`/events/${eventId}`);
-      setEvent(data);
-
-      try {
-        const my = await api.fetch<MyResult>(`/events/${eventId}/results/me`);
-        setMyResult(my);
-      } catch {
-        setMyResult(null);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "대회 정보를 불러올 수 없습니다.");
-    } finally {
-      setIsLoading(false);
+      const my = await api.fetch<MyResult>(`/events/${eventId}/results/me`);
+      setMyResult(my);
+    } catch {
+      setMyResult(null);
     }
   }, [eventId]);
+
+  const refreshEventData = useCallback(
+    async (queryKeys: readonly AppQueryKey[]) => {
+      await invalidateQueryKeys(queryClient, queryKeys);
+      await fetchMyResult();
+    },
+    [fetchMyResult, queryClient],
+  );
 
   const fetchResults = useCallback(async () => {
     try {
@@ -96,8 +84,8 @@ export function useEventDetailPage(
       return;
     }
 
-    void fetchEvent();
-  }, [eventId, fetchEvent]);
+    void fetchMyResult();
+  }, [eventId, fetchMyResult]);
 
   useEffect(() => {
     if (activeTab !== "results" || !eventId || eventId === "_") {
@@ -111,20 +99,19 @@ export function useEventDetailPage(
     setActionLoading(true);
     try {
       await api.fetch(`/events/${eventId}/register`, { method: "POST" });
-      await fetchEvent();
+      await refreshEventData(eventInvalidationTargets.register(eventId));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "참가 등록에 실패했습니다.");
     } finally {
       setActionLoading(false);
     }
-  }, [eventId, fetchEvent]);
+  }, [eventId, refreshEventData]);
 
   const cancelRegistration = useCallback(async () => {
     setActionLoading(true);
     try {
       await api.fetch(`/events/${eventId}/cancel`, { method: "DELETE" });
-      await fetchEvent();
-      setMyResult(null);
+      await refreshEventData(eventInvalidationTargets.cancel(eventId));
       return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "참가 취소에 실패했습니다.");
@@ -132,7 +119,7 @@ export function useEventDetailPage(
     } finally {
       setActionLoading(false);
     }
-  }, [eventId, fetchEvent]);
+  }, [eventId, refreshEventData]);
 
   const deleteEvent = useCallback(async () => {
     try {
@@ -153,7 +140,7 @@ export function useEventDetailPage(
           method: "PUT",
           body: JSON.stringify(body),
         });
-        await fetchEvent();
+        await refreshEventData(eventInvalidationTargets.submitResult(eventId));
         if (activeTab === "results") {
           await fetchResults();
         }
@@ -165,7 +152,7 @@ export function useEventDetailPage(
         setActionLoading(false);
       }
     },
-    [activeTab, eventId, fetchEvent, fetchResults],
+    [activeTab, eventId, fetchResults, refreshEventData],
   );
 
   const linkWorkout = useCallback(
@@ -176,7 +163,7 @@ export function useEventDetailPage(
           method: "POST",
           body: JSON.stringify({ workoutId }),
         });
-        await fetchEvent();
+        await refreshEventData(eventInvalidationTargets.linkWorkout(eventId));
         return true;
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "워크아웃 연결에 실패했습니다.");
@@ -185,26 +172,26 @@ export function useEventDetailPage(
         setActionLoading(false);
       }
     },
-    [eventId, fetchEvent],
+    [eventId, refreshEventData],
   );
 
   const unlinkWorkout = useCallback(async () => {
     setActionLoading(true);
     try {
       await api.fetch(`/events/${eventId}/link-workout`, { method: "DELETE" });
-      await fetchEvent();
+      await refreshEventData(eventInvalidationTargets.unlinkWorkout(eventId));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "워크아웃 연결 해제에 실패했습니다.");
     } finally {
       setActionLoading(false);
     }
-  }, [eventId, fetchEvent]);
+  }, [eventId, refreshEventData]);
 
   return {
     actionLoading,
     error,
     event,
-    isLoading,
+    isLoading: eventQuery.isLoading,
     myResult,
     results,
     resultsLoading,
