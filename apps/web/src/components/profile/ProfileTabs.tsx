@@ -1,4 +1,4 @@
-import { Activity, Grid3x3, MessageCircle, Users } from "lucide-react";
+import { Activity, AlertCircle, Grid3x3, MessageCircle, Users } from "lucide-react";
 import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
@@ -119,6 +119,8 @@ interface ProfileTabsProps {
   crews: Crew[];
   crewPosts: CrewPost[];
   isLoading: boolean;
+  error?: string | null;
+  onRetry?: () => void;
   activeTab: string;
   onTabChange: (tab: string) => void;
   showWorkoutsTab?: boolean;
@@ -353,6 +355,8 @@ export function ProfileTabs({
   crews,
   crewPosts,
   isLoading,
+  error,
+  onRetry,
   activeTab,
   onTabChange,
   showWorkoutsTab = true,
@@ -415,6 +419,8 @@ export function ProfileTabs({
           <ProfilePostsPane
             posts={posts}
             isLoading={isLoading}
+            error={resolvedActiveTab === "posts" ? error : null}
+            onRetry={onRetry}
             postsEmptyDescription={postsEmptyDescription}
             visibleTabCount={visibleTabCount}
           />
@@ -423,6 +429,8 @@ export function ProfileTabs({
             <ProfileWorkoutsPane
               workouts={workouts}
               isLoading={isLoading}
+              error={resolvedActiveTab === "workouts" ? error : null}
+              onRetry={onRetry}
               visibleTabCount={visibleTabCount}
             />
           ) : null}
@@ -431,6 +439,8 @@ export function ProfileTabs({
             crews={crews}
             crewPosts={crewPosts}
             isLoading={isLoading}
+            error={resolvedActiveTab === "crews" ? error : null}
+            onRetry={onRetry}
             crewsEmptyTitle={crewsEmptyTitle}
             crewsEmptyDescription={crewsEmptyDescription}
             visibleTabCount={visibleTabCount}
@@ -496,6 +506,8 @@ export function ProfileTabBar({
 interface ProfilePostsPaneProps {
   posts: Post[];
   isLoading: boolean;
+  error?: string | null;
+  onRetry?: () => void;
   postsEmptyDescription: string;
   visibleTabCount: number;
 }
@@ -503,12 +515,18 @@ interface ProfilePostsPaneProps {
 export function ProfilePostsPane({
   posts,
   isLoading,
+  error,
+  onRetry,
   postsEmptyDescription,
   visibleTabCount,
 }: ProfilePostsPaneProps) {
   return (
     <ProfileTabPanel visibleTabCount={visibleTabCount}>
-      {isLoading ? (
+      {error ? (
+        <ProfileStatePanel>
+          <ProfileTabErrorState message={error} onRetry={onRetry} />
+        </ProfileStatePanel>
+      ) : isLoading ? (
         <ProfileStatePanel>
           <ProfileFeedStack>
             {Array.from({ length: 3 }, (_, index) => (
@@ -538,17 +556,25 @@ export function ProfilePostsPane({
 interface ProfileWorkoutsPaneProps {
   workouts: Workout[];
   isLoading: boolean;
+  error?: string | null;
+  onRetry?: () => void;
   visibleTabCount: number;
 }
 
 export function ProfileWorkoutsPane({
   workouts,
   isLoading,
+  error,
+  onRetry,
   visibleTabCount,
 }: ProfileWorkoutsPaneProps) {
   return (
     <ProfileTabPanel visibleTabCount={visibleTabCount}>
-      {isLoading ? (
+      {error ? (
+        <ProfileStatePanel>
+          <ProfileTabErrorState message={error} onRetry={onRetry} />
+        </ProfileStatePanel>
+      ) : isLoading ? (
         <ProfileStatePanel>
           <ProfileFeedStack>
             {Array.from({ length: 2 }, (_, index) => (
@@ -579,6 +605,8 @@ interface ProfileCrewsPaneProps {
   crews: Crew[];
   crewPosts: CrewPost[];
   isLoading: boolean;
+  error?: string | null;
+  onRetry?: () => void;
   crewsEmptyTitle: string;
   crewsEmptyDescription: string;
   visibleTabCount: number;
@@ -588,13 +616,19 @@ export function ProfileCrewsPane({
   crews,
   crewPosts,
   isLoading,
+  error,
+  onRetry,
   crewsEmptyTitle,
   crewsEmptyDescription,
   visibleTabCount,
 }: ProfileCrewsPaneProps) {
   return (
     <ProfileTabPanel visibleTabCount={visibleTabCount}>
-      {isLoading ? (
+      {error ? (
+        <ProfileStatePanel>
+          <ProfileTabErrorState message={error} onRetry={onRetry} />
+        </ProfileStatePanel>
+      ) : isLoading ? (
         <ProfileStatePanel>
           <ProfileFeedStack>
             {Array.from({ length: 2 }, (_, index) => (
@@ -737,6 +771,29 @@ function ProfileEmptyState({
       description={description}
       className="rounded-3xl border border-dashed border-border/70 bg-muted/20"
     />
+  );
+}
+
+function ProfileTabErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <div
+      role="alert"
+      className="flex items-center justify-between gap-3 rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <AlertCircle className="size-4 shrink-0" />
+        <p>{message}</p>
+      </div>
+      {onRetry ? (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="shrink-0 rounded-md border border-destructive/30 px-2.5 py-1 text-xs font-medium transition-colors hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+        >
+          다시 시도
+        </button>
+      ) : null}
+    </div>
   );
 }
 

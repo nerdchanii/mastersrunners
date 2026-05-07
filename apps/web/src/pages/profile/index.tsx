@@ -4,169 +4,48 @@ import { useNavigate } from "react-router-dom";
 import { LoadingPage } from "@/components/common/LoadingPage";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
+import { Button } from "@/components/ui/button";
+import {
+  type ProfileCrewPost,
+  type ProfileCrewsTabData,
+  type ProfilePost,
+  type ProfileTab,
+  type ProfileWorkout,
+  useProfile,
+  useProfileCrews,
+  useProfileFollowersPreview,
+  useProfileStats,
+  useProfileTab,
+} from "@/hooks/useProfile";
 import { useAuth } from "@/lib/auth-context";
 
-import {
-  fetchCrewPostsFromCrews,
-  fetchMyFollowersPreview,
-  fetchMyProfile,
-  fetchMyProfileCrews,
-  fetchMyProfilePosts,
-  fetchMyProfileWorkouts,
-  type FollowUserPreview,
-  type ProfileCrewPost,
-} from "./profile-api";
-
-interface Post {
-  id: string;
-  content: string;
-  createdAt: string;
-  likesCount?: number;
-  commentsCount?: number;
-  _count?: {
-    likes: number;
-    comments: number;
-  };
-  user: {
-    id: string;
-    name: string;
-    profileImage: string | null;
-  };
-}
-
-interface Workout {
-  id: string;
-  distance: number;
-  duration: number;
-  pace: number;
-  date: string;
-  memo: string | null;
-  user?: {
-    id: string;
-    name: string;
-    profileImage: string | null;
-  };
-  workoutType?: {
-    id: string;
-    name: string;
-  };
-}
-
-interface Crew {
-  id: string;
-  name: string;
-  description: string | null;
-  imageUrl: string | null;
-  _count: {
-    members: number;
-  };
-}
-
-interface ProfileApiResponse {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    profileImage: string | null;
-    backgroundImage: string | null;
-    bio: string | null;
-    createdAt: string;
-    isPrivate: boolean;
-  };
-  stats: {
-    postCount: number;
-    totalWorkouts: number;
-    totalDistance: number;
-    totalDuration: number;
-    averagePace: number;
-  };
-  followersCount: number;
-  followingCount: number;
-  isFollowing?: boolean;
-}
-
-interface ProfileStats {
-  postCount: number;
-  followerCount: number;
-  followingCount: number;
-  workoutCount: number;
-}
+type ProfileContentTab = Extract<ProfileTab, "posts" | "workouts" | "crews">;
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { isLoading: authLoading, isAuthenticated, user } = useAuth();
+  const userId = user?.id ?? "_";
+  const canFetchProfile = isAuthenticated && !!user?.id;
 
-  const [profileUser, setProfileUser] = useState<ProfileApiResponse["user"] | null>(null);
-  const [profileStats, setProfileStats] = useState<ProfileStats | null>(null);
-  const [activeTab, setActiveTab] = useState("posts");
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [crews, setCrews] = useState<Crew[]>([]);
-  const [crewPosts, setCrewPosts] = useState<ProfileCrewPost[]>([]);
-  const [followerPreviewUsers, setFollowerPreviewUsers] = useState<FollowUserPreview[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isTabDataLoading, setIsTabDataLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<ProfileContentTab>("posts");
+  const profileQuery = useProfile({ enabled: canFetchProfile });
+  const profileStatsQuery = useProfileStats(userId, { enabled: canFetchProfile });
+  const crewsQuery = useProfileCrews(userId, { enabled: canFetchProfile });
+  const followerPreviewQuery = useProfileFollowersPreview(userId, { enabled: canFetchProfile });
+  const profileTabQuery = useProfileTab(
+    userId,
+    activeTab,
+    activeTab === "posts" ? { limit: 12 } : undefined,
+    { enabled: canFetchProfile && !!profileStatsQuery.data },
+  );
 
   useEffect(() => {
     if (authLoading) return;
 
     if (!isAuthenticated) {
       navigate("/login", { replace: true });
-      return;
     }
-
-    const fetchProfile = async () => {
-      try {
-        const [data, membershipCrews, followerPreview] = await Promise.all([
-          fetchMyProfile(),
-          fetchMyProfileCrews(),
-          fetchMyFollowersPreview(),
-        ]);
-        if (!data) return;
-        setProfileUser(data.user);
-        setCrews(membershipCrews);
-        setFollowerPreviewUsers(followerPreview);
-        setProfileStats({
-          postCount: data.stats.postCount ?? 0,
-          followerCount: data.followersCount,
-          followingCount: data.followingCount,
-          workoutCount: data.stats.totalWorkouts,
-        });
-      } catch (err) {
-        console.error("Failed to fetch profile:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [authLoading, isAuthenticated, user?.id, navigate]);
-
-  useEffect(() => {
-    if (!user?.id || !profileStats) return;
-
-    const fetchTabData = async () => {
-      setIsTabDataLoading(true);
-      try {
-        if (activeTab === "posts") {
-          const data = await fetchMyProfilePosts(user.id);
-          setPosts(data);
-        } else if (activeTab === "workouts") {
-          const data = await fetchMyProfileWorkouts(user.id);
-          setWorkouts(data);
-        } else if (activeTab === "crews") {
-          const data = await fetchCrewPostsFromCrews(crews);
-          setCrewPosts(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch tab data:", err);
-      } finally {
-        setIsTabDataLoading(false);
-      }
-    };
-
-    fetchTabData();
-  }, [activeTab, crews, user?.id, profileStats]);
+  }, [authLoading, isAuthenticated, navigate]);
 
   const handleFollowersClick = () => {
     if (!user?.id) return;
@@ -178,7 +57,14 @@ export default function ProfilePage() {
     navigate(`/profile/${user.id}/connections?tab=following`);
   };
 
-  if (authLoading || isLoading) {
+  const isRequiredProfileLoading =
+    canFetchProfile &&
+    (profileQuery.isPending ||
+      profileStatsQuery.isPending ||
+      (crewsQuery.isPending && !crewsQuery.isError) ||
+      (followerPreviewQuery.isPending && !followerPreviewQuery.isError));
+
+  if (authLoading || isRequiredProfileLoading) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <LoadingPage variant="profile" />
@@ -186,7 +72,10 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user || !profileStats) {
+  const profileUser = profileQuery.data?.user;
+  const profileStats = profileStatsQuery.data;
+
+  if (!user || !profileUser || !profileStats) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="text-center py-12">
@@ -196,10 +85,19 @@ export default function ProfilePage() {
     );
   }
 
+  const crews = crewsQuery.data ?? [];
+  const followerPreviewUsers = followerPreviewQuery.data ?? [];
+  const tabData = profileTabQuery.data;
+  const crewTabData = isProfileCrewsTabData(tabData) ? tabData : null;
+  const posts = activeTab === "posts" && Array.isArray(tabData) ? (tabData as ProfilePost[]) : [];
+  const workouts =
+    activeTab === "workouts" && Array.isArray(tabData) ? (tabData as ProfileWorkout[]) : [];
+  const crewPosts: ProfileCrewPost[] = activeTab === "crews" ? (crewTabData?.crewPosts ?? []) : [];
+
   return (
     <div className="space-y-5 pb-8 md:mx-auto md:max-w-4xl md:px-4">
       <ProfileHeader
-        user={profileUser || user}
+        user={profileUser}
         isOwnProfile={true}
         stats={profileStats}
         crews={crews}
@@ -208,19 +106,77 @@ export default function ProfilePage() {
         onFollowingClick={handleFollowingClick}
       />
 
+      <ProfileAuxiliaryNotices
+        crewsError={crewsQuery.isError}
+        followerPreviewError={followerPreviewQuery.isError}
+        onRetryCrews={() => void crewsQuery.refetch()}
+        onRetryFollowerPreview={() => void followerPreviewQuery.refetch()}
+      />
+
       <ProfileTabs
         posts={posts}
         workouts={workouts.map((workout) => ({
           ...workout,
-          user: profileUser || user,
+          user: profileUser,
         }))}
         crews={crews}
         crewPosts={crewPosts}
-        isLoading={isTabDataLoading}
+        isLoading={profileTabQuery.isPending || profileTabQuery.isFetching}
+        error={profileTabQuery.isError ? "탭 콘텐츠를 불러오지 못했습니다." : null}
+        onRetry={() => void profileTabQuery.refetch()}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={(tab) => setActiveTab(toProfileContentTab(tab))}
         desktopStickyTopOffset={56}
       />
+    </div>
+  );
+}
+
+function isProfileCrewsTabData(data: unknown): data is ProfileCrewsTabData {
+  return typeof data === "object" && data !== null && "crewPosts" in data;
+}
+
+function toProfileContentTab(tab: string): ProfileContentTab {
+  return tab === "workouts" || tab === "crews" ? tab : "posts";
+}
+
+function ProfileAuxiliaryNotices({
+  crewsError,
+  followerPreviewError,
+  onRetryCrews,
+  onRetryFollowerPreview,
+}: {
+  crewsError: boolean;
+  followerPreviewError: boolean;
+  onRetryCrews: () => void;
+  onRetryFollowerPreview: () => void;
+}) {
+  if (!crewsError && !followerPreviewError) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-2 px-4 sm:px-6" aria-label="프로필 보조 정보 오류">
+      {crewsError ? (
+        <ProfileAuxiliaryNotice message="크루 정보를 불러오지 못했습니다." onRetry={onRetryCrews} />
+      ) : null}
+      {followerPreviewError ? (
+        <ProfileAuxiliaryNotice
+          message="팔로워 미리보기를 불러오지 못했습니다."
+          onRetry={onRetryFollowerPreview}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function ProfileAuxiliaryNotice({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+      <p>{message}</p>
+      <Button type="button" variant="outline" size="xs" onClick={onRetry}>
+        다시 시도
+      </Button>
     </div>
   );
 }

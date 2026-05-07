@@ -8,13 +8,13 @@ depends_on:
   - tasks/todo/I-0022-020-web-query-cache-mutation-conventions.md
   - tasks/todo/I-0022-220-web-profile-tabs-decomposition.md
 blocked_by: []
-execution_status: in_progress
-verification_status: pending
+execution_status: ready_for_archive
+verification_status: passed
 closeout_blocker:
 verify:
-  - pnpm --filter @masters/web test -- --run src/pages/profile/__tests__/profile-route-query-migration.test.tsx
+  - pnpm --filter @masters/web exec vitest run src/pages/profile/__tests__/profile-route-query-migration.test.tsx
   - pnpm --filter @masters/web lint
-  - pnpm --filter @masters/web build
+  - VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build
 artifacts:
   - docs/initiatives/I-0022-cool-code/README.md
   - docs/initiatives/I-0022-cool-code/details/R3-query-key-cache-invalidation-matrix.md
@@ -24,6 +24,12 @@ artifacts:
   - apps/web/src/components/profile
   - apps/web/src/hooks
 ---
+
+## 실제 개선 요약
+
+- profile route에서 직접 `fetch*`와 local server state를 관리하던 코드를 제거하고, profile/stats/follower preview/tab data를 `useProfile` domain query hooks와 query option factory로 옮겼다.
+- active tab이 query key와 enabled condition에 참여하도록 바꿔 posts/workouts/crews 전환 시 stale cross-tab render가 남지 않게 했다.
+- header auxiliary data 실패는 비치명적 retry notice로, tab data 실패는 tab pane inline retry state로 분리해 empty state와 오류 상태가 섞이지 않도록 정리했다.
 
 ## 목표
 
@@ -47,8 +53,12 @@ Profile route의 profile/stats/follower preview/tab data 직접 fetch와 local s
 
 - 범위와 의도: profile route query migration만 다룬다.
 - source of truth: I-0022 R3/R7/R8.
-- 설계 divergence:
+- 설계 divergence: 없음. route는 auth redirect/navigation orchestration만 유지하고 query key/endpoint ownership은 domain hook으로 이동했다.
 - 검증:
+  - PASS: `pnpm --filter @masters/web exec vitest run src/pages/profile/__tests__/profile-route-query-migration.test.tsx` 통과, 1 file / 8 tests.
+  - PASS: `pnpm lint` 통과.
+  - PASS: `VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build` 통과. 기존 large chunk warning만 남는다.
+  - PASS: `bash scripts/check-active-task-closeout.sh` 통과.
 
 ## 리뷰 계획
 
@@ -66,6 +76,9 @@ Profile route의 profile/stats/follower preview/tab data 직접 fetch와 local s
 ## 시도 로그
 
 - 2026-05-07: I-0022 roadmap에서 seed task를 생성했다.
+- 2026-05-07: Worker A가 task를 `tasks/active/`로 이동하고 profile route query migration TDD red spec 작성을 시작했다. Production migration은 아직 구현하지 않는다.
+- 2026-05-08: profile route가 `useProfile`, `useProfileStats`, `useProfileFollowersPreview`, `useProfileCrews`, `useProfileTab` query hooks를 사용하도록 전환했다.
+- 2026-05-08: `ProfileTabs`에 tab-scoped error/retry surface를 추가하고 auxiliary header query failures는 non-fatal notice로 분리했다.
 
 ## 리뷰 노트
 
