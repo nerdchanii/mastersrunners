@@ -1,10 +1,13 @@
 ---
 doc_state: current
 owner: product
-last_verified: 2026-04-03
+last_verified: 2026-05-08
 sources:
   - packages/database/prisma/schema.prisma
   - apps/api/src
+  - apps/web/src/components/crew/CrewFormFields.tsx
+  - apps/web/src/components/regions/RegionSelectFields.tsx
+  - apps/web/src/pages/crews/index.tsx
 ---
 
 # 크루 (Crew)
@@ -112,6 +115,7 @@ sources:
 
 - 크루 상세 화면은 멤버·활동·태그·통계·게시판·채팅을 한 route에 모은다.
 - 현재 persistence는 `imageUrl`와 `coverImageUrl`를 쓰지만, 제품 의미는 각각 `프로필 이미지`와 `커버 이미지`로 해석한다.
+- 현재 웹의 크루 생성/수정 surface는 한국 지역 선택지에서 고른 canonical `region`, `subRegion`만 전송한다. 다만 읽기 surface는 백엔드에 이미 저장된 legacy 문자열을 그대로 보여줄 수 있다.
 - 커버 이미지가 비어 있으면 중립 배경을 쓰고, 프로필 이미지를 커버 이미지로 재사용하지 않는다.
 - 도메인 모델은 풍부하지만 UX와 코드 경계는 여전히 무겁다.
 

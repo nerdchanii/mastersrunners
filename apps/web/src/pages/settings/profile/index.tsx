@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { RegionSelectFields } from "@/components/regions/RegionSelectFields";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -179,37 +180,17 @@ export default function EditProfilePage() {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="region">거점 지역</Label>
-              <Input
-                id="region"
-                value={form.region}
-                onChange={(e) => {
-                  setForm((prev) => ({ ...prev, region: e.target.value }));
-                  if (errors.region) setErrors((prev) => ({ ...prev, region: "" }));
-                }}
-                placeholder="예: 서울특별시"
-                maxLength={100}
-              />
-              {errors.region && <p className="text-xs text-destructive">{errors.region}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="subRegion">세부 지역</Label>
-              <Input
-                id="subRegion"
-                value={form.subRegion}
-                onChange={(e) => {
-                  setForm((prev) => ({ ...prev, subRegion: e.target.value }));
-                  if (errors.subRegion) setErrors((prev) => ({ ...prev, subRegion: "" }));
-                }}
-                placeholder="예: 마포구"
-                maxLength={100}
-              />
-              {errors.subRegion && <p className="text-xs text-destructive">{errors.subRegion}</p>}
-            </div>
-          </div>
+          <RegionSelectFields
+            value={{ region: form.region, subRegion: form.subRegion }}
+            onChange={({ region, subRegion }) => {
+              setForm((prev) => ({ ...prev, region, subRegion }));
+              if (errors.region || errors.subRegion) {
+                setErrors((prev) => ({ ...prev, region: "", subRegion: "" }));
+              }
+            }}
+            regionError={errors.region}
+            subRegionError={errors.subRegion}
+          />
 
           <div className="space-y-3">
             <div>

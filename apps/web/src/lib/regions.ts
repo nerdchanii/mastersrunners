@@ -18,6 +18,39 @@ export const KOREA_SIDO = [
   "제주특별자치도",
 ] as const;
 
+const REGION_SUFFIX_PATTERN = /(특별시|광역시|특별자치시|특별자치도|자치시|도)$/;
+const SUB_REGION_SUFFIX_CANDIDATES = ["구", "시", "군", "특별자치시"] as const;
+
+const REGION_ORDER = new Map<string, number>(KOREA_SIDO.map((region, index) => [region, index]));
+const REGION_ALIASES = new Map<string, string>([
+  ["서울", "서울특별시"],
+  ["부산", "부산광역시"],
+  ["대구", "대구광역시"],
+  ["인천", "인천광역시"],
+  ["광주", "광주광역시"],
+  ["대전", "대전광역시"],
+  ["울산", "울산광역시"],
+  ["세종", "세종특별자치시"],
+  ["세종시", "세종특별자치시"],
+  ["경기", "경기도"],
+  ["강원", "강원특별자치도"],
+  ["강원도", "강원특별자치도"],
+  ["충북", "충청북도"],
+  ["충청북도", "충청북도"],
+  ["충남", "충청남도"],
+  ["충청남도", "충청남도"],
+  ["전북", "전북특별자치도"],
+  ["전라북도", "전북특별자치도"],
+  ["전남", "전라남도"],
+  ["전라남도", "전라남도"],
+  ["경북", "경상북도"],
+  ["경상북도", "경상북도"],
+  ["경남", "경상남도"],
+  ["경상남도", "경상남도"],
+  ["제주", "제주특별자치도"],
+  ["제주도", "제주특별자치도"],
+]);
+
 export const KOREA_SIGUNGU: Record<string, string[]> = {
   서울특별시: [
     "강남구",
@@ -250,3 +283,95 @@ export const KOREA_SIGUNGU: Record<string, string[]> = {
   ],
   제주특별자치도: ["제주시", "서귀포시"],
 };
+
+for (const region of KOREA_SIDO) {
+  REGION_ALIASES.set(region, region);
+  REGION_ALIASES.set(getRegionDisplayLabel(region), region);
+}
+
+export function getRegionDisplayLabel(region: string | null | undefined) {
+  const value = normalizeRegionValue(region) ?? region?.trim() ?? "";
+  return value.replace(REGION_SUFFIX_PATTERN, "");
+}
+
+export function getRegionOrder(region: string | null | undefined) {
+  const normalized = normalizeRegionValue(region);
+  return normalized
+    ? (REGION_ORDER.get(normalized) ?? Number.MAX_SAFE_INTEGER)
+    : Number.MAX_SAFE_INTEGER;
+}
+
+export function getSubRegionsForRegion(region: string | null | undefined) {
+  const normalizedRegion = normalizeRegionValue(region);
+  return normalizedRegion ? (KOREA_SIGUNGU[normalizedRegion] ?? []) : [];
+}
+
+export function normalizeRegionValue(region: string | null | undefined) {
+  const value = region?.trim();
+  if (!value) return null;
+
+  return REGION_ALIASES.get(value) ?? null;
+}
+
+export function normalizeSubRegionValue(
+  region: string | null | undefined,
+  subRegion: string | null | undefined,
+) {
+  const value = subRegion?.trim();
+  const subRegions = getSubRegionsForRegion(region);
+
+  if (!value || subRegions.length === 0) return null;
+  if (subRegions.includes(value)) return value;
+
+  const candidateMatches = new Set<string>();
+  for (const suffix of SUB_REGION_SUFFIX_CANDIDATES) {
+    const candidate = `${value}${suffix}`;
+    if (subRegions.includes(candidate)) {
+      candidateMatches.add(candidate);
+    }
+  }
+
+  return candidateMatches.size === 1 ? [...candidateMatches][0] : null;
+}
+
+export function normalizeRegionSelection(
+  region: string | null | undefined,
+  subRegion: string | null | undefined,
+) {
+  const normalizedRegion = normalizeRegionValue(region);
+  if (!normalizedRegion) {
+    return { region: "", subRegion: "" };
+  }
+
+  const normalizedSubRegion = normalizeSubRegionValue(normalizedRegion, subRegion);
+  return {
+    region: normalizedRegion,
+    subRegion: normalizedSubRegion ?? "",
+  };
+}
+
+export function sortByCanonicalRegionOrder<T>(
+  items: readonly T[],
+  getRegion: (item: T) => string | null | undefined,
+) {
+  return [...items].sort((left, right) => {
+    const leftRegion = getRegion(left);
+    const rightRegion = getRegion(right);
+    const leftOrder = getRegionOrder(leftRegion);
+    const rightOrder = getRegionOrder(rightRegion);
+
+    if (leftOrder !== rightOrder) {
+      return leftOrder - rightOrder;
+    }
+
+    const leftNormalized = normalizeRegionValue(leftRegion);
+    const rightNormalized = normalizeRegionValue(rightRegion);
+
+    if (leftNormalized && rightNormalized && leftNormalized === rightNormalized) {
+      if (leftRegion === leftNormalized && rightRegion !== rightNormalized) return -1;
+      if (rightRegion === rightNormalized && leftRegion !== leftNormalized) return 1;
+    }
+
+    return (leftRegion ?? "").localeCompare(rightRegion ?? "", "ko");
+  });
+}

@@ -1,17 +1,10 @@
 import { AlertCircle, Globe, Image as ImageIcon, Users } from "lucide-react";
 
+import { RegionSelectFields } from "@/components/regions/RegionSelectFields";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { KOREA_SIDO, KOREA_SIGUNGU } from "@/lib/regions";
 import { cn } from "@/lib/utils";
 
 export interface CrewFormData {
@@ -219,67 +212,16 @@ export const CrewRulesField = ({
 export const CrewLocationField = ({
   formData,
   setFormData,
-  isEditMode = false,
 }: {
   formData: CrewFormData;
   setFormData: React.Dispatch<React.SetStateAction<CrewFormData>>;
-  isEditMode?: boolean;
 }) => (
   <div className="space-y-4">
-    <div className={cn("space-y-4", isEditMode ? "" : "grid grid-cols-1 gap-4 space-y-0")}>
-      <div
-        className={cn(
-          "flex items-center justify-between py-1 min-h-[56px]",
-          !isEditMode && "flex-col items-start gap-1.5 py-0 min-h-0",
-        )}
-      >
-        <Label className="text-sm font-semibold text-muted-foreground shrink-0">시/도</Label>
-        <div className={cn("w-[160px] sm:w-[180px]", !isEditMode && "w-full")}>
-          <Select
-            value={formData.region}
-            onValueChange={(v) => setFormData((p) => ({ ...p, region: v, subRegion: "" }))}
-          >
-            <SelectTrigger className="h-9 text-sm w-full">
-              <SelectValue placeholder="선택" />
-            </SelectTrigger>
-            <SelectContent>
-              {KOREA_SIDO.map((r) => (
-                <SelectItem key={r} value={r}>
-                  {r}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div
-        className={cn(
-          "flex items-center justify-between py-1 min-h-[56px]",
-          !isEditMode && "flex-col items-start gap-1.5 py-0 min-h-0",
-        )}
-      >
-        <Label className="text-sm font-semibold text-muted-foreground shrink-0">구/군</Label>
-        <div className={cn("w-[160px] sm:w-[180px]", !isEditMode && "w-full")}>
-          <Select
-            value={formData.subRegion}
-            onValueChange={(v) => setFormData((p) => ({ ...p, subRegion: v }))}
-            disabled={!formData.region}
-          >
-            <SelectTrigger className="h-9 text-sm w-full">
-              <SelectValue placeholder="선택" />
-            </SelectTrigger>
-            <SelectContent>
-              {formData.region &&
-                KOREA_SIGUNGU[formData.region]?.map((sg) => (
-                  <SelectItem key={sg} value={sg}>
-                    {sg}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-    </div>
+    <RegionSelectFields
+      value={{ region: formData.region, subRegion: formData.subRegion }}
+      onChange={({ region, subRegion }) => setFormData((prev) => ({ ...prev, region, subRegion }))}
+      regionLabel="시/도"
+      subRegionLabel="구/군"
+    />
   </div>
 );

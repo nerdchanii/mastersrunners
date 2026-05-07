@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { RegionSelectFields } from "@/components/regions/RegionSelectFields";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
+import { getRegionDisplayLabel, normalizeRegionSelection } from "@/lib/regions";
 import { formatRunnerTimeInput, parseRunnerTimeInput } from "@/lib/runner-time";
 import { cn } from "@/lib/utils";
 
@@ -57,11 +59,12 @@ export default function OnboardingPage() {
   const step = funnel.step;
   const stepIndex = STEPS.findIndex((item) => item.key === step);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const initialRegionSelection = normalizeRegionSelection(user?.region, user?.subRegion);
 
   const [name, setName] = useState(user?.name ?? "");
   const [intro, setIntro] = useState(user?.bio ?? "");
-  const [region, setRegion] = useState(user?.region ?? "");
-  const [subRegion, setSubRegion] = useState(user?.subRegion ?? "");
+  const [region, setRegion] = useState(initialRegionSelection.region);
+  const [subRegion, setSubRegion] = useState(initialRegionSelection.subRegion);
   const [pb5k, setPb5k] = useState(formatRunnerTimeInput(user?.pb5kSeconds));
   const [pb10k, setPb10k] = useState(formatRunnerTimeInput(user?.pb10kSeconds));
   const [pbHalf, setPbHalf] = useState(formatRunnerTimeInput(user?.pbHalfMarathonSeconds));
@@ -254,29 +257,14 @@ export default function OnboardingPage() {
                     </p>
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="region">거점 지역</Label>
-                      <Input
-                        id="region"
-                        value={region}
-                        onChange={(event) => setRegion(event.target.value)}
-                        placeholder="예: 서울"
-                        maxLength={40}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="subRegion">세부 지역</Label>
-                      <Input
-                        id="subRegion"
-                        value={subRegion}
-                        onChange={(event) => setSubRegion(event.target.value)}
-                        placeholder="예: 강남 / 마포"
-                        maxLength={40}
-                      />
-                    </div>
-                  </div>
+                  <RegionSelectFields
+                    value={{ region, subRegion }}
+                    onChange={({ region: nextRegion, subRegion: nextSubRegion }) => {
+                      setRegion(nextRegion);
+                      setSubRegion(nextSubRegion);
+                    }}
+                    className="sm:grid-cols-2"
+                  />
 
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
@@ -423,7 +411,9 @@ export default function OnboardingPage() {
                       <FieldSummary label="소개" value={intro.trim()} />
                       <FieldSummary
                         label="거점"
-                        value={[region.trim(), subRegion.trim()].filter(Boolean).join(" · ")}
+                        value={[getRegionDisplayLabel(region), subRegion.trim()]
+                          .filter(Boolean)
+                          .join(" · ")}
                       />
                       <FieldSummary
                         label="PB"
@@ -483,7 +473,10 @@ export default function OnboardingPage() {
                 <div className="space-y-3">
                   <FieldSummary label="닉네임" value={name.trim() || "아직 비어 있어요"} />
                   <FieldSummary label="한 줄 소개" value={intro.trim() || "선택 입력입니다"} />
-                  <FieldSummary label="거점" value={region.trim() || "선택 입력입니다"} />
+                  <FieldSummary
+                    label="거점"
+                    value={getRegionDisplayLabel(region) || "선택 입력입니다"}
+                  />
                   <FieldSummary label="공개 설정" value={isPrivate ? "비공개" : "공개"} />
                 </div>
               </CardContent>

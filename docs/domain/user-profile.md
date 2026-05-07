@@ -1,13 +1,14 @@
 ---
 doc_state: current
 owner: product
-last_verified: 2026-04-28
+last_verified: 2026-05-08
 sources:
   - packages/database/prisma/schema.prisma
   - apps/api/src/profile/profile.controller.ts
   - apps/api/src/profile/profile.service.ts
   - apps/api/src/profile/dto/update-profile.dto.ts
   - apps/web/src/components/profile/ProfileTabs.tsx
+  - apps/web/src/components/regions/RegionSelectFields.tsx
   - apps/web/src/pages/settings/profile/index.tsx
   - apps/web/src/pages/settings/profile/use-profile-edit-form.ts
   - apps/web/src/pages/onboarding/index.tsx
@@ -70,8 +71,8 @@ OAuth 제공자 프로필 이미지 중 지원된 외부 avatar는 인증 경계
 - `pbHalfMarathonSeconds`
 - `pbMarathonSeconds`
 
-Onboarding에서는 `name`을 필수로 받고, `bio`, `region`, `subRegion`, PB 4종, `isPrivate`를 선택적으로 설정할 수 있다. 러닝 수준, 주력 거리, 관심 운동 타입은 현재 온보딩 current truth가 아니다.
-프로필 수정 화면에서는 `region`, `subRegion`, PB 4종을 다시 `null`로 비워둘 수 있어야 한다.
+Onboarding에서는 `name`을 필수로 받고, `bio`, `region`, `subRegion`, PB 4종, `isPrivate`를 선택적으로 설정할 수 있다. `region`, `subRegion` 입력은 웹의 정식 한국 지역 선택지로 제한되며, 제출 시 canonical 문자열만 보낸다. 기존에 저장된 축약값은 편집 화면에서 정규화 가능한 경우에만 canonical option으로 hydrate한다. 러닝 수준, 주력 거리, 관심 운동 타입은 현재 온보딩 current truth가 아니다.
+프로필 수정 화면에서는 `region`, `subRegion`, PB 4종을 다시 `null`로 비워둘 수 있어야 한다. 백엔드와 DB는 여전히 자유 문자열을 허용하지만, 현재 웹 write surface는 canonical 지역 값만 전송한다.
 
 ## 프로필 접근 규칙
 

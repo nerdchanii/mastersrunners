@@ -16,27 +16,7 @@ import {
 } from "@/hooks/useCrewExplore";
 import { type Crew, useMyCrews } from "@/hooks/useCrews";
 import { useAuth } from "@/lib/auth-context";
-
-// Korean regions data
-const KOREA_REGIONS = [
-  "서울특별시",
-  "부산광역시",
-  "대구광역시",
-  "인천광역시",
-  "광주광역시",
-  "대전광역시",
-  "울산광역시",
-  "세종특별자치시",
-  "경기도",
-  "강원특별자치도",
-  "충청북도",
-  "충청남도",
-  "전북특별자치도",
-  "전라남도",
-  "경상북도",
-  "경상남도",
-  "제주특별자치도",
-];
+import { getRegionDisplayLabel, sortByCanonicalRegionOrder } from "@/lib/regions";
 
 export default function CrewsPage() {
   const navigate = useNavigate();
@@ -172,6 +152,10 @@ function CrewExplore() {
     sort,
   });
   const { data: recommended } = useCrewRecommend(isAuthenticated);
+  const orderedRegions = useMemo(
+    () => sortByCanonicalRegionOrder(regions ?? [], (regionItem) => regionItem.region),
+    [regions],
+  );
 
   return (
     <div className="space-y-6">
@@ -201,20 +185,18 @@ function CrewExplore() {
           >
             전체
           </Badge>
-          {KOREA_REGIONS.map((r) => {
-            const regionData = regions?.find((rd) => rd.region === r);
+          {orderedRegions.map((regionData) => {
             return (
               <Badge
-                key={r}
-                variant={selectedRegion === r ? "default" : "outline"}
+                key={regionData.region}
+                variant={selectedRegion === regionData.region ? "default" : "outline"}
                 className="cursor-pointer"
                 onClick={() => {
-                  setSelectedRegion(r);
+                  setSelectedRegion(regionData.region);
                   setSelectedSubRegion(undefined);
                 }}
               >
-                {r.replace(/(특별시|광역시|특별자치시|특별자치도|도)$/, "")}
-                {regionData ? ` (${regionData.crewCount})` : ""}
+                {getRegionDisplayLabel(regionData.region)} ({regionData.crewCount})
               </Badge>
             );
           })}

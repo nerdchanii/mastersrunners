@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { normalizeRegionSelection } from "@/lib/regions";
 import { cn } from "@/lib/utils";
 
 import {
@@ -49,14 +50,18 @@ export default function CrewEditForm({
   submitLabel,
   isSubmitting,
 }: CrewEditFormProps) {
+  const normalizedLocation = normalizeRegionSelection(
+    initialValues.region,
+    initialValues.subRegion,
+  );
   const [formData, setFormData] = useState<CrewFormData>({
     name: initialValues.name || "",
     description: initialValues.description || "",
     isPublic: initialValues.isPublic ?? true,
     maxMembers: initialValues.maxMembers?.toString() || "",
     location: initialValues.location || "",
-    region: initialValues.region || "",
-    subRegion: initialValues.subRegion || "",
+    region: normalizedLocation.region,
+    subRegion: normalizedLocation.subRegion,
     profileImageUrl: initialValues.profileImageUrl || "",
     coverImageUrl: initialValues.coverImageUrl || "",
   });
@@ -236,7 +241,7 @@ export default function CrewEditForm({
               errorField={errorField}
               errorMessage={errorMessage}
             />
-            <CrewLocationField formData={formData} setFormData={setFormData} isEditMode={true} />
+            <CrewLocationField formData={formData} setFormData={setFormData} />
           </div>
         </section>
       </div>

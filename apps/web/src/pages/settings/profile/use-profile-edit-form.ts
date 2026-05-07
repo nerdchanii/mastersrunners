@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useUpdateProfile } from "@/hooks/useProfile";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { normalizeRegionSelection } from "@/lib/regions";
 import { formatRunnerTimeInput, parseRunnerTimeInput } from "@/lib/runner-time";
 
 export interface ProfileForm {
@@ -76,13 +77,15 @@ export function useProfileEditForm() {
     }
 
     if (user) {
+      const normalizedLocation = normalizeRegionSelection(user.region, user.subRegion);
+
       setForm({
         name: user.name || "",
         bio: user.bio || "",
         profileImage: user.profileImage || null,
         backgroundImage: user.backgroundImage || null,
-        region: user.region || "",
-        subRegion: user.subRegion || "",
+        region: normalizedLocation.region,
+        subRegion: normalizedLocation.subRegion,
         pb5k: formatRunnerTimeInput(user.pb5kSeconds),
         pb10k: formatRunnerTimeInput(user.pb10kSeconds),
         pbHalf: formatRunnerTimeInput(user.pbHalfMarathonSeconds),

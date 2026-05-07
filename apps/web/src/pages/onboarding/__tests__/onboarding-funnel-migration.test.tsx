@@ -119,6 +119,8 @@ describe("OnboardingPage funnel migration", () => {
     authMock.refreshUser.mockReset();
     updateOnboardingProfileMock.mockReset();
     updateOnboardingProfileMock.mockResolvedValue(undefined);
+    authMock.user.region = "";
+    authMock.user.subRegion = "";
   });
 
   it("keeps next/back behavior and visible step labels aligned with the funnel step", async () => {
@@ -210,5 +212,69 @@ describe("OnboardingPage funnel migration", () => {
     );
     expect(updateOnboardingProfileMock).not.toHaveBeenCalled();
     expect(navigateMock).not.toHaveBeenCalledWith("/feed", { replace: true });
+  });
+
+  it("renders region fields as selects and clears sub-region when the region changes", async () => {
+    const user = userEvent.setup();
+
+    renderOnboarding();
+    await advanceToRunnerStep(user);
+
+    const regionSelect = screen.getByRole("combobox", { name: "거점 지역" });
+    const subRegionSelect = screen.getByRole("combobox", { name: "세부 지역" });
+
+    expect(regionSelect).toBeInTheDocument();
+    expect(subRegionSelect).toBeDisabled();
+
+    await user.selectOptions(regionSelect, "서울특별시");
+    expect(subRegionSelect).not.toBeDisabled();
+
+    await user.selectOptions(subRegionSelect, "강남구");
+    expect(subRegionSelect).toHaveValue("강남구");
+
+    await user.selectOptions(regionSelect, "부산광역시");
+    expect(subRegionSelect).toHaveValue("");
+  });
+
+  it("submits empty optional region fields as omitted values", async () => {
+    const user = userEvent.setup();
+
+    renderOnboarding();
+    await advanceToPrivacyStep(user);
+    await user.click(screen.getByRole("button", { name: "시작하기" }));
+
+    await waitFor(() => {
+      expect(updateOnboardingProfileMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          region: undefined,
+          subRegion: undefined,
+        }),
+      );
+    });
+  });
+
+  it("hydrates legacy saved region values into canonical selectable options", async () => {
+    authMock.user.region = "서울";
+    authMock.user.subRegion = "강남";
+
+    const user = userEvent.setup();
+
+    renderOnboarding();
+    await advanceToRunnerStep(user);
+
+    expect(screen.getByRole("combobox", { name: "거점 지역" })).toHaveValue("서울특별시");
+    expect(screen.getByRole("combobox", { name: "세부 지역" })).toHaveValue("강남구");
+
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "시작하기" }));
+
+    await waitFor(() => {
+      expect(updateOnboardingProfileMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          region: "서울특별시",
+          subRegion: "강남구",
+        }),
+      );
+    });
   });
 });
