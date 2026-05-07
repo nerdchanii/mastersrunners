@@ -1,14 +1,18 @@
-import { lazy, Suspense } from "react";
+import { QueryErrorResetBoundary } from "@tanstack/react-query";
+import { lazy, type ReactNode, Suspense } from "react";
 import {
   createBrowserRouter,
   Navigate,
   Outlet,
   useLocation,
+  useNavigate,
   useOutletContext,
+  useRevalidator,
+  useRouteError,
 } from "react-router-dom";
 
 import { BottomNav } from "@/components/common/BottomNav";
-import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { ErrorBoundary, ErrorFallback } from "@/components/common/ErrorBoundary";
 import { FeatureRoute } from "@/components/common/FeatureRoute";
 import { LoadingPage } from "@/components/common/LoadingPage";
 import { isCrewHubSurfacePath } from "@/components/crew/crew-hub-routes";
@@ -124,6 +128,63 @@ function RootLayout() {
   return <Outlet />;
 }
 
+function toError(error: unknown) {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  if (typeof error === "string") {
+    return new Error(error);
+  }
+
+  return new Error("Route recovery boundary received an unknown error.");
+}
+
+export function RootRouteErrorElement() {
+  const routeError = toError(useRouteError());
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { revalidate } = useRevalidator();
+
+  const retryRoute = (resetQueryError: () => void) => {
+    resetQueryError();
+    revalidate();
+    void navigate(`${location.pathname}${location.search}${location.hash}`, { replace: true });
+  };
+
+  return (
+    <QueryErrorResetBoundary>
+      {({ reset }) => (
+        <ErrorFallback
+          error={routeError}
+          onReload={() => window.location.reload()}
+          onRetry={() => retryRoute(reset)}
+        />
+      )}
+    </QueryErrorResetBoundary>
+  );
+}
+
+interface RouteQueryRecoveryBoundaryProps {
+  children: ReactNode;
+  boundaryKey?: string;
+}
+
+export function RouteQueryRecoveryBoundary({
+  boundaryKey,
+  children,
+}: RouteQueryRecoveryBoundaryProps) {
+  return (
+    <QueryErrorResetBoundary>
+      {({ reset }) => (
+        <ErrorBoundary key={boundaryKey} onReset={reset}>
+          {children}
+        </ErrorBoundary>
+      )}
+    </QueryErrorResetBoundary>
+  );
+}
+
 function MainLayout() {
   const location = useLocation();
   const isChatRoute = location.pathname.startsWith("/messages");
@@ -158,9 +219,9 @@ function MainLayout() {
         )}
       >
         <Suspense fallback={<LoadingPage />}>
-          <ErrorBoundary key={errorBoundaryKey}>
+          <RouteQueryRecoveryBoundary boundaryKey={errorBoundaryKey}>
             <Outlet />
-          </ErrorBoundary>
+          </RouteQueryRecoveryBoundary>
         </Suspense>
       </main>
       <BottomNav />
@@ -181,11 +242,7 @@ function AuthLayout() {
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
-    errorElement: (
-      <ErrorBoundary>
-        <div />
-      </ErrorBoundary>
-    ),
+    errorElement: <RootRouteErrorElement />,
     children: [
       // Root entry
       { path: "/", element: <Navigate to="/feed" replace /> },

@@ -14,6 +14,7 @@ import {
 
 interface ErrorBoundaryProps {
   children: ReactNode;
+  onReset?: () => void;
 }
 
 interface ErrorBoundaryState {
@@ -35,13 +36,24 @@ class ErrorBoundaryClass extends Component<ErrorBoundaryProps, ErrorBoundaryStat
     console.error("ErrorBoundary caught an error:", error, errorInfo);
   }
 
+  handleRetry = () => {
+    this.props.onReset?.();
+    this.setState({ hasError: false, error: null });
+  };
+
   handleReload = () => {
     window.location.reload();
   };
 
   render() {
     if (this.state.hasError) {
-      return <ErrorFallback error={this.state.error} onReload={this.handleReload} />;
+      return (
+        <ErrorFallback
+          error={this.state.error}
+          onReload={this.handleReload}
+          onRetry={this.handleRetry}
+        />
+      );
     }
 
     return this.props.children;
@@ -51,9 +63,10 @@ class ErrorBoundaryClass extends Component<ErrorBoundaryProps, ErrorBoundaryStat
 interface ErrorFallbackProps {
   error: Error | null;
   onReload: () => void;
+  onRetry: () => void;
 }
 
-function ErrorFallback({ error, onReload }: ErrorFallbackProps) {
+export function ErrorFallback({ error, onReload, onRetry }: ErrorFallbackProps) {
   const navigate = useNavigate();
   const handleGoBack = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {
@@ -86,7 +99,7 @@ function ErrorFallback({ error, onReload }: ErrorFallbackProps) {
           </CardContent>
         )}
         <CardFooter className="flex flex-col gap-2">
-          <Button onClick={onReload} className="w-full">
+          <Button onClick={onRetry} className="w-full">
             다시 시도
           </Button>
           <Button onClick={handleGoBack} variant="outline" className="w-full">
@@ -94,6 +107,9 @@ function ErrorFallback({ error, onReload }: ErrorFallbackProps) {
           </Button>
           <Button onClick={() => navigate("/feed")} variant="outline" className="w-full">
             홈으로
+          </Button>
+          <Button onClick={onReload} variant="ghost" className="w-full">
+            페이지 새로고침
           </Button>
         </CardFooter>
       </Card>
