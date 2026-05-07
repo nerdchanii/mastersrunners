@@ -1,4 +1,5 @@
 import { UserAvatar } from "@/components/common/UserAvatar";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
@@ -17,9 +18,11 @@ interface LeaderboardEntry {
 
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
+  error?: string | null;
   goalValue: number;
   goalType: string;
   isLoading?: boolean;
+  onRetry?: () => void;
 }
 
 function goalTypeUnit(type: string): string {
@@ -39,9 +42,11 @@ function goalTypeUnit(type: string): string {
 
 export default function LeaderboardTable({
   entries,
+  error,
   goalValue,
   goalType,
   isLoading,
+  onRetry,
 }: LeaderboardTableProps) {
   const { user } = useAuth();
 
@@ -51,6 +56,19 @@ export default function LeaderboardTable({
         {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="h-20 rounded-lg" />
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-6 text-center">
+        <p className="text-sm text-destructive">{error}</p>
+        {onRetry && (
+          <Button variant="outline" size="sm" onClick={onRetry} className="mt-4">
+            다시 시도
+          </Button>
+        )}
       </div>
     );
   }

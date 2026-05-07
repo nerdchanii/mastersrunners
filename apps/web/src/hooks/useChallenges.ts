@@ -1,11 +1,19 @@
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type QueryClient,
+  type QueryKey,
+  queryOptions,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useCallback } from "react";
 
 import { api } from "@/lib/api-client";
 
 import {
   cleanQueryParams,
   cursorlessQueryParams,
-  invalidateQueryKeys,
   type QueryParams,
   toQueryString,
 } from "./query-key-utils";
@@ -24,7 +32,9 @@ export interface Challenge {
   myProgress?: number | null;
   // 확장 필드 (detail용)
   createdAt?: string;
+  creatorId?: string;
   creator?: { id: string; name: string; profileImage: string | null };
+  isJoined?: boolean;
   isParticipating?: boolean;
 }
 
@@ -35,6 +45,12 @@ export interface ChallengeDetail extends Challenge {
     progress: number;
     user: { id: string; name: string; profileImage: string | null };
   }>;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  progress: number;
+  user: { id: string; name: string; profileImage: string | null };
 }
 
 interface ChallengeListResponse {
@@ -50,6 +66,8 @@ export type ChallengeInfiniteListParams = QueryParams & {
   limit?: number;
 };
 export type ChallengeLeaderboardParams = QueryParams & { limit?: number };
+
+const defaultLeaderboardParams = { limit: 50 } as const;
 
 export const challengeKeys = {
   all: ["challenges"] as const,
@@ -83,6 +101,72 @@ export const challengeInvalidationTargets = {
   delete: () => [challengeKeys.all],
 };
 
+export const challengeQueries = {
+  detail: (id: string) =>
+    queryOptions({
+      queryKey: challengeKeys.detail(id),
+      queryFn: () => api.fetch<ChallengeDetail>(`/challenges/${id}`),
+    }),
+  leaderboard: (id: string, params: ChallengeLeaderboardParams = defaultLeaderboardParams) =>
+    queryOptions({
+      queryKey: challengeKeys.leaderboard(id, params),
+      queryFn: async () => {
+        const data = await api.fetch<LeaderboardEntry[]>(
+          `/challenges/${id}/leaderboard${toQueryString(params)}`,
+        );
+        return Array.isArray(data) ? data : [];
+      },
+    }),
+};
+
+function isChallengeDetailScopedKey(queryKey: QueryKey) {
+  return queryKey[0] === challengeKeys.all[0] && queryKey[1] === "detail";
+}
+
+function invalidateChallengeMutationTargets(
+  queryClient: QueryClient,
+  queryKeys: readonly QueryKey[],
+) {
+  return Promise.all(
+    queryKeys.map((queryKey) =>
+      queryClient.invalidateQueries(
+        isChallengeDetailScopedKey(queryKey) ? { queryKey, exact: true } : { queryKey },
+      ),
+    ),
+  );
+}
+
+export function useInvalidateChallengeMutationTargets() {
+  const queryClient = useQueryClient();
+
+  return useCallback(
+    (queryKeys: readonly QueryKey[]) => invalidateChallengeMutationTargets(queryClient, queryKeys),
+    [queryClient],
+  );
+}
+
+export function useInvalidateDeletedChallenges() {
+  const invalidateChallengeMutationTargets = useInvalidateChallengeMutationTargets();
+
+  return useCallback(
+    () => invalidateChallengeMutationTargets(challengeInvalidationTargets.delete()),
+    [invalidateChallengeMutationTargets],
+  );
+}
+
+type ChallengeQueryOptions = {
+  enabled?: boolean;
+};
+
+type UpdateChallengeProgressVariables = {
+  challengeId: string;
+  currentValue: number;
+};
+
+function isEnabledChallengeId(id: string, enabled = true) {
+  return enabled && !!id && id !== "_";
+}
+
 export function useChallenges(params?: ChallengeListParams) {
   return useQuery({
     queryKey: challengeKeys.list(params),
@@ -110,28 +194,56 @@ export function useInfiniteChallenges(joined = false) {
 
 export function useChallenge(id: string) {
   return useQuery({
-    queryKey: challengeKeys.detail(id),
-    queryFn: () => api.fetch<ChallengeDetail>(`/challenges/${id}`),
-    enabled: !!id,
+    ...challengeQueries.detail(id),
+    enabled: isEnabledChallengeId(id),
+  });
+}
+
+export function useChallengeLeaderboard(id: string, options: ChallengeQueryOptions = {}) {
+  return useQuery({
+    ...challengeQueries.leaderboard(id),
+    enabled: isEnabledChallengeId(id, options.enabled),
   });
 }
 
 export function useJoinChallenge() {
-  const queryClient = useQueryClient();
+  const invalidateChallengeMutationTargets = useInvalidateChallengeMutationTargets();
   return useMutation({
     mutationFn: (challengeId: string) =>
       api.fetch(`/challenges/${challengeId}/join`, { method: "POST" }),
     onSuccess: (_result, challengeId) =>
-      invalidateQueryKeys(queryClient, challengeInvalidationTargets.join(challengeId)),
+      invalidateChallengeMutationTargets(challengeInvalidationTargets.join(challengeId)),
   });
 }
 
 export function useLeaveChallenge() {
-  const queryClient = useQueryClient();
+  const invalidateChallengeMutationTargets = useInvalidateChallengeMutationTargets();
   return useMutation({
     mutationFn: (challengeId: string) =>
       api.fetch(`/challenges/${challengeId}/leave`, { method: "DELETE" }),
     onSuccess: (_result, challengeId) =>
-      invalidateQueryKeys(queryClient, challengeInvalidationTargets.leave(challengeId)),
+      invalidateChallengeMutationTargets(challengeInvalidationTargets.leave(challengeId)),
+  });
+}
+
+export function useUpdateChallengeProgress() {
+  const invalidateChallengeMutationTargets = useInvalidateChallengeMutationTargets();
+  return useMutation({
+    mutationFn: ({ challengeId, currentValue }: UpdateChallengeProgressVariables) =>
+      api.fetch(`/challenges/${challengeId}/progress`, {
+        method: "PATCH",
+        body: JSON.stringify({ currentValue }),
+      }),
+    onSuccess: (_result, { challengeId }) =>
+      invalidateChallengeMutationTargets(
+        challengeInvalidationTargets.updateProgress(challengeId, defaultLeaderboardParams),
+      ),
+  });
+}
+
+export function useDeleteChallenge() {
+  return useMutation({
+    mutationFn: (challengeId: string) =>
+      api.fetch(`/challenges/${challengeId}`, { method: "DELETE" }),
   });
 }

@@ -1,4 +1,14 @@
-import { Calendar, Edit, LogOut, Target, Trash2, User, UserPlus, Users } from "lucide-react";
+import {
+  Calendar,
+  Edit,
+  LogOut,
+  RefreshCw,
+  Target,
+  Trash2,
+  User,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -81,10 +91,13 @@ export default function ChallengeDetailPage() {
     error,
     isLoading,
     leaderboard,
+    leaderboardError,
     leaderboardLoading,
     deleteChallenge,
     joinChallenge,
     leaveChallenge,
+    retryChallenge,
+    retryLeaderboard,
     updateProgress,
   } = useChallengeDetailPage(challengeId, activeTab, () => navigate("/challenges"));
 
@@ -142,9 +155,15 @@ export default function ChallengeDetailPage() {
           <CardContent className="p-6">
             <h2 className="text-lg font-semibold text-destructive mb-2">오류</h2>
             <p className="text-destructive/90">{error || "챌린지를 찾을 수 없습니다."}</p>
-            <Button variant="outline" onClick={() => navigate(-1)} className="mt-4">
-              돌아가기
-            </Button>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button variant="default" onClick={() => void retryChallenge()}>
+                <RefreshCw className="mr-2 size-4" />
+                다시 시도
+              </Button>
+              <Button variant="outline" onClick={() => navigate(-1)}>
+                돌아가기
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -381,7 +400,9 @@ export default function ChallengeDetailPage() {
                 entries={leaderboard}
                 goalValue={challenge.targetValue}
                 goalType={challenge.type}
+                error={leaderboardError}
                 isLoading={leaderboardLoading}
+                onRetry={() => void retryLeaderboard()}
               />
             </CardContent>
           </Card>

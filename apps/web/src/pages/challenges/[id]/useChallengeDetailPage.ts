@@ -1,166 +1,108 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { toast } from "sonner";
 
-import { api } from "@/lib/api-client";
-
-interface ChallengeUser {
-  id: string;
-  name: string;
-  profileImage: string | null;
-}
-
-export interface ChallengeDetail {
-  id: string;
-  title: string;
-  description: string | null;
-  type: string;
-  targetValue: number;
-  targetUnit: string;
-  startDate: string;
-  endDate: string;
-  isPublic: boolean;
-  creatorId: string;
-  creator?: ChallengeUser;
-  _count?: { participants: number };
-  isJoined?: boolean;
-  myProgress?: number | null;
-}
-
-export interface LeaderboardEntry {
-  rank: number;
-  progress: number;
-  user: ChallengeUser;
-}
+import {
+  useChallenge,
+  useChallengeLeaderboard,
+  useDeleteChallenge,
+  useInvalidateDeletedChallenges,
+  useJoinChallenge,
+  useLeaveChallenge,
+  useUpdateChallengeProgress,
+} from "@/hooks/useChallenges";
 
 type DetailTab = "info" | "leaderboard" | "teams";
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
 
 export function useChallengeDetailPage(
   challengeId: string,
   activeTab: DetailTab,
   onDeleteSuccess: () => void,
 ) {
-  const [challenge, setChallenge] = useState<ChallengeDetail | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
-
-  const fetchChallenge = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await api.fetch<ChallengeDetail>(`/challenges/${challengeId}`);
-      setChallenge(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "챌린지 정보를 불러올 수 없습니다.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [challengeId]);
-
-  const fetchLeaderboard = useCallback(async () => {
-    try {
-      setLeaderboardLoading(true);
-      const data = await api.fetch<LeaderboardEntry[]>(
-        `/challenges/${challengeId}/leaderboard?limit=50`,
-      );
-      setLeaderboard(Array.isArray(data) ? data : []);
-    } catch {
-      // silently fail
-    } finally {
-      setLeaderboardLoading(false);
-    }
-  }, [challengeId]);
-
-  useEffect(() => {
-    if (!challengeId || challengeId === "_") {
-      return;
-    }
-
-    void fetchChallenge();
-  }, [challengeId, fetchChallenge]);
-
-  useEffect(() => {
-    if (activeTab !== "leaderboard" || !challengeId || challengeId === "_") {
-      return;
-    }
-
-    void fetchLeaderboard();
-  }, [activeTab, challengeId, fetchLeaderboard]);
+  const challengeQuery = useChallenge(challengeId);
+  const challenge = challengeQuery.data ?? null;
+  const canLoadAuxiliaryQueries = challengeQuery.isSuccess && !!challengeId && challengeId !== "_";
+  const leaderboardQuery = useChallengeLeaderboard(challengeId, {
+    enabled: canLoadAuxiliaryQueries && activeTab === "leaderboard",
+  });
+  const joinMutation = useJoinChallenge();
+  const leaveMutation = useLeaveChallenge();
+  const deleteMutation = useDeleteChallenge();
+  const invalidateDeletedChallenges = useInvalidateDeletedChallenges();
+  const updateProgressMutation = useUpdateChallengeProgress();
+  const error = challengeQuery.error
+    ? getErrorMessage(challengeQuery.error, "챌린지 정보를 불러올 수 없습니다.")
+    : null;
+  const leaderboardError = leaderboardQuery.error
+    ? getErrorMessage(leaderboardQuery.error, "리더보드를 불러오지 못했습니다.")
+    : null;
+  const actionLoading =
+    joinMutation.isPending ||
+    leaveMutation.isPending ||
+    deleteMutation.isPending ||
+    updateProgressMutation.isPending;
 
   const joinChallenge = useCallback(async () => {
-    setActionLoading(true);
     try {
-      await api.fetch(`/challenges/${challengeId}/join`, { method: "POST" });
-      await fetchChallenge();
+      await joinMutation.mutateAsync(challengeId);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "참가에 실패했습니다.");
-    } finally {
-      setActionLoading(false);
+      toast.error(getErrorMessage(err, "참가에 실패했습니다."));
     }
-  }, [challengeId, fetchChallenge]);
+  }, [challengeId, joinMutation]);
 
   const leaveChallenge = useCallback(async () => {
-    setActionLoading(true);
     try {
-      await api.fetch(`/challenges/${challengeId}/leave`, { method: "DELETE" });
-      await fetchChallenge();
+      await leaveMutation.mutateAsync(challengeId);
       toast.success("챌린지에서 나갔습니다.");
       return true;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "챌린지 나가기에 실패했습니다.");
+      toast.error(getErrorMessage(err, "챌린지 나가기에 실패했습니다."));
       return false;
-    } finally {
-      setActionLoading(false);
     }
-  }, [challengeId, fetchChallenge]);
+  }, [challengeId, leaveMutation]);
 
   const deleteChallenge = useCallback(async () => {
     try {
-      await api.fetch(`/challenges/${challengeId}`, { method: "DELETE" });
+      await deleteMutation.mutateAsync(challengeId);
       toast.success("챌린지가 삭제되었습니다.");
       onDeleteSuccess();
+      await invalidateDeletedChallenges();
       return true;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "삭제에 실패했습니다.");
+      toast.error(getErrorMessage(err, "삭제에 실패했습니다."));
       return false;
     }
-  }, [challengeId, onDeleteSuccess]);
+  }, [challengeId, deleteMutation, invalidateDeletedChallenges, onDeleteSuccess]);
 
   const updateProgress = useCallback(
     async (currentValue: number) => {
-      setActionLoading(true);
       try {
-        await api.fetch(`/challenges/${challengeId}/progress`, {
-          method: "PATCH",
-          body: JSON.stringify({ currentValue }),
-        });
-        await fetchChallenge();
-        if (activeTab === "leaderboard") {
-          await fetchLeaderboard();
-        }
+        await updateProgressMutation.mutateAsync({ challengeId, currentValue });
         return true;
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "진행도 업데이트에 실패했습니다.");
+        toast.error(getErrorMessage(err, "진행도 업데이트에 실패했습니다."));
         return false;
-      } finally {
-        setActionLoading(false);
       }
     },
-    [activeTab, challengeId, fetchChallenge, fetchLeaderboard],
+    [challengeId, updateProgressMutation],
   );
 
   return {
     actionLoading,
     challenge,
     error,
-    isLoading,
-    leaderboard,
-    leaderboardLoading,
+    isLoading: challengeQuery.isLoading,
+    leaderboard: leaderboardQuery.data ?? [],
+    leaderboardError,
+    leaderboardLoading: leaderboardQuery.isLoading || leaderboardQuery.isFetching,
     deleteChallenge,
     joinChallenge,
     leaveChallenge,
+    retryChallenge: challengeQuery.refetch,
+    retryLeaderboard: leaderboardQuery.refetch,
     updateProgress,
   };
 }
