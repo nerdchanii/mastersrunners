@@ -1,17 +1,19 @@
 import {
+  type QueryClient,
+  type QueryKey,
   queryOptions,
   useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useCallback } from "react";
 
 import { api } from "@/lib/api-client";
 
 import {
   cleanQueryParams,
   cursorlessQueryParams,
-  invalidateQueryKeys,
   type QueryParams,
   toQueryString,
 } from "./query-key-utils";
@@ -43,6 +45,30 @@ export interface EventDetail extends Event {
     joinedAt: string;
     user: { id: string; name: string; profileImage: string | null };
   }>;
+}
+
+interface EventUser {
+  id: string;
+  name: string;
+  profileImage: string | null;
+}
+
+export interface EventResult {
+  resultRank: number | null;
+  bibNumber: string | null;
+  resultTime: number | null;
+  status: string;
+  user: EventUser;
+  workoutId?: string | null;
+}
+
+export interface MyResult {
+  resultRank: number | null;
+  bibNumber: string | null;
+  resultTime: number | null;
+  status: string;
+  workoutId: string | null;
+  goalTime?: number | null;
 }
 
 interface EventListResponse {
@@ -104,7 +130,74 @@ export const eventQueries = {
       queryKey: eventKeys.detail(id),
       queryFn: () => api.fetch<EventDetail>(`/events/${id}`),
     }),
+  myResult: (id: string) =>
+    queryOptions({
+      queryKey: eventKeys.myResult(id),
+      queryFn: () => api.fetch<MyResult>(`/events/${id}/results/me`),
+    }),
+  results: (id: string) =>
+    queryOptions({
+      queryKey: eventKeys.results(id),
+      queryFn: async () => {
+        const data = await api.fetch<EventResult[]>(`/events/${id}/results`);
+        return Array.isArray(data) ? data : [];
+      },
+    }),
 };
+
+function isEventDetailScopedKey(queryKey: QueryKey) {
+  return queryKey[0] === eventKeys.all[0] && queryKey[1] === "detail";
+}
+
+function invalidateEventMutationTargets(queryClient: QueryClient, queryKeys: readonly QueryKey[]) {
+  return Promise.all(
+    queryKeys.map((queryKey) =>
+      queryClient.invalidateQueries(
+        isEventDetailScopedKey(queryKey) ? { queryKey, exact: true } : { queryKey },
+      ),
+    ),
+  );
+}
+
+export function useInvalidateEventMutationTargets() {
+  const queryClient = useQueryClient();
+
+  return useCallback(
+    (queryKeys: readonly QueryKey[]) => invalidateEventMutationTargets(queryClient, queryKeys),
+    [queryClient],
+  );
+}
+
+export function useInvalidateDeletedEvents() {
+  const invalidateEventMutationTargets = useInvalidateEventMutationTargets();
+
+  return useCallback(
+    () => invalidateEventMutationTargets(eventInvalidationTargets.delete()),
+    [invalidateEventMutationTargets],
+  );
+}
+
+type EventQueryOptions = {
+  enabled?: boolean;
+};
+
+type SubmitEventResultVariables = {
+  body: Record<string, unknown>;
+  eventId: string;
+};
+
+type LinkEventWorkoutVariables = {
+  eventId: string;
+  workoutId: string;
+};
+
+type UnlinkEventWorkoutVariables = {
+  eventId: string;
+};
+
+function isEnabledEventId(id: string, enabled = true) {
+  return enabled && !!id && id !== "_";
+}
 
 export function useEvents(params?: EventListParams) {
   return useQuery({
@@ -140,24 +233,92 @@ export function useInfiniteEvents(tab: EventTab = "upcoming") {
 export function useEvent(id: string) {
   return useQuery({
     ...eventQueries.detail(id),
-    enabled: !!id && id !== "_",
+    enabled: isEnabledEventId(id),
+  });
+}
+
+export function useEventMyResult(id: string, options: EventQueryOptions = {}) {
+  return useQuery({
+    ...eventQueries.myResult(id),
+    enabled: isEnabledEventId(id, options.enabled),
+  });
+}
+
+export function useEventResults(id: string, options: EventQueryOptions = {}) {
+  return useQuery({
+    ...eventQueries.results(id),
+    enabled: isEnabledEventId(id, options.enabled),
+  });
+}
+
+export function useRegisterEvent() {
+  const invalidateEventMutationTargets = useInvalidateEventMutationTargets();
+  return useMutation({
+    mutationFn: (eventId: string) => api.fetch(`/events/${eventId}/register`, { method: "POST" }),
+    onSuccess: (_result, eventId) =>
+      invalidateEventMutationTargets(eventInvalidationTargets.register(eventId)),
   });
 }
 
 export function useJoinEvent() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (eventId: string) => api.fetch(`/events/${eventId}/register`, { method: "POST" }),
-    onSuccess: (_result, eventId) =>
-      invalidateQueryKeys(queryClient, eventInvalidationTargets.register(eventId)),
-  });
+  return useRegisterEvent();
 }
 
-export function useLeaveEvent() {
-  const queryClient = useQueryClient();
+export function useCancelEventRegistration() {
+  const invalidateEventMutationTargets = useInvalidateEventMutationTargets();
   return useMutation({
     mutationFn: (eventId: string) => api.fetch(`/events/${eventId}/cancel`, { method: "DELETE" }),
     onSuccess: (_result, eventId) =>
-      invalidateQueryKeys(queryClient, eventInvalidationTargets.cancel(eventId)),
+      invalidateEventMutationTargets(eventInvalidationTargets.cancel(eventId)),
+  });
+}
+
+export function useCancelRegistration() {
+  return useCancelEventRegistration();
+}
+
+export function useLeaveEvent() {
+  return useCancelEventRegistration();
+}
+
+export function useSubmitEventResult() {
+  const invalidateEventMutationTargets = useInvalidateEventMutationTargets();
+  return useMutation({
+    mutationFn: ({ body, eventId }: SubmitEventResultVariables) =>
+      api.fetch(`/events/${eventId}/results`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: (_result, { eventId }) =>
+      invalidateEventMutationTargets(eventInvalidationTargets.submitResult(eventId)),
+  });
+}
+
+export function useLinkEventWorkout() {
+  const invalidateEventMutationTargets = useInvalidateEventMutationTargets();
+  return useMutation({
+    mutationFn: ({ eventId, workoutId }: LinkEventWorkoutVariables) =>
+      api.fetch(`/events/${eventId}/link-workout`, {
+        method: "POST",
+        body: JSON.stringify({ workoutId }),
+      }),
+    onSuccess: (_result, { eventId }) =>
+      invalidateEventMutationTargets(eventInvalidationTargets.linkWorkout(eventId)),
+  });
+}
+
+export function useUnlinkEventWorkout() {
+  const invalidateEventMutationTargets = useInvalidateEventMutationTargets();
+  return useMutation({
+    mutationFn: ({ eventId }: UnlinkEventWorkoutVariables) =>
+      api.fetch(`/events/${eventId}/link-workout`, { method: "DELETE" }),
+    onSuccess: (_result, { eventId }) =>
+      invalidateEventMutationTargets(eventInvalidationTargets.unlinkWorkout(eventId)),
+  });
+}
+
+export function useDeleteEvent() {
+  return useMutation({
+    mutationFn: (eventId: string) => api.fetch(`/events/${eventId}`, { method: "DELETE" }),
   });
 }

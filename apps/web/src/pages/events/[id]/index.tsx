@@ -92,12 +92,17 @@ export default function EventDetailPage() {
     event,
     isLoading,
     myResult,
+    myResultError,
+    myResultLoading,
     results,
+    resultsError,
     resultsLoading,
     cancelRegistration,
     deleteEvent,
     linkWorkout,
     registerEvent,
+    retryMyResult,
+    retryResults,
     submitResult,
     unlinkWorkout,
   } = useEventDetailPage(eventId, activeTab, () => navigate("/events"));
@@ -441,7 +446,25 @@ export default function EventDetailPage() {
                 <CardTitle>내 결과</CardTitle>
               </CardHeader>
               <CardContent>
-                {myResult ? (
+                {myResultError ? (
+                  <div className="space-y-3 rounded-md border border-destructive/30 bg-destructive/5 p-4">
+                    <p className="text-sm text-destructive">{myResultError}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void retryMyResult()}
+                      disabled={myResultLoading}
+                    >
+                      {myResultLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      다시 시도
+                    </Button>
+                  </div>
+                ) : myResultLoading ? (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />내 결과를 불러오는 중입니다.
+                  </div>
+                ) : myResult ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       <div>
@@ -602,7 +625,23 @@ export default function EventDetailPage() {
             <CardDescription>참가자들의 대회 기록입니다.</CardDescription>
           </CardHeader>
           <CardContent>
-            <EventResultsTable results={results} isLoading={resultsLoading} />
+            {resultsError ? (
+              <div className="space-y-3 rounded-md border border-destructive/30 bg-destructive/5 p-4">
+                <p className="text-sm text-destructive">{resultsError}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void retryResults()}
+                  disabled={resultsLoading}
+                >
+                  {resultsLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  다시 시도
+                </Button>
+              </div>
+            ) : (
+              <EventResultsTable results={results} isLoading={resultsLoading} />
+            )}
           </CardContent>
         </Card>
       )}
