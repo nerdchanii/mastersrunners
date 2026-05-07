@@ -19,14 +19,16 @@ depends_on:
   - tasks/todo/I-0022-231-web-post-composer-funnel-migration.md
   - tasks/todo/I-0022-232-web-onboarding-funnel-migration.md
 blocked_by: []
-execution_status: in_progress
-verification_status: pending
+execution_status: ready_for_archive
+verification_status: passed
 closeout_blocker:
 verify:
-  - pnpm --filter @masters/web test -- --run src/__tests__/i0022-query-regression.test.tsx
+  - pnpm --filter @masters/web exec vitest run src/pages/profile/__tests__/profile-route-query-migration.test.tsx
+  - pnpm --filter @masters/web exec vitest run src/pages/posts/new/__tests__/post-composer-funnel-migration.test.tsx
+  - pnpm --filter @masters/web exec vitest run src/pages/onboarding/__tests__/onboarding-funnel-migration.test.tsx
   - pnpm lint
   - pnpm typecheck
-  - pnpm --filter @masters/web build
+  - VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build
 artifacts:
   - docs/initiatives/I-0022-cool-code/README.md
   - docs/initiatives/I-0022-cool-code/details/R1-query-error-recovery.md
@@ -40,6 +42,12 @@ artifacts:
   - docs/initiatives/I-0022-cool-code/details/R10-funnel-abstraction-and-history.md
   - apps/web/src
 ---
+
+## 실제 개선 요약
+
+- I-0022의 남아 있던 profile route query migration, post composer funnel migration, onboarding funnel migration focused suites를 최종 regression bundle로 재검증했다.
+- workspace lint와 typecheck, env-configured web build까지 통과시켜 query/mutation UI refactor와 history-aware funnel refactor가 현재 web baseline에서 함께 성립함을 확인했다.
+- initiative README와 task breakdown을 archive 기준으로 동기화해 I-0022의 실행 상태를 `complete`로 닫을 수 있게 정리했다.
 
 ## 목표
 
@@ -56,15 +64,22 @@ I-0022 implementation task 완료 후 route recovery, query invalidation, UI dec
 ## 노트
 
 - Source of truth: `R8-regression-metrics-and-verification.md`.
-- TDD: 각 implementation task에서 만든 focused tests를 이 task에서 regression bundle로 묶거나 대표 route tests를 추가한다.
-- 이 task는 README roadmap의 implementation set 완료 후 진행하며 추가 funnel tasks를 dependency에 포함하지 않는다.
+- 이 closeout에서는 별도 meta test 파일 대신 task-owned focused suites를 묶어 representative regression bundle로 사용한다.
+- implementation set 전체의 설계 truth는 `docs/initiatives/I-0022-cool-code/README.md`와 R1-R10 detail docs가 유지한다.
 
 ## 셀프 리뷰
 
 - 범위와 의도: I-0022 implementation set의 최종 web regression verification만 다룬다.
 - source of truth: I-0022 R1/R3/R4/R5/R6/R7/R8/R9/R10.
-- 설계 divergence:
+- 설계 divergence: 없음. 남은 dirty change는 docs/protocol closeout과 archived task bookkeeping 뿐이며 implementation residual은 새 follow-up 없이 닫을 수 있다.
 - 검증:
+  - PASS: `pnpm --filter @masters/web exec vitest run src/pages/profile/__tests__/profile-route-query-migration.test.tsx`
+  - PASS: `pnpm --filter @masters/web exec vitest run src/pages/posts/new/__tests__/post-composer-funnel-migration.test.tsx`
+  - PASS: `pnpm --filter @masters/web exec vitest run src/pages/onboarding/__tests__/onboarding-funnel-migration.test.tsx`
+  - PASS: `pnpm lint`
+  - PASS: `pnpm typecheck`
+  - PASS: `VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build`
+  - PASS: `bash scripts/check-active-task-closeout.sh`
 
 ## 리뷰 계획
 
@@ -74,7 +89,7 @@ I-0022 implementation task 완료 후 route recovery, query invalidation, UI dec
 
 ## 핸드오프
 
-- 이 task가 통과하면 I-0022 implementation set의 residual risk와 남은 divergence를 initiative docs 또는 후속 task에 정리한다.
+- I-0022는 이 task archive와 initiative README 동기화 이후 완료로 간주한다.
 
 ## 설계 divergence
 
@@ -83,6 +98,8 @@ I-0022 implementation task 완료 후 route recovery, query invalidation, UI dec
 ## 시도 로그
 
 - 2026-05-07: I-0022 roadmap에서 seed task를 생성했다.
+- 2026-05-08: focused migration suites와 workspace lint/typecheck/build를 묶어 final regression bundle을 재검증했다.
+- 2026-05-08: initiative README task roadmap을 archive status 기준으로 동기화하고 completion summary를 추가했다.
 
 ## 리뷰 노트
 
