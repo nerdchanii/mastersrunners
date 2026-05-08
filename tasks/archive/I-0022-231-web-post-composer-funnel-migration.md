@@ -15,9 +15,9 @@ verify:
   - pnpm --filter @masters/web lint
   - VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build
 artifacts:
-  - docs/initiatives/I-0022-cool-code/README.md
-  - docs/initiatives/I-0022-cool-code/details/R8-regression-metrics-and-verification.md
-  - docs/initiatives/I-0022-cool-code/details/R10-funnel-abstraction-and-history.md
+  - design/initiatives/I-0022-cool-code/README.md
+  - design/initiatives/I-0022-cool-code/details/R8-regression-metrics-and-verification.md
+  - design/initiatives/I-0022-cool-code/details/R10-funnel-abstraction-and-history.md
   - apps/web/src/pages/posts/new/use-post-composer.ts
   - apps/web/src/pages/posts/new
   - apps/web/src/components/ui/funnel.tsx

@@ -14,10 +14,10 @@ verify:
   - pnpm --filter @masters/web lint
   - VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build
 artifacts:
-  - docs/initiatives/I-0022-cool-code/README.md
-  - docs/initiatives/I-0022-cool-code/details/R2-slap-layering-and-route-composition.md
-  - docs/initiatives/I-0022-cool-code/details/R7-profile-tabs-composition-and-profile-query.md
-  - docs/initiatives/I-0022-cool-code/details/R8-regression-metrics-and-verification.md
+  - design/initiatives/I-0022-cool-code/README.md
+  - design/initiatives/I-0022-cool-code/details/R2-slap-layering-and-route-composition.md
+  - design/initiatives/I-0022-cool-code/details/R7-profile-tabs-composition-and-profile-query.md
+  - design/initiatives/I-0022-cool-code/details/R8-regression-metrics-and-verification.md
   - apps/web/src/components/profile/ProfileTabs.tsx
   - apps/web/src/components/profile
 ---

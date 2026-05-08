@@ -10,20 +10,20 @@ execution_status: ready_for_archive
 verification_status: passed
 closeout_blocker:
 verify:
-  - git diff --check -- AGENTS.md docs/initiatives/I-0022-cool-code tasks/archive/I-0022-005-docs-cool-code-expansion.md .agents/skills/initiative-orchestration-contract/SKILL.md .agents/skills/task-orchestration-tdd-lifecycle-contract/SKILL.md .agents/skills/worker-handoff-closeout-contract/SKILL.md .codex/agents
+  - git diff --check -- AGENTS.md design/initiatives/I-0022-cool-code tasks/archive/I-0022-005-docs-cool-code-expansion.md .agents/skills/initiative-orchestration-contract/SKILL.md .agents/skills/task-orchestration-tdd-lifecycle-contract/SKILL.md .agents/skills/worker-handoff-closeout-contract/SKILL.md .codex/agents
 artifacts:
   - AGENTS.md
-  - docs/initiatives/I-0022-cool-code/README.md
-  - docs/initiatives/I-0022-cool-code/analysis-report.md
-  - docs/initiatives/I-0022-cool-code/details/R2-slap-layering-and-route-composition.md
-  - docs/initiatives/I-0022-cool-code/details/R3-query-key-cache-invalidation-matrix.md
-  - docs/initiatives/I-0022-cool-code/details/R4-detail-page-query-migration-contract.md
-  - docs/initiatives/I-0022-cool-code/details/R5-social-interaction-hooks.md
-  - docs/initiatives/I-0022-cool-code/details/R6-crew-board-and-crew-detail-composition.md
-  - docs/initiatives/I-0022-cool-code/details/R7-profile-tabs-composition-and-profile-query.md
-  - docs/initiatives/I-0022-cool-code/details/R8-regression-metrics-and-verification.md
-  - docs/initiatives/I-0022-cool-code/details/R9-router-loader-query-contract.md
-  - docs/initiatives/I-0022-cool-code/details/R10-funnel-abstraction-and-history.md
+  - design/initiatives/I-0022-cool-code/README.md
+  - design/initiatives/I-0022-cool-code/analysis-report.md
+  - design/initiatives/I-0022-cool-code/details/R2-slap-layering-and-route-composition.md
+  - design/initiatives/I-0022-cool-code/details/R3-query-key-cache-invalidation-matrix.md
+  - design/initiatives/I-0022-cool-code/details/R4-detail-page-query-migration-contract.md
+  - design/initiatives/I-0022-cool-code/details/R5-social-interaction-hooks.md
+  - design/initiatives/I-0022-cool-code/details/R6-crew-board-and-crew-detail-composition.md
+  - design/initiatives/I-0022-cool-code/details/R7-profile-tabs-composition-and-profile-query.md
+  - design/initiatives/I-0022-cool-code/details/R8-regression-metrics-and-verification.md
+  - design/initiatives/I-0022-cool-code/details/R9-router-loader-query-contract.md
+  - design/initiatives/I-0022-cool-code/details/R10-funnel-abstraction-and-history.md
   - .agents/skills/initiative-orchestration-contract/SKILL.md
   - .agents/skills/task-orchestration-tdd-lifecycle-contract/SKILL.md
   - .agents/skills/worker-handoff-closeout-contract/SKILL.md
@@ -32,7 +32,7 @@ artifacts:
 
 ## 실제 개선 요약
 
-- `docs/initiatives/I-0022-cool-code/` 아래에 분석 보고서, approved layering, query invalidation, loader/query contract, funnel abstraction, regression strategy를 task 가능한 설계 문서로 확장했다.
+- `design/initiatives/I-0022-cool-code/` 아래에 분석 보고서, approved layering, query invalidation, loader/query contract, funnel abstraction, regression strategy를 task 가능한 설계 문서로 확장했다.
 - `AGENTS.md`에 project-scoped Codex agent/skill protocol 사용 규칙을 추가하고 `.agents/skills/` 및 `.codex/agents/`에 initiative/task orchestration contract와 reviewer 역할 설정을 저장소 소스 오브 트루스로 정리했다.
 - 이후 web implementation task들이 이 문서와 protocol을 근거로 독립적으로 진행될 수 있도록 I-0022의 문서/프로세스 기반을 닫았다.
 
@@ -55,10 +55,10 @@ I-0022 Cool Code initiative를 Event/Challenge/Comment 중심 진단에서 broad
 ## 셀프 리뷰
 
 - 범위와 의도: docs and repo-scoped orchestration protocol expansion only.
-- source of truth: `docs/initiatives/I-0022-cool-code/*`.
+- source of truth: `design/initiatives/I-0022-cool-code/*`.
 - 설계 divergence: 코드 divergence는 analysis report와 details에 follow-up 대상 risk로 기록했다.
 - 검증:
-  - `git diff --check -- AGENTS.md docs/initiatives/I-0022-cool-code tasks/archive/I-0022-005-docs-cool-code-expansion.md .agents/skills/initiative-orchestration-contract/SKILL.md .agents/skills/task-orchestration-tdd-lifecycle-contract/SKILL.md .agents/skills/worker-handoff-closeout-contract/SKILL.md .codex/agents`
+  - `git diff --check -- AGENTS.md design/initiatives/I-0022-cool-code tasks/archive/I-0022-005-docs-cool-code-expansion.md .agents/skills/initiative-orchestration-contract/SKILL.md .agents/skills/task-orchestration-tdd-lifecycle-contract/SKILL.md .agents/skills/worker-handoff-closeout-contract/SKILL.md .codex/agents`
 
 ## 리뷰 계획
 

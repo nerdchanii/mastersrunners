@@ -14,10 +14,10 @@ verify:
   - pnpm --filter @masters/web lint
   - VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build
 artifacts:
-  - docs/initiatives/I-0022-cool-code/README.md
-  - docs/initiatives/I-0022-cool-code/details/R3-query-key-cache-invalidation-matrix.md
-  - docs/initiatives/I-0022-cool-code/details/R8-regression-metrics-and-verification.md
-  - docs/initiatives/I-0022-cool-code/details/R9-router-loader-query-contract.md
+  - design/initiatives/I-0022-cool-code/README.md
+  - design/initiatives/I-0022-cool-code/details/R3-query-key-cache-invalidation-matrix.md
+  - design/initiatives/I-0022-cool-code/details/R8-regression-metrics-and-verification.md
+  - design/initiatives/I-0022-cool-code/details/R9-router-loader-query-contract.md
   - apps/web/src/router.tsx
   - apps/web/src/router-loaders.ts
   - apps/web/src/router-loader-query-contract.test.tsx

@@ -15,10 +15,10 @@ verify:
   - pnpm --filter @masters/web lint
   - pnpm --filter @masters/web build
 artifacts:
-  - docs/initiatives/I-0022-cool-code/README.md
-  - docs/initiatives/I-0022-cool-code/details/R3-query-key-cache-invalidation-matrix.md
-  - docs/initiatives/I-0022-cool-code/details/R5-social-interaction-hooks.md
-  - docs/initiatives/I-0022-cool-code/details/R8-regression-metrics-and-verification.md
+  - design/initiatives/I-0022-cool-code/README.md
+  - design/initiatives/I-0022-cool-code/details/R3-query-key-cache-invalidation-matrix.md
+  - design/initiatives/I-0022-cool-code/details/R5-social-interaction-hooks.md
+  - design/initiatives/I-0022-cool-code/details/R8-regression-metrics-and-verification.md
   - apps/web/src/components/social/CommentList.tsx
   - apps/web/src/hooks
 ---

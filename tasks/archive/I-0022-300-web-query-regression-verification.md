@@ -30,16 +30,16 @@ verify:
   - pnpm typecheck
   - VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build
 artifacts:
-  - docs/initiatives/I-0022-cool-code/README.md
-  - docs/initiatives/I-0022-cool-code/details/R1-query-error-recovery.md
-  - docs/initiatives/I-0022-cool-code/details/R3-query-key-cache-invalidation-matrix.md
-  - docs/initiatives/I-0022-cool-code/details/R4-detail-page-query-migration-contract.md
-  - docs/initiatives/I-0022-cool-code/details/R5-social-interaction-hooks.md
-  - docs/initiatives/I-0022-cool-code/details/R6-crew-board-and-crew-detail-composition.md
-  - docs/initiatives/I-0022-cool-code/details/R7-profile-tabs-composition-and-profile-query.md
-  - docs/initiatives/I-0022-cool-code/details/R8-regression-metrics-and-verification.md
-  - docs/initiatives/I-0022-cool-code/details/R9-router-loader-query-contract.md
-  - docs/initiatives/I-0022-cool-code/details/R10-funnel-abstraction-and-history.md
+  - design/initiatives/I-0022-cool-code/README.md
+  - design/initiatives/I-0022-cool-code/details/R1-query-error-recovery.md
+  - design/initiatives/I-0022-cool-code/details/R3-query-key-cache-invalidation-matrix.md
+  - design/initiatives/I-0022-cool-code/details/R4-detail-page-query-migration-contract.md
+  - design/initiatives/I-0022-cool-code/details/R5-social-interaction-hooks.md
+  - design/initiatives/I-0022-cool-code/details/R6-crew-board-and-crew-detail-composition.md
+  - design/initiatives/I-0022-cool-code/details/R7-profile-tabs-composition-and-profile-query.md
+  - design/initiatives/I-0022-cool-code/details/R8-regression-metrics-and-verification.md
+  - design/initiatives/I-0022-cool-code/details/R9-router-loader-query-contract.md
+  - design/initiatives/I-0022-cool-code/details/R10-funnel-abstraction-and-history.md
   - apps/web/src
 ---
 
@@ -65,7 +65,7 @@ I-0022 implementation task 완료 후 route recovery, query invalidation, UI dec
 
 - Source of truth: `R8-regression-metrics-and-verification.md`.
 - 이 closeout에서는 별도 meta test 파일 대신 task-owned focused suites를 묶어 representative regression bundle로 사용한다.
-- implementation set 전체의 설계 truth는 `docs/initiatives/I-0022-cool-code/README.md`와 R1-R10 detail docs가 유지한다.
+- implementation set 전체의 설계 truth는 `design/initiatives/I-0022-cool-code/README.md`와 R1-R10 detail docs가 유지한다.
 
 ## 셀프 리뷰
 

@@ -16,11 +16,11 @@ verify:
   - pnpm --filter @masters/web lint
   - pnpm --filter @masters/web build
 artifacts:
-  - docs/initiatives/I-0022-cool-code/README.md
-  - docs/initiatives/I-0022-cool-code/details/R1-query-error-recovery.md
-  - docs/initiatives/I-0022-cool-code/details/R3-query-key-cache-invalidation-matrix.md
-  - docs/initiatives/I-0022-cool-code/details/R4-detail-page-query-migration-contract.md
-  - docs/initiatives/I-0022-cool-code/details/R8-regression-metrics-and-verification.md
+  - design/initiatives/I-0022-cool-code/README.md
+  - design/initiatives/I-0022-cool-code/details/R1-query-error-recovery.md
+  - design/initiatives/I-0022-cool-code/details/R3-query-key-cache-invalidation-matrix.md
+  - design/initiatives/I-0022-cool-code/details/R4-detail-page-query-migration-contract.md
+  - design/initiatives/I-0022-cool-code/details/R8-regression-metrics-and-verification.md
   - apps/web/src/pages/challenges/[id]/useChallengeDetailPage.ts
   - apps/web/src/hooks
 ---
