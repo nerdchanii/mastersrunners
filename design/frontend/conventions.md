@@ -30,6 +30,19 @@ sources:
 - 공용 도메인 훅은 `apps/web/src/hooks/` 아래에 둔다.
 - 하나의 파일 안에 쿼리 오케스트레이션, mutation 부수효과, 모달 상태, 무거운 JSX 레이아웃을 한꺼번에 섞지 않는다.
 
+## Route-Critical Query Recovery
+
+- route-critical 서버 데이터는 router loader와 TanStack Query cache를 같은 계약으로 다룬다.
+- route-critical surface는 `queryOptions()` factory를 source of truth로 두고, loader는 `queryClient.ensureQueryData(queryOptions)`로 prefetch만 수행한다.
+- route component는 loader 반환값을 두 번째 캐시처럼 붙잡지 말고 같은 `queryOptions`를 `useQuery` 또는 `useSuspenseQuery`로 읽는다.
+- router loader에서 direct `api.fetch`를 새로 추가하지 않는다. direct fetch가 필요한 경우는 route-critical query contract 밖의 예외로 남기고 task에서 설명한다.
+- route entry에서 initial route-critical query를 `if (isLoading) return ...` 또는 `if (error) return ...` early return으로 직접 소유하지 않는다. 그 단계의 loading/error recovery는 boundary와 suspense scope로 올린다.
+- 위 규칙은 route-critical initial data에만 적용한다. auxiliary section, tab, widget, background refetch는 inline loading/error, smaller boundary, non-blocking refresh indicator를 사용할 수 있다.
+- `Suspense`를 무조건 page 최상단으로 올리지 않는다. unrelated query가 같은 fallback/error UI로 묶이지 않도록 route-critical data 묶음이나 section 단위로 경계를 둔다.
+- `ErrorBoundary`는 중첩을 허용하며, recovery scope가 다른 section은 page 내부에서 더 작은 boundary로 분리한다.
+- blanket `throwOnError`, blanket `useSuspenseQuery`, blanket page-level fallback으로 모든 query를 같은 loading/error 정책에 묶지 않는다.
+- route entry는 data ownership을 가진 container로 두고, immediate view/composite에는 props 전달을 기본값으로 삼는다. 다수 sibling section이 같은 route-local data/action을 공유할 때만 작은 route-scoped context를 고려한다.
+
 ## UI 구성
 
 - 재사용 가능한 UI는 `components/`에 둔다.
