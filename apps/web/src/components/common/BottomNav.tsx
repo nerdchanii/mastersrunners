@@ -14,6 +14,11 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import {
+  MOBILE_SHELL_FEEDBACK_BOTTOM_OFFSET_CLASS_NAME,
+  MOBILE_SHELL_SAFE_AREA_PADDING_CLASS_NAME,
+  shouldShowBottomNav,
+} from "@/components/layout/mobile-shell";
+import {
   Sheet,
   SheetClose,
   SheetContent,
@@ -100,9 +105,8 @@ export function BottomNav({ initialCreateSheetOpen = false }: BottomNavProps) {
   const visibleItems = mobileNavItems.filter(
     (item) => (!item.auth || isAuthenticated) && (!item.feature || config.features[item.feature]),
   );
-  const hideOnMobileChatRoute = pathname.startsWith("/messages");
 
-  if (hideOnMobileChatRoute) {
+  if (!shouldShowBottomNav(pathname)) {
     return null;
   }
 
@@ -113,7 +117,12 @@ export function BottomNav({ initialCreateSheetOpen = false }: BottomNavProps) {
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-lg md:hidden">
         {isAuthenticated ? (
-          <div className="grid h-16 grid-cols-7 items-center gap-1 px-2 pb-[env(safe-area-inset-bottom)]">
+          <div
+            className={cn(
+              "grid h-16 grid-cols-7 items-center gap-1 px-2",
+              MOBILE_SHELL_SAFE_AREA_PADDING_CLASS_NAME,
+            )}
+          >
             {leftItems.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
               const Icon = item.icon;
@@ -223,7 +232,12 @@ export function BottomNav({ initialCreateSheetOpen = false }: BottomNavProps) {
             })}
           </div>
         ) : (
-          <div className="flex h-14 items-center justify-around px-2 pb-[env(safe-area-inset-bottom)]">
+          <div
+            className={cn(
+              "flex h-14 items-center justify-around px-2",
+              MOBILE_SHELL_SAFE_AREA_PADDING_CLASS_NAME,
+            )}
+          >
             {visibleItems.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
               const Icon = item.icon;
@@ -258,7 +272,8 @@ export function BottomNav({ initialCreateSheetOpen = false }: BottomNavProps) {
           to="/feedback"
           state={{ sourcePath: pathname }}
           className={cn(
-            "fixed bottom-20 left-4 z-50 inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background/95 px-3 py-2 text-xs font-medium text-foreground shadow-sm backdrop-blur-lg",
+            "fixed left-4 z-50 inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background/95 px-3 py-2 text-xs font-medium text-foreground shadow-sm backdrop-blur-lg",
+            MOBILE_SHELL_FEEDBACK_BOTTOM_OFFSET_CLASS_NAME,
             "transition-colors hover:bg-accent md:hidden",
           )}
           aria-label="피드백 보내기"

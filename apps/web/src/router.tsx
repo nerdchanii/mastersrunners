@@ -15,8 +15,11 @@ import { BottomNav } from "@/components/common/BottomNav";
 import { ErrorBoundary, ErrorFallback } from "@/components/common/ErrorBoundary";
 import { FeatureRoute } from "@/components/common/FeatureRoute";
 import { LoadingPage } from "@/components/common/LoadingPage";
-import { isCrewHubSurfacePath } from "@/components/crew/crew-hub-routes";
 import Header from "@/components/layout/Header";
+import {
+  MOBILE_SHELL_TOKENS_CLASS_NAME,
+  resolveMobileRouteShell,
+} from "@/components/layout/mobile-shell";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import AuthCallbackPage from "@/pages/auth/callback";
@@ -188,35 +191,42 @@ export function RouteQueryRecoveryBoundary({
 
 function MainLayout() {
   const location = useLocation();
-  const isChatRoute = location.pathname.startsWith("/messages");
-  const isViewportLockedRoute = location.pathname === "/crews/new";
-  const isCrewDetailRoute = isCrewHubSurfacePath(location.pathname);
+  const routeShell = resolveMobileRouteShell(location.pathname);
+  const isMessagesRoute = location.pathname.startsWith("/messages");
   const crewHubBoundaryKey = location.pathname.match(/^\/crews\/[^/]+/)?.[0];
   const errorBoundaryKey =
-    isCrewDetailRoute && crewHubBoundaryKey ? crewHubBoundaryKey : location.key;
-  const isProfileSurfaceRoute =
-    location.pathname === "/profile" || /^\/profile\/[^/]+$/.test(location.pathname);
+    routeShell.category === "wide-surface" && location.pathname.startsWith("/crews/")
+      ? (crewHubBoundaryKey ?? location.key)
+      : location.key;
 
   return (
     <div
+      data-mobile-layout={routeShell.category}
+      data-mobile-width={routeShell.width}
       className={cn(
         "bg-background",
-        isViewportLockedRoute ? "h-svh overflow-hidden" : "min-h-screen",
+        MOBILE_SHELL_TOKENS_CLASS_NAME,
+        routeShell.category === "full-height" ? "h-svh overflow-hidden" : "min-h-screen",
       )}
     >
       <Header />
       <main
+        data-mobile-layout={routeShell.category}
+        data-mobile-width={routeShell.width}
         className={cn(
-          isChatRoute ? "h-svh md:h-[calc(100svh-3.5rem)] md:px-0 md:py-0" : undefined,
-          !isChatRoute && !isViewportLockedRoute ? "mx-auto max-w-5xl" : undefined,
-          !isChatRoute &&
-            (isViewportLockedRoute
-              ? "flex h-[calc(100svh-4rem)] w-full max-w-none overflow-hidden px-0 py-0 pb-0 md:h-[calc(100svh-3.5rem)]"
-              : isCrewDetailRoute
-                ? "px-0 py-0 pb-20 md:pb-0"
-                : isProfileSurfaceRoute
-                  ? "px-0 py-0 pb-20 md:pb-6"
-                  : "px-4 py-4 pb-20 md:py-6 md:pb-6"),
+          routeShell.category !== "full-height" ? "mx-auto max-w-5xl" : undefined,
+          routeShell.category === "full-height" && isMessagesRoute
+            ? "h-svh md:h-[calc(100svh-3.5rem)] md:px-0 md:py-0"
+            : undefined,
+          routeShell.category === "full-height" && !isMessagesRoute
+            ? "flex h-[calc(100svh-4rem)] w-full max-w-none overflow-hidden px-0 py-0 pb-0 md:h-[calc(100svh-3.5rem)]"
+            : undefined,
+          routeShell.category === "wide-surface"
+            ? "px-0 py-0 pb-[var(--mobile-shell-bottom-inset)] md:pb-0"
+            : undefined,
+          routeShell.category === "contained" || routeShell.category === "feed-exception"
+            ? "px-4 py-4 pb-[var(--mobile-shell-bottom-inset)] md:py-6 md:pb-6"
+            : undefined,
         )}
       >
         <Suspense fallback={<LoadingPage />}>

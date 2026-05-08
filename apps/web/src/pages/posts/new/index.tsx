@@ -1,6 +1,10 @@
 import { ChevronLeft, Eye, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import {
+  MOBILE_SHELL_STICKY_BOTTOM_OFFSET_CLASS_NAME,
+  MOBILE_SHELL_STICKY_PAGE_INSET_CLASS_NAME,
+} from "@/components/layout/mobile-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useWorkouts } from "@/hooks/useWorkouts";
@@ -99,7 +103,7 @@ export default function NewPostPage() {
   })();
 
   return (
-    <div className="mx-auto max-w-xl pb-32">
+    <div className={cn("mx-auto max-w-xl", MOBILE_SHELL_STICKY_PAGE_INSET_CLASS_NAME)}>
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-4">
           <Button type="button" variant="ghost" size="icon" onClick={goBack}>
@@ -180,7 +184,13 @@ export default function NewPostPage() {
         />
       )}
 
-      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-20 mt-6 rounded-3xl border border-border/60 bg-background/95 p-3 shadow-lg backdrop-blur md:bottom-4">
+      <div
+        className={cn(
+          "sticky z-20 mt-6 rounded-3xl border border-border/60 bg-background/95 p-3 shadow-lg backdrop-blur",
+          MOBILE_SHELL_STICKY_BOTTOM_OFFSET_CLASS_NAME,
+          "md:bottom-4",
+        )}
+      >
         <div className="flex gap-3">
           {secondaryAction && (
             <Button

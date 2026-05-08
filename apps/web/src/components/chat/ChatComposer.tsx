@@ -1,6 +1,7 @@
 import { Send } from "lucide-react";
 import { useEffect, useRef } from "react";
 
+import { MOBILE_SHELL_FULL_HEIGHT_INSET_CLASS_NAME } from "@/components/layout/mobile-shell";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -47,7 +48,8 @@ export function ChatComposer({
   return (
     <div
       className={cn(
-        "sticky bottom-0 shrink-0 bg-background/98 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:px-4",
+        "sticky bottom-0 shrink-0 bg-background/98 px-3 pt-2 backdrop-blur-sm sm:px-4",
+        MOBILE_SHELL_FULL_HEIGHT_INSET_CLASS_NAME,
         className,
       )}
     >

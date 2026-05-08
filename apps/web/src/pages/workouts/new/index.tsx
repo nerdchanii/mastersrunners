@@ -14,6 +14,10 @@ import {
 import { Link } from "react-router-dom";
 
 import { PageHeader } from "@/components/common/PageHeader";
+import {
+  MOBILE_SHELL_STICKY_BOTTOM_OFFSET_CLASS_NAME,
+  MOBILE_SHELL_STICKY_PAGE_INSET_CLASS_NAME,
+} from "@/components/layout/mobile-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -63,7 +67,7 @@ export default function NewWorkoutPage() {
   } = useWorkoutEntry();
 
   return (
-    <div className="container max-w-3xl py-6 pb-32">
+    <div className={cn("container max-w-3xl py-6", MOBILE_SHELL_STICKY_PAGE_INSET_CLASS_NAME)}>
       <PageHeader
         title="새 기록 추가"
         description="훈련 파일을 업로드하거나 직접 기록을 입력하세요."
@@ -451,7 +455,13 @@ export default function NewWorkoutPage() {
           </Card>
         )}
 
-        <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-20 rounded-3xl border border-border/60 bg-background/95 p-3 shadow-lg backdrop-blur md:bottom-4">
+        <div
+          className={cn(
+            "sticky z-20 rounded-3xl border border-border/60 bg-background/95 p-3 shadow-lg backdrop-blur",
+            MOBILE_SHELL_STICKY_BOTTOM_OFFSET_CLASS_NAME,
+            "md:bottom-4",
+          )}
+        >
           <div className="flex gap-3">
             <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting}>
               취소

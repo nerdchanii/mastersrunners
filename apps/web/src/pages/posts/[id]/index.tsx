@@ -71,7 +71,7 @@ export default function PostDetailPage() {
 
   if (error || !post) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-6">
+      <div className="mx-auto max-w-2xl">
         <div className="rounded-3xl border border-destructive/40 bg-destructive/5 px-5 py-5">
           <h2 className="mb-2 text-lg font-semibold text-destructive">오류</h2>
           <p className="text-destructive/80">
@@ -110,7 +110,7 @@ export default function PostDetailPage() {
   const commentsCount = post._count?.comments ?? 0;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
+    <div className="mx-auto max-w-2xl">
       <ConfirmDialog
         open={confirmDeleteOpen}
         onOpenChange={setConfirmDeleteOpen}
