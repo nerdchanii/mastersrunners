@@ -36,9 +36,9 @@ Most durable design knowledge still lives in transitional phase plans, `.omc` no
 
 ## Review Plan
 
-- frontend docs: `frontend-reviewer`
-- backend/runtime docs: `backend-reviewer`
-- cross-cutting architecture/doc-boundary changes: `harness-reviewer`
+- frontend docs: frontend review
+- backend/runtime docs: backend review
+- cross-cutting architecture/doc-boundary changes: workflow review
 - PO review checks whether the design corpus reflects the implemented product rather than aspirational future scope
 
 ## Task Breakdown

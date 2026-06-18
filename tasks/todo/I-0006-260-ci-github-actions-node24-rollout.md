@@ -6,9 +6,6 @@ scope: ci
 owner: unassigned
 depends_on: []
 blocked_by: []
-execution_status: in_progress
-verification_status: pending
-closeout_blocker:
 verify:
   - pnpm ci:local
   - gh run view <deploy-run-id> --repo nerdchanii/mastersrunners --json conclusion,status,url
@@ -40,12 +37,11 @@ GitHub Actions의 Node.js 20 action deprecation 경고를 제거하고, 2026-06-
 - source of truth:
 - 설계 divergence:
 - 검증:
-- 리뷰: 필요하면 `harness-reviewer`와 PO 관점으로 opt-in 한다.
+- 리뷰: 필요하면 deploy workflow 안전성과 runtime 전환 리스크를 추가 검토한다.
 
 ## 리뷰 계획
 
-- `harness-reviewer`: deploy workflow action version/runtime 전환이 dev/main lane 모두에 안전하며, GitHub Actions deprecation 경고를 실제로 제거하는지 확인한다.
-- PO 관점: 현재 배포 성공 상태를 흔들지 않으면서 2026-06-02 runtime 전환 리스크를 적절한 시점에 줄이는지 확인한다.
+- 추가 검토 초점: deploy workflow action version/runtime 전환이 dev/main lane 모두에 안전하며, GitHub Actions deprecation 경고를 실제로 제거하는지 확인한다.
 
 ## 핸드오프
 
@@ -58,12 +54,3 @@ GitHub Actions의 Node.js 20 action deprecation 경고를 제거하고, 2026-06-
 ## 시도 로그
 
 - 2026-05-05: Storybook 제거 배포 복구 후 deploy run `25368951269`는 성공했으나 Node.js 20 action deprecation annotation이 남아 후속 task로 등록했다.
-
-## 리뷰 노트
-
-- Optional review:
-  - reviewer:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:

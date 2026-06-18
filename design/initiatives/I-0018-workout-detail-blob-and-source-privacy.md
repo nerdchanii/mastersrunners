@@ -46,9 +46,9 @@
 
 ## 리뷰 계획
 
-- API / DB / storage boundary: `backend-reviewer`
-- Cloudflare / repo / workflow / docs cutover: `harness-reviewer`, `docs-reviewer`
-- 모든 task는 `po-reviewer`가 product contract와 regression risk를 확인한다.
+- API / DB / storage boundary: backend review
+- Cloudflare / repo / workflow / docs cutover: workflow review, docs review
+- 모든 task는 product review가 product contract와 regression risk를 확인한다.
 
 ## 태스크 분해
 

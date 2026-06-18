@@ -80,9 +80,9 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 
 ## Review Plan
 
-- docs intake task: `docs-reviewer`, `frontend-reviewer`, `ui-ux-reviewer`, and `backend-reviewer` check structure, route grounding, messaging truth, and fix-pack framing
-- user-facing web follow-ups: `frontend-reviewer` plus `ui-ux-reviewer`
-- messaging or persistence follow-ups: add `backend-reviewer` when chat storage or realtime behavior changes
+- docs intake task: docs review, frontend review, UI/UX review, and backend review check structure, route grounding, messaging truth, and fix-pack framing
+- user-facing web follow-ups: frontend review plus UI/UX review
+- messaging or persistence follow-ups: add backend review when chat storage or realtime behavior changes
 - PO review checks that the board matches the reported pain and that the next fix packs are ordered by user value instead of implementation convenience
 
 ## Task Breakdown
@@ -170,7 +170,7 @@ Without one shared intake artifact, we risk fixing isolated symptoms, weakening 
 - 2026-04-03: opened `I-0014-320` after Playwright reproduction proved the new public-feed/public-crews flow still had protected API reads and global unauthorized redirects that bounced anonymous visitors into `/login` and broke browser back-navigation.
 - 2026-04-03: archived `I-0014-310` and `I-0014-320` together after the public `/feed` entry shipped, protected participation actions were consistently modal-gated, public route regressions were reproduced and fixed with Playwright coverage, and backend visibility boundaries were re-tightened so only public or properly follower/member-scoped data stays readable.
 - 2026-04-03: opened `I-0014-330` after product rejected the remaining explanatory guest feed chrome and surfaced one more mismatch where attached workout previews on public post detail still redirected anonymous users to `/login` instead of opening the same in-place auth modal used elsewhere.
-- 2026-04-04: normalized `I-0014-330` back to `tasks/todo/` so the repo can honor the new single-active-task Stop-hook rule while leaving the already-landed public guest-feed fix pack as a resumable follow-up instead of a second simultaneous active task.
+- 2026-04-04: normalized `I-0014-330` back to `tasks/todo/` under the then-current single-active-task rule while leaving the already-landed public guest-feed fix pack as a resumable follow-up instead of a second simultaneous active task.
 - 2026-04-04: archived `I-0014-330` after re-verifying the guest feed/content-first surface, confirming anonymous workout preview clicks stay on the public post route with an auth dialog, and recording specialist plus PO review artifacts for closeout.
 - 2026-04-04: opened `I-0014-340` after `/workouts/:id` started crashing on missing workout social counts and the shared error fallback would keep trapping users on the same UI even after the browser URL changed.
 - 2026-04-04: `I-0014-340` restored the workout-detail social summary contract, added navigation escape from the page-scoped error fallback, and unblocked the focused workout API e2e verifier by mapping Prisma runtime `.mjs` imports to the shipped `.js` runtime inside `apps/api/jest-e2e.config.ts`.

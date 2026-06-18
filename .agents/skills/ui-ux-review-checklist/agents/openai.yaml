@@ -1,5 +1,0 @@
-interface:
-  display_name: "UI/UX Review Checklist"
-  short_description: "Review user-facing changes for interaction quality and product tone."
-policy:
-  allow_implicit_invocation: false

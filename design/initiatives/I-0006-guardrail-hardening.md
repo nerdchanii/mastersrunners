@@ -36,8 +36,8 @@ The repository now has lint, CI, and review metadata enforcement, but it still l
 
 ## Review Plan
 
-- harness/CI/tooling work: `harness-reviewer`
-- backend runtime changes: `backend-reviewer`
+- harness/CI/tooling work: workflow review
+- backend runtime changes: backend review
 - PO review checks whether the new gates are proportionate to the risk they prevent
 
 ## Task Breakdown

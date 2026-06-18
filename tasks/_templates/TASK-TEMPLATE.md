@@ -6,9 +6,6 @@ scope: api
 owner: unassigned
 depends_on: []
 blocked_by: []
-execution_status: in_progress
-verification_status: pending
-closeout_blocker:
 verify:
   - pnpm --filter @masters/api test -- --runTestsByPath src/example.spec.ts
 artifacts:
@@ -39,7 +36,7 @@ artifacts:
 
 ## 리뷰 계획
 
-- 필요한 경우 reviewer 역할과 확인할 내용을 기록한다.
+- 필요한 경우 추가 검토가 필요한 초점을 기록한다.
 - 리뷰는 기본 게이트가 아니며 task별 판단으로 opt-in 한다.
 
 ## 핸드오프
@@ -55,12 +52,3 @@ artifacts:
 ## 시도 로그
 
 - YYYY-MM-DD: 시도, 실패, 또는 중요한 선택을 남긴다
-
-## 리뷰 노트
-
-- Optional review:
-  - reviewer:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:

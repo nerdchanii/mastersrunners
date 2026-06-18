@@ -48,10 +48,10 @@ The current messaging surfaces mostly work, but several flows still feel unnatur
 
 ## Review Plan
 
-- `frontend-reviewer` checks route composition, shared socket ownership, and UI behavior
-- `backend-reviewer` checks gateway auth, room fan-out, and DM leave cut-line persistence stay coherent with the current transport contract
-- `ui-ux-reviewer` checks chat identity, copy, empty states, and interaction smoothness
-- `po-reviewer` checks the resulting messaging flow feels natural for community use
+- frontend review checks route composition, shared socket ownership, and UI behavior
+- backend review checks gateway auth, room fan-out, and DM leave cut-line persistence stay coherent with the current transport contract
+- UI/UX review checks chat identity, copy, empty states, and interaction smoothness
+- product review checks the resulting messaging flow feels natural for community use
 
 ## Task Breakdown
 

@@ -45,10 +45,10 @@ The repo currently hides or exposes product and auth surfaces through a mix of r
 
 ## Review Plan
 
-- API/runtime config and auth gate behavior: `backend-reviewer`
-- web route/nav gating and login surface behavior: `frontend-reviewer`
-- user-facing visibility and launch-surface coherence: `ui-ux-reviewer`
-- repo truth, deploy/env contract, and task-state hygiene: `harness-reviewer`
+- API/runtime config and auth gate behavior: backend review
+- web route/nav gating and login surface behavior: frontend review
+- user-facing visibility and launch-surface coherence: UI/UX review
+- repo truth, deploy/env contract, and task-state hygiene: workflow review
 - PO review checks whether the public launch surface matches the intended crews/social/workout-first rollout
 
 ## Task Breakdown

@@ -1,5 +1,0 @@
-interface:
-  display_name: "Backend Review Checklist"
-  short_description: "Review API and data changes for contract and integrity safety."
-policy:
-  allow_implicit_invocation: false

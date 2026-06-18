@@ -35,8 +35,8 @@
 
 ## Review Plan
 
-- `frontend-reviewer`: route-critical boundary wording과 route/page ownership이 `I-0022` 설계와 맞는지 확인
-- `harness-reviewer`: audit/task decomposition이 repo task workflow와 충돌하지 않는지 확인
+- frontend review: route-critical boundary wording과 route/page ownership이 `I-0022` 설계와 맞는지 확인
+- workflow review: audit/task decomposition이 repo task workflow와 충돌하지 않는지 확인
 
 ## Task Breakdown
 

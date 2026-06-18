@@ -66,9 +66,9 @@ Required handling:
 - The original task stays archived as the record of what landed.
 - The correction gets its own task, review notes, and verification evidence.
 - Review routing follows the recovery scope.
-  - repo/meta correction: `harness-reviewer` + `po-reviewer`
-  - user-facing web correction: `frontend-reviewer` + `ui-ux-reviewer` + `po-reviewer`
-  - API or DB correction: `backend-reviewer` + `po-reviewer`
+  - repo/meta correction: workflow review + product review
+  - user-facing web correction: frontend review + UI/UX review + product review
+  - API or DB correction: backend review + product review
 
 ## Commit Examples
 
@@ -80,7 +80,7 @@ fix(web): recover guest crew navigation after public-entry rollout
 Task: I-0014-320
 Initiative: I-0014
 Fixes: 5f5adea
-Reviewers: frontend-reviewer, backend-reviewer, ui-ux-reviewer, po-reviewer
+Review: frontend, backend, UI/UX, and product risk checked
 Verify: pnpm ci:local
 ```
 
@@ -93,6 +93,6 @@ Task: I-0014-330
 Initiative: I-0014
 Reverts: a1b2c3d
 Reason: workout detail requests return 500 in dev after deploy
-Reviewers: backend-reviewer, po-reviewer
+Review: backend and product risk checked
 Verify: pnpm ci:local
 ```

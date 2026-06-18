@@ -41,9 +41,9 @@ The repository currently documents generic PostgreSQL deployment assumptions, bu
 
 ## Review Plan
 
-- DB/runtime contract work: `backend-reviewer`
-- deploy workflow and task-state work: `harness-reviewer`
-- doc clarity and source-of-truth sync: `docs-reviewer`
+- DB/runtime contract work: backend review
+- deploy workflow and task-state work: workflow review
+- doc clarity and source-of-truth sync: docs review
 - PO review checks whether the rollout reduces setup pain without hiding free-plan uptime risk
 
 ## Task Breakdown

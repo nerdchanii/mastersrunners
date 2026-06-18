@@ -36,8 +36,8 @@ Dependabot can open multiple small platform updates plus a large dependency batc
 
 ## Review Plan
 
-- repository/dependency workflow work: `harness-reviewer`
-- package/runtime dependency contract changes: `backend-reviewer` when API dependency metadata changes
+- repository/dependency workflow work: workflow review
+- package/runtime dependency contract changes: backend review when API dependency metadata changes
 - PO review checks that only green, low-risk updates are merged and that failed checks are not bypassed
 
 ## Task Breakdown

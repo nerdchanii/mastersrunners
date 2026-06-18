@@ -18,7 +18,7 @@ tasks/
 - Do not duplicate task status inside file metadata.
 - One Markdown file equals one executable task.
 - A task should usually have one clear scope such as `api`, `web`, `db`, `docs`, `ci`, or `meta`.
-- Review is optional and task-specific. When needed, record requested reviewer roles and focus in the task body.
+- Review is optional and task-specific. When needed, record the requested focus in the task body.
 - If a task discovers design divergence it cannot close, it must create a follow-up task instead of weakening design/docs.
 - Initiative grouping is handled by the task filename prefix and the matching initiative document's `Task Breakdown`, not by per-initiative directories.
 
@@ -60,7 +60,7 @@ I-0002-010-meta-eslint-repair.md
 ## Parallel Work Rule
 
 - If the current worktree already contains unrelated dirty changes, do not build new parallel work on top of it.
-- Create a dedicated git worktree for each parallel task and integrate reviewed commits back by merge or cherry-pick.
+- Create a dedicated git worktree for each parallel task and integrate validated task-owned commits back by merge or cherry-pick.
 - Preserve explicit task history during integration.
 
 ## Templates
@@ -71,5 +71,3 @@ I-0002-010-meta-eslint-repair.md
 
 - `docs/guides/agent-self-review.md`
 - `docs/guides/parallel-worktree-workflow.md`
-- `docs/guides/reviewer-taxonomy.md`
-- `docs/guides/review-harness.md`

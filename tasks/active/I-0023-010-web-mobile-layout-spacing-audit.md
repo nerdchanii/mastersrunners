@@ -6,11 +6,7 @@ scope: web
 owner: codex
 depends_on: []
 blocked_by: []
-execution_status: in_progress
-verification_status: pending
-closeout_blocker:
-verify:
-  - bash scripts/check-active-task-closeout.sh
+verify: []
 artifacts:
   - design/initiatives/I-0023-mobile-layout-spacing-system/README.md
   - design/initiatives/I-0023-mobile-layout-spacing-system/analysis/README.md

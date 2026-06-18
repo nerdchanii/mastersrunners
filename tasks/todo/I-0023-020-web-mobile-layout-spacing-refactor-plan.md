@@ -7,11 +7,7 @@ owner: unassigned
 depends_on:
   - I-0023-010
 blocked_by: []
-execution_status: in_progress
-verification_status: pending
-closeout_blocker:
-verify:
-  - bash scripts/check-active-task-closeout.sh
+verify: []
 artifacts:
   - design/initiatives/I-0023-mobile-layout-spacing-system/analysis/README.md
 ---

@@ -7,9 +7,6 @@ owner: unassigned
 depends_on:
   - tasks/archive/I-0018-030-api-workout-detail-read-cutover.md
 blocked_by: []
-execution_status: in_progress
-verification_status: pending
-closeout_blocker:
 verify:
   - pnpm --filter @masters/api test -- --runTestsByPath src/uploads/uploads.service.spec.ts
   - pnpm format:check
@@ -44,12 +41,11 @@ Cloudflare R2의 public asset / private workout storage 경계를 실제 외부 
 - source of truth:
 - 설계 divergence:
 - 검증:
-- 리뷰: 필요하면 `backend-reviewer`, `harness-reviewer`, `docs-reviewer`, PO 관점으로 opt-in 한다.
+- 리뷰: 필요하면 storage cutover, backfill safety, script/runbook 정합성, privacy/운영 tradeoff를 추가 검토한다.
 
 ## 리뷰 계획
 
-- `backend-reviewer`, `harness-reviewer`, `docs-reviewer`: storage cutover, backfill safety, script/runbook 정합성을 본다.
-- PO 관점: privacy 강화와 운영 복잡도 tradeoff가 납득 가능한지 본다.
+- 추가 검토 초점: storage cutover, backfill safety, script/runbook 정합성, privacy 강화와 운영 복잡도 tradeoff.
 
 ## 핸드오프
 
@@ -62,12 +58,3 @@ Cloudflare R2의 public asset / private workout storage 경계를 실제 외부 
 ## 시도 로그
 
 - 2026-04-22: task 생성.
-
-## 리뷰 노트
-
-- Optional review:
-  - reviewer:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:

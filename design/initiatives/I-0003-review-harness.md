@@ -2,7 +2,7 @@
 
 ## Summary
 
-This initiative is now historical. The repository no longer operates a PR-specific harness, AI review lane, merge-readiness state machine, mandatory task review gate, or Codex Stop-hook review automation. The PR-specific surfaces that once lived under `I-0003` were retired by `I-0003-210`; the mandatory task review gate was retired by `I-0003-220`.
+This initiative is now historical. The repository no longer operates a PR-specific harness, AI review lane, merge-readiness state machine, mandatory task review gate, or Codex session-end review automation. The PR-specific surfaces that once lived under `I-0003` were retired by `I-0003-210`; the mandatory task review gate was retired by `I-0003-220`.
 
 ## Problem
 
@@ -16,7 +16,7 @@ The earlier PR lane added a second workflow truth on top of the task-centric har
 
 ## Non-Goals
 
-- removing reviewer protocol reference files
+- removing historical review evidence
 - removing mechanical verification gates such as lint, format, typecheck, build, and test
 - redefining the repo-native task/supervisor/intake semantics already documented in the live runbooks
 - treating pull requests as canonical execution truth
@@ -24,18 +24,16 @@ The earlier PR lane added a second workflow truth on top of the task-centric har
 ## Scope
 
 - `AGENTS.md`
-- `docs/guides/review-harness.md`
 - `tasks/I-0003-review-harness/`
 
 ## Design References
 
 - `AGENTS.md`
-- `docs/guides/review-harness.md`
+- `AGENTS.md`
 
 ## Review Plan
 
-- Harness and process changes may request `harness-reviewer` when independent advice would reduce risk.
-- PO review is optional and useful when workflow changes affect product delivery expectations.
+- Workflow changes may request an additional reader when independent advice would reduce risk.
 
 ## Task Breakdown
 
@@ -54,5 +52,5 @@ The earlier PR lane added a second workflow truth on top of the task-centric har
 
 - `I-0003-010` through `I-0003-160` remain as historical evidence of the earlier PR-specific harness work.
 - On 2026-03-24, the repository retired the live PR lane and archived the remaining open `I-0003` tasks as superseded by `I-0003-210`.
-- On 2026-05-06, `I-0003-220` disabled Codex Stop-hook review automation and removed review-only checks from CI/local CI while preserving reviewer protocols as optional advisory references.
+- On 2026-05-06, `I-0003-220` disabled Codex session-end review automation and removed review-only checks from CI/local CI while preserving review evidences as optional advisory references.
 - Further workflow changes should keep tasks as execution truth and avoid rebuilding mandatory PR or review control surfaces under `I-0003`.

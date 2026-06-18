@@ -8,9 +8,6 @@ depends_on:
   - tasks/todo/I-0024-010-web-route-critical-query-policy-and-audit.md
   - tasks/todo/I-0024-020-web-workouts-route-critical-query-adoption.md
 blocked_by: []
-execution_status: in_progress
-verification_status: pending
-closeout_blocker:
 verify:
   - rg -n "if \\(isLoading\\)|if \\(error\\)|if \\(isPending\\)|if \\(.*isError.*\\)" apps/web/src/pages -g 'index.tsx'
 artifacts:
@@ -42,7 +39,7 @@ artifacts:
 
 ## 리뷰 계획
 
-- Optional review: `frontend-reviewer`가 follow-up 분류가 `I-0022`와 `I-0024` 설계에 맞는지 확인한다.
+- Optional review: follow-up 분류가 `I-0022`와 `I-0024` 설계에 맞는지 확인한다.
 
 ## 핸드오프
 
@@ -55,12 +52,3 @@ artifacts:
 ## 시도 로그
 
 - 2026-05-09: seed task created so the initiative can track remaining route-critical adoption after the `/workouts` pilot.
-
-## 리뷰 노트
-
-- Optional review:
-  - reviewer:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:

@@ -47,7 +47,6 @@
 - `design/frontend/social-profile.md`
 - `design/frontend/README.md`
 - `docs/runbooks/ui-ux-guardrail-review.md`
-- `docs/guides/review-harness.md`
 - `tasks/_templates/TASK-TEMPLATE.md`
 - `apps/web/src/pages/feed/index.tsx`
 - `apps/web/e2e/public-entry-auth.spec.ts`
@@ -85,9 +84,9 @@
 
 ## 리뷰 계획
 
-- UX 기반 문서와 사용자 가드레일: `frontend-reviewer`, `ui-ux-reviewer`, `docs-reviewer`
-- 레포 자동화와 태스크 템플릿 변경: `harness-reviewer`
-- Storybook은 `I-0020`에서 퇴역했으므로 이후 consumer-web UI 검증은 `frontend-reviewer`, `ui-ux-reviewer`, 필요 시 `harness-reviewer`가 실앱/Playwright/문서 truth 기준으로 본다.
+- UX 기반 문서와 사용자 가드레일: frontend review, UI/UX review, docs review
+- 레포 자동화와 태스크 템플릿 변경: workflow review
+- Storybook은 `I-0020`에서 퇴역했으므로 이후 consumer-web UI 검증은 frontend review, UI/UX review, 필요 시 workflow review가 실앱/Playwright/문서 truth 기준으로 본다.
 - PO 리뷰는 결과물이 마케팅용 셸이 아니라 러너 중심 소셜 제품 방향을 유지하는지 확인한다.
 
 ## 태스크 분해
@@ -145,4 +144,4 @@
 - 2026-04-08: 같은 push 단계에서 knip가 Storybook wiring을 false positive로 잡아, Storybook baseline 예외를 `I-0016-160` follow-up으로 분리했다.
 - 2026-04-11: crew 참여/허브 작업을 진행하면서 아이콘 버튼, 라운드 값, 액션 래퍼가 여러 화면에서 제각각 다시 생길 수 있다는 문제가 드러나 `I-0016-170`으로 디자인 시스템 프리미티브를 더 작은 재사용 단위로 묶는 후속 정비를 추가했다. 우선순위는 `icon button`, 공통 `pill/tag` 스타일, 그리고 crew/workout/messages에 흩어진 primitive wrapper를 버튼/태그 컴포넌트로 흡수하는 것이다.
 - 2026-05-04: `I-0016-128`에서 크루 허브를 path 기반 탭으로 정리하면서 운영진 전용 가입대기를 `/crews/:id/pending` 1차 탭으로 분리했다.
-- 2026-05-05: Storybook이 UI 관리 부담을 줄이지 못하고 별도 관리면을 늘린다는 판단에 따라 `I-0020`에서 Storybook runtime, stories, fixture, guardrail 예외를 퇴역시키기로 했다. 이후 UI 검증 truth는 실앱, Playwright, current design docs, reviewer protocol이다.
+- 2026-05-05: Storybook이 UI 관리 부담을 줄이지 못하고 별도 관리면을 늘린다는 판단에 따라 `I-0020`에서 Storybook runtime, stories, fixture, guardrail 예외를 퇴역시키기로 했다. 이후 UI 검증 truth는 실앱, Playwright, current design docs다.

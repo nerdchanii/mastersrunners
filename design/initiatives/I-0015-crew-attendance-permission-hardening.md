@@ -42,10 +42,10 @@ The current crew activity flow lets RSVP members trigger the manual `/check-in` 
 
 ## Review Plan
 
-- `frontend-reviewer` checks member/operator entry-point separation on the activity detail route
-- `ui-ux-reviewer` checks the RSVP-member check-in CTA is still understandable after the manual action is removed
-- `backend-reviewer` checks the API permission guard matches the frontend behavior
-- `po-reviewer` checks the shipped rule matches the intended crew-operations policy
+- frontend review checks member/operator entry-point separation on the activity detail route
+- UI/UX review checks the RSVP-member check-in CTA is still understandable after the manual action is removed
+- backend review checks the API permission guard matches the frontend behavior
+- product review checks the shipped rule matches the intended crew-operations policy
 
 ## Task Breakdown
 

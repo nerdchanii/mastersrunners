@@ -8,9 +8,6 @@ depends_on:
   - tasks/todo/I-0018-040-repo-cloudflare-workout-private-storage-backfill.md
   - tasks/archive/I-0018-060-db-deploy-migration-backfill-compat.md
 blocked_by: []
-execution_status: in_progress
-verification_status: pending
-closeout_blocker:
 verify:
   - pnpm --filter @masters/database db:generate
   - pnpm --filter @masters/api test -- --runTestsByPath src/workouts/workouts.service.spec.ts src/uploads/uploads.service.spec.ts
@@ -42,12 +39,11 @@ artifacts:
 - source of truth:
 - 설계 divergence:
 - 검증:
-- 리뷰: 필요하면 `backend-reviewer`, `harness-reviewer`, `docs-reviewer`, PO 관점으로 opt-in 한다.
+- 리뷰: 필요하면 backfill proof, data-loss guard, migration order, deploy safety, 운영 리스크를 추가 검토한다.
 
 ## 리뷰 계획
 
-- `backend-reviewer`, `harness-reviewer`, `docs-reviewer`: backfill proof, data-loss guard, migration order, deploy safety.
-- PO 관점: legacy storage retention 종료와 운영 리스크가 납득 가능한지 본다.
+- 추가 검토 초점: backfill proof, data-loss guard, migration order, deploy safety, legacy storage retention 종료 리스크.
 
 ## 핸드오프
 
@@ -60,12 +56,3 @@ artifacts:
 ## 시도 로그
 
 - 2026-05-05: `I-0018-060` deploy compatibility fix 후 후속 cleanup task로 등록.
-
-## 리뷰 노트
-
-- Optional review:
-  - reviewer:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:

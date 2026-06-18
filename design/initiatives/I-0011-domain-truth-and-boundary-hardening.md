@@ -39,14 +39,10 @@ The repository now has a strong design corpus, but several high-value domain doc
 - `design/backend/events-challenges.md`
 - `design/backend/upload-ingestion.md`
 - `tasks/README.md`
-- `docs/guides/review-harness.md`
 
 ## Review Plan
 
-- docs and state-normalization tasks: `docs-reviewer` plus `harness-reviewer` or `backend-reviewer` as needed
-- frontend boundary work: `frontend-reviewer` plus `refactor-reviewer` and `harness-reviewer` where the rule surface changes
-- backend boundary work: `backend-reviewer` plus `architecture-reviewer`, with `harness-reviewer` when rule or logging policy changes
-- PO review checks whether the backlog restores trustworthy current-state docs and turns repeated engineering debt into actionable tasks
+- Optional review should focus on docs clarity, frontend/backend boundary accuracy, and whether the backlog restores trustworthy current-state docs.
 
 ## Task Breakdown
 

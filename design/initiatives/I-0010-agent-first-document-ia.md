@@ -29,7 +29,6 @@ The repository already has useful top-level boundaries, but task navigation, leg
 - `design/`
 - `docs/`
 - `tasks/`
-- `scripts/check-task-review-metadata.sh`
 - `package.json`
 
 ## Design References
@@ -42,9 +41,7 @@ The repository already has useful top-level boundaries, but task navigation, leg
 
 ## Review Plan
 
-- Docs and IA clarity: `docs-reviewer`
-- Harness and task-system invariants: `harness-reviewer`
-- PO review checks whether the new structure lowers navigation cost without weakening truth boundaries
+- Additional review, if requested, should focus on docs clarity and task-system invariants.
 
 ## Task Breakdown
 

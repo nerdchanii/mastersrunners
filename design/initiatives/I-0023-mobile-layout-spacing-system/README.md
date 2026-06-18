@@ -33,8 +33,8 @@
 
 ## Review Plan
 
-- `web` 조사/정리: `frontend-reviewer` (선택)
-- 레이아웃/여백 시스템 설계: `ui-ux-reviewer` (선택)
+- `web` 조사/정리 검토 (선택)
+- 레이아웃/여백 시스템 설계 검토 (선택)
 
 ## Task Breakdown
 

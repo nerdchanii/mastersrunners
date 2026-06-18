@@ -68,9 +68,6 @@ jobs:
       - name: Run explicit typecheck
         run: pnpm typecheck
 
-      - name: Check deterministic active-task closeout state
-        run: bash scripts/check-active-task-closeout.sh
-
       - name: Check dependency boundaries and cycles
         run: pnpm depcruise
 

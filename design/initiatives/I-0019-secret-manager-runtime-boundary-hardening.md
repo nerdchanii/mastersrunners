@@ -35,7 +35,7 @@ The current deploy workflow and bootstrap script still treat JWT TTLs, `R2_PUBLI
 
 ## Review Plan
 
-- Specialist reviewers: `backend-reviewer`, `harness-reviewer`, and `docs-reviewer`
+- Specialist reviewers: backend review, workflow review, and docs review
 - PO review focus: operator clarity, rollout safety, and dev-first scope discipline
 
 ## Task Breakdown

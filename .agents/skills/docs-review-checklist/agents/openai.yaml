@@ -1,5 +1,0 @@
-interface:
-  display_name: "Docs Review Checklist"
-  short_description: "Review docs for clarity, structure, and source-of-truth alignment."
-policy:
-  allow_implicit_invocation: false

@@ -40,9 +40,9 @@ Several high-traffic files are too large and carry too much mixed responsibility
 
 ## Review Plan
 
-- web route refactors: `frontend-reviewer`
-- API service decomposition: `backend-reviewer`
-- user-facing route changes may also need `ui-ux-reviewer`
+- web route refactors: frontend review
+- API service decomposition: backend review
+- user-facing route changes may also need UI/UX review
 - PO review checks that the scope stays constrained to readability hardening and does not sprawl into feature work
 
 ## Task Breakdown

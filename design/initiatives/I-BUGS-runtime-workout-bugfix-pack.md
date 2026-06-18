@@ -44,8 +44,8 @@ Recent workout data issues exposed a few correctness bugs in manual entry normal
 
 ## Review Plan
 
-- web task: `frontend-reviewer`
-- parser tasks: `backend-reviewer`
+- web task: frontend review
+- parser tasks: backend review
 - PO review checks that the fixes resolve observed workout correctness bugs without broadening scope into product redesign
 
 ## Task Breakdown

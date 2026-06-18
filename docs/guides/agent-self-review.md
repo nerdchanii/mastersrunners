@@ -2,7 +2,7 @@
 
 Run this checklist after implementation and before final verification or optional review.
 
-Codex Stop-hook review automation is disabled. The checklist is a quality aid, not a review trigger.
+The checklist is a quality aid, not a review trigger.
 
 ## 1. Scope and Intent
 
@@ -34,11 +34,11 @@ Codex Stop-hook review automation is disabled. The checklist is a quality aid, n
 - Did I check any repo-wide guardrails affected by the change, such as lint, build, or focused tests?
 - If I could not run a required verification step, did I record that explicitly in the task?
 
-## 6. Review Routing
+## 6. Optional Review
 
-- Does this task need opt-in specialist or PO review?
-- If the change affects user-visible flow, would UI/UX review materially reduce risk?
-- If the change affects boundaries, performance, or major refactoring, should I request an additional reviewer role?
+- Does this task need an additional reader before closeout?
+- If the change affects user-visible flow, would another UI pass materially reduce risk?
+- If the change affects boundaries, performance, or major refactoring, should I ask for focused review?
 
 ## 7. Commit Readiness
 
@@ -53,5 +53,5 @@ Capture any important self-review outcome in the task file, especially:
 
 - unresolved divergence
 - verify limitations
-- reasons for opt-in reviewer routing
+- reasons for optional review
 - whether any review was deferred and why

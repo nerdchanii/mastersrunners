@@ -58,11 +58,11 @@ Storybook은 reusable UI와 대표 surface를 빠르게 다듬는 workbench로 �
 
 ## Review Plan
 
-- `frontend-reviewer`: web build/type/lint 영향과 production import 경계 확인
-- `harness-reviewer`: package scripts, lockfile, knip, depcruise, generated artifact rules 확인
-- `docs-reviewer`: current design truth와 runbook에서 Storybook 운영 지시가 제거됐는지 확인
-- `ui-ux-reviewer`: Storybook 제거 후 UX 검증 기준이 실앱/Playwright 중심으로 충분히 명확한지 확인
-- `po-reviewer`: 관리 포인트 축소라는 제품/운영 목표가 달성됐는지 확인
+- frontend review: web build/type/lint 영향과 production import 경계 확인
+- workflow review: package scripts, lockfile, knip, depcruise, generated artifact rules 확인
+- docs review: current design truth와 runbook에서 Storybook 운영 지시가 제거됐는지 확인
+- UI/UX review: Storybook 제거 후 UX 검증 기준이 실앱/Playwright 중심으로 충분히 명확한지 확인
+- product review: 관리 포인트 축소라는 제품/운영 목표가 달성됐는지 확인
 
 ## Task Breakdown
 

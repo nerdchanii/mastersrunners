@@ -5,7 +5,6 @@ last_verified: 2026-03-12
 sources:
   - AGENTS.md
   - git log --oneline -20
-  - docs/guides/review-harness.md
 ---
 
 # Commit Conventions
@@ -24,7 +23,7 @@ Examples:
 - `fix(repo): remove duplicated task file`
 - `refactor(api-crews): split membership and activity orchestration`
 - `docs(frontend): define route composition conventions`
-- `ci(repo): enforce task review metadata`
+- `ci(repo): update workflow guardrails`
 
 ## Allowed Types
 
@@ -73,13 +72,12 @@ Recommended trailers:
 ```text
 Task: I-0007-040
 Initiative: I-0007
-Reviewers: harness-reviewer, po-reviewer
 Verify: bash scripts/check-size-budgets.sh
 ```
 
 ## Commit Cadence
 
-- Prefer one reviewed commit per executable unit of work.
+- Prefer one validated commit per executable unit of work.
 - If a task is too broad to produce a coherent reviewed commit quickly, split the task instead of banking a long-lived hidden diff.
 - Do not push half-finished work to shared history just to create more commits; correction history starts once a bad commit is actually shared.
 
@@ -99,7 +97,7 @@ Use the shortest clear SHA that resolves in the repository. Add a short reason i
 
 ## Correction History
 
-- Before a change is pushed or merged, keep fixing it inside the current task branch until it is ready for reviewed integration.
+- Before a change is pushed or merged, keep fixing it inside the current task branch until it is ready for integration.
 - After a bad commit exists in shared history, do not hide it with force-push, silent replacement, or an unrelated follow-up task.
 - Use a follow-up `fix` commit when the intended change should stay but the implementation needs correction.
 - Use a `revert` commit when the fastest safe path is to roll back to the last known good state.

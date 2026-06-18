@@ -1,5 +1,0 @@
-interface:
-  display_name: "Review Output Contract"
-  short_description: "Standard findings -> decision -> residual risks review format."
-policy:
-  allow_implicit_invocation: false

@@ -7,9 +7,6 @@ owner: unassigned
 depends_on:
   - tasks/todo/I-0024-010-web-route-critical-query-policy-and-audit.md
 blocked_by: []
-execution_status: in_progress
-verification_status: pending
-closeout_blocker:
 verify:
   - pnpm --filter @masters/web exec eslint src/pages/workouts/index.tsx src/hooks/useWorkouts.ts src/router.tsx src/router-loaders.ts
   - VITE_API_URL=http://localhost:4000/api/v1 pnpm --filter @masters/web build
@@ -45,7 +42,7 @@ artifacts:
 
 ## 리뷰 계획
 
-- Optional review: `frontend-reviewer`가 `/workouts` migration이 route-critical vs auxiliary recovery scope를 제대로 나누는지 확인한다.
+- Optional review: `/workouts` migration이 route-critical vs auxiliary recovery scope를 제대로 나누는지 확인한다.
 
 ## 핸드오프
 
@@ -58,12 +55,3 @@ artifacts:
 ## 시도 로그
 
 - 2026-05-09: seed task created from the I-0024 initiative after user requested `/workouts` as the first concrete surface.
-
-## 리뷰 노트
-
-- Optional review:
-  - reviewer:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:

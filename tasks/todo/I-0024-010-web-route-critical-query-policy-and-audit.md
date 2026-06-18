@@ -6,9 +6,6 @@ scope: web
 owner: unassigned
 depends_on: []
 blocked_by: []
-execution_status: in_progress
-verification_status: pending
-closeout_blocker:
 verify:
   - git diff --check -- design/frontend/conventions.md design/initiatives/I-0024-route-critical-query-boundary-adoption.md tasks/todo/I-0024-010-web-route-critical-query-policy-and-audit.md
   - rg -n "if \\(isLoading\\)|if \\(error\\)|if \\(isPending\\)|if \\(.*isError.*\\)" apps/web/src/pages -g 'index.tsx'
@@ -45,7 +42,7 @@ route-critical initial query에 대한 loader/query/boundary 규칙을 문서화
 
 ## 리뷰 계획
 
-- Optional review: `frontend-reviewer`가 route-critical wording, suspense/boundary scope, props-vs-context default를 확인한다.
+- Optional review: route-critical wording, suspense/boundary scope, props-vs-context default를 확인한다.
 
 ## 핸드오프
 
@@ -58,12 +55,3 @@ route-critical initial query에 대한 loader/query/boundary 규칙을 문서화
 ## 시도 로그
 
 - 2026-05-09: user requested the route-critical loading/error boundary rule be added to frontend conventions and tracked as follow-up work rather than being left as ad hoc discussion.
-
-## 리뷰 노트
-
-- Optional review:
-  - reviewer:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:

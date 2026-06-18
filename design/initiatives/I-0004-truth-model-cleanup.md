@@ -41,8 +41,8 @@ The repository has a useful harness shape, but source-of-truth boundaries, excep
 
 ## Review Plan
 
-- Harness/process changes: `harness-reviewer`
-- Human-facing entrypoints and doc boundaries: `docs-reviewer`
+- Harness/process changes: workflow review
+- Human-facing entrypoints and doc boundaries: docs review
 - PO review checks whether the new truth model reduces ambiguity without making routine work heavier than necessary
 
 ## Task Breakdown

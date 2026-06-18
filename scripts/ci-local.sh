@@ -60,8 +60,6 @@ run_step "Check first-wave UX copy guardrails" pnpm check:ux-copy
 
 run_step "Run explicit typecheck" bash scripts/run-typecheck.sh
 
-run_step "Check deterministic active-task closeout state" bash scripts/check-active-task-closeout.sh
-
 run_step "Check dependency boundaries and cycles" pnpm depcruise
 
 run_step "Check dead code baseline" pnpm knip

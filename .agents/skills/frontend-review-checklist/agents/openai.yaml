@@ -1,5 +1,0 @@
-interface:
-  display_name: "Frontend Review Checklist"
-  short_description: "Review web changes for flow integrity and basic accessibility."
-policy:
-  allow_implicit_invocation: false

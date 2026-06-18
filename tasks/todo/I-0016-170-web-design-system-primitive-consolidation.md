@@ -6,9 +6,6 @@ scope: web
 owner: unassigned
 depends_on: []
 blocked_by: []
-execution_status: in_progress
-verification_status: pending
-closeout_blocker:
 verify:
   - pnpm --filter @masters/web lint
 artifacts:
@@ -44,12 +41,11 @@ artifacts:
 - source of truth: `design/initiatives/I-0016-design-system-and-ux-guardrails.md`, `design/frontend/ui-system.md`, `design/frontend/conventions.md`, `design/frontend/visual-system-rules.md`
 - 설계 divergence: 없음.
 - 검증: not run; seed task only.
-- 리뷰: 필요하면 `frontend-reviewer`, `ui-ux-reviewer`, PO 관점으로 opt-in 한다.
+- 리뷰: 필요하면 UI 구조와 사용자 가치 관점에서 추가 검토한다.
 
 ## 리뷰 계획
 
-- `frontend-reviewer`, `ui-ux-reviewer`: 프리미티브 통합 범위가 surface language 재사용 문제에 맞게 잘 잘려 있는지 본다.
-- PO 관점: 후속 task가 UX 일관성 문제를 실제 사용자 가치에 맞게 설명하는지 본다.
+- 추가 검토 초점: 프리미티브 통합 범위가 surface language 재사용 문제에 맞게 잘 잘려 있고, 후속 task가 UX 일관성 문제를 실제 사용자 가치에 맞게 설명하는지 확인한다.
 
 ## 핸드오프
 
@@ -62,12 +58,3 @@ artifacts:
 ## 시도 로그
 
 - 2026-05-05: `I-0020-010` docs review에서 initiative note에만 남아 있던 `I-0016-170` follow-up을 task inventory로 복원했다.
-
-## 리뷰 노트
-
-- Optional review:
-  - reviewer:
-  - artifact:
-  - decision:
-  - findings:
-  - residual risks:
