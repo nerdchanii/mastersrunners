@@ -12,7 +12,11 @@ verify:
   - grep -q 'references/patterns/' .agents/skills/ast-grep/SKILL.md
   - "! grep -q codex_hooks .codex/config.toml"
   - grep -q 'prompts/' AGENTS.md
+  - pnpm knip
+  - "! grep -q 'pnpm ci:local' .husky/pre-push"
 artifacts:
+  - .husky/pre-push
+  - knip.json
   - .gitignore
   - .codex/config.toml
   - .agents/skills/ast-grep/SKILL.md
@@ -34,10 +38,13 @@ artifacts:
 - 커밋한 경우 `AGENTS.md` Source of Truth Map에 `prompts/ai-slop/`가 등록되어 있다.
 - `.gitignore`에서 `AGENTS.override.md` 항목이 제거되고 로컬 파일도 삭제되어 있다.
 - `dev`가 push되어 `origin/dev`와 같다.
+- `pnpm knip`이 `dev`에서 통과한다. 죽은 export는 삭제하거나 `knip.json`에 사유와 함께 ignore 등록한다.
+- `.husky/pre-push`가 전체 `ci:local` 대신 빠른 부분집합(`format:check`, `lint`, harness structure, typecheck)만 돌리고, 전체 파이프라인은 CI가 맡는다.
 
 ## 노트
 
-- 근거: `docs/reports/agent-harness-audit-2026-09-02.md` §3 F-09, F-11, F-13, F-17
+- 근거: `docs/reports/agent-harness-audit-2026-09-02.md` §3 F-09, F-11, F-13, F-17, F-18
+- 2026-09-02 기준 `pnpm ci:local`은 문서만 바꾼 커밋에서도 knip 단계에서 실패한다. 이 태스크의 push 완료 기준은 knip 복구 뒤에만 `--no-verify` 없이 달성할 수 있다.
 - `prompts/user_requst.md`는 ignore 대상이다. 그 내용이 필요하면 tracked 문서로 옮긴 뒤 override 의존을 끊는다.
 - `I-0026` 태스크의 `verify`는 전부 `test -f`다. 커밋할 때 필수 섹션 존재 검사 하나 이상을 추가한다.
 - 이 태스크가 끝나기 전에는 I-0027-020, I-0027-050을 시작하지 않는다. 같은 파일을 건드린다.

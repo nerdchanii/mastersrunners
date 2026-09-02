@@ -14,14 +14,14 @@
 
 영역별 판정:
 
-| 영역                  | 판정 | 한 줄 요약                                                                         |
-| --------------------- | ---- | ---------------------------------------------------------------------------------- |
-| A. 지시 계층          | 미흡 | Codex만 읽는 gitignore된 override가 존재하고, 문서가 의존하는 진단 스킬이 없다     |
-| B. Claude Code 표면   | 미흡 | tracked 공유 설정이 없고, 로컬 설정에 JWT 토큰이 들어 있으며 전역 ignore에 의존    |
-| C. Codex 표면         | 보통 | 폐기된 feature 키, 빈 hooks placeholder, 절반만 진행된 스킬 리팩터가 미커밋 상태   |
-| D. 태스크·문서 하네스 | 미흡 | 활성 태스크와 새 `prompts/` 디렉터리가 미커밋이고, 퇴역 하네스 잔재가 남아 있다    |
-| E. 가드레일 연결      | 보통 | 문서가 언급하는 스크립트 2개가 CI, ci-local, pre-commit 어디에도 연결되지 않음     |
-| F. Git 상태           | 미흡 | 하네스 변경이 로컬 `dev`에만 있고 `origin/dev`는 26커밋, `main`은 62커밋 뒤에 있다 |
+| 영역                  | 판정 | 한 줄 요약                                                                                             |
+| --------------------- | ---- | ------------------------------------------------------------------------------------------------------ |
+| A. 지시 계층          | 미흡 | Codex만 읽는 gitignore된 override가 존재하고, 문서가 의존하는 진단 스킬이 없다                         |
+| B. Claude Code 표면   | 미흡 | tracked 공유 설정이 없고, 로컬 설정에 JWT 토큰이 들어 있으며 전역 ignore에 의존                        |
+| C. Codex 표면         | 보통 | 폐기된 feature 키, 빈 hooks placeholder, 절반만 진행된 스킬 리팩터가 미커밋 상태                       |
+| D. 태스크·문서 하네스 | 미흡 | 활성 태스크와 새 `prompts/` 디렉터리가 미커밋이고, 퇴역 하네스 잔재가 남아 있다                        |
+| E. 가드레일 연결      | 미흡 | 문서가 언급하는 스크립트 2개가 어디에도 연결되지 않고, pre-push의 `ci:local`은 `dev`에서 항상 실패한다 |
+| F. Git 상태           | 미흡 | 하네스 변경이 로컬 `dev`에만 있고 `origin/dev`는 26커밋, `main`은 62커밋 뒤에 있다                     |
 
 가장 먼저 처리해야 할 다섯 가지:
 
@@ -30,6 +30,7 @@
 3. I-0026 산출물과 `.gitignore`, `.codex/config.toml`, ast-grep 스킬 변경을 커밋하거나 되돌려 워킹트리를 닫는다 (F-09, F-11, F-13).
 4. `harness-diagnostics` 의존을 해소한다. 스킬을 리포에 vendoring하거나, 런북과 `exceptions.md`의 `P1`–`P12` 참조를 리포 내부 정의로 바꾼다 (F-02, F-15).
 5. `AGENTS.md`에 하네스 맵을 추가해 어떤 파일을 어떤 에이전트가 읽는지, 무엇이 tracked이고 무엇이 로컬인지 명시한다 (F-03).
+6. `pnpm ci:local`의 knip 단계를 `dev`에서 녹색으로 되돌린다. 이 단계가 빨간 동안 pre-push 훅은 모든 push를 막고, `--no-verify` 습관과 로컬 브랜치 드리프트를 낳는다 (F-18).
 
 ## 2. AS-IS 하네스 맵
 
@@ -183,6 +184,13 @@
 - AS-IS: 하네스의 진실이 한 머신에 갇혀 있다.
 - TO-BE: 워킹트리를 닫은 뒤 `dev`를 push하고 `main`으로 합치는 정상 흐름을 복구한다. 이 보고서가 제안하는 변경은 그 뒤에 얹는다.
 
+#### F-18 · High · pre-push의 `ci:local`이 `dev`에서 항상 실패함
+
+- 근거: `.husky/pre-push:#L4` (`pnpm ci:local`), `scripts/ci-local.sh:#L65` (`pnpm knip`), 이 보고서를 담은 문서 전용 커밋에서 `pnpm ci:local` 실행 결과 knip 단계 exit 1 (Unused files 1, Unused exports 12, Unused exported types 18. 대상은 `apps/web/src/pages/profile/profile-api.ts`, `components/layout/mobile-shell.ts`, `lib/regions.ts` 등 기존 코드), `.github/workflows/ci.yml:#L75` (CI도 `pnpm knip` 실행)
+- 문제: pre-push 훅은 전체 `ci:local`을 돌리는데, 그 안의 knip 죽은 코드 검사가 `dev` HEAD의 기존 코드에서 실패한다. 문서만 바꿔도 push가 막힌다. 유일한 우회는 `--no-verify`이고, 그 습관이 F-17의 26커밋 드리프트를 만든 것으로 보인다. `ci.yml`에도 같은 knip 단계가 있으므로 push해도 CI는 빨갛다. 전체 `ci:local`은 이 머신에서 6분 이상 걸려 훅으로 쓰기에는 무겁다.
+- AS-IS: 가장 강한 가드레일이 항상 빨갛고, 그래서 아무도 지키지 않는다.
+- TO-BE: (1) knip 기준선을 `dev`에서 녹색으로 복구한다. 죽은 export를 지우거나 `knip.json` ignore로 등록하되 사유를 남긴다. (2) pre-push는 빠른 부분집합(`format:check`, `lint`, harness structure, typecheck)만 돌리고 전체 `ci:local`은 CI에 맡긴다. (3) `--no-verify` 사용은 커밋 규약에서 명시적으로 금지하고, 정 필요하면 `Verify:` 트레일러에 사유를 적게 한다.
+
 ## 4. TO-BE 목표 구조
 
 원칙 다섯 가지:
@@ -314,13 +322,13 @@ Follow `.agents/skills/ast-grep/SKILL.md`. That file is the single source for th
 
 ## 6. 로드맵
 
-| 우선순위 | 태스크                                                          | 닫는 항목              |
-| -------- | --------------------------------------------------------------- | ---------------------- |
-| P0       | `tasks/todo/I-0027-010-meta-harness-dirty-state-closeout.md`    | F-09, F-11, F-13, F-17 |
-| P0       | `tasks/todo/I-0027-030-meta-claude-shared-settings-baseline.md` | F-05, F-06, F-07, F-08 |
-| P1       | `tasks/todo/I-0027-020-meta-agents-md-harness-map.md`           | F-01, F-03, F-04, F-12 |
-| P1       | `tasks/todo/I-0027-050-meta-retired-harness-residue-cleanup.md` | F-02, F-14, F-15, F-16 |
-| P2       | `tasks/todo/I-0027-040-meta-codex-config-and-skill-parity.md`   | F-10, F-11 (포워더)    |
+| 우선순위 | 태스크                                                          | 닫는 항목                    |
+| -------- | --------------------------------------------------------------- | ---------------------------- |
+| P0       | `tasks/todo/I-0027-010-meta-harness-dirty-state-closeout.md`    | F-09, F-11, F-13, F-17, F-18 |
+| P0       | `tasks/todo/I-0027-030-meta-claude-shared-settings-baseline.md` | F-05, F-06, F-07, F-08       |
+| P1       | `tasks/todo/I-0027-020-meta-agents-md-harness-map.md`           | F-01, F-03, F-04, F-12       |
+| P1       | `tasks/todo/I-0027-050-meta-retired-harness-residue-cleanup.md` | F-02, F-14, F-15, F-16       |
+| P2       | `tasks/todo/I-0027-040-meta-codex-config-and-skill-parity.md`   | F-10, F-11 (포워더)          |
 
 P0 두 개는 서로 독립이다. P1은 P0-010이 끝난 뒤(워킹트리가 닫힌 뒤) 시작한다.
 

@@ -11,6 +11,7 @@ Bring the repository's agent harness back to a state where Claude Code and Codex
 - There is no tracked `.claude/settings.json`. The local `settings.local.json` carries a signed JWT inside an allow rule and is kept out of git only by a machine-level global ignore.
 - I-0026 artifacts (initiative, active task, `prompts/ai-slop/`) plus cleanups to `.gitignore`, `.codex/config.toml`, and the ast-grep skill have sat uncommitted since 2026-06-22. Local `dev` is 26 commits ahead of `origin/dev`, so the I-0025 harness retirement has never run through CI.
 - `scripts/check-doc-frontmatter.sh` and `scripts/check-size-budgets.sh` are referenced by operating rules but wired into nothing.
+- The pre-push hook runs the full `pnpm ci:local`, and its knip step fails on existing `apps/web` code at `dev` HEAD. Every push is blocked unless `--no-verify` is used, which is the likely cause of the 26-commit local drift.
 - Retired-harness residue remains: `tasks/reviews/README.md` calls itself canonical and links deleted `reviewers/` schemas; `.codex/hooks.json` is an empty placeholder; `.claude/commands/project-status.md` calls subagent types that do not exist.
 
 ## Goals
@@ -43,13 +44,13 @@ Bring the repository's agent harness back to a state where Claude Code and Codex
 
 ## Task Breakdown
 
-| Task       | Priority | Title                                        | Closes                 |
-| ---------- | -------- | -------------------------------------------- | ---------------------- |
-| I-0027-010 | P0       | Harness dirty-state closeout                 | F-09, F-11, F-13, F-17 |
-| I-0027-030 | P0       | Claude Code shared settings baseline         | F-05, F-06, F-07, F-08 |
-| I-0027-020 | P1       | AGENTS.md harness map and role table         | F-01, F-03, F-04, F-12 |
-| I-0027-050 | P1       | Retired-harness residue and guardrail wiring | F-02, F-14, F-15, F-16 |
-| I-0027-040 | P2       | Codex config and skill parity                | F-10, F-11 (forwarder) |
+| Task       | Priority | Title                                        | Closes                       |
+| ---------- | -------- | -------------------------------------------- | ---------------------------- |
+| I-0027-010 | P0       | Harness dirty-state closeout                 | F-09, F-11, F-13, F-17, F-18 |
+| I-0027-030 | P0       | Claude Code shared settings baseline         | F-05, F-06, F-07, F-08       |
+| I-0027-020 | P1       | AGENTS.md harness map and role table         | F-01, F-03, F-04, F-12       |
+| I-0027-050 | P1       | Retired-harness residue and guardrail wiring | F-02, F-14, F-15, F-16       |
+| I-0027-040 | P2       | Codex config and skill parity                | F-10, F-11 (forwarder)       |
 
 I-0027-010 and I-0027-030 are independent. I-0027-020 and I-0027-050 start after I-0027-010 lands, because they edit files that the dirty tree also touches.
 
