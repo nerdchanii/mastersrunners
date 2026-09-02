@@ -48,7 +48,7 @@ sg scan
 sg test
 ```
 
-Use `references/patterns.md` for concrete pattern examples across TypeScript, React JSX, NestJS, and Python.
+Use `references/patterns.md` as the index and the per-language files under `references/patterns/` (`ts-js.md`, `react.md`, `yaml.md`) for concrete pattern examples across TypeScript, React JSX, NestJS, and rule YAML.
 
 ## Safety Rules
 
