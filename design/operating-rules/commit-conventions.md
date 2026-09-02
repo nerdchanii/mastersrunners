@@ -109,7 +109,8 @@ Use the shortest clear SHA that resolves in the repository. Add a short reason i
 - Repository automation validates commit subjects in the `commit-msg` hook.
 - `pre-commit` is for file-content checks. Commit message validation belongs in `commit-msg`.
 - `pre-commit` escalates to `bash scripts/run-typecheck.sh` when staged changes touch TypeScript-sensitive files or configs.
-- `pre-push` runs `pnpm ci:local` so the full local CI mirror executes before changes leave the workstation.
+- `pre-push` runs a fast subset only: harness structure check, `pnpm format:check`, `pnpm lint`, and `bash scripts/run-typecheck.sh`. The full local CI mirror (`pnpm ci:local`) is CI's job and can still be run by hand before a risky push.
+- Do not push with `--no-verify`. If the hook fails on code you did not touch, fix the baseline in its own task instead of bypassing the hook.
 - The enforced rules currently cover:
   - allowed commit `type`
   - required non-empty `scope`
