@@ -28,6 +28,7 @@ Read in this order:
 - Operational guidance: `docs/runbooks/`
 - Runtime environment and settings index: `docs/runbooks/environment-and-settings.md`
 - Executable deployment/test automation: `.github/workflows/`, `scripts/`
+- AI-slop evaluation prompt templates (read only for I-0026 evaluation tasks): `prompts/ai-slop/`
 
 ## Repo Summary
 

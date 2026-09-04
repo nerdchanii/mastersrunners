@@ -70,6 +70,9 @@ next-env.d.ts
 !.claude/skills/*/SKILL.md
 .claude/commands/
 .claude/commands/*
+.claude/settings.local.json
+.claude/worktrees/
+!.claude/settings.json
 
 # oh-my-claudecode
 .omc/
@@ -93,3 +96,7 @@ next-env.d.ts
 __pycache__/
 *.pyc
 .worktrees
+
+# local prompt scratch
+/prompts/local
+/prompts/user_requst.md

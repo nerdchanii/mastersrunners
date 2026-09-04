@@ -1,8 +1,7 @@
 [features]
-codex_hooks = false
-multi_agent = true
 goals = true
 
+# Ceiling for the delegated evaluation pass in I-0026 (1 mechanical + 3 judge + 1 aggregation subagents).
 [agents]
 max_threads= 10
 max_depth = 2

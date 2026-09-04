@@ -1,4 +1,13 @@
 #!/usr/bin/env sh
 set -eu
 
-pnpm ci:local
+# Fast subset only. The full local CI mirror is CI's job;
+# see design/operating-rules/commit-conventions.md "Enforcement".
+test -f AGENTS.md
+test -d design
+test -d docs
+test -d tasks
+bash scripts/check-generated-artifacts.sh
+pnpm format:check
+pnpm lint
+bash scripts/run-typecheck.sh
