@@ -31,6 +31,7 @@ What does not belong here:
 | `i-0014-ui-bug-board.md`                    | live UI issue ledger and fix-pack intake for current web UX pain   | live       |
 | `flaky-tests.md`                            | active ledger for advisory or quarantined test instability         | live       |
 | `diagnostics-surface-retirement.md`         | drift report that retired the legacy diagnostics surface           | live       |
+| `agent-harness-audit-2026-09-02.md`         | AS-IS/TO-BE audit of the Claude Code + Codex agent harness         | live       |
 | `history/`                                  | preserved phase plans and legacy design inputs                     | historical |
 
 ## How to Extend This Folder
